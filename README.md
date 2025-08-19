@@ -16,14 +16,14 @@ Contracts serve as the foundation for a larger **ecosystem of correctness tools*
 
 ## Quick Start
 
-***1. Add Anodized to your project.***
+**1. Add Anodized to your project.**
 
 ```toml
 [dependencies]
 anodized = "0.1.0"
 ```
 
-***2. Add contracts to your functions.***
+**2. Add contracts to your functions.**
 
 Use the `#[contract]` attribute to define `requires` (precondition), `ensures` (postcondition), and `maintains` (invariant) clauses. Each clause is a standard Rust expressions that evaluates to `bool` (i.e. a predicate). In an `ensures` clause, the function's return value is available as `output`.
 
@@ -47,7 +47,7 @@ fn main() {
 }
 ```
 
-***3. Run or test your code as usual.***
+**3. Run or test your code as usual.**
 
 In a **debug build** (`cargo run`), your code is automatically instrumented to check the contracts. A contract violation will cause a panic with a descriptive error message:
 
@@ -69,7 +69,7 @@ The long-term vision includes developing a suite of `anodized-*` tools, such as:
 
 - `anodized-verify`: Prove formally that contracts are upheld both by implementations and at call sites, providing mathematical guarantees of correctness.
 
-Anodized aims to support a wide spectrum of correctness tools, enabling you to choose the best combination for each project. From simple runtime checks to full formal proofs, leveraging the same contract annotations.
+Anodized aims to support a wide spectrum of correctness tools, enabling you to choose the best combination for each project. From simple runtime checks to full formal proofs, leveraging the exact same contract annotations.
 
 ## Annotation Syntax
 
@@ -87,7 +87,7 @@ Contracts are built from three flavors of clauses:
 
 A predicate is a `bool`-valued Rust expression; as simple as that. This is an important design choice, and you can read about the benefits in the "[Why Predicates Are Rust Expressions](#why-predicates-are-rust-expressions)" section below.
 
-You can include zero, one, or many clauses of each flavor. In terms of the meaning (semantics), multiple clauses of the same flavor are combined with a logical **AND** (`&&`).
+You can include zero, one, or many clauses of each flavor. In terms of meaning (semantics), multiple clauses of the same flavor are combined with a logical **AND** (`&&`).
 
 ```rust
 #[contract(
