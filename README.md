@@ -25,7 +25,7 @@ anodized = "0.1.0"
 
 **2. Add contracts to your functions.**
 
-Use the `#[contract]` attribute to define `requires` (precondition), `ensures` (postcondition), and `maintains` (invariant) clauses. Each clause is a standard Rust expressions that evaluates to `bool` (i.e. a predicate). In an `ensures` clause, the function's return value is available as `output`.
+Use the `#[contract]` attribute to attach `requires` (precondition), `ensures` (postcondition), and `maintains` (invariant) _clauses_. Each clause contains a standard Rust expression that evaluates to `bool`, called a _predicate_. In an `ensures` clause, the function's return value is available as `output`.
 
 ```rust
 use anodized::contract;
@@ -85,7 +85,7 @@ Contracts are built from three flavors of clauses:
 
 - `maintains: <predicate>`: Defines an **invariant**. A convenience to add a predicate as both a pre- and a postcondition. It's most useful for expressing properties of `self` that a method must preserve.
 
-A predicate is a `bool`-valued Rust expression; as simple as that. This is an important design choice, and you can read about the benefits in the "[Why Predicates Are Rust Expressions](#why-predicates-are-rust-expressions)" section below.
+A predicate is a `bool`-valued Rust expression; as simple as that. This is a non-trivial design choice, so its benefits are explained in the section below: [Why Predicates Are Rust Expressions](#why-predicates-are-rust-expressions).
 
 You can include zero, one, or many clauses of each flavor. In terms of meaning (semantics), multiple clauses of the same flavor are combined with a logical **AND** (`&&`).
 
