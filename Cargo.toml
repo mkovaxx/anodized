@@ -1,0 +1,10 @@
+[package]
+name = "anodized"
+version = "0.1.0"
+edition = "2024"
+description = "An ecosystem for correct Rust based on lightweight contract annotations."
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/mkovaxx/anodized"
+keywords = ["contract", "correctness", "verification", "logic", "fuzzing"]
+
+[dependencies]
