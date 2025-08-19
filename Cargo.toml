@@ -6,5 +6,13 @@ description = "An ecosystem for correct Rust based on lightweight contract annot
 license = "MIT OR Apache-2.0"
 repository = "https://github.com/mkovaxx/anodized"
 keywords = ["contract", "correctness", "verification", "logic", "fuzzing"]
+exclude = [".gitignore"]
+
+[lib]
+proc-macro = true
 
 [dependencies]
+heck = "0.5.0"
+proc-macro2 = "1.0.79"
+quote = "1.0.35"
+syn = { version = "2.0.55", features = ["full"] }
