@@ -71,6 +71,66 @@ The long-term vision includes developing a suite of `anodized-*` tools, such as:
 
 This creates a spectrum of correctness tools, allowing you to choose the right combination for the job. From simple runtime checks to full formal proofs, all using the same contract annotations.
 
+## Annotation Syntax
+
+The `#[logic]` attribute provides a rich syntax for defining contracts, designed to be both powerful and ergonomic.
+
+### Clauses
+
+Contracts are built from three flavors of clauses:
+
+- `requires: <predicate>`: Defines a **precondition**. This predicate must be true when the function is called.
+
+- `ensures: <predicate>`: Defines a **postcondition**. This predicate must be true when the function returns.
+
+- `maintains: <predicate>`: Defines an **invariant**. A convenience to add a predicate as both a pre- and a postcondition. It's most useful for expressing properties of `self` that a method must preserve.
+
+You can include zero, one, or many clauses of each flavor. In terms of the meaning (semantics), multiple clauses of the same flavor are combined with a logical **AND** (`&&`).
+
+```rust
+#[logic(
+    requires: self.is_initialized,
+    requires: !self.is_locked, // equivalent to `self.is_initialized && !self.is_locked`
+    maintains: self.len() <= self.capacity(),
+)]
+fn push(&mut self, value: T) { /* ... */ }
+```
+
+### The Return Value
+
+In `ensures` clauses, you can refer to the function's return value using the default name `output`.
+
+```rust
+#[logic(
+    ensures: output > 0,
+)]
+fn get_positive_value() -> i32 { /* ... */ }
+```
+
+If the name `output` collides with an existing identifier, you can rename it in two ways:
+
+**1. Global Override**: Use the `returns` key to set a new default name for all `ensures` clauses within the annotation.
+
+```rust
+#[logic(
+    returns: new_value,
+    ensures: new_value > old_value,
+)]
+fn increment(old_value: i32) -> i32 { old_value + 1 }
+```
+
+**2. Per-Clause Override**: Use a closure-style syntax on a specific `ensures` clause. This has the highest precedence and only affects that single clause.
+
+```rust
+#[logic(
+    // This clause uses the default name `output`.
+    ensures: output.is_valid(),
+    // This clause uses a specific local name `val`.
+    ensures: |val| val.id() != 0,
+)]
+fn create_data() -> Data { /* ... */ }
+```
+
 ## License
 
 Anodized is distributed under the terms of both the MIT License and the Apache License (Version 2.0).
