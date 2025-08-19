@@ -154,7 +154,7 @@ A core design principle of Anodized is that a predicate is written as a **standa
 
 - **The Language You Already Know**: No need to learn yet another language to write the contracts. Write them in the one you already know: standard Rust. Call functions, macros (like `matches!`), or write `if` and `match` expressions, and so on. As long as it all evaluates to a `bool`, you're good to go.
 
-- **An Integral Part of Your Code**: Your contracts aren't special comments or strings; they are real Rust expressions, fully integrated with your code. The Rust compiler checks every predicate for syntax and type errors, just like any other part of your code. If you misspell a variable, compare incompatible types, or make any other mistake, you'll get a familiar compile-time error pointing directly to the predicate that needs fixing.
+- **An Integral Part of Your Code**: Contracts aren't special comments or strings; they are real Rust expressions, fully integrated with your code. The Rust compiler checks every predicate for syntax and type errors, just like any other part of your code. If you misspell a variable, compare incompatible types, or make any other mistake, you'll get a familiar compiler error pointing directly to the predicate that needs fixing.
 
 ## License
 
