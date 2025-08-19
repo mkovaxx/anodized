@@ -25,12 +25,12 @@ anodized = "0.1.0"
 
 ### 2. Add contracts to your functions
 
-Use the `#[logic]` attribute to define `requires` (precondition), `ensures` (postcondition), and `maintains` (invariant) clauses. Each clause is a standard Rust expressions that evaluates to `bool` (i.e. a predicate). In an `ensures` clause, the function's return value is available as `output`.
+Use the `#[contract]` attribute to define `requires` (precondition), `ensures` (postcondition), and `maintains` (invariant) clauses. Each clause is a standard Rust expressions that evaluates to `bool` (i.e. a predicate). In an `ensures` clause, the function's return value is available as `output`.
 
 ```rust
-use anodized::logic;
+use anodized::contract;
 
-#[logic(
+#[contract(
     requires: divisor != 0,
     ensures: output < dividend,
 )]
@@ -59,7 +59,7 @@ In a **release build** (`cargo run --release`), all contract-checking overhead i
 
 ## The Vision: An Ecosystem for Correctness
 
-Anodized is more than just a macro for runtime assertions; it's the foundation for a future suite of interoperable correctness tools. The `#[logic]` annotations provide a **single, unified language** that other tools can use to understand your code's intent.
+Anodized is more than just a macro for runtime assertions; it's the foundation for a future suite of interoperable correctness tools. The `#[contract]` annotations provide a **single, unified language** that other tools can use to understand your code's intent.
 
 The long-term vision includes developing a suite of `anodized-*` tools, such as:
 
@@ -73,7 +73,7 @@ This creates a spectrum of correctness tools, allowing you to choose the right c
 
 ## Annotation Syntax
 
-The `#[logic]` attribute provides a rich syntax for defining contracts, designed to be both powerful and ergonomic.
+The `#[contract]` attribute provides a rich syntax for defining contracts, designed to be both powerful and ergonomic.
 
 ### Clauses
 
@@ -88,7 +88,7 @@ Contracts are built from three flavors of clauses:
 You can include zero, one, or many clauses of each flavor. In terms of the meaning (semantics), multiple clauses of the same flavor are combined with a logical **AND** (`&&`).
 
 ```rust
-#[logic(
+#[contract(
     requires: self.is_initialized,
     requires: !self.is_locked, // equivalent to `self.is_initialized && !self.is_locked`
     maintains: self.len() <= self.capacity(),
@@ -101,7 +101,7 @@ fn push(&mut self, value: T) { /* ... */ }
 In `ensures` clauses, you can refer to the function's return value using the default name `output`.
 
 ```rust
-#[logic(
+#[contract(
     ensures: output > 0,
 )]
 fn get_positive_value() -> i32 { /* ... */ }
@@ -112,7 +112,7 @@ If the name `output` collides with an existing identifier, you can rename it in 
 **1. Global Override**: Use the `returns` key to set a new default name for all `ensures` clauses within the annotation.
 
 ```rust
-#[logic(
+#[contract(
     returns: new_value,
     ensures: new_value > old_value,
 )]
@@ -122,13 +122,28 @@ fn increment(old_value: i32) -> i32 { old_value + 1 }
 **2. Per-Clause Override**: Use a closure-style syntax on a specific `ensures` clause. This has the highest precedence and only affects that single clause.
 
 ```rust
-#[logic(
+#[contract(
     // This clause uses the default name `output`.
     ensures: output.is_valid(),
     // This clause uses a specific local name `val`.
     ensures: |val| val.id() != 0,
 )]
 fn create_data() -> Data { /* ... */ }
+```
+
+**3. Multiple Overrides**: When used together, the per-clause override always takes precedence for its specific clause, while other clauses fall back to the global override.
+
+```rust
+// A function where 'output' is an argument name, requiring a global override.
+#[contract(
+    // Globally rename the return value to `result`.
+    returns: result,
+    // This clause uses the global name `result`.
+    ensures: result > output,
+    // This clause uses a per-clause override `val`, which takes precedence.
+    ensures: |val| val % 2 == 0,
+)]
+fn calculate_even_result(output: i32) -> i32 { /* ... */ }
 ```
 
 ## License
