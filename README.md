@@ -16,14 +16,14 @@ These annotations serve as the foundation for a larger **ecosystem of correctnes
 
 ## Quick Start
 
-### 1. Add Anodized to your project
+***1. Add Anodized to your project.***
 
 ```toml
 [dependencies]
 anodized = "0.1.0"
 ```
 
-### 2. Add contracts to your functions
+***2. Add contracts to your functions.***
 
 Use the `#[contract]` attribute to define `requires` (precondition), `ensures` (postcondition), and `maintains` (invariant) clauses. Each clause is a standard Rust expressions that evaluates to `bool` (i.e. a predicate). In an `ensures` clause, the function's return value is available as `output`.
 
@@ -47,7 +47,7 @@ fn main() {
 }
 ```
 
-### 3. Run your code
+***3. Run or test your code as usual.***
 
 In a **debug build** (`cargo run`), your code is automatically instrumented to check the contracts. A contract violation will cause a panic with a descriptive error message:
 
@@ -55,7 +55,7 @@ In a **debug build** (`cargo run`), your code is automatically instrumented to c
 thread 'main' panicked at 'Precondition failed: divisor != 0', src/main.rs:17:5
 ```
 
-In a **release build** (`cargo run --release`), all contract-checking overhead is compiled out, resulting in **zero performance cost** in your production code.
+In a **release build** (`cargo run --release`), contract-checking is disabled, resulting in **zero performance cost** in your production code. Note that the compiler still checks contracts for errors such as bad syntax, unknown identifiers, type mismatches, etc.
 
 ## The Vision: An Ecosystem for Correctness
 
@@ -63,19 +63,19 @@ Anodized is more than just a macro for runtime assertions; it's the foundation f
 
 The long-term vision includes developing a suite of `anodized-*` tools, such as:
 
-- `anodized-docs`: A `cargo` subcommand that renders your explicit contracts as part of the generated documentation, making intended behavior clear to users.
+- `anodized-docs`: Render contracts as part of the generated documentation, making intended behavior clear to users.
 
-- `anodized-fuzz`: A `cargo` subcommand that generates fuzz tests, using `requires` clauses to generate valid inputs, making fuzzing effortless and efficient.
+- `anodized-fuzz`: Generate fuzz tests that choose valid inputs based on `requires` clauses, making fuzzing effortless and efficient.
 
-- `anodized-verify`: A `cargo` subcommand that uses formal methods to prove at compile-time that contracts are upheld both by implementations and at call sites, providing mathematical guarantees of correctness.
+- `anodized-verify`: Prove formally that contracts are upheld both by implementations and at call sites, providing mathematical guarantees of correctness.
 
-This creates a spectrum of correctness tools, allowing you to choose the right combination for the job. From simple runtime checks to full formal proofs, all using the same contract annotations.
+Anodized aims to support a wide spectrum of correctness tools, enabling you to choose the best combination for each project. From simple runtime checks to full formal proofs, leveraging the same contract annotations.
 
 ## Annotation Syntax
 
-The `#[contract]` attribute provides a rich syntax for defining contracts, designed to be both powerful and ergonomic.
+The `#[contract]` attribute provides a powerful and ergonomic way to define contracts.
 
-### Clauses
+### Contracts, Clauses, and Predicates
 
 Contracts are built from three flavors of clauses:
 
@@ -84,6 +84,8 @@ Contracts are built from three flavors of clauses:
 - `ensures: <predicate>`: Defines a **postcondition**. This predicate must be true when the function returns.
 
 - `maintains: <predicate>`: Defines an **invariant**. A convenience to add a predicate as both a pre- and a postcondition. It's most useful for expressing properties of `self` that a method must preserve.
+
+A predicate is a `bool`-valued Rust expression; as simple as that. This is an important design choice, and you can read about the benefits in the "[Why Predicates Are Rust Expressions](#why-predicates-are-rust-expressions)" section below.
 
 You can include zero, one, or many clauses of each flavor. In terms of the meaning (semantics), multiple clauses of the same flavor are combined with a logical **AND** (`&&`).
 
@@ -146,7 +148,7 @@ fn create_data() -> Data { /* ... */ }
 fn calculate_even_result(output: i32) -> i32 { /* ... */ }
 ```
 
-### Rust Expressions as Predicates
+### Why Predicates Are Rust Expressions
 
 A core design principle of Anodized is that a predicate is written as a **standard Rust expression** that evaluates to `bool`. This is a deliberate choice that provides key benefits over using a custom language.
 
