@@ -1,6 +1,6 @@
 [![crates.io](https://img.shields.io/crates/v/anodized.svg)](https://crates.io/crates/anodized)
 [![docs.rs](https://docs.rs/anodized/badge.svg)](https://docs.rs/anodized)
-[![CI](https://github.com/mkovaxx/anodized/actions/workflows/ci.yml/badge.svg)](https://github.com/mkovaxx/anodized/actions/workflows/ci.yml)
+[![CI tests](https://github.com/mkovaxx/anodized/actions/workflows/ci.yml/badge.svg)](https://github.com/mkovaxx/anodized/actions/workflows/ci.yml)
 [![License: Apache-2.0](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/mkovaxx/anodized/blob/main/LICENSE-Apache-2.0)
 [![License: MIT](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](https://github.com/mkovaxx/anodized/blob/main/LICENSE-MIT)
 
