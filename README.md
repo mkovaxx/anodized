@@ -25,7 +25,7 @@ anodized = "0.1.0"
 
 **2. Add contracts to your functions.**
 
-Use the `#[contract]` attribute to attach `requires` (precondition), `ensures` (postcondition), and `maintains` (invariant) _clauses_. Each clause contains a standard Rust expression that evaluates to `bool`, called a _predicate_. In an `ensures` clause, the function's return value is available as `output`.
+Use the `#[contract]` attribute to attach `requires` (precondition), `ensures` (postcondition), and `maintains` (invariant) _clauses_. Each clause contains a standard Rust expression that evaluates to `bool`, called a _condition_. In an `ensures` clause, the function's return value is available as `output`.
 
 ```rust
 use anodized::contract;
@@ -75,24 +75,25 @@ Anodized aims to support a wide spectrum of correctness tools, enabling you to c
 
 The `#[contract]` attribute provides a powerful and ergonomic way to define contracts.
 
-### Contracts, Clauses, and Predicates
+### Contracts, Clauses, and Conditions
 
 Contracts are built from three flavors of clauses:
 
-- `requires: <predicate>`: Defines a **precondition**. This predicate must be true when the function is called.
+- `requires: <condition>`: Defines a **precondition**. This condition must be true when the function is called.
 
-- `ensures: <predicate>`: Defines a **postcondition**. This predicate must be true when the function returns.
+- `ensures: <condition>`: Defines a **postcondition**. This condition must be true when the function returns.
 
-- `maintains: <predicate>`: Defines an **invariant**. A convenience to add a predicate as both a pre- and a postcondition. It's most useful for expressing properties of `self` that a method must preserve.
+- `maintains: <condition>`: Defines an **invariant**. A convenience to add a condition as both a pre- and a postcondition. It's most useful for expressing properties of `self` that a method must preserve.
 
-A predicate is a `bool`-valued Rust expression; as simple as that. This is a non-trivial design choice, so its benefits are explained in the section below: [Why Predicates Are Rust Expressions](#why-predicates-are-rust-expressions).
+A condition is a `bool`-valued Rust expression; as simple as that. This is a non-trivial design choice, so its benefits are explained in the section below: [Why Conditions Are Rust Expressions](#why-conditions-are-rust-expressions).
 
 You can include zero, one, or many clauses of each flavor. In terms of meaning (semantics), multiple clauses of the same flavor are combined with a logical **AND** (`&&`).
 
 ```rust
 #[contract(
+    // These two `requires` clauses are equivalent to one with `self.is_initialized && !self.is_locked`
     requires: self.is_initialized,
-    requires: !self.is_locked, // equivalent to `self.is_initialized && !self.is_locked`
+    requires: !self.is_locked,
     maintains: self.len() <= self.capacity(),
 )]
 fn push(&mut self, value: T) { /* ... */ }
@@ -121,7 +122,7 @@ If the name `output` collides with an existing identifier, you can rename it in 
 fn increment(old_value: i32) -> i32 { old_value + 1 }
 ```
 
-**2. Per-Clause Override**: Use a closure-style syntax on a specific `ensures` clause. This has the highest precedence and only affects that single clause.
+**2. Per-Clause Override**: Use a closure-style syntax in a specific `ensures` clause. This has the highest precedence and only affects that single clause.
 
 ```rust
 #[contract(
@@ -136,7 +137,7 @@ fn create_data() -> Data { /* ... */ }
 **3. Multiple Overrides**: When used together, the per-clause override always takes precedence for its specific clause, while other clauses fall back to the global override.
 
 ```rust
-// A function where 'output' is an argument name, requiring a global override.
+// A function where 'output' is an argument name, requiring overrides.
 #[contract(
     // Globally rename the return value to `result`.
     returns: result,
@@ -148,13 +149,13 @@ fn create_data() -> Data { /* ... */ }
 fn calculate_even_result(output: i32) -> i32 { /* ... */ }
 ```
 
-### Why Predicates Are Rust Expressions
+### Why Conditions Are Rust Expressions
 
-A core design principle of Anodized is that a predicate is written as a **standard Rust expression** that evaluates to `bool`. This is a deliberate choice that provides key benefits over using a custom language.
+A core design principle of Anodized is that a condition is written as a **standard Rust expression** that evaluates to `bool`. This is a deliberate choice that provides key benefits over using a custom language.
 
-- **The Language You Already Know**: No need to learn yet another language to write the contract predicates. Write them in the one you already know: standard Rust. Call functions, macros (like `matches!`), or write `if` and `match` expressions, and so on. As long as it all evaluates to a `bool`, you're good to go.
+- **The Language You Already Know**: No need to learn yet another language to write the contract conditions. Write them in the one you already know: standard Rust. Call functions, macros (like `matches!`), or write `if` and `match` expressions, and so on. As long as it all evaluates to a `bool`, you're good to go.
 
-- **An Integral Part of Your Code**: Contract predicates aren't special comments or strings; they are real Rust expressions, fully integrated with your code. The Rust compiler checks every predicate for syntax and type errors, just like any other part of your code. If you misspell a variable, compare incompatible types, or make any other mistake, you'll get a familiar compiler error pointing directly to the predicate that needs fixing.
+- **An Integral Part of Your Code**: Contract conditions aren't special comments or strings; they are real Rust expressions, fully integrated with your code. The Rust compiler checks every condition for syntax and type errors, just like any other part of your code. If you misspell a variable, compare incompatible types, or make any other mistake, you'll get a familiar compiler error pointing directly to the condition that needs fixing.
 
 ## License
 
