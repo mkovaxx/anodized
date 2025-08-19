@@ -160,7 +160,7 @@ A core design principle of Anodized is that a predicate is written as a **standa
 
 Anodized is distributed under the terms of both the MIT License and the Apache License (Version 2.0).
 
-See LICENSE-MIT and LICENSE-APACHE for details.
+See [LICENSE-MIT](LICENSE-MIT) and [LICENSE-APACHE](LICENSE-APACHE) for details.
 
 ## Contributing
 
