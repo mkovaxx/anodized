@@ -146,6 +146,14 @@ fn create_data() -> Data { /* ... */ }
 fn calculate_even_result(output: i32) -> i32 { /* ... */ }
 ```
 
+### Rust Expressions as Predicates
+
+A core design principle of Anodized is that a predicate is written as a **standard Rust expression** that evaluates to `bool`. This is a deliberate choice that provides key benefits over using a custom language.
+
+- **The Language You Already Know**: No need to learn yet another language to write the contracts. Write them in the one you already know: standard Rust. Call functions, macros (like `matches!`), or write `if` and `match` expressions, and so on. As long as it all evaluates to a `bool`, you're good to go.
+
+- **An Integral Part of Your Code**: Your contracts aren't special comments or strings; they are real Rust expressions, fully integrated with your code. The Rust compiler checks every predicate for syntax and type errors, just like any other part of your code. If you misspell a variable, compare incompatible types, or make any other mistake, you'll get a familiar compile-time error pointing directly to the predicate that needs fixing.
+
 ## License
 
 Anodized is distributed under the terms of both the MIT License and the Apache License (Version 2.0).
