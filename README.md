@@ -158,6 +158,30 @@ A core design principle of Anodized is that a condition is written as a **standa
 
 - **An Integral Part of Your Code**: Conditions aren't special comments or strings; they are real Rust expressions, fully integrated with your code. The Rust compiler checks every condition for syntax and type errors, just like any other part of your code. If you misspell a variable, compare incompatible types, or make any other mistake, you'll get a familiar compiler error pointing directly to the condition that needs fixing.
 
+## Prior Art and Motivation
+
+The idea of adding contracts to Rust isn't new, and Anodized builds upon the great work and ideas from several other projects and discussions in the community. It is a fresh take with a strong focus on ergonomics and a forward-looking vision for an integrated ecosystem.
+
+**The `contracts` Crate**
+
+The most direct and popular predecessor is the [`contracts`](https://crates.io/crates/contracts) crate. It is a mature and feature-rich library that also provides `#[requires]`, `#[ensures]`, and `#[invariant]` attributes. It has been a major inspiration for Anodized.
+
+Anodized differentiates itself with a few key design choices:
+
+- **Unified Attribute**: Anodized uses a single, comprehensive `#[contract]` attribute to group all conditions for a function, presenting the entire contract as one cohesive block.
+
+- **Ergonomic Focus**: The design process has been heavily focused on refining the user-facing syntax (e.g., keyword choices, return value binding) to be as intuitive, approachable, and powerful as possible.
+
+- **Ecosystem Vision**: While `contracts` is an excellent tool for runtime checking, Anodized is designed from the ground up to be a foundational layer for a wider ecosystem of diverse correctness tools, from fuzzing to formal verification.
+
+**Other Crates**
+
+Older crates like `libhoare` (a compiler plugin from before procedural macros were stabilized) and `dbc` explored similar ideas, proving the long-standing interest in Design by Contract within the Rust community. Anodized benefits from the modern procedural macro system, which allows for much better integration with the compiler and toolchain.
+
+**Language-Level Discussions**
+
+There have been official discussions and RFCs within the Rust project itself about adding native support for contracts to the language. Anodized is designed to be a practical, library-based solution that can be used **today**, while also serving as a testbed for ideas that could inform future language-level features.
+
 ## License
 
 Anodized is distributed under the terms of both the MIT License and the Apache License (Version 2.0).
