@@ -180,7 +180,7 @@ Older crates like `libhoare` (a compiler plugin from before procedural macros we
 
 **Inspiration from Other Languages**
 
-Anodized is also inspired by languages where contracts are a first-class feature, not just a library. Languages like [Whiley](https://whiley.org), [Eiffel](https://eiffel.org), and [Ada/SPARK](https://adacore.com/about-spark) demonstrate the power of deeply integrating formal specifications into the type system and toolchain. While Anodized is a library, it aims to bring a similar level of integration and ergonomic feel to the Rust ecosystem.
+Anodized is also inspired by languages where contracts are a first-class feature, not just a library. Languages like [Whiley](https://whiley.org), [Eiffel](https://eiffel.org), and [Ada/SPARK](https://adacore.com/about-spark) demonstrate the power of deeply integrating formal specifications into the syntax, type system, and toolchain. The Anodized ecosystem begins with one library, but shares the great ambition of those languages: to bring a similar level of integration and ergonomic feel to Rust.
 
 **Towards First-Class Contracts for Rust**
 
