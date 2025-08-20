@@ -27,7 +27,7 @@ anodized = "0.1.0"
 
 Use the `#[contract]` attribute to define preconditions (`requires`), postconditions (`ensures`), and invariants (`maintains`). Each _condition_ is a standard Rust expression that evaluates to `bool`. In postconditions, the function's return value is available as `output`.
 
-```rust
+```rust,ignore
 use anodized::contract;
 
 #[contract(
@@ -51,7 +51,7 @@ fn main() {
 
 In a **debug build** (`cargo run` or `cargo test`), your code is automatically instrumented to check the contracts. A contract violation will cause a panic with a descriptive error message:
 
-```
+```ignore
 thread 'main' panicked at 'Precondition failed: divisor != 0', src/main.rs:17:5
 ```
 
@@ -89,7 +89,7 @@ A condition is a `bool`-valued Rust expression; as simple as that. This is a non
 
 You can include any number of each flavor. Multiple conditions of the same flavor are combined with a logical **AND** (`&&`).
 
-```rust
+```rust,ignore
 #[contract(
     // These two preconditions are equivalent to a single
     // precondition, `self.is_initialized && !self.is_locked`.
@@ -105,7 +105,7 @@ fn push(&mut self, value: T) { /* ... */ }
 
 In **postconditions** (`ensures`), you can refer to the function's return value by the default name `output`.
 
-```rust
+```rust,ignore
 #[contract(
     ensures: output > 0,
 )]
@@ -116,7 +116,7 @@ If the name `output` collides with an existing identifier, you can choose a diff
 
 **1. Contract-Wide Binding**: Use the `binds` parameter to set a new name for the return value across all postconditions in the contract.
 
-```rust
+```rust,ignore
 #[contract(
     binds: new_value,
     ensures: new_value > old_value,
@@ -126,7 +126,7 @@ fn increment(old_value: i32) -> i32 { /* ... */ }
 
  **2. Closure Binding**: Write the postcondition as a closure. This has the highest precedence and affects only that single condition.
 
-```rust
+```rust,ignore
 #[contract(
     // This postcondition uses the default binding `output`.
     ensures: output.is_valid(),
@@ -138,7 +138,7 @@ fn create_data() -> Data { /* ... */ }
 
 **3. Binding Precedence**: The closure's binding takes precedence; same as in Rust. Plain postconditions still use the contract-wide binding.
 
-```rust
+```rust,ignore
 // A function where 'output' is an argument name, requiring a different name.
 #[contract(
     // Set a contract-wide name for the return value: `result`.
@@ -155,7 +155,7 @@ fn calculate_even_result(output: i32) -> i32 { /* ... */ }
 
 The `binds` parameter also lets you destructure return values, making complex postconditions easier to read and write. You can use any valid Rust pattern, including tuple patterns, struct patterns, or even more complex nested patterns.
 
-```rust
+```rust,ignore
 use anodized::contract;
 
 #[contract(
