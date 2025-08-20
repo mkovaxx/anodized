@@ -5,6 +5,8 @@ edition = "2024"
 description = "An ecosystem for correct Rust based on lightweight contract annotations."
 license = "MIT OR Apache-2.0"
 repository = "https://github.com/mkovaxx/anodized"
+documentation = "https://docs.rs/anodized"
+readme = "README.md"
 keywords = ["contract", "correctness", "verification", "logic", "fuzzing"]
 exclude = [".gitignore"]
 
