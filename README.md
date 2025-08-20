@@ -25,7 +25,7 @@ anodized = "0.1.0"
 
 **2. Add contracts to your functions.**
 
-Use the `#[contract]` attribute to attach `requires` (precondition), `ensures` (postcondition), and `maintains` (invariant) _clauses_. Each clause contains a standard Rust expression that evaluates to `bool`, called a _condition_. In an `ensures` clause, the function's return value is available as `output`.
+Use the `#[contract]` attribute to define preconditions (`requires`), postconditions (`ensures`), and invariants (`maintains`). Each _condition_ is a standard Rust expression that evaluates to `bool`. In postconditions, the function's return value is available as `output`.
 
 ```rust
 use anodized::contract;
@@ -49,13 +49,13 @@ fn main() {
 
 **3. Run or test your code as usual.**
 
-In a **debug build** (`cargo run`), your code is automatically instrumented to check the contracts. A contract violation will cause a panic with a descriptive error message:
+In a **debug build** (`cargo run` or `cargo test`), your code is automatically instrumented to check the contracts. A contract violation will cause a panic with a descriptive error message:
 
 ```
 thread 'main' panicked at 'Precondition failed: divisor != 0', src/main.rs:17:5
 ```
 
-In a **release build** (`cargo run --release`), contract-checking is disabled, resulting in **zero performance cost** in your production code. Note that the compiler still checks contracts for errors such as bad syntax, unknown identifiers, type mismatches, etc.
+In a **release build** (`cargo run --release`), _runtime_ contract-checking is disabled, resulting in **zero performance cost** in your production code. Note that the compiler still checks contracts for errors such as bad syntax, unknown identifiers, type mismatches, etc.
 
 ## The Vision: An Ecosystem for Correctness
 
@@ -65,7 +65,7 @@ The long-term vision includes developing a suite of `anodized-*` tools, such as:
 
 - `anodized-docs`: Render contracts as part of the generated documentation, making intended behavior clear to users.
 
-- `anodized-fuzz`: Generate fuzz tests that choose valid inputs based on `requires` clauses, making fuzzing effortless and efficient.
+- `anodized-fuzz`: Generate fuzz tests that choose valid inputs based on preconditions, making fuzzing effortless and efficient.
 
 - `anodized-verify`: Prove formally that contracts are upheld both by implementations and at call sites, providing mathematical guarantees of correctness.
 
@@ -75,25 +75,26 @@ Anodized aims to support a wide spectrum of correctness tools, enabling you to c
 
 The `#[contract]` attribute provides a powerful and ergonomic way to define contracts.
 
-### Contracts, Clauses, and Conditions
+### Preconditions, Postconditions, and Invariants
 
-Contracts are built from three flavors of clauses:
+Contracts are built from conditions, which come in three flavors:
 
-- `requires: <condition>`: Defines a **precondition**. This condition must be true when the function is called.
+- **Preconditions** (using `requires: <condition>`): Must be true when the function is called.
 
-- `ensures: <condition>`: Defines a **postcondition**. This condition must be true when the function returns.
+- **Postconditions** (using `ensures: <condition>`): Must be true when the function returns.
 
-- `maintains: <condition>`: Defines an **invariant**. A convenience to add a condition as both a pre- and a postcondition. It's most useful for expressing properties of `self` that a method must preserve.
+- **Invariants** (using `maintains: <condition>`): A convenience for conditions that must hold true both before and after the function runs. It's most useful for expressing properties of `self` that a method must preserve.
 
 A condition is a `bool`-valued Rust expression; as simple as that. This is a non-trivial design choice, so its benefits are explained in the section below: [Why Conditions Are Rust Expressions](#why-conditions-are-rust-expressions).
 
-You can include zero, one, or many clauses of each flavor. In terms of meaning (semantics), multiple clauses of the same flavor are combined with a logical **AND** (`&&`).
+You can include any number of each flavor. Multiple conditions of the same flavor are combined with a logical **AND** (`&&`).
 
 ```rust
 #[contract(
-    // These two `requires` clauses are equivalent to one with `self.is_initialized && !self.is_locked`
+    // These two preconditions are equivalent to one with `self.is_initialized && !self.is_locked`
     requires: self.is_initialized,
     requires: !self.is_locked,
+    // The next one is an invariant
     maintains: self.len() <= self.capacity(),
 )]
 fn push(&mut self, value: T) { /* ... */ }
@@ -101,7 +102,7 @@ fn push(&mut self, value: T) { /* ... */ }
 
 ### The Return Value
 
-In `ensures` clauses, you can refer to the function's return value using the default name `output`.
+In **postconditions** (`ensures`), you can refer to the function's return value by the default name `output`.
 
 ```rust
 #[contract(
@@ -110,9 +111,9 @@ In `ensures` clauses, you can refer to the function's return value using the def
 fn get_positive_value() -> i32 { /* ... */ }
 ```
 
-If the name `output` collides with an existing identifier, you can rename it in two ways:
+If the name `output` collides with an existing identifier, you can choose a different name for it in two ways:
 
-**1. Global Override**: Use the `returns` key to set a new default name for all `ensures` clauses within the annotation.
+**1. Contract-Wide Name**: Use the `returns` key to set a new name for the return value across all postconditions in the contract.
 
 ```rust
 #[contract(
@@ -122,28 +123,28 @@ If the name `output` collides with an existing identifier, you can rename it in 
 fn increment(old_value: i32) -> i32 { old_value + 1 }
 ```
 
-**2. Per-Clause Override**: Use a closure-style syntax in a specific `ensures` clause. This has the highest precedence and only affects that single clause.
+ **2. Closure Argument Name**: Write the postcondition as a closure. This has the highest precedence and affects only that single condition.
 
 ```rust
 #[contract(
-    // This clause uses the default name `output`.
+    // This postcondition uses the default name `output`.
     ensures: output.is_valid(),
-    // This clause uses a specific local name `val`.
+    // This postcondition uses `val` as the name for the return value.
     ensures: |val| val.id() != 0,
 )]
 fn create_data() -> Data { /* ... */ }
 ```
 
-**3. Multiple Overrides**: When used together, the per-clause override always takes precedence for its specific clause, while other clauses fall back to the global override.
+**3. Combined Name Settings**: When both are used, the name from the closure argument always takes precedence for its specific condition, while other postconditions fall back to the contract-wide name.
 
 ```rust
-// A function where 'output' is an argument name, requiring overrides.
+// A function where 'output' is an argument name, requiring a different name.
 #[contract(
-    // Globally rename the return value to `result`.
+    // Set a contract-wide name for the return value: `result`.
     returns: result,
-    // This clause uses the global name `result`.
+    // This postcondition uses the contract-wide name `result`.
     ensures: result > output,
-    // This clause uses a per-clause override `val`, which takes precedence.
+    // This postcondition uses a closure argument to set the name to `val`, which takes precedence.
     ensures: |val| val % 2 == 0,
 )]
 fn calculate_even_result(output: i32) -> i32 { /* ... */ }
@@ -153,9 +154,9 @@ fn calculate_even_result(output: i32) -> i32 { /* ... */ }
 
 A core design principle of Anodized is that a condition is written as a **standard Rust expression** that evaluates to `bool`. This is a deliberate choice that provides key benefits over using a custom language.
 
-- **The Language You Already Know**: No need to learn yet another language to write the contract conditions. Write them in the one you already know: standard Rust. Call functions, macros (like `matches!`), or write `if` and `match` expressions, and so on. As long as it all evaluates to a `bool`, you're good to go.
+- **The Language You Already Know**: No need to learn yet another language to write the conditions. Write them in the one you already know: standard Rust. Call functions, use macros (like `matches!`), or write `if` and `match` expressions, and so on. As long as it all evaluates to a `bool`, it's good to go.
 
-- **An Integral Part of Your Code**: Contract conditions aren't special comments or strings; they are real Rust expressions, fully integrated with your code. The Rust compiler checks every condition for syntax and type errors, just like any other part of your code. If you misspell a variable, compare incompatible types, or make any other mistake, you'll get a familiar compiler error pointing directly to the condition that needs fixing.
+- **An Integral Part of Your Code**: Conditions aren't special comments or strings; they are real Rust expressions, fully integrated with your code. The Rust compiler checks every condition for syntax and type errors, just like any other part of your code. If you misspell a variable, compare incompatible types, or make any other mistake, you'll get a familiar compiler error pointing directly to the condition that needs fixing.
 
 ## License
 
