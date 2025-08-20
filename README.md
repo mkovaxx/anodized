@@ -55,7 +55,7 @@ In a **debug build** (`cargo run` or `cargo test`), your code is automatically i
 thread 'main' panicked at 'Precondition failed: divisor != 0', src/main.rs:17:5
 ```
 
-In a **release build** (`cargo run --release`), _runtime_ contract-checking is disabled, resulting in **zero performance cost** in your production code. Note that the compiler still checks contracts for errors such as bad syntax, unknown identifiers, type mismatches, etc.
+In a **release build** (`cargo run --release`), _runtime_ contract-checking is disabled, resulting in **zero performance cost** to your production code. Note that the compiler still checks contracts for errors such as bad syntax, unknown identifiers, type mismatches, etc.
 
 ## The Vision: An Ecosystem for Correctness
 
@@ -91,7 +91,8 @@ You can include any number of each flavor. Multiple conditions of the same flavo
 
 ```rust
 #[contract(
-    // These two preconditions are equivalent to one with `self.is_initialized && !self.is_locked`
+    // These two preconditions are equivalent to a single
+    // precondition, `self.is_initialized && !self.is_locked`.
     requires: self.is_initialized,
     requires: !self.is_locked,
     // The next one is an invariant
@@ -100,7 +101,7 @@ You can include any number of each flavor. Multiple conditions of the same flavo
 fn push(&mut self, value: T) { /* ... */ }
 ```
 
-### The Return Value
+### Binding the Return Value
 
 In **postconditions** (`ensures`), you can refer to the function's return value by the default name `output`.
 
@@ -113,7 +114,7 @@ fn get_positive_value() -> i32 { /* ... */ }
 
 If the name `output` collides with an existing identifier, you can choose a different name for it in two ways:
 
-**1. Contract-Wide Name**: Use `binds` to set a new name for the return value across all postconditions in the contract.
+**1. Contract-Wide Name**: Use the `binds` parameter to set a new name for the return value across all postconditions in the contract.
 
 ```rust
 #[contract(
@@ -144,10 +145,28 @@ fn create_data() -> Data { /* ... */ }
     binds: result,
     // This postcondition uses the contract-wide name `result`.
     ensures: result > output,
-    // This postcondition uses a closure argument to set the name to `val`, which takes precedence.
+    // This postcondition is written as a closure to bind the return value as `val`.
     ensures: |val| val % 2 == 0,
 )]
 fn calculate_even_result(output: i32) -> i32 { /* ... */ }
+```
+
+***4. Beyond Names: Destructuring Return Values***
+
+The `binds` parameter also lets you destructure return values, making complex postconditions easier to read and write. You can use any valid Rust pattern, including tuple patterns, struct patterns, or even more complex nested patterns.
+
+```rust
+use anodized::contract;
+
+#[contract(
+    // Destructure the returned tuple into `(a, b)`.
+    binds: (a, b),
+    // Postconditions can now use the bound variables `a` and `b`.
+    ensures: a <= b,
+    // Can also reference the original arguments.
+    ensures: (a, b) == pair || (b, a) == pair,
+)]
+fn sort_pair(pair: (i32, i32)) -> (i32, i32) { /* ... */ }
 ```
 
 ### Why Conditions Are Rust Expressions
