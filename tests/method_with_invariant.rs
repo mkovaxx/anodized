@@ -16,7 +16,10 @@ impl Counter {
 
 #[test]
 fn test_increment_success() {
-    let mut c = Counter { count: 5, capacity: 10 };
+    let mut c = Counter {
+        count: 5,
+        capacity: 10,
+    };
     c.increment();
     assert_eq!(c.count, 6);
 }
@@ -24,6 +27,9 @@ fn test_increment_success() {
 #[test]
 #[should_panic(expected = "Postcondition failed: self.count <= self.capacity")]
 fn test_increment_violates_invariant() {
-    let mut c = Counter { count: 10, capacity: 10 };
+    let mut c = Counter {
+        count: 10,
+        capacity: 10,
+    };
     c.increment(); // This will make count 11, violating the invariant on exit.
 }

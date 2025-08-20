@@ -32,6 +32,8 @@ fn test_job_start_success() {
 #[test]
 #[should_panic(expected = "Precondition failed: matches! (self.state, State::Idle)")]
 fn test_job_start_panics_if_not_idle() {
-    let mut job = Job { state: State::Running };
+    let mut job = Job {
+        state: State::Running,
+    };
     job.start(); // This violates the precondition.
 }
