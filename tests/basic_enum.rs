@@ -1,0 +1,38 @@
+use anodized::contract;
+
+#[derive(Debug, PartialEq, Eq)]
+enum State {
+    Idle,
+    Running,
+    Finished,
+}
+
+struct Job {
+    state: State,
+}
+
+impl Job {
+    #[contract(
+        maintains: matches!(self.state, State::Idle | State::Running | State::Finished),
+        requires: matches!(self.state, State::Idle),
+        ensures: matches!(self.state, State::Running),
+    )]
+    fn start(&mut self) {
+        self.state = State::Running;
+    }
+}
+
+#[test]
+fn test_job_start_success() {
+    let mut job = Job { state: State::Idle };
+    job.start();
+}
+
+#[test]
+#[should_panic(expected = "Precondition failed: matches! (self.state, State::Idle)")]
+fn test_job_start_panics_if_not_idle() {
+    let mut job = Job {
+        state: State::Running,
+    };
+    job.start(); // This violates the precondition.
+}
