@@ -178,7 +178,11 @@ Anodized differentiates itself with a few key design choices:
 
 Older crates like `libhoare` (a compiler plugin from before procedural macros were stabilized) and `dbc` explored similar ideas, proving the long-standing interest in Design by Contract within the Rust community. Anodized benefits from the modern procedural macro system, which allows for much better integration with the compiler and toolchain.
 
-**Language-Level Discussions**
+**Inspiration from Other Languages**
+
+Anodized is also inspired by languages where contracts are a first-class feature, not just a library. Languages like [Whiley](https://whiley.org), [Eiffel](https://eiffel.org), and [Ada/SPARK](https://adacore.com/about-spark) demonstrate the power of deeply integrating formal specifications into the type system and toolchain. While Anodized is a library, it aims to bring a similar level of integration and ergonomic feel to the Rust ecosystem.
+
+**Towards First-Class Contracts for Rust**
 
 There have been official discussions and RFCs within the Rust project itself about adding native support for contracts to the language. Anodized is designed to be a practical, library-based solution that can be used **today**, while also serving as a testbed for ideas that could inform future language-level features.
 
