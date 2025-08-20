@@ -1,8 +1,9 @@
 use proc_macro::TokenStream;
 use proc_macro2::{Ident, Span};
 use quote::{ToTokens, quote};
+use syn::spanned::Spanned;
 use syn::{
-    Expr, ExprClosure, ItemFn, Result, Token,
+    Expr, ExprClosure, ItemFn, Pat, Result, Token,
     parse::{Parse, ParseStream},
     parse_macro_input,
     punctuated::Punctuated,
@@ -35,8 +36,7 @@ pub fn contract(args: TokenStream, input: TokenStream) -> TokenStream {
 /// A container for all parsed arguments from the `#[contract]` attribute.
 struct ContractArgs {
     conditions: Vec<Condition>,
-    // Optional global rename for the return value.
-    returns_ident: Option<Ident>,
+    returns_pat: Option<Pat>,
 }
 
 /// Represents a single contract condition, e.g., `requires: x > 0`.
@@ -51,7 +51,7 @@ impl Parse for ContractArgs {
     /// Custom parser for the contents of `#[contract(...)]`.
     fn parse(input: ParseStream) -> Result<Self> {
         let mut conditions = Vec::new();
-        let mut returns_ident = None;
+        let mut returns_pat = None;
 
         // The arguments are a comma-separated list of conditions or a `returns` key.
         let items = Punctuated::<ContractArgItem, Token![,]>::parse_terminated(input)?;
@@ -59,18 +59,18 @@ impl Parse for ContractArgs {
         for item in items {
             match item {
                 ContractArgItem::Condition(condition) => conditions.push(condition),
-                ContractArgItem::Returns(ident) => {
-                    if returns_ident.is_some() {
-                        return Err(syn::Error::new(ident.span(), "duplicate `returns` key"));
+                ContractArgItem::Returns(pat) => {
+                    if returns_pat.is_some() {
+                        return Err(syn::Error::new(pat.span(), "duplicate `returns` key"));
                     }
-                    returns_ident = Some(ident);
+                    returns_pat = Some(pat);
                 }
             }
         }
 
         Ok(ContractArgs {
             conditions,
-            returns_ident,
+            returns_pat,
         })
     }
 }
@@ -78,18 +78,18 @@ impl Parse for ContractArgs {
 /// An intermediate enum to help parse either a condition or a `returns` key.
 enum ContractArgItem {
     Condition(Condition),
-    Returns(Ident),
+    Returns(Pat),
 }
 
 impl Parse for ContractArgItem {
     fn parse(input: ParseStream) -> Result<Self> {
         let lookahead = input.lookahead1();
         if lookahead.peek(kw::returns) {
-            // Parse `returns: new_name`
+            // Parse `returns: pat`
             input.parse::<kw::returns>()?;
             input.parse::<Token![:]>()?;
-            let ident = input.parse::<Ident>()?;
-            Ok(ContractArgItem::Returns(ident))
+            let pat = Pat::parse_single(input)?;
+            Ok(ContractArgItem::Returns(pat))
         } else if lookahead.peek(kw::requires)
             || lookahead.peek(kw::ensures)
             || lookahead.peek(kw::maintains)
@@ -151,11 +151,12 @@ fn instrument_body(func: &ItemFn, args: &ContractArgs) -> Result<proc_macro2::To
     // The identifier for the return value binding. It's hygienic to prevent collisions.
     let binding_ident = Ident::new("__anodized_output", Span::mixed_site());
 
-    // The identifier used inside the `ensures` predicate. It must be resolvable at the call site.
-    let default_output_ident = args
-        .returns_ident
+    // The pattern for the `ensures` predicate. It must be resolvable at the call site.
+    let default_output_pat = args
+        .returns_pat
         .clone()
-        .unwrap_or_else(|| Ident::new("output", Span::call_site()));
+        .map(|p| p.to_token_stream())
+        .unwrap_or_else(|| quote! { output });
 
     // --- Generate Precondition Checks ---
     let preconditions = args.conditions.iter().filter_map(|c| match c {
@@ -178,7 +179,7 @@ fn instrument_body(func: &ItemFn, args: &ContractArgs) -> Result<proc_macro2::To
         }
         Condition::Ensures { predicate } => {
             let msg = format!("Postcondition failed: {}", predicate.to_token_stream());
-            Some(quote! { assert!((|#default_output_ident| #predicate)(#binding_ident), #msg); })
+            Some(quote! { assert!((|#default_output_pat| #predicate)(#binding_ident), #msg); })
         }
         Condition::EnsuresClosure { closure } => {
             let msg = format!("Postcondition failed: {}", closure.to_token_stream());
