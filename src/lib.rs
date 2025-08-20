@@ -148,9 +148,11 @@ fn instrument_body(func: &ItemFn, args: &ContractArgs) -> Result<proc_macro2::To
     let original_body = &func.block;
     let is_async = func.sig.asyncness.is_some();
 
-    // Determine the name of the variable that will hold the function's return value.
-    // This is either the global `returns:` override or the default "output".
-    let global_output_ident = args
+    // The identifier for the return value binding. It's hygienic to prevent collisions.
+    let binding_ident = Ident::new("__anodized_output", Span::mixed_site());
+
+    // The identifier used inside the `ensures` predicate. It must be resolvable at the call site.
+    let default_output_ident = args
         .returns_ident
         .clone()
         .unwrap_or_else(|| Ident::new("output", Span::call_site()));
@@ -172,11 +174,11 @@ fn instrument_body(func: &ItemFn, args: &ContractArgs) -> Result<proc_macro2::To
         }
         Condition::Ensures { predicate } => {
             let msg = format!("Postcondition failed: {}", predicate.to_token_stream());
-            Some(quote! { assert!((|#global_output_ident| #predicate)(#global_output_ident), #msg); })
+            Some(quote! { assert!((|#default_output_ident| #predicate)(#binding_ident), #msg); })
         }
         Condition::EnsuresClosure { closure } => {
             let msg = format!("Postcondition failed: {}", closure.to_token_stream());
-            Some(quote! { assert!((#closure)(#global_output_ident), #msg); })
+            Some(quote! { assert!((#closure)(#binding_ident), #msg); })
         }
         _ => None, // Ignore `requires`
     });
@@ -191,9 +193,9 @@ fn instrument_body(func: &ItemFn, args: &ContractArgs) -> Result<proc_macro2::To
     Ok(quote! {
         {
             #(#preconditions)*
-            let #global_output_ident = #body_expr;
+            let #binding_ident = #body_expr;
             #(#postconditions)*
-            #global_output_ident
+            #binding_ident
         }
     })
 }
