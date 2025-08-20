@@ -1,7 +1,7 @@
 use anodized::contract;
 
 #[contract(
-    returns: result,
+    binds: result,
     ensures: result > output,
     ensures: |val| val % 2 == 0,
 )]
@@ -20,7 +20,7 @@ fn test_rename_success() {
 }
 
 #[contract(
-    returns: result,
+    binds: result,
     ensures: result % 2 == 0,
 )]
 fn calculate_odd_result(output: i32) -> i32 {

@@ -36,7 +36,7 @@ pub fn contract(args: TokenStream, input: TokenStream) -> TokenStream {
 /// A container for all parsed arguments from the `#[contract]` attribute.
 struct ContractArgs {
     conditions: Vec<Condition>,
-    returns_pat: Option<Pat>,
+    binds_pat: Option<Pat>,
 }
 
 /// Represents a single contract condition, e.g., `requires: x > 0`.
@@ -51,45 +51,45 @@ impl Parse for ContractArgs {
     /// Custom parser for the contents of `#[contract(...)]`.
     fn parse(input: ParseStream) -> Result<Self> {
         let mut conditions = Vec::new();
-        let mut returns_pat = None;
+        let mut binds_pat = None;
 
-        // The arguments are a comma-separated list of conditions or a `returns` key.
+        // The arguments are a comma-separated list of conditions or a `binds` setting.
         let items = Punctuated::<ContractArgItem, Token![,]>::parse_terminated(input)?;
 
         for item in items {
             match item {
                 ContractArgItem::Condition(condition) => conditions.push(condition),
-                ContractArgItem::Returns(pat) => {
-                    if returns_pat.is_some() {
-                        return Err(syn::Error::new(pat.span(), "duplicate `returns` key"));
+                ContractArgItem::Binds(pat) => {
+                    if binds_pat.is_some() {
+                        return Err(syn::Error::new(pat.span(), "duplicate `binds` setting"));
                     }
-                    returns_pat = Some(pat);
+                    binds_pat = Some(pat);
                 }
             }
         }
 
         Ok(ContractArgs {
             conditions,
-            returns_pat,
+            binds_pat,
         })
     }
 }
 
-/// An intermediate enum to help parse either a condition or a `returns` key.
+/// An intermediate enum to help parse either a condition or a `binds` setting.
 enum ContractArgItem {
     Condition(Condition),
-    Returns(Pat),
+    Binds(Pat),
 }
 
 impl Parse for ContractArgItem {
     fn parse(input: ParseStream) -> Result<Self> {
         let lookahead = input.lookahead1();
-        if lookahead.peek(kw::returns) {
-            // Parse `returns: pat`
-            input.parse::<kw::returns>()?;
+        if lookahead.peek(kw::binds) {
+            // Parse `binds: pat`
+            input.parse::<kw::binds>()?;
             input.parse::<Token![:]>()?;
             let pat = Pat::parse_single(input)?;
-            Ok(ContractArgItem::Returns(pat))
+            Ok(ContractArgItem::Binds(pat))
         } else if lookahead.peek(kw::requires)
             || lookahead.peek(kw::ensures)
             || lookahead.peek(kw::maintains)
@@ -139,7 +139,7 @@ mod kw {
     syn::custom_keyword!(requires);
     syn::custom_keyword!(ensures);
     syn::custom_keyword!(maintains);
-    syn::custom_keyword!(returns);
+    syn::custom_keyword!(binds);
 }
 
 /// Takes the original function and contract arguments, and returns a new
@@ -153,7 +153,7 @@ fn instrument_body(func: &ItemFn, args: &ContractArgs) -> Result<proc_macro2::To
 
     // The pattern for the `ensures` predicate. It must be resolvable at the call site.
     let default_output_pat = args
-        .returns_pat
+        .binds_pat
         .clone()
         .map(|p| p.to_token_stream())
         .unwrap_or_else(|| quote! { output });

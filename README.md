@@ -113,11 +113,11 @@ fn get_positive_value() -> i32 { /* ... */ }
 
 If the name `output` collides with an existing identifier, you can choose a different name for it in two ways:
 
-**1. Contract-Wide Name**: Use the `returns` key to set a new name for the return value across all postconditions in the contract.
+**1. Contract-Wide Name**: Use `binds` to set a new name for the return value across all postconditions in the contract.
 
 ```rust
 #[contract(
-    returns: new_value,
+    binds: new_value,
     ensures: new_value > old_value,
 )]
 fn increment(old_value: i32) -> i32 { old_value + 1 }
@@ -141,7 +141,7 @@ fn create_data() -> Data { /* ... */ }
 // A function where 'output' is an argument name, requiring a different name.
 #[contract(
     // Set a contract-wide name for the return value: `result`.
-    returns: result,
+    binds: result,
     // This postcondition uses the contract-wide name `result`.
     ensures: result > output,
     // This postcondition uses a closure argument to set the name to `val`, which takes precedence.

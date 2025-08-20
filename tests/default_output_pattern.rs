@@ -1,7 +1,7 @@
 use anodized::contract;
 
 #[contract(
-    returns: (a, b),
+    binds: (a, b),
     ensures: a <= b,
     ensures: (a, b) == pair || (b, a) == pair,
 )]
