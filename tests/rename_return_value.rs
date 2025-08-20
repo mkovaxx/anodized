@@ -20,7 +20,7 @@ fn test_rename_success() {
 }
 
 #[test]
-#[should_panic(expected = "Postcondition failed: val % 2 == 0")]
+#[should_panic(expected = "Postcondition failed: | val | val % 2 == 0")]
 fn test_rename_panics_if_not_even() {
     #[contract(returns: result, ensures: |val| val % 2 == 0)]
     fn calculate_odd_result(output: i32) -> i32 {

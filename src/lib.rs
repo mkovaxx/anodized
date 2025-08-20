@@ -2,11 +2,10 @@ use proc_macro::TokenStream;
 use proc_macro2::{Ident, Span};
 use quote::{ToTokens, quote};
 use syn::{
-    Expr, ItemFn, Pat, Result, ReturnType, Token,
+    Expr, ExprClosure, ItemFn, Result, ReturnType, Token,
     parse::{Parse, ParseStream},
     parse_macro_input,
     punctuated::Punctuated,
-    spanned::Spanned,
 };
 
 /// The main procedural macro for defining contracts on functions.
@@ -35,39 +34,31 @@ pub fn contract(args: TokenStream, input: TokenStream) -> TokenStream {
 
 /// A container for all parsed arguments from the `#[contract]` attribute.
 struct ContractArgs {
-    clauses: Vec<Clause>,
+    conditions: Vec<Condition>,
     // Optional global rename for the return value.
     returns_ident: Option<Ident>,
 }
 
-/// Represents a single clause, e.g., `requires: x > 0`.
-struct Clause {
-    flavor: ClauseFlavor,
-    predicate: Expr,
-    // Optional per-clause rename for the return value (only for `ensures`).
-    output_binding: Option<Ident>,
-}
-
-/// The "flavor" of a clause: precondition, postcondition, or invariant.
-#[derive(Clone, Copy, PartialEq, Eq)]
-enum ClauseFlavor {
-    Requires,
-    Ensures,
-    Maintains,
+/// Represents a single contract condition, e.g., `requires: x > 0`.
+enum Condition {
+    Requires { predicate: Expr },
+    Ensures { predicate: Expr },
+    EnsuresClosure { closure: ExprClosure },
+    Maintains { predicate: Expr },
 }
 
 impl Parse for ContractArgs {
     /// Custom parser for the contents of `#[contract(...)]`.
     fn parse(input: ParseStream) -> Result<Self> {
-        let mut clauses = Vec::new();
+        let mut conditions = Vec::new();
         let mut returns_ident = None;
 
-        // The arguments are a comma-separated list of clauses or a `returns` key.
+        // The arguments are a comma-separated list of conditions or a `returns` key.
         let items = Punctuated::<ContractArgItem, Token![,]>::parse_terminated(input)?;
 
         for item in items {
             match item {
-                ContractArgItem::Clause(clause) => clauses.push(clause),
+                ContractArgItem::Condition(condition) => conditions.push(condition),
                 ContractArgItem::Returns(ident) => {
                     if returns_ident.is_some() {
                         return Err(syn::Error::new(ident.span(), "duplicate `returns` key"));
@@ -78,15 +69,15 @@ impl Parse for ContractArgs {
         }
 
         Ok(ContractArgs {
-            clauses,
+            conditions,
             returns_ident,
         })
     }
 }
 
-/// An intermediate enum to help parse either a clause or a `returns` key.
+/// An intermediate enum to help parse either a condition or a `returns` key.
 enum ContractArgItem {
-    Clause(Clause),
+    Condition(Condition),
     Returns(Ident),
 }
 
@@ -103,57 +94,38 @@ impl Parse for ContractArgItem {
             || lookahead.peek(kw::ensures)
             || lookahead.peek(kw::maintains)
         {
-            // Parse a clause like `requires: predicate` or `ensures: |val| predicate`
-            Ok(ContractArgItem::Clause(input.parse()?))
+            // Parse a condition like `requires: predicate` or `ensures: |val| predicate`
+            Ok(ContractArgItem::Condition(input.parse()?))
         } else {
             Err(lookahead.error())
         }
     }
 }
 
-impl Parse for Clause {
-    /// Parses a single clause.
+impl Parse for Condition {
+    /// Parses a single condition.
     fn parse(input: ParseStream) -> Result<Self> {
         let lookahead = input.lookahead1();
         if lookahead.peek(kw::requires) {
             input.parse::<kw::requires>()?;
             input.parse::<Token![:]>()?;
-            Ok(Clause {
-                flavor: ClauseFlavor::Requires,
+            Ok(Condition::Requires {
                 predicate: input.parse()?,
-                output_binding: None,
             })
         } else if lookahead.peek(kw::ensures) {
             input.parse::<kw::ensures>()?;
             input.parse::<Token![:]>()?;
-            let mut output_binding = None;
-            // Check for the optional `|name|` syntax.
-            if input.peek(Token![|]) {
-                input.parse::<Token![|]>()?;
-                // FIX: Use `Pat::parse_single` instead of `input.parse()`.
-                let pat = Pat::parse_single(input)?;
-                if let Pat::Ident(pat_ident) = pat {
-                    output_binding = Some(pat_ident.ident);
-                } else {
-                    return Err(syn::Error::new(
-                        pat.span(),
-                        "expected a simple identifier for the return value binding",
-                    ));
-                }
-                input.parse::<Token![|]>()?;
+            let predicate: Expr = input.parse()?;
+            if let Expr::Closure(closure) = predicate {
+                Ok(Condition::EnsuresClosure { closure })
+            } else {
+                Ok(Condition::Ensures { predicate })
             }
-            Ok(Clause {
-                flavor: ClauseFlavor::Ensures,
-                predicate: input.parse()?,
-                output_binding,
-            })
         } else if lookahead.peek(kw::maintains) {
             input.parse::<kw::maintains>()?;
             input.parse::<Token![:]>()?;
-            Ok(Clause {
-                flavor: ClauseFlavor::Maintains,
+            Ok(Condition::Maintains {
                 predicate: input.parse()?,
-                output_binding: None,
             })
         } else {
             Err(lookahead.error())
@@ -184,43 +156,15 @@ fn instrument_body(func: &ItemFn, args: &ContractArgs) -> Result<proc_macro2::To
         .unwrap_or_else(|| Ident::new("output", Span::call_site()));
 
     // --- Generate Precondition Checks ---
-    let preconditions = args.clauses.iter().filter_map(|c| {
-        if c.flavor == ClauseFlavor::Requires || c.flavor == ClauseFlavor::Maintains {
-            let pred = &c.predicate;
-            let msg = format!("Precondition failed: {}", pred.to_token_stream());
-            Some(quote! { assert!(#pred, #msg); })
-        } else {
-            None
+    let preconditions = args.conditions.iter().filter_map(|c| match c {
+        Condition::Requires { predicate } | Condition::Maintains { predicate } => {
+            let msg = format!("Precondition failed: {}", predicate.to_token_stream());
+            Some(quote! { assert!(#predicate, #msg); })
         }
+        _ => None,
     });
 
     // --- Generate Postcondition Checks ---
-    let postconditions = args.clauses.iter().filter_map(|c| {
-        if c.flavor == ClauseFlavor::Ensures || c.flavor == ClauseFlavor::Maintains {
-            let pred = &c.predicate;
-            let msg = format!("Postcondition failed: {}", pred.to_token_stream());
-
-            // If the clause has a per-clause `|name|` binding, we create a new
-            // variable with that name that references the global output variable.
-            let maybe_rename = if let Some(per_clause_ident) = &c.output_binding {
-                quote! { let #per_clause_ident = &#global_output_ident; }
-            } else {
-                quote! {}
-            };
-
-            Some(quote! {
-                // This block ensures that if we rename the output, it's only for this assertion.
-                {
-                    #maybe_rename
-                    assert!(#pred, #msg);
-                }
-            })
-        } else {
-            None
-        }
-    });
-
-    // --- Construct the New Body ---
     let returns_nothing = match &func.sig.output {
         ReturnType::Default => true,
         ReturnType::Type(_, ty) => {
@@ -231,6 +175,30 @@ fn instrument_body(func: &ItemFn, args: &ContractArgs) -> Result<proc_macro2::To
             }
         }
     };
+
+    let postconditions = args.conditions.iter().filter_map(|c| match c {
+        Condition::Maintains { predicate } => {
+            let msg = format!("Postcondition failed: {}", predicate.to_token_stream());
+            Some(quote! { assert!(#predicate, #msg); })
+        }
+        Condition::Ensures { predicate } => {
+            if returns_nothing {
+                return None;
+            }
+            let msg = format!("Postcondition failed: {}", predicate.to_token_stream());
+            Some(quote! { assert!((|#global_output_ident| #predicate)(#global_output_ident), #msg); })
+        }
+        Condition::EnsuresClosure { closure } => {
+            if returns_nothing {
+                return None;
+            }
+            let msg = format!("Postcondition failed: {}", closure.to_token_stream());
+            Some(quote! { assert!((#closure)(#global_output_ident), #msg); })
+        }
+        _ => None, // Ignore `requires`
+    });
+
+    // --- Construct the New Body ---
 
     if returns_nothing {
         // Case 1: Function returns `()` or nothing.
