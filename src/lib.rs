@@ -2,7 +2,7 @@ use proc_macro::TokenStream;
 use proc_macro2::{Ident, Span};
 use quote::{ToTokens, quote};
 use syn::{
-    Expr, ExprClosure, ItemFn, Result, ReturnType, Token,
+    Expr, ExprClosure, ItemFn, Result, Token,
     parse::{Parse, ParseStream},
     parse_macro_input,
     punctuated::Punctuated,
@@ -165,33 +165,16 @@ fn instrument_body(func: &ItemFn, args: &ContractArgs) -> Result<proc_macro2::To
     });
 
     // --- Generate Postcondition Checks ---
-    let returns_nothing = match &func.sig.output {
-        ReturnType::Default => true,
-        ReturnType::Type(_, ty) => {
-            if let syn::Type::Tuple(tuple) = &**ty {
-                tuple.elems.is_empty()
-            } else {
-                false
-            }
-        }
-    };
-
     let postconditions = args.conditions.iter().filter_map(|c| match c {
         Condition::Maintains { predicate } => {
             let msg = format!("Postcondition failed: {}", predicate.to_token_stream());
             Some(quote! { assert!(#predicate, #msg); })
         }
         Condition::Ensures { predicate } => {
-            if returns_nothing {
-                return None;
-            }
             let msg = format!("Postcondition failed: {}", predicate.to_token_stream());
             Some(quote! { assert!((|#global_output_ident| #predicate)(#global_output_ident), #msg); })
         }
         Condition::EnsuresClosure { closure } => {
-            if returns_nothing {
-                return None;
-            }
             let msg = format!("Postcondition failed: {}", closure.to_token_stream());
             Some(quote! { assert!((#closure)(#global_output_ident), #msg); })
         }
@@ -199,47 +182,18 @@ fn instrument_body(func: &ItemFn, args: &ContractArgs) -> Result<proc_macro2::To
     });
 
     // --- Construct the New Body ---
-
-    if returns_nothing {
-        // Case 1: Function returns `()` or nothing.
-        if is_async {
-            Ok(quote! {
-                {
-                    #(#preconditions)*
-                    let result = async { #original_body }.await;
-                    #(#postconditions)*
-                    result
-                }
-            })
-        } else {
-            Ok(quote! {
-                {
-                    #(#preconditions)*
-                    #original_body
-                    #(#postconditions)*
-                }
-            })
-        }
+    let body_expr = if is_async {
+        quote! { async { #original_body }.await }
     } else {
-        // Case 2: Function returns a value.
-        if is_async {
-            Ok(quote! {
-                {
-                    #(#preconditions)*
-                    let #global_output_ident = async { #original_body }.await;
-                    #(#postconditions)*
-                    #global_output_ident
-                }
-            })
-        } else {
-            Ok(quote! {
-                {
-                    #(#preconditions)*
-                    let #global_output_ident = #original_body;
-                    #(#postconditions)*
-                    #global_output_ident
-                }
-            })
+        quote! { { #original_body } }
+    };
+
+    Ok(quote! {
+        {
+            #(#preconditions)*
+            let #global_output_ident = #body_expr;
+            #(#postconditions)*
+            #global_output_ident
         }
-    }
+    })
 }

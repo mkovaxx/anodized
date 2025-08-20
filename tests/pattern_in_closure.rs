@@ -6,7 +6,7 @@ use anodized::contract;
 )]
 fn sort_pair(pair: (i32, i32)) -> (i32, i32) {
     let (a, b) = pair;
-    // Deliberately wrong implementation to trigger the contract.
+    // Deliberately wrong implementation to break the contract.
     (b, a)
 }
 
