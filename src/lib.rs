@@ -159,8 +159,12 @@ fn instrument_body(func: &ItemFn, args: &ContractArgs) -> Result<proc_macro2::To
 
     // --- Generate Precondition Checks ---
     let preconditions = args.conditions.iter().filter_map(|c| match c {
-        Condition::Requires { predicate } | Condition::Maintains { predicate } => {
+        Condition::Requires { predicate } => {
             let msg = format!("Precondition failed: {}", predicate.to_token_stream());
+            Some(quote! { assert!(#predicate, #msg); })
+        }
+        Condition::Maintains { predicate } => {
+            let msg = format!("Pre-invariant failed: {}", predicate.to_token_stream());
             Some(quote! { assert!(#predicate, #msg); })
         }
         _ => None,
@@ -169,7 +173,7 @@ fn instrument_body(func: &ItemFn, args: &ContractArgs) -> Result<proc_macro2::To
     // --- Generate Postcondition Checks ---
     let postconditions = args.conditions.iter().filter_map(|c| match c {
         Condition::Maintains { predicate } => {
-            let msg = format!("Postcondition failed: {}", predicate.to_token_stream());
+            let msg = format!("Post-invariant failed: {}", predicate.to_token_stream());
             Some(quote! { assert!(#predicate, #msg); })
         }
         Condition::Ensures { predicate } => {
