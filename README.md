@@ -95,7 +95,7 @@ You can include any number of each flavor. Multiple conditions of the same flavo
     // precondition, `self.is_initialized && !self.is_locked`.
     requires: self.is_initialized,
     requires: !self.is_locked,
-    // The next one is an invariant
+    // The next one is an invariant.
     maintains: self.len() <= self.capacity(),
 )]
 fn push(&mut self, value: T) { /* ... */ }
@@ -114,29 +114,29 @@ fn get_positive_value() -> i32 { /* ... */ }
 
 If the name `output` collides with an existing identifier, you can choose a different name for it in two ways:
 
-**1. Contract-Wide Name**: Use the `binds` parameter to set a new name for the return value across all postconditions in the contract.
+**1. Contract-Wide Binding**: Use the `binds` parameter to set a new name for the return value across all postconditions in the contract.
 
 ```rust
 #[contract(
     binds: new_value,
     ensures: new_value > old_value,
 )]
-fn increment(old_value: i32) -> i32 { old_value + 1 }
+fn increment(old_value: i32) -> i32 { /* ... */ }
 ```
 
- **2. Closure Argument Name**: Write the postcondition as a closure. This has the highest precedence and affects only that single condition.
+ **2. Closure Binding**: Write the postcondition as a closure. This has the highest precedence and affects only that single condition.
 
 ```rust
 #[contract(
-    // This postcondition uses the default name `output`.
+    // This postcondition uses the default binding `output`.
     ensures: output.is_valid(),
-    // This postcondition uses `val` as the name for the return value.
+    // This postcondition binds the return value as `val`.
     ensures: |val| val.id() != 0,
 )]
 fn create_data() -> Data { /* ... */ }
 ```
 
-**3. Combined Name Settings**: When both are used, the name from the closure argument always takes precedence for its specific condition, while other postconditions fall back to the contract-wide name.
+**3. Binding Precedence**: The closure's binding takes precedence; same as in Rust. Plain postconditions still use the contract-wide binding.
 
 ```rust
 // A function where 'output' is an argument name, requiring a different name.
@@ -151,7 +151,7 @@ fn create_data() -> Data { /* ... */ }
 fn calculate_even_result(output: i32) -> i32 { /* ... */ }
 ```
 
-***4. Beyond Names: Destructuring Return Values***
+**4. Beyond Names: Destructuring Return Values**
 
 The `binds` parameter also lets you destructure return values, making complex postconditions easier to read and write. You can use any valid Rust pattern, including tuple patterns, struct patterns, or even more complex nested patterns.
 
@@ -163,7 +163,7 @@ use anodized::contract;
     binds: (a, b),
     // Postconditions can now use the bound variables `a` and `b`.
     ensures: a <= b,
-    // Can also reference the original arguments.
+    // They can also reference the arguments.
     ensures: (a, b) == pair || (b, a) == pair,
 )]
 fn sort_pair(pair: (i32, i32)) -> (i32, i32) { /* ... */ }
