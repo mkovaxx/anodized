@@ -1,6 +1,4 @@
-//! Core functionality for the Anodized correctness ecosystem.
-//!
-//! This crate provides the fundamental building blocks for the Anodized correctness ecosystem.
+#[doc = include_str!("../README.md")]
 
 use proc_macro2::{Span, TokenStream as TokenStream2};
 use quote::{ToTokens, quote};
