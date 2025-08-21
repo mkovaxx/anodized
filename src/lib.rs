@@ -5,7 +5,7 @@ use quote::{ToTokens, quote};
 use std::convert::TryFrom;
 use syn::spanned::Spanned;
 use syn::{
-    Expr, ExprClosure, ItemFn, Pat, PatIdent, Result, Token,
+    Expr, ExprClosure, ItemFn, Pat, Result, Token,
     parse::{Parse, ParseStream},
     parse_macro_input,
     punctuated::Punctuated,
@@ -20,7 +20,7 @@ struct Contract {
 impl TryFrom<ContractArgs> for Contract {
     type Error = syn::Error;
 
-    fn try_from(args: ContractArgs) -> std::result::Result<Self, Self::Error> {
+    fn try_from(args: ContractArgs) -> Result<Self> {
         let mut requires: Vec<Expr> = vec![];
         let mut maintains: Vec<Expr> = vec![];
         let mut ensures: Vec<ExprClosure> = vec![];
