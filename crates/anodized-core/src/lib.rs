@@ -10,7 +10,7 @@ use syn::{
 };
 
 /// A contract specifies the intended behavior of a function or method.
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct Contract {
     /// Preconditions: conditions that must hold when the function is called.
     pub requires: Vec<Expr>,
