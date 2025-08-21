@@ -49,15 +49,38 @@ impl TryFrom<ContractArgs> for Contract {
 
         for arg in args.items {
             match arg {
-                ContractArg::Requires { expr: predicate } => requires.push(predicate),
-                ContractArg::Maintains { expr: predicate } => maintains.push(predicate),
-                ContractArg::Ensures { expr: predicate } => {
-                    // Convert a simple expression into a closure.
-                    let closure: ExprClosure =
-                        syn::parse_quote! { |#default_closure_pattern| #predicate };
-                    ensures.push(closure);
+                ContractArg::Requires { expr } => {
+                    if let Expr::Array(conditions) = expr {
+                        requires.extend(conditions.elems);
+                    } else {
+                        requires.push(expr);
+                    }
                 }
-                ContractArg::EnsuresClosure { closure } => ensures.push(closure),
+                ContractArg::Maintains { expr } => {
+                    if let Expr::Array(conditions) = expr {
+                        maintains.extend(conditions.elems);
+                    } else {
+                        maintains.push(expr);
+                    }
+                }
+                ContractArg::Ensures { expr } => {
+                    let conditions: Vec<Expr> = if let Expr::Array(conditions) = expr {
+                        conditions.elems.into_iter().collect()
+                    } else {
+                        vec![expr]
+                    };
+
+                    for condition in conditions {
+                        if let Expr::Closure(closure) = condition {
+                            ensures.push(closure);
+                        } else {
+                            // Convert a simple expression into a closure.
+                            let closure: ExprClosure =
+                                syn::parse_quote! { |#default_closure_pattern| #condition };
+                            ensures.push(closure);
+                        }
+                    }
+                }
                 ContractArg::Binds { .. } => {}
             }
         }
@@ -91,7 +114,6 @@ impl Parse for ContractArgs {
 pub enum ContractArg {
     Requires { expr: Expr },
     Ensures { expr: Expr },
-    EnsuresClosure { closure: ExprClosure },
     Maintains { expr: Expr },
     Binds { pattern: Pat },
 }
@@ -124,12 +146,9 @@ impl Parse for ContractArg {
             // Parse `ensures: <expr>`
             input.parse::<kw::ensures>()?;
             input.parse::<Token![:]>()?;
-            let predicate: Expr = input.parse()?;
-            if let Expr::Closure(closure) = predicate {
-                Ok(ContractArg::EnsuresClosure { closure })
-            } else {
-                Ok(ContractArg::Ensures { expr: predicate })
-            }
+            Ok(ContractArg::Ensures {
+                expr: input.parse()?,
+            })
         } else {
             Err(lookahead.error())
         }
