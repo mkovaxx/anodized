@@ -5,7 +5,6 @@ use quote::{quote, ToTokens};
 use syn::{
     parse_macro_input,
     ItemFn,
-    spanned::Spanned,
 };
 use proc_macro2::Span;
 use syn::Ident;

@@ -1,4 +1,3 @@
-use proc_macro2::TokenStream;
 use quote::{ToTokens, quote};
 use syn::{
     parse::{Parse, ParseStream, Result},
