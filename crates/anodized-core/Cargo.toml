@@ -2,7 +2,7 @@
 name = "anodized-core"
 version.workspace = true
 edition.workspace = true
-description.workspace = true
+description = "Core functionality for the Anodized correctness ecosystem"
 readme.workspace = true
 repository.workspace = true
 license.workspace = true

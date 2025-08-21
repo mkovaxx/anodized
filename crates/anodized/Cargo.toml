@@ -2,7 +2,7 @@
 name = "anodized"
 version.workspace = true
 edition.workspace = true
-description = "Procedural macros for the Anodized contract system"
+description = "Contract annotations for the Anodized correctness ecosystem"
 readme = "../../README.md"
 repository.workspace = true
 license.workspace = true

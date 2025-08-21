@@ -1,7 +1,6 @@
-//! Core types and traits for the Anodized contract system.
+//! Core functionality for the Anodized correctness ecosystem.
 //!
-//! This crate provides the fundamental building blocks for the Anodized contract system,
-//! including the core contract types and traits that are used by the `anodized` procedural macro.
+//! This crate provides the fundamental building blocks for the Anodized correctness ecosystem.
 
 use proc_macro2::{Span, TokenStream as TokenStream2};
 use quote::{ToTokens, quote};
