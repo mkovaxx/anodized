@@ -7,7 +7,7 @@ use syn::spanned::Spanned;
 use syn::{
     Expr, ExprClosure, ItemFn, Pat, Result, Token,
     parse::{Parse, ParseStream},
-    parse_macro_input,
+    parse_macro_input, parse_quote,
     punctuated::Punctuated,
 };
 
@@ -37,10 +37,8 @@ impl TryFrom<ContractArgs> for Contract {
                 Condition::Requires { predicate } => requires.push(predicate),
                 Condition::Maintains { predicate } => maintains.push(predicate),
                 Condition::Ensures { predicate } => {
-                    // Convert a simple expression into a closure
-                    let closure_tokens = quote! { |#default_output_pat| #predicate };
-                    let closure = syn::parse2::<ExprClosure>(closure_tokens)
-                        .map_err(|e| syn::Error::new(e.span(), format!("Failed to parse closure: {}", e)))?;
+                    // Convert a simple expression into a closure.
+                    let closure: ExprClosure = parse_quote! { |#default_output_pat| #predicate };
                     ensures.push(closure);
                 }
                 Condition::EnsuresClosure { closure } => ensures.push(closure),
