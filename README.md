@@ -79,11 +79,13 @@ The `#[contract]` attribute provides a powerful and ergonomic way to define cont
 
 Contracts are built from conditions, which come in three flavors:
 
-- **Preconditions** (using `requires: <condition>`): Must be true when the function is called.
+- **Preconditions** (using `requires: <conditions>`): Must be true when the function is called.
 
-- **Postconditions** (using `ensures: <condition>`): Must be true when the function returns.
+- **Postconditions** (using `ensures: <conditions>`): Must be true when the function returns.
 
-- **Invariants** (using `maintains: <condition>`): A convenience for conditions that must hold true both before and after the function runs. It's most useful for expressing properties of `self` that a method must preserve.
+- **Invariants** (using `maintains: <conditions>`): A convenience for conditions that must hold true both before and after the function runs. It's most useful for expressing properties of `self` that a method must preserve.
+
+For convenience `<conditions>` can be either a single condition or a list (i.e. `[<condition>, <condition>, ...]`).
 
 A condition is a `bool`-valued Rust expression; as simple as that. This is a non-trivial design choice, so its benefits are explained in the section below: [Why Conditions Are Rust Expressions](#why-conditions-are-rust-expressions).
 
@@ -93,8 +95,10 @@ You can include any number of each flavor. Multiple conditions of the same flavo
 #[contract(
     // These two preconditions are equivalent to a single
     // precondition, `self.is_initialized && !self.is_locked`.
-    requires: self.is_initialized,
-    requires: !self.is_locked,
+    requires: [
+        self.is_initialized,
+        !self.is_locked,
+    ],
     // The next one is an invariant.
     maintains: self.len() <= self.capacity(),
 )]
@@ -130,10 +134,12 @@ fn increment(old_value: i32) -> i32 { /* ... */ }
 
 ```rust,ignore
 #[contract(
-    // This postcondition uses the default binding `output`.
-    ensures: output.is_valid(),
-    // This postcondition binds the return value as `val`.
-    ensures: |val| val.id() != 0,
+    ensures: [
+        // This postcondition uses the default binding `output`.
+        output.is_valid(),
+        // This postcondition binds the return value as `val`.
+        |val| val.id() != 0,
+    ],
 )]
 fn create_data() -> Data { /* ... */ }
 ```
@@ -145,10 +151,12 @@ fn create_data() -> Data { /* ... */ }
 #[contract(
     // Set a contract-wide name for the return value: `result`.
     binds: result,
-    // This postcondition uses the contract-wide name `result`.
-    ensures: result > output,
-    // This postcondition is written as a closure to bind the return value as `val`.
-    ensures: |val| val % 2 == 0,
+    ensures: [
+        // This postcondition uses the contract-wide name `result`.
+        result > output,
+        // This postcondition is written as a closure and binds the return value as `val`.
+        |val| val % 2 == 0,
+    ],
 )]
 fn calculate_even_result(output: i32) -> i32 { /* ... */ }
 ```
@@ -164,9 +172,11 @@ use anodized::contract;
     // Destructure the returned tuple into `(a, b)`.
     binds: (a, b),
     // Postconditions can now use the bound variables `a` and `b`.
-    ensures: a <= b,
-    // They can also reference the arguments.
-    ensures: (a, b) == pair || (b, a) == pair,
+    ensures: [
+        a <= b,
+        // They can also reference the arguments.
+        ensures: (a, b) == pair || (b, a) == pair,
+    ],
 )]
 fn sort_pair(pair: (i32, i32)) -> (i32, i32) { /* ... */ }
 ```
