@@ -23,13 +23,13 @@ pub fn contract(args: TokenStream, input: TokenStream) -> TokenStream {
     };
 
     // Generate the new, instrumented function body.
-    let new_body = match instrument_function_body(&func, &contract) {
+    let new_body = match instrument_function_body(&contract, &func) {
         Ok(body) => body,
         Err(e) => return e.to_compile_error().into(),
     };
 
     // Replace the old function body with the new one.
-    func.block = syn::parse2(new_body).expect("Failed to parse new function body");
+    *func.block = new_body;
 
     // Return the modified function.
     func.into_token_stream().into()
