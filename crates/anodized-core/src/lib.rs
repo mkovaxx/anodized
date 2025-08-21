@@ -168,7 +168,7 @@ mod kw {
 
 /// Takes the original function and contract, and returns a new
 /// token stream for the instrumented function body.
-pub fn instrument_body(func: &ItemFn, contract: &Contract) -> Result<TokenStream2> {
+pub fn instrument_function_body(func: &ItemFn, contract: &Contract) -> Result<TokenStream2> {
     let original_body = &func.block;
     let is_async = func.sig.asyncness.is_some();
 
