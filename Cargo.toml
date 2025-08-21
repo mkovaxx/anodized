@@ -1,20 +1,18 @@
-[package]
-name = "anodized"
+[workspace]
+members = [
+    "crates/anodized",
+    "crates/anodized-core",
+]
+resolver = "2"
+
+[workspace.package]
 version = "0.1.0"
 edition = "2024"
-description = "An ecosystem for correct Rust based on lightweight contract annotations."
 license = "MIT OR Apache-2.0"
-repository = "https://github.com/mkovaxx/anodized"
 documentation = "https://docs.rs/anodized"
-readme = "README.md"
+repository = "https://github.com/mkovaxx/anodized"
+description = "An ecosystem for correct Rust based on lightweight contract annotations."
 keywords = ["contract", "correctness", "verification", "logic", "fuzzing"]
-exclude = [".gitignore"]
 
-[lib]
-proc-macro = true
-
-[dependencies]
-heck = "0.5.0"
-proc-macro2 = "1.0.79"
-quote = "1.0.35"
-syn = { version = "2.0.55", features = ["full"] }
+[workspace.dependencies]
+# Common dependencies can be listed here
