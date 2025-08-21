@@ -112,6 +112,8 @@ In **postconditions** (`ensures`), you can refer to the function's return value 
 fn get_positive_value() -> i32 { /* ... */ }
 ```
 
+**Note** that a postcondition is _always_ a closure, because it needs to bind the return value. When you write a postcondition as a "naked" expression, that is shorthand for using the default binding, i.e. `|output| <expression>`. In error messages, a postcondition is always displayed as a closure to make the binding explicit (e.g., `|output| output > 0`).
+
 If the name `output` collides with an existing identifier, you can choose a different name for it in two ways:
 
 **1. Contract-Wide Binding**: Use the `binds` parameter to set a new name for the return value across all postconditions in the contract.
