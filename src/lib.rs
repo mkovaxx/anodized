@@ -20,7 +20,7 @@ struct Contract {
 impl TryFrom<ContractArgs> for Contract {
     type Error = syn::Error;
 
-    fn try_from(args: ContractArgs) -> Result<Self, Self::Error> {
+    fn try_from(args: ContractArgs) -> std::result::Result<Self, Self::Error> {
         let mut requires: Vec<Expr> = vec![];
         let mut maintains: Vec<Expr> = vec![];
         let mut ensures: Vec<ExprClosure> = vec![];
@@ -38,7 +38,9 @@ impl TryFrom<ContractArgs> for Contract {
                 Condition::Maintains { predicate } => maintains.push(predicate),
                 Condition::Ensures { predicate } => {
                     // Convert a simple expression into a closure
-                    let closure = quote! { |#default_output_pat| #predicate }
+                    let closure_tokens = quote! { |#default_output_pat| #predicate };
+                    let closure = syn::parse2::<ExprClosure>(closure_tokens)
+                        .map_err(|e| syn::Error::new(e.span(), format!("Failed to parse closure: {}", e)))?;
                     ensures.push(closure);
                 }
                 Condition::EnsuresClosure { closure } => ensures.push(closure),
