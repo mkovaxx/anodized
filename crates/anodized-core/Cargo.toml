@@ -1,13 +1,14 @@
 [package]
 name = "anodized-core"
+description = "Core functionality for the Anodized correctness ecosystem"
+
 version.workspace = true
 edition.workspace = true
-description = "Core functionality for the Anodized correctness ecosystem"
 readme.workspace = true
 repository.workspace = true
-license.workspace = true
 categories.workspace = true
 keywords.workspace = true
+license.workspace = true
 
 [lib]
 
