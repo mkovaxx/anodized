@@ -1,7 +1,7 @@
 use quote::{ToTokens, quote};
 use syn::{
-    parse::{Parse, ParseStream, Result},
     Expr, ExprClosure, Pat, Token,
+    parse::{Parse, ParseStream, Result},
     punctuated::Punctuated,
     spanned::Spanned,
 };
@@ -34,7 +34,8 @@ impl TryFrom<ContractArgs> for Contract {
                 Condition::Maintains { predicate } => maintains.push(predicate),
                 Condition::Ensures { predicate } => {
                     // Convert a simple expression into a closure.
-                    let closure: ExprClosure = syn::parse_quote! { |#default_output_pat| #predicate };
+                    let closure: ExprClosure =
+                        syn::parse_quote! { |#default_output_pat| #predicate };
                     ensures.push(closure);
                 }
                 Condition::EnsuresClosure { closure } => ensures.push(closure),
@@ -77,8 +78,7 @@ impl Parse for ContractArgs {
                 ContractArgItem::Condition(condition) => conditions.push(condition),
                 ContractArgItem::Binds(pat) => {
                     if binds_pat.is_some() {
-                        return Err(syn::Error::new(pat.
-                            span(), "duplicate `binds` setting"));
+                        return Err(syn::Error::new(pat.span(), "duplicate `binds` setting"));
                     }
                     binds_pat = Some(pat);
                 }

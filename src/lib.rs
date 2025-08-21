@@ -1,13 +1,10 @@
 #![doc = include_str!("../README.md")]
 use proc_macro::TokenStream;
-use proc_macro2::TokenStream as TokenStream2;
-use quote::{quote, ToTokens};
-use syn::{
-    parse_macro_input,
-    ItemFn,
-};
 use proc_macro2::Span;
+use proc_macro2::TokenStream as TokenStream2;
+use quote::{ToTokens, quote};
 use syn::Ident;
+use syn::{ItemFn, parse_macro_input};
 
 use crate::syntax::ContractArgs;
 
