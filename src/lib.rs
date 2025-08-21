@@ -201,22 +201,30 @@ fn instrument_body(func: &ItemFn, contract: &Contract) -> Result<proc_macro2::To
     let binding_ident = Ident::new("__anodized_output", Span::mixed_site());
 
     // --- Generate Precondition Checks ---
-    let preconditions = contract.requires.iter().map(|predicate| {
-        let msg = format!("Precondition failed: {}", predicate.to_token_stream());
-        quote! { assert!(#predicate, #msg); }
-    }).chain(contract.maintains.iter().map(|predicate| {
-        let msg = format!("Pre-invariant failed: {}", predicate.to_token_stream());
-        quote! { assert!(#predicate, #msg); }
-    }));
+    let preconditions = contract
+        .requires
+        .iter()
+        .map(|predicate| {
+            let msg = format!("Precondition failed: {}", predicate.to_token_stream());
+            quote! { assert!(#predicate, #msg); }
+        })
+        .chain(contract.maintains.iter().map(|predicate| {
+            let msg = format!("Pre-invariant failed: {}", predicate.to_token_stream());
+            quote! { assert!(#predicate, #msg); }
+        }));
 
     // --- Generate Postcondition Checks ---
-    let postconditions = contract.maintains.iter().map(|predicate| {
-        let msg = format!("Post-invariant failed: {}", predicate.to_token_stream());
-        quote! { assert!(#predicate, #msg); }
-    }).chain(contract.ensures.iter().map(|closure| {
-        let msg = format!("Postcondition failed: {}", closure.to_token_stream());
-        quote! { assert!((#closure)(#binding_ident), #msg); }
-    }));
+    let postconditions = contract
+        .maintains
+        .iter()
+        .map(|predicate| {
+            let msg = format!("Post-invariant failed: {}", predicate.to_token_stream());
+            quote! { assert!(#predicate, #msg); }
+        })
+        .chain(contract.ensures.iter().map(|closure| {
+            let msg = format!("Postcondition failed: {}", closure.to_token_stream());
+            quote! { assert!((#closure)(#binding_ident), #msg); }
+        }));
 
     // --- Construct the New Body ---
     let body_expr = if is_async {
