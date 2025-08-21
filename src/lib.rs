@@ -149,51 +149,32 @@ mod kw {
     syn::custom_keyword!(binds);
 }
 
-/// Takes the original function and contract arguments, and returns a new
+/// Takes the original function and contract, and returns a new
 /// token stream for the instrumented function body.
-fn instrument_body(func: &ItemFn, args: &ContractArgs) -> Result<proc_macro2::TokenStream> {
+fn instrument_body(func: &ItemFn, contract: &Contract) -> Result<proc_macro2::TokenStream> {
     let original_body = &func.block;
     let is_async = func.sig.asyncness.is_some();
 
     // The identifier for the return value binding. It's hygienic to prevent collisions.
     let binding_ident = Ident::new("__anodized_output", Span::mixed_site());
 
-    // The pattern for the `ensures` predicate. It must be resolvable at the call site.
-    let default_output_pat = args
-        .binds_pat
-        .clone()
-        .map(|p| p.to_token_stream())
-        .unwrap_or_else(|| quote! { output });
-
     // --- Generate Precondition Checks ---
-    let preconditions = args.conditions.iter().filter_map(|c| match c {
-        Condition::Requires { predicate } => {
-            let msg = format!("Precondition failed: {}", predicate.to_token_stream());
-            Some(quote! { assert!(#predicate, #msg); })
-        }
-        Condition::Maintains { predicate } => {
-            let msg = format!("Pre-invariant failed: {}", predicate.to_token_stream());
-            Some(quote! { assert!(#predicate, #msg); })
-        }
-        _ => None,
-    });
+    let preconditions = contract.requires.iter().map(|predicate| {
+        let msg = format!("Precondition failed: {}", predicate.to_token_stream());
+        quote! { assert!(#predicate, #msg); }
+    }).chain(contract.maintains.iter().map(|predicate| {
+        let msg = format!("Pre-invariant failed: {}", predicate.to_token_stream());
+        quote! { assert!(#predicate, #msg); }
+    }));
 
     // --- Generate Postcondition Checks ---
-    let postconditions = args.conditions.iter().filter_map(|c| match c {
-        Condition::Maintains { predicate } => {
-            let msg = format!("Post-invariant failed: {}", predicate.to_token_stream());
-            Some(quote! { assert!(#predicate, #msg); })
-        }
-        Condition::Ensures { predicate } => {
-            let msg = format!("Postcondition failed: {}", predicate.to_token_stream());
-            Some(quote! { assert!((|#default_output_pat| #predicate)(#binding_ident), #msg); })
-        }
-        Condition::EnsuresClosure { closure } => {
-            let msg = format!("Postcondition failed: {}", closure.to_token_stream());
-            Some(quote! { assert!((#closure)(#binding_ident), #msg); })
-        }
-        _ => None, // Ignore `requires`
-    });
+    let postconditions = contract.ensures.iter().map(|closure| {
+        let msg = format!("Postcondition failed: {}", closure.to_token_stream());
+        quote! { assert!((#closure)(#binding_ident), #msg); }
+    }).chain(contract.maintains.iter().map(|predicate| {
+        let msg = format!("Post-invariant failed: {}", predicate.to_token_stream());
+        quote! { assert!(#predicate, #msg); }
+    }));
 
     // --- Construct the New Body ---
     let body_expr = if is_async {
