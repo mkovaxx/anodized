@@ -1,6 +1,7 @@
+use proc_macro2::{Span, TokenStream as TokenStream2};
 use quote::{ToTokens, quote};
 use syn::{
-    Expr, ExprClosure, Pat, Token,
+    Expr, ExprClosure, Ident, ItemFn, Pat, Token,
     parse::{Parse, ParseStream, Result},
     punctuated::Punctuated,
     spanned::Spanned,
@@ -157,4 +158,56 @@ mod kw {
     syn::custom_keyword!(ensures);
     syn::custom_keyword!(maintains);
     syn::custom_keyword!(binds);
+}
+
+/// Takes the original function and contract, and returns a new
+/// token stream for the instrumented function body.
+pub fn instrument_body(func: &ItemFn, contract: &Contract) -> Result<TokenStream2> {
+    let original_body = &func.block;
+    let is_async = func.sig.asyncness.is_some();
+
+    // The identifier for the return value binding. It's hygienic to prevent collisions.
+    let binding_ident = Ident::new("__anodized_output", Span::mixed_site());
+
+    // --- Generate Precondition Checks ---
+    let preconditions = contract
+        .requires
+        .iter()
+        .map(|predicate| {
+            let msg = format!("Precondition failed: {}", predicate.to_token_stream());
+            quote! { assert!(#predicate, #msg); }
+        })
+        .chain(contract.maintains.iter().map(|predicate| {
+            let msg = format!("Pre-invariant failed: {}", predicate.to_token_stream());
+            quote! { assert!(#predicate, #msg); }
+        }));
+
+    // --- Generate Postcondition Checks ---
+    let postconditions = contract
+        .maintains
+        .iter()
+        .map(|predicate| {
+            let msg = format!("Post-invariant failed: {}", predicate.to_token_stream());
+            quote! { assert!(#predicate, #msg); }
+        })
+        .chain(contract.ensures.iter().map(|closure| {
+            let msg = format!("Postcondition failed: {}", closure.to_token_stream());
+            quote! { assert!((#closure)(#binding_ident), #msg); }
+        }));
+
+    // --- Construct the New Body ---
+    let body_expr = if is_async {
+        quote! { async { #original_body }.await }
+    } else {
+        quote! { { #original_body } }
+    };
+
+    Ok(quote! {
+        {
+            #(#preconditions)*
+            let #binding_ident = #body_expr;
+            #(#postconditions)*
+            #binding_ident
+        }
+    })
 }

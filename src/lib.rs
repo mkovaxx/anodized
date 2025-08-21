@@ -1,15 +1,12 @@
 #![doc = include_str!("../README.md")]
 
-mod syntax;
+mod core;
 
 use proc_macro::TokenStream;
-use proc_macro2::Span;
-use proc_macro2::TokenStream as TokenStream2;
-use quote::{ToTokens, quote};
-use syn::Ident;
+use quote::ToTokens;
 use syn::{ItemFn, parse_macro_input};
 
-use crate::syntax::ContractArgs;
+use crate::core::{Contract, ContractArgs, instrument_body};
 
 /// The main procedural macro for defining contracts on functions.
 ///
@@ -22,7 +19,7 @@ pub fn contract(args: TokenStream, input: TokenStream) -> TokenStream {
     // Parse the function to which the attribute is attached.
     let mut func = parse_macro_input!(input as ItemFn);
 
-    let contract = match crate::syntax::Contract::try_from(contract_args) {
+    let contract = match Contract::try_from(contract_args) {
         Ok(contract) => contract,
         Err(e) => return e.to_compile_error().into(),
     };
@@ -34,63 +31,8 @@ pub fn contract(args: TokenStream, input: TokenStream) -> TokenStream {
     };
 
     // Replace the old function body with the new one.
-    *func.block = syn::parse2(new_body).expect("Failed to parse new function body");
+    func.block = syn::parse2(new_body).expect("Failed to parse new function body");
 
     // Return the modified function.
     func.to_token_stream().into()
-}
-
-/// Takes the original function and contract, and returns a new
-/// token stream for the instrumented function body.
-fn instrument_body(
-    func: &ItemFn,
-    contract: &crate::syntax::Contract,
-) -> Result<TokenStream2, syn::Error> {
-    let original_body = &func.block;
-    let is_async = func.sig.asyncness.is_some();
-
-    // The identifier for the return value binding. It's hygienic to prevent collisions.
-    let binding_ident = Ident::new("__anodized_output", Span::mixed_site());
-
-    // --- Generate Precondition Checks ---
-    let preconditions = contract
-        .requires
-        .iter()
-        .map(|predicate| {
-            let msg = format!("Precondition failed: {}", predicate.to_token_stream());
-            quote! { assert!(#predicate, #msg); }
-        })
-        .chain(contract.maintains.iter().map(|predicate| {
-            let msg = format!("Pre-invariant failed: {}", predicate.to_token_stream());
-            quote! { assert!(#predicate, #msg); }
-        }));
-
-    // --- Generate Postcondition Checks ---
-    let postconditions = contract
-        .maintains
-        .iter()
-        .map(|predicate| {
-            let msg = format!("Post-invariant failed: {}", predicate.to_token_stream());
-            quote! { assert!(#predicate, #msg); }
-        })
-        .chain(contract.ensures.iter().map(|closure| {
-            let msg = format!("Postcondition failed: {}", closure.to_token_stream());
-            quote! { assert!((#closure)(#binding_ident), #msg); }
-        }));
-
-    // --- Construct the New Body ---
-    let body_expr = if is_async {
-        quote! { async { #original_body }.await }
-    } else {
-        quote! { { #original_body } }
-    };
-
-    Ok(quote! {
-        {
-            #(#preconditions)*
-            let #binding_ident = #body_expr;
-            #(#postconditions)*
-            #binding_ident
-        }
-    })
 }
