@@ -20,7 +20,7 @@ Contracts serve as the foundation for a larger **ecosystem of correctness tools*
 
 ```toml
 [dependencies]
-anodized = "0.1.0"
+anodized = "0.2.0"
 ```
 
 **2. Add contracts to your functions.**
