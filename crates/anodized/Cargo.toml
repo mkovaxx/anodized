@@ -8,12 +8,14 @@ repository.workspace = true
 documentation.workspace = true
 readme = "../../README.md"
 keywords.workspace = true
+categories.workspace = true
 exclude = [".gitignore"]
 
 [lib]
 proc-macro = true
 
 [dependencies]
+anodized-core = { path = "../anodized-core", version = "0.1.0" }
 heck = "0.5.0"
 proc-macro2 = "1.0.79"
 quote = "1.0.35"

@@ -7,6 +7,7 @@ license.workspace = true
 repository.workspace = true
 documentation.workspace = true
 keywords.workspace = true
+categories.workspace = true
 
 [lib]
 path = "src/lib.rs"
