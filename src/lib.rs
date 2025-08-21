@@ -2,9 +2,10 @@
 use proc_macro::TokenStream;
 use proc_macro2::{Ident, Span};
 use quote::{ToTokens, quote};
+use std::convert::TryFrom;
 use syn::spanned::Spanned;
 use syn::{
-    Expr, ExprClosure, ItemFn, Pat, Result, Token,
+    Expr, ExprClosure, ItemFn, Pat, PatIdent, Result, Token,
     parse::{Parse, ParseStream},
     parse_macro_input,
     punctuated::Punctuated,
@@ -14,6 +15,42 @@ struct Contract {
     pub requires: Vec<Expr>,
     pub maintains: Vec<Expr>,
     pub ensures: Vec<ExprClosure>,
+}
+
+impl TryFrom<ContractArgs> for Contract {
+    type Error = syn::Error;
+
+    fn try_from(args: ContractArgs) -> Result<Self, Self::Error> {
+        let mut requires: Vec<Expr> = vec![];
+        let mut maintains: Vec<Expr> = vec![];
+        let mut ensures: Vec<ExprClosure> = vec![];
+
+        // The default pattern for `ensures` conditions. It must be resolvable at the call site.
+        let default_output_pat = args
+            .binds_pat
+            .clone()
+            .map(|p| p.to_token_stream())
+            .unwrap_or_else(|| quote! { output });
+
+        for condition in args.conditions {
+            match condition {
+                Condition::Requires { predicate } => requires.push(predicate),
+                Condition::Maintains { predicate } => maintains.push(predicate),
+                Condition::Ensures { predicate } => {
+                    // Convert a simple expression into a closure
+                    let closure = quote! { |#default_output_pat| #predicate }
+                    ensures.push(closure);
+                }
+                Condition::EnsuresClosure { closure } => ensures.push(closure),
+            }
+        }
+
+        Ok(Contract {
+            requires,
+            maintains,
+            ensures,
+        })
+    }
 }
 
 /// The main procedural macro for defining contracts on functions.
@@ -27,8 +64,13 @@ pub fn contract(args: TokenStream, input: TokenStream) -> TokenStream {
     // Parse the function to which the attribute is attached.
     let mut func = parse_macro_input!(input as ItemFn);
 
+    let contract = match Contract::try_from(contract_args) {
+        Ok(contract) => contract,
+        Err(e) => return e.to_compile_error().into(),
+    };
+
     // Generate the new, instrumented function body.
-    let new_body = match instrument_body(&func, &contract_args) {
+    let new_body = match instrument_body(&func, &contract) {
         Ok(body) => body,
         Err(e) => return e.to_compile_error().into(),
     };
