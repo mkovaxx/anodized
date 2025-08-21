@@ -1,4 +1,7 @@
 #![doc = include_str!("../README.md")]
+
+mod syntax;
+
 use proc_macro::TokenStream;
 use proc_macro2::Span;
 use proc_macro2::TokenStream as TokenStream2;
@@ -7,8 +10,6 @@ use syn::Ident;
 use syn::{ItemFn, parse_macro_input};
 
 use crate::syntax::ContractArgs;
-
-mod syntax;
 
 /// The main procedural macro for defining contracts on functions.
 ///
