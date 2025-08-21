@@ -25,28 +25,63 @@ impl TryFrom<ContractArgs> for Contract {
     type Error = syn::Error;
 
     fn try_from(args: ContractArgs) -> Result<Self> {
+        let mut binds_pattern: Option<&Pat> = None;
         let mut requires: Vec<Expr> = vec![];
         let mut maintains: Vec<Expr> = vec![];
         let mut ensures: Vec<ExprClosure> = vec![];
 
-        // The default pattern for `ensures` conditions. It must be resolvable at the call site.
-        let default_output_pat = args
-            .binds_pat
-            .clone()
+        for arg in &args.items {
+            if let ContractArg::Binds { pattern } = arg {
+                if binds_pattern.is_some() {
+                    return Err(syn::Error::new(
+                        pattern.span(),
+                        "multiple `binds` parameters are not allowed",
+                    ));
+                }
+                binds_pattern = Some(pattern);
+            }
+        }
+
+        // The default pattern for `ensures` conditions.
+        let default_closure_pattern = binds_pattern
             .map(|p| p.to_token_stream())
             .unwrap_or_else(|| quote! { output });
 
-        for condition in args.conditions {
-            match condition {
-                Condition::Requires { predicate } => requires.push(predicate),
-                Condition::Maintains { predicate } => maintains.push(predicate),
-                Condition::Ensures { predicate } => {
-                    // Convert a simple expression into a closure.
-                    let closure: ExprClosure =
-                        syn::parse_quote! { |#default_output_pat| #predicate };
-                    ensures.push(closure);
+        for arg in args.items {
+            match arg {
+                ContractArg::Requires { expr } => {
+                    if let Expr::Array(conditions) = expr {
+                        requires.extend(conditions.elems);
+                    } else {
+                        requires.push(expr);
+                    }
                 }
-                Condition::EnsuresClosure { closure } => ensures.push(closure),
+                ContractArg::Maintains { expr } => {
+                    if let Expr::Array(conditions) = expr {
+                        maintains.extend(conditions.elems);
+                    } else {
+                        maintains.push(expr);
+                    }
+                }
+                ContractArg::Ensures { expr } => {
+                    let conditions: Vec<Expr> = if let Expr::Array(conditions) = expr {
+                        conditions.elems.into_iter().collect()
+                    } else {
+                        vec![expr]
+                    };
+
+                    for condition in conditions {
+                        if let Expr::Closure(closure) = condition {
+                            ensures.push(closure);
+                        } else {
+                            // Convert a simple expression into a closure.
+                            let closure: ExprClosure =
+                                syn::parse_quote! { |#default_closure_pattern| #condition };
+                            ensures.push(closure);
+                        }
+                    }
+                }
+                ContractArg::Binds { .. } => {}
             }
         }
 
@@ -60,97 +95,59 @@ impl TryFrom<ContractArgs> for Contract {
 
 /// A container for all parsed arguments from the `#[contract]` attribute.
 pub struct ContractArgs {
-    pub conditions: Vec<Condition>,
-    pub binds_pat: Option<Pat>,
-}
-
-/// Represents a single contract condition, e.g., `requires: x > 0`.
-pub enum Condition {
-    Requires { predicate: Expr },
-    Ensures { predicate: Expr },
-    EnsuresClosure { closure: ExprClosure },
-    Maintains { predicate: Expr },
+    pub items: Vec<ContractArg>,
 }
 
 impl Parse for ContractArgs {
     /// Custom parser for the contents of `#[contract(...)]`.
     fn parse(input: ParseStream) -> Result<Self> {
-        let mut conditions = Vec::new();
-        let mut binds_pat = None;
-
         // The arguments are a comma-separated list of conditions or a `binds` setting.
-        let items = Punctuated::<ContractArgItem, Token![,]>::parse_terminated(input)?;
-
-        for item in items {
-            match item {
-                ContractArgItem::Condition(condition) => conditions.push(condition),
-                ContractArgItem::Binds(pat) => {
-                    if binds_pat.is_some() {
-                        return Err(syn::Error::new(pat.span(), "duplicate `binds` setting"));
-                    }
-                    binds_pat = Some(pat);
-                }
-            }
-        }
+        let items = Punctuated::<ContractArg, Token![,]>::parse_terminated(input)?;
 
         Ok(ContractArgs {
-            conditions,
-            binds_pat,
+            items: items.into_iter().map(|x| x).collect(),
         })
     }
 }
 
 /// An intermediate enum to help parse either a condition or a `binds` setting.
-pub enum ContractArgItem {
-    Condition(Condition),
-    Binds(Pat),
+pub enum ContractArg {
+    Requires { expr: Expr },
+    Ensures { expr: Expr },
+    Maintains { expr: Expr },
+    Binds { pattern: Pat },
 }
 
-impl Parse for ContractArgItem {
+impl Parse for ContractArg {
     fn parse(input: ParseStream) -> Result<Self> {
         let lookahead = input.lookahead1();
         if lookahead.peek(kw::binds) {
-            // Parse `binds: pat`
+            // Parse `binds: <pattern>`
             input.parse::<kw::binds>()?;
             input.parse::<Token![:]>()?;
-            let pat = Pat::parse_single(input)?;
-            Ok(ContractArgItem::Binds(pat))
-        } else if lookahead.peek(kw::requires)
-            || lookahead.peek(kw::ensures)
-            || lookahead.peek(kw::maintains)
-        {
-            // Parse a condition like `requires: predicate` or `ensures: |val| predicate`
-            Ok(ContractArgItem::Condition(input.parse()?))
-        } else {
-            Err(lookahead.error())
-        }
-    }
-}
-
-impl Parse for Condition {
-    /// Parses a single condition.
-    fn parse(input: ParseStream) -> Result<Self> {
-        let lookahead = input.lookahead1();
-        if lookahead.peek(kw::requires) {
+            Ok(ContractArg::Binds {
+                pattern: Pat::parse_single(input)?,
+            })
+        } else if lookahead.peek(kw::requires) {
+            // Parse `requires: <expr>`
             input.parse::<kw::requires>()?;
             input.parse::<Token![:]>()?;
-            Ok(Condition::Requires {
-                predicate: input.parse()?,
+            Ok(ContractArg::Requires {
+                expr: input.parse()?,
             })
-        } else if lookahead.peek(kw::ensures) {
-            input.parse::<kw::ensures>()?;
-            input.parse::<Token![:]>()?;
-            let predicate: Expr = input.parse()?;
-            if let Expr::Closure(closure) = predicate {
-                Ok(Condition::EnsuresClosure { closure })
-            } else {
-                Ok(Condition::Ensures { predicate })
-            }
         } else if lookahead.peek(kw::maintains) {
+            // Parse `maintains: <expr>`
             input.parse::<kw::maintains>()?;
             input.parse::<Token![:]>()?;
-            Ok(Condition::Maintains {
-                predicate: input.parse()?,
+            Ok(ContractArg::Maintains {
+                expr: input.parse()?,
+            })
+        } else if lookahead.peek(kw::ensures) {
+            // Parse `ensures: <expr>`
+            input.parse::<kw::ensures>()?;
+            input.parse::<Token![:]>()?;
+            Ok(ContractArg::Ensures {
+                expr: input.parse()?,
             })
         } else {
             Err(lookahead.error())
@@ -162,9 +159,9 @@ impl Parse for Condition {
 // as if they were built-in Rust keywords during parsing.
 mod kw {
     syn::custom_keyword!(requires);
-    syn::custom_keyword!(ensures);
     syn::custom_keyword!(maintains);
     syn::custom_keyword!(binds);
+    syn::custom_keyword!(ensures);
 }
 
 /// Takes the contract and the function, and returns a new instrumented function body.

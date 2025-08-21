@@ -2,8 +2,10 @@ use anodized::contract;
 
 #[contract(
     binds: result,
-    ensures: result > output,
-    ensures: |val| val % 2 == 0,
+    ensures: [
+        result > output,
+        |val| val % 2 == 0,
+    ],
 )]
 fn calculate_even_result(output: i32) -> i32 {
     if output % 2 == 0 {
