@@ -12,7 +12,7 @@ license = "MIT OR Apache-2.0"
 documentation = "https://docs.rs/anodized"
 repository = "https://github.com/mkovaxx/anodized"
 description = "An ecosystem for correct Rust based on lightweight contract annotations."
-keywords = ["contract", "correctness", "verification", "logic", "fuzzing"]
+keywords = ["correctness", "design-by-contract", "fuzzing", "property-based-testing", "verification"]
 
 [workspace.dependencies]
 # Common dependencies can be listed here
