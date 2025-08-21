@@ -42,7 +42,7 @@ impl TryFrom<ContractArgs> for Contract {
             }
         }
 
-        // The default pattern for `ensures` conditions. It must be resolvable at the call site.
+        // The default pattern for `ensures` conditions.
         let default_closure_pattern = binds_pattern
             .map(|p| p.to_token_stream())
             .unwrap_or_else(|| quote! { output });
@@ -100,7 +100,7 @@ impl Parse for ContractArg {
     fn parse(input: ParseStream) -> Result<Self> {
         let lookahead = input.lookahead1();
         if lookahead.peek(kw::binds) {
-            // Parse `binds: <pat>`
+            // Parse `binds: <pattern>`
             input.parse::<kw::binds>()?;
             input.parse::<Token![:]>()?;
             Ok(ContractArg::Binds {
@@ -139,10 +139,10 @@ impl Parse for ContractArg {
 // Custom keywords for parsing. This allows us to use `requires`, `ensures`, etc.,
 // as if they were built-in Rust keywords during parsing.
 mod kw {
-    syn::custom_keyword!(requires);
-    syn::custom_keyword!(ensures);
-    syn::custom_keyword!(maintains);
     syn::custom_keyword!(binds);
+    syn::custom_keyword!(requires);
+    syn::custom_keyword!(maintains);
+    syn::custom_keyword!(ensures);
 }
 
 /// Takes the contract and the function, and returns a new instrumented function body.
