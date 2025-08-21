@@ -1,7 +1,7 @@
 #![doc = include_str!("../README.md")]
 use proc_macro::TokenStream;
 use proc_macro2::TokenStream as TokenStream2;
-use quote::quote;
+use quote::{quote, ToTokens};
 use syn::{
     parse_macro_input,
     ItemFn,
@@ -40,7 +40,7 @@ pub fn contract(args: TokenStream, input: TokenStream) -> TokenStream {
     *func.block = syn::parse2(new_body).expect("Failed to parse new function body");
 
     // Return the modified function.
-    func.into_token_stream().into()
+    func.to_token_stream().into()
 }
 
 /// Takes the original function and contract, and returns a new

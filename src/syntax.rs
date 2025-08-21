@@ -1,9 +1,10 @@
 use proc_macro2::TokenStream;
-use quote::ToTokens;
+use quote::{ToTokens, quote};
 use syn::{
     parse::{Parse, ParseStream, Result},
     Expr, ExprClosure, Pat, Token,
     punctuated::Punctuated,
+    spanned::Spanned,
 };
 
 /// Represents a contract with preconditions, postconditions, and invariants
@@ -77,7 +78,8 @@ impl Parse for ContractArgs {
                 ContractArgItem::Condition(condition) => conditions.push(condition),
                 ContractArgItem::Binds(pat) => {
                     if binds_pat.is_some() {
-                        return Err(syn::Error::new(pat.span(), "duplicate `binds` setting"));
+                        return Err(syn::Error::new(pat.
+                            span(), "duplicate `binds` setting"));
                     }
                     binds_pat = Some(pat);
                 }
