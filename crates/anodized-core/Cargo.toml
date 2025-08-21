@@ -2,12 +2,16 @@
 name = "anodized-core"
 version.workspace = true
 edition.workspace = true
-description = "Core types and traits for the Anodized contract system"
-license.workspace = true
+description.workspace = true
+readme.workspace = true
 repository.workspace = true
-documentation.workspace = true
-keywords.workspace = true
+license.workspace = true
 categories.workspace = true
+keywords.workspace = true
 
 [lib]
-path = "src/lib.rs"
+
+[dependencies]
+proc-macro2 = "1.0"
+quote = "1.0"
+syn = { version = "2.0", features = ["parsing", "extra-traits", "full"] }

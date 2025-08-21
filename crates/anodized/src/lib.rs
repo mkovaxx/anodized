@@ -1,12 +1,10 @@
 #![doc = include_str!("../../../README.md")]
 
-mod core;
-
 use proc_macro::TokenStream;
 use quote::ToTokens;
 use syn::{ItemFn, parse_macro_input};
 
-use crate::core::{Contract, ContractArgs, instrument_body};
+use anodized_core::{Contract, ContractArgs, instrument_body};
 
 /// The main procedural macro for defining contracts on functions.
 ///

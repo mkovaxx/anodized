@@ -3,13 +3,12 @@ name = "anodized"
 version.workspace = true
 edition.workspace = true
 description = "Procedural macros for the Anodized contract system"
-license.workspace = true
-repository.workspace = true
-documentation.workspace = true
 readme = "../../README.md"
-keywords.workspace = true
+repository.workspace = true
+license.workspace = true
 categories.workspace = true
-exclude = [".gitignore"]
+keywords.workspace = true
+documentation.workspace = true
 
 [lib]
 proc-macro = true
