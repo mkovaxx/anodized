@@ -2,7 +2,7 @@
 
 This crate provides the core data structures and logic for the [Anodized](https://github.com/mkovaxx/anodized) ecosystem.
 
-## Who is This For?
+## Who Is This For?
 
 - **If you want to add contracts to your code...**
 
