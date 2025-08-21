@@ -1,8 +1,10 @@
 use anodized::contract;
 
 #[contract(
-    ensures: |(a, b)| a <= b,
-    ensures: |(a, b)| (a, b) == pair || (b, a) == pair,
+    ensures: [
+        |(a, b)| a <= b,
+        |(a, b)| (a, b) == pair || (b, a) == pair,
+    ],
 )]
 fn sort_pair(pair: (i32, i32)) -> (i32, i32) {
     let (a, b) = pair;
