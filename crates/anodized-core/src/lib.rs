@@ -9,11 +9,14 @@ use syn::{
     spanned::Spanned,
 };
 
-/// Represents a contract with preconditions, postconditions, and invariants
+/// A contract specifies the intended behavior of a function or method.
 #[derive(Debug)]
 pub struct Contract {
+    /// Preconditions: conditions that must hold when the function is called.
     pub requires: Vec<Expr>,
+    /// Invariants: conditions that must hold both when the function is called and when it returns.
     pub maintains: Vec<Expr>,
+    /// Postconditions: conditions that must hold when the function returns.
     pub ensures: Vec<ExprClosure>,
 }
 
