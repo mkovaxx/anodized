@@ -35,7 +35,7 @@ impl TryFrom<ContractArgs> for Contract {
                 if binds_pattern.is_some() {
                     return Err(syn::Error::new(
                         pattern.span(),
-                        "duplicate `binds` parameter",
+                        "multiple `binds` parameters are not allowed",
                     ));
                 }
                 binds_pattern = Some(pattern);
