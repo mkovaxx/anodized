@@ -10,6 +10,12 @@ use syn::{
     punctuated::Punctuated,
 };
 
+struct Contract {
+    pub requires: Vec<Expr>,
+    pub maintains: Vec<Expr>,
+    pub ensures: Vec<ExprClosure>,
+}
+
 /// The main procedural macro for defining contracts on functions.
 ///
 /// This macro parses contract annotations and injects `assert!` statements
