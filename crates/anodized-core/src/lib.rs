@@ -1,10 +1,11 @@
 #![doc = include_str!("../README.md")]
 
-use proc_macro2::{Span, TokenStream as TokenStream2};
+use proc_macro2::Span;
 use quote::{ToTokens, quote};
 use syn::{
-    Expr, ExprClosure, Ident, ItemFn, Pat, Token,
+    Block, Expr, ExprClosure, Ident, ItemFn, Pat, Token,
     parse::{Parse, ParseStream, Result},
+    parse_quote,
     punctuated::Punctuated,
     spanned::Spanned,
 };
@@ -166,9 +167,8 @@ mod kw {
     syn::custom_keyword!(binds);
 }
 
-/// Takes the original function and contract, and returns a new
-/// token stream for the instrumented function body.
-pub fn instrument_body(func: &ItemFn, contract: &Contract) -> Result<TokenStream2> {
+/// Takes the contract and the function, and returns a new instrumented function body.
+pub fn instrument_function_body(contract: &Contract, func: &ItemFn) -> Result<Block> {
     let original_body = &func.block;
     let is_async = func.sig.asyncness.is_some();
 
@@ -208,7 +208,7 @@ pub fn instrument_body(func: &ItemFn, contract: &Contract) -> Result<TokenStream
         quote! { { #original_body } }
     };
 
-    Ok(quote! {
+    Ok(parse_quote! {
         {
             #(#preconditions)*
             let #binding_ident = #body_expr;
