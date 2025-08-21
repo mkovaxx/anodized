@@ -13,6 +13,6 @@ license.workspace = true
 [lib]
 
 [dependencies]
-proc-macro2 = "1.0"
-quote = "1.0"
-syn = { version = "2.0", features = ["parsing", "extra-traits", "full"] }
+proc-macro2.workspace = true
+quote.workspace = true
+syn.workspace = true

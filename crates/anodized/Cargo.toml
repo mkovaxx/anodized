@@ -14,8 +14,7 @@ license.workspace = true
 proc-macro = true
 
 [dependencies]
-anodized-core = { path = "../anodized-core", version = "0.1.0" }
-heck = "0.5.0"
-proc-macro2 = "1.0.79"
-quote = "1.0.35"
-syn = { version = "2.0.55", features = ["full"] }
+anodized-core = { path = "../anodized-core", version = "0.2.0" }
+proc-macro2.workspace = true
+quote.workspace = true
+syn.workspace = true
