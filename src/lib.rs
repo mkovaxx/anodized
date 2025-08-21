@@ -168,12 +168,12 @@ fn instrument_body(func: &ItemFn, contract: &Contract) -> Result<proc_macro2::To
     }));
 
     // --- Generate Postcondition Checks ---
-    let postconditions = contract.ensures.iter().map(|closure| {
-        let msg = format!("Postcondition failed: {}", closure.to_token_stream());
-        quote! { assert!((#closure)(#binding_ident), #msg); }
-    }).chain(contract.maintains.iter().map(|predicate| {
+    let postconditions = contract.maintains.iter().map(|predicate| {
         let msg = format!("Post-invariant failed: {}", predicate.to_token_stream());
         quote! { assert!(#predicate, #msg); }
+    }).chain(contract.ensures.iter().map(|closure| {
+        let msg = format!("Postcondition failed: {}", closure.to_token_stream());
+        quote! { assert!((#closure)(#binding_ident), #msg); }
     }));
 
     // --- Construct the New Body ---
