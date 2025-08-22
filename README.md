@@ -107,25 +107,25 @@ You can include any number of each flavor. Multiple conditions of the same flavo
 fn push(&mut self, value: T) { /* ... */ }
 ```
 
-### Configure Runtime Checks a'la `#[cfg]`
+### Configure Runtime Checks with `#[cfg]`
 
-You can conditionally enable or disable _runtime_ checks using the standard `#[cfg]` attribute, just like you would with regular Rust code. This is useful for e.g. performing expensive checks only in specific build configurations, such as during testing or when debug assertions are enabled.
-
-**Note** that the behavior here differs in a subtle but _important_ way from the `#[cfg]` attribute on a function or module. Even if a condition is inactive under the build configuration, it must still pass syntax and type checking. This is a deliberate design choice to guarantee that build settings never mask validity issues in a contract. This is important; even if a condition is inactive at _runtime_, a static analyzer can still use it to find bugs.
+You can use the standard `#[cfg]` attribute to conditionally enable or disable the *runtime checks* for any condition. This is ideal for expensive checks that you only want to run during testing or in debug builds.
 
 ```rust,ignore
 #[contract(
-    // This precondition has runtime checks only during tests.
+    // This check only runs during `cargo test`.
     #[cfg(test)]
     requires: self.is_valid_for_testing(),
-    // This postcondition has runtime checks only when debug assertions are enabled.
+    // This check only runs when debug assertions are enabled.
     #[cfg(debug_assertions)]
     ensures: output.is_sane(),
 )]
 fn perform_complex_operation(&mut self) -> Result { /* ... */ }
 ```
 
-This gives you fine-grained control over the performance impact of your contracts, allowing you to include complex conditions without affecting the performance of your release builds.
+**Important:** Anodized guarantees that all your contracts are syntactically valid and type-correct, regardless of the `#[cfg]` attribute. The attribute only controls whether a check is performed at *runtime*. This ensures that e.g. a contract valid in `test` builds can't become invalid in `release` builds, and it allows other tools in the ecosystem (like static analyzers) to always see the full contract.
+
+This gives you fine-grained control over the performance impact of your contracts, allowing you to write the conditions thoroughly without affecting release build performance.
 
 ### Binding the Return Value
 
