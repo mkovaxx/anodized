@@ -197,11 +197,16 @@ fn test_parse_cfg_attributes() -> Result<()> {
 
 #[test]
 fn test_parse_non_cfg_attribute() -> Result<()> {
-    let result = parse_contract(quote! {
+    let error = parse_contract(quote! {
         #[allow(dead_code)]
         requires: x > 0,
-    });
-    assert!(result.is_err());
+    })
+    .expect_err("parsing should have failed but it succeeded");
+
+    assert_eq!(
+        error.to_string(),
+        "unsupported attribute; only `cfg` is allowed"
+    );
 
     Ok(())
 }
