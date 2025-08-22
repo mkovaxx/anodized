@@ -194,3 +194,14 @@ fn test_parse_cfg_attributes() -> Result<()> {
 
     Ok(())
 }
+
+#[test]
+fn test_parse_non_cfg_attribute() -> Result<()> {
+    let result = parse_contract(quote! {
+        #[allow(dead_code)]
+        requires: x > 0,
+    });
+    assert!(result.is_err());
+
+    Ok(())
+}

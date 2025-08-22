@@ -256,10 +256,18 @@ impl Parse for ContractArg {
 }
 
 fn parse_cfg_attribute(attrs: &[Attribute]) -> Result<Option<Meta>> {
-    let cfg_attrs: Vec<_> = attrs
-        .iter()
-        .filter(|attr| attr.path().is_ident("cfg"))
-        .collect();
+    let mut cfg_attrs: Vec<Meta> = vec![];
+
+    for attr in attrs {
+        if attr.path().is_ident("cfg") {
+            cfg_attrs.push(attr.parse_args()?);
+        } else {
+            return Err(syn::Error::new(
+                attr.span(),
+                "unsupported attribute; only `cfg` is allowed",
+            ));
+        }
+    }
 
     if cfg_attrs.len() > 1 {
         return Err(syn::Error::new(
@@ -268,11 +276,7 @@ fn parse_cfg_attribute(attrs: &[Attribute]) -> Result<Option<Meta>> {
         ));
     }
 
-    if let Some(attr) = cfg_attrs.first() {
-        Ok(Some(attr.parse_args()?))
-    } else {
-        Ok(None)
-    }
+    Ok(cfg_attrs.pop())
 }
 
 // Custom keywords for parsing. This allows us to use `requires`, `ensures`, etc.,
