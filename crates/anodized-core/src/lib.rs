@@ -21,8 +21,6 @@ pub struct Contract {
     pub ensures: Vec<ExprClosure>,
 }
 
-
-
 #[derive(PartialEq, PartialOrd, Clone, Copy, Debug)]
 enum ArgOrder {
     Requires,
@@ -125,7 +123,7 @@ impl Parse for ContractArgs {
         let items = Punctuated::<ContractArg, Token![,]>::parse_terminated(input)?;
 
         Ok(ContractArgs {
-            items: items.into_iter().map(|x| x).collect(),
+            items: items.into_iter().collect(),
         })
     }
 }

@@ -1,50 +1,45 @@
 use crate::Contract;
 use quote::ToTokens;
 
-#[derive(Debug)]
-pub struct TestContract(pub Contract);
+pub fn assert_contract_eq(left: &Contract, right: &Contract) {
+    let left_requires = left
+        .requires
+        .iter()
+        .map(|e| e.to_token_stream().to_string())
+        .collect::<Vec<_>>();
+    let right_requires = right
+        .requires
+        .iter()
+        .map(|e| e.to_token_stream().to_string())
+        .collect::<Vec<_>>();
+    let left_maintains = left
+        .maintains
+        .iter()
+        .map(|e| e.to_token_stream().to_string())
+        .collect::<Vec<_>>();
+    let right_maintains = right
+        .maintains
+        .iter()
+        .map(|e| e.to_token_stream().to_string())
+        .collect::<Vec<_>>();
+    let left_ensures = left
+        .ensures
+        .iter()
+        .map(|e| e.to_token_stream().to_string())
+        .collect::<Vec<_>>();
+    let right_ensures = right
+        .ensures
+        .iter()
+        .map(|e| e.to_token_stream().to_string())
+        .collect::<Vec<_>>();
 
-impl PartialEq for TestContract {
-    fn eq(&self, other: &Self) -> bool {
-        let self_requires = self
-            .0
-            .requires
-            .iter()
-            .map(|e| e.to_token_stream().to_string())
-            .collect::<Vec<_>>();
-        let other_requires = other
-            .0
-            .requires
-            .iter()
-            .map(|e| e.to_token_stream().to_string())
-            .collect::<Vec<_>>();
-        let self_maintains = self
-            .0
-            .maintains
-            .iter()
-            .map(|e| e.to_token_stream().to_string())
-            .collect::<Vec<_>>();
-        let other_maintains = other
-            .0
-            .maintains
-            .iter()
-            .map(|e| e.to_token_stream().to_string())
-            .collect::<Vec<_>>();
-        let self_ensures = self
-            .0
-            .ensures
-            .iter()
-            .map(|e| e.to_token_stream().to_string())
-            .collect::<Vec<_>>();
-        let other_ensures = other
-            .0
-            .ensures
-            .iter()
-            .map(|e| e.to_token_stream().to_string())
-            .collect::<Vec<_>>();
-
-        self_requires == other_requires
-            && self_maintains == other_maintains
-            && self_ensures == other_ensures
-    }
+    assert_eq!(
+        left_requires, right_requires,
+        "requires clauses do not match"
+    );
+    assert_eq!(
+        left_maintains, right_maintains,
+        "maintains clauses do not match"
+    );
+    assert_eq!(left_ensures, right_ensures, "ensures clauses do not match");
 }

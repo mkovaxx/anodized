@@ -1,7 +1,7 @@
 use super::*;
-use crate::test_util::TestContract;
+use crate::test_util::assert_contract_eq;
 use quote::quote;
-use syn::{parse2, parse_quote};
+use syn::{parse_quote, parse2};
 
 fn parse_contract(tokens: proc_macro2::TokenStream) -> Result<Contract> {
     let args: ContractArgs = parse2(tokens)?;
@@ -22,7 +22,7 @@ fn test_parse_simple_contract() {
         ensures: vec![parse_quote! { |output| output > x }],
     };
 
-    assert_eq!(TestContract(contract), TestContract(expected));
+    assert_contract_eq(&contract, &expected);
 }
 
 #[test]
@@ -41,7 +41,7 @@ fn test_parse_all_clauses() {
         ensures: vec![parse_quote! { |z| z > x }],
     };
 
-    assert_eq!(TestContract(contract), TestContract(expected));
+    assert_contract_eq(&contract, &expected);
 }
 
 #[test]
@@ -77,10 +77,7 @@ fn test_parse_array_of_conditions() {
     .unwrap();
 
     let expected = Contract {
-        requires: vec![
-            parse_quote! { x > 0 },
-            parse_quote! { y > 0 },
-        ],
+        requires: vec![parse_quote! { x > 0 }, parse_quote! { y > 0 }],
         maintains: vec![],
         ensures: vec![
             parse_quote! { |output| output > x },
@@ -88,7 +85,7 @@ fn test_parse_array_of_conditions() {
         ],
     };
 
-    assert_eq!(TestContract(contract), TestContract(expected));
+    assert_contract_eq(&contract, &expected);
 }
 
 #[test]
@@ -104,5 +101,5 @@ fn test_parse_ensures_with_closure() {
         ensures: vec![parse_quote! { |result| result.is_ok() }],
     };
 
-    assert_eq!(TestContract(contract), TestContract(expected));
+    assert_contract_eq(&contract, &expected);
 }
