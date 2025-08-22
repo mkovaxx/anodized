@@ -210,3 +210,36 @@ fn test_parse_non_cfg_attribute() -> Result<()> {
 
     Ok(())
 }
+
+#[test]
+fn test_parse_multiple_cfg_attributes() -> Result<()> {
+    let error = parse_contract(quote! {
+        #[cfg(test)]
+        #[cfg(debug_assertions)]
+        requires: x > 0,
+    })
+    .expect_err("parsing should have failed but it succeeded");
+
+    assert_eq!(
+        error.to_string(),
+        "multiple `cfg` attributes are not supported"
+    );
+
+    Ok(())
+}
+
+#[test]
+fn test_parse_cfg_on_binds() -> Result<()> {
+    let error = parse_contract(quote! {
+        #[cfg(test)]
+        binds: y,
+    })
+    .expect_err("parsing should have failed but it succeeded");
+
+    assert_eq!(
+        error.to_string(),
+        "`cfg` attribute is not supported on `binds`"
+    );
+
+    Ok(())
+}
