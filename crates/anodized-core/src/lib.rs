@@ -39,8 +39,6 @@ pub struct ConditionClosure {
     pub cfg: Option<Meta>,
 }
 
-
-
 #[derive(PartialEq, PartialOrd, Clone, Copy, Debug)]
 enum ArgOrder {
     Requires,
