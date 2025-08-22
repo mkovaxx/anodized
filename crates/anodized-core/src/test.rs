@@ -16,15 +16,9 @@ fn test_parse_simple_contract() -> Result<()> {
     })?;
 
     let expected = Contract {
-        requires: vec![Condition {
-            expr: parse_quote! { x > 0 },
-            cfg: None,
-        }],
+        requires: vec![Condition::from_expr(parse_quote! { x > 0 })],
         maintains: vec![],
-        ensures: vec![ConditionClosure {
-            closure: parse_quote! { |output| output > x },
-            cfg: None,
-        }],
+        ensures: vec![ConditionClosure::from_closure(parse_quote! { |output| output > x })],
     };
 
     assert_contract_eq(&contract, &expected);
@@ -42,18 +36,9 @@ fn test_parse_all_clauses() -> Result<()> {
     })?;
 
     let expected = Contract {
-        requires: vec![Condition {
-            expr: parse_quote! { x > 0 },
-            cfg: None,
-        }],
-        maintains: vec![Condition {
-            expr: parse_quote! { y.is_valid() },
-            cfg: None,
-        }],
-        ensures: vec![ConditionClosure {
-            closure: parse_quote! { |z| z > x },
-            cfg: None,
-        }],
+        requires: vec![Condition::from_expr(parse_quote! { x > 0 })],
+        maintains: vec![Condition::from_expr(parse_quote! { y.is_valid() })],
+        ensures: vec![ConditionClosure::from_closure(parse_quote! { |z| z > x })],
     };
 
     assert_contract_eq(&contract, &expected);
@@ -98,25 +83,13 @@ fn test_parse_array_of_conditions() -> Result<()> {
 
     let expected = Contract {
         requires: vec![
-            Condition {
-                expr: parse_quote! { x > 0 },
-                cfg: None,
-            },
-            Condition {
-                expr: parse_quote! { y > 0 },
-                cfg: None,
-            },
+            Condition::from_expr(parse_quote! { x > 0 }),
+            Condition::from_expr(parse_quote! { y > 0 }),
         ],
         maintains: vec![],
         ensures: vec![
-            ConditionClosure {
-                closure: parse_quote! { |output| output > x },
-                cfg: None,
-            },
-            ConditionClosure {
-                closure: parse_quote! { |output| output > y },
-                cfg: None,
-            },
+            ConditionClosure::from_closure(parse_quote! { |output| output > x }),
+            ConditionClosure::from_closure(parse_quote! { |output| output > y }),
         ],
     };
 
@@ -134,10 +107,9 @@ fn test_parse_ensures_with_closure() -> Result<()> {
     let expected = Contract {
         requires: vec![],
         maintains: vec![],
-        ensures: vec![ConditionClosure {
-            closure: parse_quote! { |result| result.is_ok() },
-            cfg: None,
-        }],
+        ensures: vec![ConditionClosure::from_closure(
+            parse_quote! { |result| result.is_ok() },
+        )],
     };
 
     assert_contract_eq(&contract, &expected);
@@ -156,25 +128,13 @@ fn test_parse_multiple_clauses_of_same_flavor() -> Result<()> {
 
     let expected = Contract {
         requires: vec![
-            Condition {
-                expr: parse_quote! { x > 0 },
-                cfg: None,
-            },
-            Condition {
-                expr: parse_quote! { y > 0 },
-                cfg: None,
-            },
+            Condition::from_expr(parse_quote! { x > 0 }),
+            Condition::from_expr(parse_quote! { y > 0 }),
         ],
         maintains: vec![],
         ensures: vec![
-            ConditionClosure {
-                closure: parse_quote! { |output| output > x },
-                cfg: None,
-            },
-            ConditionClosure {
-                closure: parse_quote! { |output| output > y },
-                cfg: None,
-            },
+            ConditionClosure::from_closure(parse_quote! { |output| output > x }),
+            ConditionClosure::from_closure(parse_quote! { |output| output > y }),
         ],
     };
 
@@ -200,33 +160,15 @@ fn test_parse_mixed_single_and_array_clauses() -> Result<()> {
 
     let expected = Contract {
         requires: vec![
-            Condition {
-                expr: parse_quote! { x > 0 },
-                cfg: None,
-            },
-            Condition {
-                expr: parse_quote! { y > 1 },
-                cfg: None,
-            },
-            Condition {
-                expr: parse_quote! { z > 2 },
-                cfg: None,
-            },
+            Condition::from_expr(parse_quote! { x > 0 }),
+            Condition::from_expr(parse_quote! { y > 1 }),
+            Condition::from_expr(parse_quote! { z > 2 }),
         ],
         maintains: vec![],
         ensures: vec![
-            ConditionClosure {
-                closure: parse_quote! { |output| output > y },
-                cfg: None,
-            },
-            ConditionClosure {
-                closure: parse_quote! { |output| output > z },
-                cfg: None,
-            },
-            ConditionClosure {
-                closure: parse_quote! { |output| output > x },
-                cfg: None,
-            },
+            ConditionClosure::from_closure(parse_quote! { |output| output > y }),
+            ConditionClosure::from_closure(parse_quote! { |output| output > z }),
+            ConditionClosure::from_closure(parse_quote! { |output| output > x }),
         ],
     };
 

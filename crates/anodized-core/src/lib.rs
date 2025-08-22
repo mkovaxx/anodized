@@ -39,6 +39,18 @@ pub struct ConditionClosure {
     pub cfg: Option<Meta>,
 }
 
+impl Condition {
+    fn from_expr(expr: Expr) -> Self {
+        Self { expr, cfg: None }
+    }
+}
+
+impl ConditionClosure {
+    fn from_closure(closure: ExprClosure) -> Self {
+        Self { closure, cfg: None }
+    }
+}
+
 #[derive(PartialEq, PartialOrd, Clone, Copy, Debug)]
 enum ArgOrder {
     Requires,
