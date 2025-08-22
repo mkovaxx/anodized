@@ -21,7 +21,7 @@ pub struct Contract {
     pub ensures: Vec<ConditionClosure>,
 }
 
-/// A Condition represented by a `bool`-valued expression.
+/// A condition represented by a `bool`-valued expression.
 #[derive(Debug)]
 pub struct Condition {
     /// The expression.
@@ -30,7 +30,7 @@ pub struct Condition {
     pub cfg: Option<Meta>,
 }
 
-/// A Condition represented by a `bool`-valued closure.
+/// A condition represented by a `bool`-valued closure.
 #[derive(Debug)]
 pub struct ConditionClosure {
     /// The closure.
