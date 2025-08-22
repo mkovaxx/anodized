@@ -107,6 +107,27 @@ You can include any number of each flavor. Multiple conditions of the same flavo
 fn push(&mut self, value: T) { /* ... */ }
 ```
 
+### Configure Runtime Checks with `#[cfg]`
+
+You can use the standard `#[cfg]` attribute to conditionally enable or disable the *runtime checks* for any condition. This is ideal for expensive checks that you only want to run during testing or in debug builds.
+
+```rust,ignore
+#[contract(
+    // Runtime checks only during `cargo test`.
+    #[cfg(test)]
+    requires: self.is_valid_for_testing(),
+
+    // Runtime checks only when debug assertions are enabled.
+    #[cfg(debug_assertions)]
+    ensures: output.is_sane(),
+)]
+fn perform_complex_operation(&mut self) -> Result { /* ... */ }
+```
+
+**Important:** Anodized guarantees that all your contracts are syntactically valid and type-correct, regardless of the `#[cfg]` attribute. The attribute only controls whether a check is performed at *runtime*. This ensures that e.g. a contract valid in `test` builds can't become invalid in `release` builds, and it allows other tools in the ecosystem (like static analyzers) to always see the full contract.
+
+This gives you fine-grained control over the performance impact of your contracts, allowing you to write the conditions thoroughly without affecting release build performance.
+
 ### Binding the Return Value
 
 In **postconditions** (`ensures`), you can refer to the function's return value by the default name `output`.

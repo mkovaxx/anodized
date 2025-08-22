@@ -168,3 +168,78 @@ fn test_parse_mixed_single_and_array_clauses() -> Result<()> {
 
     Ok(())
 }
+
+#[test]
+fn test_parse_cfg_attributes() -> Result<()> {
+    let contract = parse_contract(quote! {
+        #[cfg(test)]
+        requires: x > 0,
+        #[cfg(not(debug_assertions))]
+        ensures: output > x,
+    })?;
+
+    let expected = Contract {
+        requires: vec![Condition {
+            expr: parse_quote! { x > 0 },
+            cfg: Some(parse_quote! { test }),
+        }],
+        maintains: vec![],
+        ensures: vec![ConditionClosure {
+            closure: parse_quote! { |output| output > x },
+            cfg: Some(parse_quote! { not(debug_assertions) }),
+        }],
+    };
+
+    assert_contract_eq(&contract, &expected);
+
+    Ok(())
+}
+
+#[test]
+fn test_parse_non_cfg_attribute() -> Result<()> {
+    let error = parse_contract(quote! {
+        #[allow(dead_code)]
+        requires: x > 0,
+    })
+    .expect_err("parsing should have failed but it succeeded");
+
+    assert_eq!(
+        error.to_string(),
+        "unsupported attribute; only `cfg` is allowed"
+    );
+
+    Ok(())
+}
+
+#[test]
+fn test_parse_multiple_cfg_attributes() -> Result<()> {
+    let error = parse_contract(quote! {
+        #[cfg(test)]
+        #[cfg(debug_assertions)]
+        requires: x > 0,
+    })
+    .expect_err("parsing should have failed but it succeeded");
+
+    assert_eq!(
+        error.to_string(),
+        "multiple `cfg` attributes are not supported"
+    );
+
+    Ok(())
+}
+
+#[test]
+fn test_parse_cfg_on_binds() -> Result<()> {
+    let error = parse_contract(quote! {
+        #[cfg(test)]
+        binds: y,
+    })
+    .expect_err("parsing should have failed but it succeeded");
+
+    assert_eq!(
+        error.to_string(),
+        "`cfg` attribute is not supported on `binds`"
+    );
+
+    Ok(())
+}

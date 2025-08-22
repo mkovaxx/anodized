@@ -1,37 +1,95 @@
-use crate::Contract;
+use crate::{Condition, ConditionClosure, Contract};
 use quote::ToTokens;
+use syn::parse::{Parse, ParseStream, Result};
 
-pub fn assert_contract_eq(left: &Contract, right: &Contract) {
-    assert_token_streams_eq(&left.requires, &right.requires, "requires");
-    assert_token_streams_eq(&left.maintains, &right.maintains, "maintains");
-    assert_token_streams_eq(&left.ensures, &right.ensures, "ensures");
+impl Parse for Condition {
+    fn parse(input: ParseStream) -> Result<Self> {
+        Ok(Condition {
+            expr: input.parse()?,
+            cfg: None,
+        })
+    }
 }
 
-fn assert_token_streams_eq<T: ToTokens>(left: &[T], right: &[T], clause_name: &str) {
+impl Parse for ConditionClosure {
+    fn parse(input: ParseStream) -> Result<Self> {
+        Ok(ConditionClosure {
+            closure: input.parse()?,
+            cfg: None,
+        })
+    }
+}
+
+pub fn assert_contract_eq(left: &Contract, right: &Contract) {
+    assert_slice_eq(
+        &left.requires,
+        &right.requires,
+        "requires",
+        &assert_condition_eq,
+    );
+    assert_slice_eq(
+        &left.maintains,
+        &right.maintains,
+        "maintains",
+        &assert_condition_eq,
+    );
+    assert_slice_eq(
+        &left.ensures,
+        &right.ensures,
+        "ensures",
+        &assert_condition_closure_eq,
+    );
+}
+
+fn assert_slice_eq<T, F>(left: &[T], right: &[T], item_name: &str, assert_item_eq: F)
+where
+    F: Fn(&T, &T, &str),
+{
     assert_eq!(
         left.len(),
         right.len(),
-        "number of {} clauses do not match",
-        clause_name
+        "number of `{}` items do not match",
+        item_name
     );
 
     for (i, (left_item, right_item)) in left.iter().zip(right.iter()).enumerate() {
-        let left_tokens: Vec<String> = left_item
-            .to_token_stream()
-            .into_iter()
-            .map(|t| t.to_string())
-            .collect();
-        let right_tokens: Vec<String> = right_item
-            .to_token_stream()
-            .into_iter()
-            .map(|t| t.to_string())
-            .collect();
-        assert_eq!(
-            left_tokens,
-            right_tokens,
-            "{} clause #{} does not match",
-            clause_name,
-            i + 1
-        );
+        let msg_prefix = format!("`{}` items at index {}, ", item_name, i);
+        assert_item_eq(left_item, right_item, &msg_prefix);
     }
+}
+
+fn assert_condition_eq(left: &Condition, right: &Condition, msg_prefix: &str) {
+    assert_eq!(
+        left.expr.to_token_stream().to_string(),
+        right.expr.to_token_stream().to_string(),
+        "{}`expr` does not match",
+        msg_prefix
+    );
+
+    assert_eq!(
+        left.cfg.to_token_stream().to_string(),
+        right.cfg.to_token_stream().to_string(),
+        "{}`cfg` does not match",
+        msg_prefix
+    );
+}
+
+fn assert_condition_closure_eq(
+    left: &ConditionClosure,
+    right: &ConditionClosure,
+    msg_prefix: &str,
+) {
+    assert_eq!(
+        left.closure.to_token_stream().to_string(),
+        right.closure.to_token_stream().to_string(),
+        "{}`closure` does not match",
+        msg_prefix
+    );
+
+    assert_eq!(
+        left.cfg.to_token_stream().to_string(),
+        right.cfg.to_token_stream().to_string(),
+        "{}`cfg` does not match",
+        msg_prefix
+    );
 }
