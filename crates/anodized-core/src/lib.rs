@@ -257,4 +257,4 @@ pub fn instrument_function_body(contract: &Contract, func: &ItemFn) -> Result<Bl
 mod test_util;
 
 #[cfg(test)]
-mod tests;
+mod test;
