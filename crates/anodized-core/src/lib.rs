@@ -45,7 +45,7 @@ impl TryFrom<ContractArgs> for Contract {
                 if current_arg_order < last_order {
                     return Err(syn::Error::new(
                         arg.span(),
-                        "parameters are out of order: it must be `requires`, `maintains`, `binds`, `ensures`",
+                        "parameters are out of order: their order must be `requires`, `maintains`, `binds`, `ensures`",
                     ));
                 }
             }
