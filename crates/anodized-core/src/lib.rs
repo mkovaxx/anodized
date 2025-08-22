@@ -288,9 +288,9 @@ pub fn instrument_function_body(contract: &Contract, func: &ItemFn) -> Result<Bl
         .requires
         .iter()
         .map(|condition| {
-            let predicate = &condition.expr;
-            let msg = format!("Precondition failed: {}", predicate.to_token_stream());
-            let assert = quote! { assert!(#predicate, #msg); };
+            let expr = &condition.expr;
+            let msg = format!("Precondition failed: {}", expr.to_token_stream());
+            let assert = quote! { assert!(#expr, #msg); };
             if let Some(cfg) = &condition.cfg {
                 quote! { if cfg!(#cfg) { #assert } }
             } else {
@@ -298,9 +298,9 @@ pub fn instrument_function_body(contract: &Contract, func: &ItemFn) -> Result<Bl
             }
         })
         .chain(contract.maintains.iter().map(|condition| {
-            let predicate = &condition.expr;
-            let msg = format!("Pre-invariant failed: {}", predicate.to_token_stream());
-            let assert = quote! { assert!(#predicate, #msg); };
+            let expr = &condition.expr;
+            let msg = format!("Pre-invariant failed: {}", expr.to_token_stream());
+            let assert = quote! { assert!(#expr, #msg); };
             if let Some(cfg) = &condition.cfg {
                 quote! { if cfg!(#cfg) { #assert } }
             } else {
@@ -313,9 +313,9 @@ pub fn instrument_function_body(contract: &Contract, func: &ItemFn) -> Result<Bl
         .maintains
         .iter()
         .map(|condition| {
-            let predicate = &condition.expr;
-            let msg = format!("Post-invariant failed: {}", predicate.to_token_stream());
-            let assert = quote! { assert!(#predicate, #msg); };
+            let expr = &condition.expr;
+            let msg = format!("Post-invariant failed: {}", expr.to_token_stream());
+            let assert = quote! { assert!(#expr, #msg); };
             if let Some(cfg) = &condition.cfg {
                 quote! { if cfg!(#cfg) { #assert } }
             } else {
