@@ -9,7 +9,7 @@ fn parse_contract(tokens: proc_macro2::TokenStream) -> Result<Contract> {
 }
 
 #[test]
-fn test_parse_simple_contract() -> Result<()> {
+fn test_parse_simple_contract() {
     let contract: Contract = parse_quote! {
         requires: x > 0,
         ensures: output > x,
@@ -22,12 +22,10 @@ fn test_parse_simple_contract() -> Result<()> {
     };
 
     assert_contract_eq(&contract, &expected);
-
-    Ok(())
 }
 
 #[test]
-fn test_parse_all_clauses() -> Result<()> {
+fn test_parse_all_clauses() {
     let contract: Contract = parse_quote! {
         requires: x > 0,
         maintains: y.is_valid(),
@@ -42,8 +40,6 @@ fn test_parse_all_clauses() -> Result<()> {
     };
 
     assert_contract_eq(&contract, &expected);
-
-    Ok(())
 }
 
 #[test]
@@ -69,7 +65,7 @@ fn test_parse_multiple_binds() -> Result<()> {
 }
 
 #[test]
-fn test_parse_array_of_conditions() -> Result<()> {
+fn test_parse_array_of_conditions() {
     let contract: Contract = parse_quote! {
         requires: [
             x > 0,
@@ -91,12 +87,10 @@ fn test_parse_array_of_conditions() -> Result<()> {
     };
 
     assert_contract_eq(&contract, &expected);
-
-    Ok(())
 }
 
 #[test]
-fn test_parse_ensures_with_closure() -> Result<()> {
+fn test_parse_ensures_with_closure() {
     let contract: Contract = parse_quote! {
         ensures: |result| result.is_ok(),
     };
@@ -108,12 +102,10 @@ fn test_parse_ensures_with_closure() -> Result<()> {
     };
 
     assert_contract_eq(&contract, &expected);
-
-    Ok(())
 }
 
 #[test]
-fn test_parse_multiple_clauses_of_same_flavor() -> Result<()> {
+fn test_parse_multiple_clauses_of_same_flavor() {
     let contract: Contract = parse_quote! {
         requires: x > 0,
         requires: y > 0,
@@ -131,12 +123,10 @@ fn test_parse_multiple_clauses_of_same_flavor() -> Result<()> {
     };
 
     assert_contract_eq(&contract, &expected);
-
-    Ok(())
 }
 
 #[test]
-fn test_parse_mixed_single_and_array_clauses() -> Result<()> {
+fn test_parse_mixed_single_and_array_clauses() {
     let contract: Contract = parse_quote! {
         requires: x > 0,
         requires: [
@@ -165,12 +155,10 @@ fn test_parse_mixed_single_and_array_clauses() -> Result<()> {
     };
 
     assert_contract_eq(&contract, &expected);
-
-    Ok(())
 }
 
 #[test]
-fn test_parse_cfg_attributes() -> Result<()> {
+fn test_parse_cfg_attributes() {
     let contract: Contract = parse_quote! {
         #[cfg(test)]
         requires: x > 0,
@@ -191,8 +179,6 @@ fn test_parse_cfg_attributes() -> Result<()> {
     };
 
     assert_contract_eq(&contract, &expected);
-
-    Ok(())
 }
 
 #[test]
