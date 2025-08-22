@@ -82,10 +82,7 @@ fn test_parse_array_of_conditions() -> Result<()> {
     })?;
 
     let expected = Contract {
-        requires: vec![
-            parse_quote! { x > 0 },
-            parse_quote! { y > 0 },
-        ],
+        requires: vec![parse_quote! { x > 0 }, parse_quote! { y > 0 }],
         maintains: vec![],
         ensures: vec![
             parse_quote! { |output| output > x },
@@ -125,10 +122,7 @@ fn test_parse_multiple_clauses_of_same_flavor() -> Result<()> {
     })?;
 
     let expected = Contract {
-        requires: vec![
-            parse_quote! { x > 0 },
-            parse_quote! { y > 0 },
-        ],
+        requires: vec![parse_quote! { x > 0 }, parse_quote! { y > 0 }],
         maintains: vec![],
         ensures: vec![
             parse_quote! { |output| output > x },
