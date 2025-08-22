@@ -122,7 +122,7 @@ fn get_positive_value() -> i32 { /* ... */ }
 
 If the name `output` collides with an existing identifier, you can choose a different name for it in two ways:
 
-**1. Contract-Wide Binding**: Use the `binds` parameter to set a new name for the return value across all postconditions in the contract.
+**1. Contract-Wide Binding**: Use the `binds` parameter to set a new name for the return value across all postconditions in the contract. It must be placed immediately before any `ensures` conditions.
 
 ```rust,ignore
 #[contract(
