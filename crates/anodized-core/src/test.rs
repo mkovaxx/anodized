@@ -82,7 +82,10 @@ fn test_parse_array_of_conditions() -> Result<()> {
     })?;
 
     let expected = Contract {
-        requires: vec![parse_quote! { x > 0 }, parse_quote! { y > 0 }],
+        requires: vec![
+            parse_quote! { x > 0 },
+            parse_quote! { y > 0 },
+        ],
         maintains: vec![],
         ensures: vec![
             parse_quote! { |output| output > x },
@@ -105,6 +108,66 @@ fn test_parse_ensures_with_closure() -> Result<()> {
         requires: vec![],
         maintains: vec![],
         ensures: vec![parse_quote! { |result| result.is_ok() }],
+    };
+
+    assert_contract_eq(&contract, &expected);
+
+    Ok(())
+}
+
+#[test]
+fn test_parse_multiple_clauses_of_same_flavor() -> Result<()> {
+    let contract = parse_contract(quote! {
+        requires: x > 0,
+        requires: y > 0,
+        ensures: output > x,
+        ensures: |output| output > y,
+    })?;
+
+    let expected = Contract {
+        requires: vec![
+            parse_quote! { x > 0 },
+            parse_quote! { y > 0 },
+        ],
+        maintains: vec![],
+        ensures: vec![
+            parse_quote! { |output| output > x },
+            parse_quote! { |output| output > y },
+        ],
+    };
+
+    assert_contract_eq(&contract, &expected);
+
+    Ok(())
+}
+
+#[test]
+fn test_parse_mixed_single_and_array_clauses() -> Result<()> {
+    let contract = parse_contract(quote! {
+        requires: x > 0,
+        requires: [
+            y > 1,
+            z > 2,
+        ],
+        ensures: [
+            output > y,
+            |output| output > z,
+        ],
+        ensures: output > x,
+    })?;
+
+    let expected = Contract {
+        requires: vec![
+            parse_quote! { x > 0 },
+            parse_quote! { y > 1 },
+            parse_quote! { z > 2 },
+        ],
+        maintains: vec![],
+        ensures: vec![
+            parse_quote! { |output| output > y },
+            parse_quote! { |output| output > z },
+            parse_quote! { |output| output > x },
+        ],
     };
 
     assert_contract_eq(&contract, &expected);
