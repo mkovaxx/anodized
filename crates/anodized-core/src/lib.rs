@@ -62,7 +62,7 @@ impl TryFrom<ContractArgs> for Contract {
             if let Some(last_order) = last_arg_order {
                 if current_arg_order < last_order {
                     return Err(syn::Error::new(
-                        arg.span(),
+                        arg.get_keyword_span(),
                         "parameters are out of order: their order must be `requires`, `maintains`, `binds`, `ensures`",
                     ));
                 }
@@ -70,7 +70,7 @@ impl TryFrom<ContractArgs> for Contract {
             last_arg_order = Some(current_arg_order);
 
             match arg {
-                ContractArg::Requires { cfg, expr } => {
+                ContractArg::Requires { cfg, expr, .. } => {
                     if let Expr::Array(conditions) = expr {
                         requires.extend(conditions.elems.into_iter().map(|expr| Condition {
                             expr,
@@ -80,7 +80,7 @@ impl TryFrom<ContractArgs> for Contract {
                         requires.push(Condition { expr, cfg });
                     }
                 }
-                ContractArg::Maintains { cfg, expr } => {
+                ContractArg::Maintains { cfg, expr, .. } => {
                     if let Expr::Array(conditions) = expr {
                         maintains.extend(conditions.elems.into_iter().map(|expr| Condition {
                             expr,
@@ -90,16 +90,16 @@ impl TryFrom<ContractArgs> for Contract {
                         maintains.push(Condition { expr, cfg });
                     }
                 }
-                ContractArg::Binds { pattern } => {
+                ContractArg::Binds { keyword, pattern } => {
                     if binds_pattern.is_some() {
                         return Err(syn::Error::new(
-                            pattern.span(),
+                            keyword.span(),
                             "multiple `binds` parameters are not allowed",
                         ));
                     }
                     binds_pattern = Some(pattern);
                 }
-                ContractArg::Ensures { cfg, expr } => {
+                ContractArg::Ensures { cfg, expr, .. } => {
                     if let Expr::Array(conditions) = expr {
                         ensures_exprs.extend(conditions.elems.into_iter().map(|expr| Condition {
                             expr,
@@ -160,10 +160,25 @@ impl Parse for ContractArgs {
 
 /// An intermediate enum to help parse either a condition or a `binds` setting.
 pub enum ContractArg {
-    Requires { cfg: Option<Meta>, expr: Expr },
-    Ensures { cfg: Option<Meta>, expr: Expr },
-    Maintains { cfg: Option<Meta>, expr: Expr },
-    Binds { pattern: Pat },
+    Requires {
+        keyword: kw::requires,
+        cfg: Option<Meta>,
+        expr: Expr,
+    },
+    Ensures {
+        keyword: kw::ensures,
+        cfg: Option<Meta>,
+        expr: Expr,
+    },
+    Maintains {
+        keyword: kw::maintains,
+        cfg: Option<Meta>,
+        expr: Expr,
+    },
+    Binds {
+        keyword: kw::binds,
+        pattern: Pat,
+    },
 }
 
 impl ContractArg {
@@ -176,12 +191,12 @@ impl ContractArg {
         }
     }
 
-    fn span(&self) -> Span {
+    fn get_keyword_span(&self) -> Span {
         match self {
-            ContractArg::Requires { expr, .. } => expr.span(),
-            ContractArg::Ensures { expr, .. } => expr.span(),
-            ContractArg::Maintains { expr, .. } => expr.span(),
-            ContractArg::Binds { pattern } => pattern.span(),
+            ContractArg::Requires { keyword, .. } => keyword.span,
+            ContractArg::Ensures { keyword, .. } => keyword.span,
+            ContractArg::Maintains { keyword, .. } => keyword.span,
+            ContractArg::Binds { keyword, .. } => keyword.span,
         }
     }
 }
@@ -191,14 +206,15 @@ impl Parse for ContractArg {
         let lookahead = input.lookahead1();
         if lookahead.peek(kw::binds) {
             // Parse `binds: <pattern>`
-            input.parse::<kw::binds>()?;
+            let keyword = input.parse::<kw::binds>()?;
             input.parse::<Token![:]>()?;
             Ok(ContractArg::Binds {
+                keyword,
                 pattern: Pat::parse_single(input)?,
             })
         } else if lookahead.peek(kw::requires) {
             // Parse `requires: <expr>`
-            input.parse::<kw::requires>()?;
+            let keyword = input.parse::<kw::requires>()?;
             let cfg = if input.peek(syn::token::Paren) {
                 let content;
                 parenthesized!(content in input);
@@ -208,12 +224,13 @@ impl Parse for ContractArg {
             };
             input.parse::<Token![:]>()?;
             Ok(ContractArg::Requires {
+                keyword,
                 cfg,
                 expr: input.parse()?,
             })
         } else if lookahead.peek(kw::maintains) {
             // Parse `maintains: <expr>`
-            input.parse::<kw::maintains>()?;
+            let keyword = input.parse::<kw::maintains>()?;
             let cfg = if input.peek(syn::token::Paren) {
                 let content;
                 parenthesized!(content in input);
@@ -223,12 +240,13 @@ impl Parse for ContractArg {
             };
             input.parse::<Token![:]>()?;
             Ok(ContractArg::Maintains {
+                keyword,
                 cfg,
                 expr: input.parse()?,
             })
         } else if lookahead.peek(kw::ensures) {
             // Parse `ensures: <expr>`
-            input.parse::<kw::ensures>()?;
+            let keyword = input.parse::<kw::ensures>()?;
             let cfg = if input.peek(syn::token::Paren) {
                 let content;
                 parenthesized!(content in input);
@@ -238,6 +256,7 @@ impl Parse for ContractArg {
             };
             input.parse::<Token![:]>()?;
             Ok(ContractArg::Ensures {
+                keyword,
                 cfg,
                 expr: input.parse()?,
             })
