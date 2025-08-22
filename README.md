@@ -115,10 +115,10 @@ You can conditionally enable or disable _runtime_ checks using the standard `#[c
 
 ```rust,ignore
 #[contract(
-    // This precondition is only checked during tests.
+    // This precondition has runtime checks only during tests.
     #[cfg(test)]
     requires: self.is_valid_for_testing(),
-    // This postcondition is only checked when debug assertions are enabled.
+    // This postcondition has runtime checks only when debug assertions are enabled.
     #[cfg(debug_assertions)]
     ensures: output.is_sane(),
 )]
