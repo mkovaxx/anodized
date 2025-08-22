@@ -12,6 +12,11 @@ pub fn assert_contract_eq(left: &Contract, right: &Contract) {
         .iter()
         .map(|e| e.to_token_stream().to_string())
         .collect::<Vec<_>>();
+    assert_eq!(
+        left_requires, right_requires,
+        "requires clauses do not match"
+    );
+
     let left_maintains = left
         .maintains
         .iter()
@@ -22,6 +27,11 @@ pub fn assert_contract_eq(left: &Contract, right: &Contract) {
         .iter()
         .map(|e| e.to_token_stream().to_string())
         .collect::<Vec<_>>();
+    assert_eq!(
+        left_maintains, right_maintains,
+        "maintains clauses do not match"
+    );
+
     let left_ensures = left
         .ensures
         .iter()
@@ -32,14 +42,5 @@ pub fn assert_contract_eq(left: &Contract, right: &Contract) {
         .iter()
         .map(|e| e.to_token_stream().to_string())
         .collect::<Vec<_>>();
-
-    assert_eq!(
-        left_requires, right_requires,
-        "requires clauses do not match"
-    );
-    assert_eq!(
-        left_maintains, right_maintains,
-        "maintains clauses do not match"
-    );
     assert_eq!(left_ensures, right_ensures, "ensures clauses do not match");
 }
