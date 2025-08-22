@@ -113,10 +113,10 @@ You can use the standard `#[cfg]` attribute to conditionally enable or disable t
 
 ```rust,ignore
 #[contract(
-    // This check only runs during `cargo test`.
+    // Runtime checks only during `cargo test`.
     #[cfg(test)]
     requires: self.is_valid_for_testing(),
-    // This check only runs when debug assertions are enabled.
+    // Runtime checks only when debug assertions are enabled.
     #[cfg(debug_assertions)]
     ensures: output.is_sane(),
 )]
