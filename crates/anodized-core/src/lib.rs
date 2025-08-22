@@ -15,23 +15,23 @@ use syn::{
 #[derive(Debug)]
 pub struct Contract {
     /// Preconditions: conditions that must hold when the function is called.
-    pub requires: Vec<CfgExpr>,
+    pub requires: Vec<Condition>,
     /// Invariants: conditions that must hold both when the function is called and when it returns.
-    pub maintains: Vec<CfgExpr>,
+    pub maintains: Vec<Condition>,
     /// Postconditions: conditions that must hold when the function returns.
-    pub ensures: Vec<CfgExprClosure>,
+    pub ensures: Vec<ConditionClosure>,
 }
 
 /// An expression guarded by a `cfg` attribute.
 #[derive(Debug)]
-pub struct CfgExpr {
+pub struct Condition {
     pub cfg: Option<Meta>,
     pub expr: Expr,
 }
 
 /// A closure expression guarded by a `cfg` attribute.
 #[derive(Debug)]
-pub struct CfgExprClosure {
+pub struct ConditionClosure {
     pub cfg: Option<Meta>,
     pub closure: ExprClosure,
 }
@@ -50,9 +50,9 @@ impl TryFrom<ContractArgs> for Contract {
     fn try_from(args: ContractArgs) -> Result<Self> {
         let mut last_arg_order: Option<ArgOrder> = None;
         let mut binds_pattern: Option<Pat> = None;
-        let mut requires: Vec<CfgExpr> = vec![];
-        let mut maintains: Vec<CfgExpr> = vec![];
-        let mut ensures_exprs: Vec<CfgExpr> = vec![];
+        let mut requires: Vec<Condition> = vec![];
+        let mut maintains: Vec<Condition> = vec![];
+        let mut ensures_exprs: Vec<Condition> = vec![];
 
         for arg in args.items {
             let current_arg_order = arg.get_order();
@@ -73,10 +73,10 @@ impl TryFrom<ContractArgs> for Contract {
                             conditions
                                 .elems
                                 .into_iter()
-                                .map(|expr| CfgExpr { cfg: cfg.clone(), expr }),
+                                .map(|expr| Condition { cfg: cfg.clone(), expr }),
                         );
                     } else {
-                        requires.push(CfgExpr { cfg, expr });
+                        requires.push(Condition { cfg, expr });
                     }
                 }
                 ContractArg::Maintains { cfg, expr } => {
@@ -85,10 +85,10 @@ impl TryFrom<ContractArgs> for Contract {
                             conditions
                                 .elems
                                 .into_iter()
-                                .map(|expr| CfgExpr { cfg: cfg.clone(), expr }),
+                                .map(|expr| Condition { cfg: cfg.clone(), expr }),
                         );
                     } else {
-                        maintains.push(CfgExpr { cfg, expr });
+                        maintains.push(Condition { cfg, expr });
                     }
                 }
                 ContractArg::Binds { pattern } => {
@@ -106,10 +106,10 @@ impl TryFrom<ContractArgs> for Contract {
                             conditions
                                 .elems
                                 .into_iter()
-                                .map(|expr| CfgExpr { cfg: cfg.clone(), expr }),
+                                .map(|expr| Condition { cfg: cfg.clone(), expr }),
                         );
                     } else {
-                        ensures_exprs.push(CfgExpr { cfg, expr });
+                        ensures_exprs.push(Condition { cfg, expr });
                     }
                 }
             }
@@ -122,19 +122,19 @@ impl TryFrom<ContractArgs> for Contract {
 
         let ensures = ensures_exprs
             .into_iter()
-            .map(|cfg_expr| {
-                let closure: ExprClosure = if let Expr::Closure(closure) = cfg_expr.expr {
+            .map(|condition| {
+                let closure: ExprClosure = if let Expr::Closure(closure) = condition.expr {
                     closure
                 } else {
-                    let condition = cfg_expr.expr;
-                    parse_quote! { |#default_closure_pattern| #condition }
+                    let inner_condition = condition.expr;
+                    parse_quote! { |#default_closure_pattern| #inner_condition }
                 };
-                Ok(CfgExprClosure {
-                    cfg: cfg_expr.cfg,
+                Ok(ConditionClosure {
+                    cfg: condition.cfg,
                     closure,
                 })
             })
-            .collect::<Result<Vec<CfgExprClosure>>>()?;
+            .collect::<Result<Vec<ConditionClosure>>>()?;
 
         Ok(Contract {
             requires,
@@ -271,16 +271,16 @@ pub fn instrument_function_body(contract: &Contract, func: &ItemFn) -> Result<Bl
     let preconditions = contract
         .requires
         .iter()
-        .map(|cfg_expr| {
-            let predicate = &cfg_expr.expr;
+        .map(|condition| {
+            let predicate = &condition.expr;
             let msg = format!("Precondition failed: {}", predicate.to_token_stream());
-            let cfg = cfg_expr.cfg.as_ref().map(|c| quote! { #[cfg(#c)] });
+            let cfg = condition.cfg.as_ref().map(|c| quote! { #[cfg(#c)] });
             quote! { #cfg assert!(#predicate, #msg); }
         })
-        .chain(contract.maintains.iter().map(|cfg_expr| {
-            let predicate = &cfg_expr.expr;
+        .chain(contract.maintains.iter().map(|condition| {
+            let predicate = &condition.expr;
             let msg = format!("Pre-invariant failed: {}", predicate.to_token_stream());
-            let cfg = cfg_expr.cfg.as_ref().map(|c| quote! { #[cfg(#c)] });
+            let cfg = condition.cfg.as_ref().map(|c| quote! { #[cfg(#c)] });
             quote! { #cfg assert!(#predicate, #msg); }
         }));
 
@@ -288,16 +288,16 @@ pub fn instrument_function_body(contract: &Contract, func: &ItemFn) -> Result<Bl
     let postconditions = contract
         .maintains
         .iter()
-        .map(|cfg_expr| {
-            let predicate = &cfg_expr.expr;
+        .map(|condition| {
+            let predicate = &condition.expr;
             let msg = format!("Post-invariant failed: {}", predicate.to_token_stream());
-            let cfg = cfg_expr.cfg.as_ref().map(|c| quote! { #[cfg(#c)] });
+            let cfg = condition.cfg.as_ref().map(|c| quote! { #[cfg(#c)] });
             quote! { #cfg assert!(#predicate, #msg); }
         })
-        .chain(contract.ensures.iter().map(|cfg_expr_closure| {
-            let closure = &cfg_expr_closure.closure;
+        .chain(contract.ensures.iter().map(|condition_closure| {
+            let closure = &condition_closure.closure;
             let msg = format!("Postcondition failed: {}", closure.to_token_stream());
-            let cfg = cfg_expr_closure.cfg.as_ref().map(|c| quote! { #[cfg(#c)] });
+            let cfg = condition_closure.cfg.as_ref().map(|c| quote! { #[cfg(#c)] });
             quote! { #cfg assert!((#closure)(#binding_ident), #msg); }
         }));
 

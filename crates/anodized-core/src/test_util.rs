@@ -1,13 +1,13 @@
-use crate::{CfgExpr, CfgExprClosure, Contract};
+use crate::{Condition, ConditionClosure, Contract};
 use quote::ToTokens;
 
-impl ToTokens for CfgExpr {
+impl ToTokens for Condition {
     fn to_tokens(&self, tokens: &mut proc_macro2::TokenStream) {
         self.expr.to_tokens(tokens);
     }
 }
 
-impl ToTokens for CfgExprClosure {
+impl ToTokens for ConditionClosure {
     fn to_tokens(&self, tokens: &mut proc_macro2::TokenStream) {
         self.closure.to_tokens(tokens);
     }
