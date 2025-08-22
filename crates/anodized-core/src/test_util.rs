@@ -1,6 +1,12 @@
 use crate::Contract;
 use quote::ToTokens;
 
+pub fn assert_contract_eq(left: &Contract, right: &Contract) {
+    assert_token_streams_eq(&left.requires, &right.requires, "requires");
+    assert_token_streams_eq(&left.maintains, &right.maintains, "maintains");
+    assert_token_streams_eq(&left.ensures, &right.ensures, "ensures");
+}
+
 fn assert_token_streams_eq<T: ToTokens>(left: &[T], right: &[T], clause_name: &str) {
     assert_eq!(
         left.len(),
@@ -27,10 +33,4 @@ fn assert_token_streams_eq<T: ToTokens>(left: &[T], right: &[T], clause_name: &s
             i + 1
         );
     }
-}
-
-pub fn assert_contract_eq(left: &Contract, right: &Contract) {
-    assert_token_streams_eq(&left.requires, &right.requires, "requires");
-    assert_token_streams_eq(&left.maintains, &right.maintains, "maintains");
-    assert_token_streams_eq(&left.ensures, &right.ensures, "ensures");
 }
