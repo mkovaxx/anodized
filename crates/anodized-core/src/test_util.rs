@@ -27,7 +27,8 @@ fn assert_token_streams_eq<T: ToTokens>(left: &[T], right: &[T], clause_name: &s
             .map(|t| t.to_string())
             .collect();
         assert_eq!(
-            left_tokens, right_tokens,
+            left_tokens,
+            right_tokens,
             "{} clause #{} does not match",
             clause_name,
             i + 1

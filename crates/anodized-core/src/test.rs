@@ -16,13 +16,9 @@ fn test_parse_simple_contract() -> Result<()> {
     })?;
 
     let expected = Contract {
-        requires: vec![
-            parse_quote! { x > 0 },
-        ],
+        requires: vec![parse_quote! { x > 0 }],
         maintains: vec![],
-        ensures: vec![
-            parse_quote! { |output| output > x },
-        ],
+        ensures: vec![parse_quote! { |output| output > x }],
     };
 
     assert_contract_eq(&contract, &expected);
@@ -40,15 +36,9 @@ fn test_parse_all_clauses() -> Result<()> {
     })?;
 
     let expected = Contract {
-        requires: vec![
-            parse_quote! { x > 0 },
-        ],
-        maintains: vec![
-            parse_quote! { y.is_valid() },
-        ],
-        ensures: vec![
-            parse_quote! { |z| z > x },
-        ],
+        requires: vec![parse_quote! { x > 0 }],
+        maintains: vec![parse_quote! { y.is_valid() }],
+        ensures: vec![parse_quote! { |z| z > x }],
     };
 
     assert_contract_eq(&contract, &expected);
@@ -92,10 +82,7 @@ fn test_parse_array_of_conditions() -> Result<()> {
     })?;
 
     let expected = Contract {
-        requires: vec![
-            parse_quote! { x > 0 },
-            parse_quote! { y > 0 }
-        ],
+        requires: vec![parse_quote! { x > 0 }, parse_quote! { y > 0 }],
         maintains: vec![],
         ensures: vec![
             parse_quote! { |output| output > x },
@@ -117,9 +104,7 @@ fn test_parse_ensures_with_closure() -> Result<()> {
     let expected = Contract {
         requires: vec![],
         maintains: vec![],
-        ensures: vec![
-            parse_quote! { |result| result.is_ok() },
-        ],
+        ensures: vec![parse_quote! { |result| result.is_ok() }],
     };
 
     assert_contract_eq(&contract, &expected);
