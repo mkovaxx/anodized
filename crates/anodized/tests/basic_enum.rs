@@ -1,6 +1,7 @@
 use anodized::contract;
 
 #[derive(Debug, PartialEq, Eq)]
+#[allow(dead_code)]
 enum State {
     Idle,
     Running,
