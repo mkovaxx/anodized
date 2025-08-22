@@ -3,11 +3,11 @@
 use proc_macro2::Span;
 use quote::{ToTokens, quote};
 use syn::{
+    Attribute, Block, Expr, ExprClosure, Ident, ItemFn, Meta, Pat, Token,
     parse::{Parse, ParseStream, Result},
     parse_quote,
     punctuated::Punctuated,
     spanned::Spanned,
-    Attribute, Block, Expr, ExprClosure, Ident, ItemFn, Meta, Pat, Token,
 };
 
 /// A contract specifies the intended behavior of a function or method.
