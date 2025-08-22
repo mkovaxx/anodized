@@ -3,11 +3,11 @@
 use proc_macro2::Span;
 use quote::{ToTokens, quote};
 use syn::{
-    Block, Expr, ExprClosure, Ident, ItemFn, Meta, Pat, Token, parenthesized,
     parse::{Parse, ParseStream, Result},
     parse_quote,
     punctuated::Punctuated,
     spanned::Spanned,
+    Attribute, Block, Expr, ExprClosure, Ident, ItemFn, Meta, Pat, Token,
 };
 
 /// A contract specifies the intended behavior of a function or method.
@@ -203,8 +203,18 @@ impl ContractArg {
 
 impl Parse for ContractArg {
     fn parse(input: ParseStream) -> Result<Self> {
+        let attrs = input.call(Attribute::parse_outer)?;
+        let cfg = parse_cfg_attribute(&attrs)?;
+
         let lookahead = input.lookahead1();
         if lookahead.peek(kw::binds) {
+            if cfg.is_some() {
+                return Err(syn::Error::new(
+                    attrs[0].span(),
+                    "`cfg` attribute is not supported on `binds`",
+                ));
+            }
+
             // Parse `binds: <pattern>`
             let keyword = input.parse::<kw::binds>()?;
             input.parse::<Token![:]>()?;
@@ -215,13 +225,6 @@ impl Parse for ContractArg {
         } else if lookahead.peek(kw::requires) {
             // Parse `requires: <conditions>`
             let keyword = input.parse::<kw::requires>()?;
-            let cfg = if input.peek(syn::token::Paren) {
-                let content;
-                parenthesized!(content in input);
-                Some(content.parse()?)
-            } else {
-                None
-            };
             input.parse::<Token![:]>()?;
             Ok(ContractArg::Requires {
                 keyword,
@@ -231,13 +234,6 @@ impl Parse for ContractArg {
         } else if lookahead.peek(kw::maintains) {
             // Parse `maintains: <conditions>`
             let keyword = input.parse::<kw::maintains>()?;
-            let cfg = if input.peek(syn::token::Paren) {
-                let content;
-                parenthesized!(content in input);
-                Some(content.parse()?)
-            } else {
-                None
-            };
             input.parse::<Token![:]>()?;
             Ok(ContractArg::Maintains {
                 keyword,
@@ -247,13 +243,6 @@ impl Parse for ContractArg {
         } else if lookahead.peek(kw::ensures) {
             // Parse `ensures: <conditions>`
             let keyword = input.parse::<kw::ensures>()?;
-            let cfg = if input.peek(syn::token::Paren) {
-                let content;
-                parenthesized!(content in input);
-                Some(content.parse()?)
-            } else {
-                None
-            };
             input.parse::<Token![:]>()?;
             Ok(ContractArg::Ensures {
                 keyword,
@@ -263,6 +252,26 @@ impl Parse for ContractArg {
         } else {
             Err(lookahead.error())
         }
+    }
+}
+
+fn parse_cfg_attribute(attrs: &[Attribute]) -> Result<Option<Meta>> {
+    let cfg_attrs: Vec<_> = attrs
+        .iter()
+        .filter(|attr| attr.path().is_ident("cfg"))
+        .collect();
+
+    if cfg_attrs.len() > 1 {
+        return Err(syn::Error::new(
+            cfg_attrs[1].span(),
+            "multiple `cfg` attributes are not supported",
+        ));
+    }
+
+    if let Some(attr) = cfg_attrs.first() {
+        Ok(Some(attr.parse_args()?))
+    } else {
+        Ok(None)
     }
 }
 

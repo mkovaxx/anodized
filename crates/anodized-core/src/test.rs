@@ -172,8 +172,10 @@ fn test_parse_mixed_single_and_array_clauses() -> Result<()> {
 #[test]
 fn test_parse_cfg_attributes() -> Result<()> {
     let contract = parse_contract(quote! {
-        requires(test): x > 0,
-        ensures(not(debug_assertions)): output > x,
+        #[cfg(test)]
+        requires: x > 0,
+        #[cfg(not(debug_assertions))]
+        ensures: output > x,
     })?;
 
     let expected = Contract {

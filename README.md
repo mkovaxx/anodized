@@ -109,16 +109,18 @@ fn push(&mut self, value: T) { /* ... */ }
 
 ### Configure Runtime Checks a'la `#[cfg]`
 
-You can conditionally enable or disable _runtime_ condition checks using settings similar to the `#[cfg]` attribute, just like you would with regular Rust code. This is useful for e.g. expensive checks that you only want to run in specific build configurations, such as during testing or when debug assertions are enabled.
+You can conditionally enable or disable _runtime_ condition checks using the standard `#[cfg]` attribute, just like you would with regular Rust code. This is useful for e.g. expensive checks that you only want to run in specific build configurations, such as during testing or when debug assertions are enabled.
 
-**Note** that the setting does not behave exactly like the `#[cfg]` attribute, because all conditions must still pass syntax and type checking. If a condition is deemed to be inactive under the build configuration, it is removed during a later stage, by dead code elimination.
+**Note** that this does not behave exactly like the `#[cfg]` attribute on a function or module, because all conditions must still pass syntax and type checking. If a condition is deemed to be inactive under the build configuration, it is removed during a later stage, by dead code elimination.
 
 ```rust,ignore
 #[contract(
     // This precondition is only checked during tests.
-    requires(test): self.is_valid_for_testing(),
+    #[cfg(test)]
+    requires: self.is_valid_for_testing(),
     // This postcondition is only checked when debug assertions are enabled.
-    ensures(debug_assertions): output.is_sane(),
+    #[cfg(debug_assertions)]
+    ensures: output.is_sane(),
 )]
 fn perform_complex_operation(&mut self) -> Result { /* ... */ }
 ```
