@@ -47,7 +47,7 @@ pub struct ConditionClosure {
 
 impl Parse for Contract {
     fn parse(input: ParseStream) -> Result<Self> {
-        let items = Punctuated::<ContractArg, Token![,]>::parse_terminated(input)?;
+        let args = Punctuated::<ContractArg, Token![,]>::parse_terminated(input)?;
 
         let mut last_arg_order: Option<ArgOrder> = None;
         let mut binds_pattern: Option<Pat> = None;
@@ -55,7 +55,7 @@ impl Parse for Contract {
         let mut maintains: Vec<Condition> = vec![];
         let mut ensures_exprs: Vec<Condition> = vec![];
 
-        for arg in items {
+        for arg in args {
             let current_arg_order = arg.get_order();
             if let Some(last_order) = last_arg_order {
                 if current_arg_order < last_order {
