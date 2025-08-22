@@ -155,7 +155,7 @@ impl TryFrom<ContractArgs> for Contract {
 }
 
 /// A container for all parsed arguments from the `#[contract]` attribute.
-pub struct ContractArgs {
+struct ContractArgs {
     pub items: Vec<ContractArg>,
 }
 
@@ -172,7 +172,7 @@ impl Parse for ContractArgs {
 }
 
 /// An intermediate enum to help parse either a condition or a `binds` setting.
-pub enum ContractArg {
+enum ContractArg {
     Requires {
         keyword: kw::requires,
         cfg: Option<Meta>,
