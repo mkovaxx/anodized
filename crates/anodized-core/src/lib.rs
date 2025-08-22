@@ -50,9 +50,9 @@ impl Parse for Contract {
         let args = Punctuated::<ContractArg, Token![,]>::parse_terminated(input)?;
 
         let mut last_arg_order: Option<ArgOrder> = None;
-        let mut binds_pattern: Option<Pat> = None;
         let mut requires: Vec<Condition> = vec![];
         let mut maintains: Vec<Condition> = vec![];
+        let mut binds_pattern: Option<Pat> = None;
         let mut ensures_exprs: Vec<Condition> = vec![];
 
         for arg in args {
