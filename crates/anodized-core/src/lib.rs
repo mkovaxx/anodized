@@ -313,8 +313,14 @@ mod tests {
     #[test]
     fn test_parse_array_of_conditions() {
         let tokens = quote! {
-            requires: [x > 0, y > 0],
-            ensures: [output > x, output > y],
+            requires: [
+                x > 0,
+                y > 0,
+            ],
+            ensures: [
+                output > x,
+                output > y,
+            ],
         };
         let args: ContractArgs = parse2(tokens.into()).unwrap();
         let contract = Contract::try_from(args).unwrap();
