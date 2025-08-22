@@ -1,7 +1,7 @@
 use super::*;
 use crate::test_util::assert_contract_eq;
 use quote::quote;
-use syn::{parse_quote, parse2};
+use syn::{parse_quote, parse2, Result};
 
 fn parse_contract(tokens: proc_macro2::TokenStream) -> Result<Contract> {
     let args: ContractArgs = parse2(tokens)?;
@@ -10,10 +10,10 @@ fn parse_contract(tokens: proc_macro2::TokenStream) -> Result<Contract> {
 
 #[test]
 fn test_parse_simple_contract() -> Result<()> {
-    let contract = parse_contract(quote! {
+    let contract: Contract = parse_quote! {
         requires: x > 0,
         ensures: output > x,
-    })?;
+    };
 
     let expected = Contract {
         requires: vec![parse_quote! { x > 0 }],
@@ -28,12 +28,12 @@ fn test_parse_simple_contract() -> Result<()> {
 
 #[test]
 fn test_parse_all_clauses() -> Result<()> {
-    let contract = parse_contract(quote! {
+    let contract: Contract = parse_quote! {
         requires: x > 0,
         maintains: y.is_valid(),
         binds: z,
         ensures: z > x,
-    })?;
+    };
 
     let expected = Contract {
         requires: vec![parse_quote! { x > 0 }],
@@ -70,7 +70,7 @@ fn test_parse_multiple_binds() -> Result<()> {
 
 #[test]
 fn test_parse_array_of_conditions() -> Result<()> {
-    let contract = parse_contract(quote! {
+    let contract: Contract = parse_quote! {
         requires: [
             x > 0,
             y > 0,
@@ -79,7 +79,7 @@ fn test_parse_array_of_conditions() -> Result<()> {
             output > x,
             |output| output > y,
         ],
-    })?;
+    };
 
     let expected = Contract {
         requires: vec![parse_quote! { x > 0 }, parse_quote! { y > 0 }],
@@ -97,9 +97,9 @@ fn test_parse_array_of_conditions() -> Result<()> {
 
 #[test]
 fn test_parse_ensures_with_closure() -> Result<()> {
-    let contract = parse_contract(quote! {
+    let contract: Contract = parse_quote! {
         ensures: |result| result.is_ok(),
-    })?;
+    };
 
     let expected = Contract {
         requires: vec![],
@@ -114,12 +114,12 @@ fn test_parse_ensures_with_closure() -> Result<()> {
 
 #[test]
 fn test_parse_multiple_clauses_of_same_flavor() -> Result<()> {
-    let contract = parse_contract(quote! {
+    let contract: Contract = parse_quote! {
         requires: x > 0,
         requires: y > 0,
         ensures: output > x,
         ensures: |output| output > y,
-    })?;
+    };
 
     let expected = Contract {
         requires: vec![parse_quote! { x > 0 }, parse_quote! { y > 0 }],
@@ -137,7 +137,7 @@ fn test_parse_multiple_clauses_of_same_flavor() -> Result<()> {
 
 #[test]
 fn test_parse_mixed_single_and_array_clauses() -> Result<()> {
-    let contract = parse_contract(quote! {
+    let contract: Contract = parse_quote! {
         requires: x > 0,
         requires: [
             y > 1,
@@ -148,7 +148,7 @@ fn test_parse_mixed_single_and_array_clauses() -> Result<()> {
             |output| output > z,
         ],
         ensures: output > x,
-    })?;
+    };
 
     let expected = Contract {
         requires: vec![
@@ -171,12 +171,12 @@ fn test_parse_mixed_single_and_array_clauses() -> Result<()> {
 
 #[test]
 fn test_parse_cfg_attributes() -> Result<()> {
-    let contract = parse_contract(quote! {
+    let contract: Contract = parse_quote! {
         #[cfg(test)]
         requires: x > 0,
         #[cfg(not(debug_assertions))]
         ensures: output > x,
-    })?;
+    };
 
     let expected = Contract {
         requires: vec![Condition {
