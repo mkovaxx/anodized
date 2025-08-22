@@ -221,7 +221,7 @@ There have been official discussions and RFCs within the Rust project itself abo
 
 ## License
 
-Anodized is distributed under the terms of both the MIT License and the Apache License (Version 2.0).
+Anodized is distributed under the terms of the MIT License and the Apache License (Version 2.0). Users can choose either license, and contributors must license their changes under both.
 
 See [LICENSE-MIT](LICENSE-MIT) and [LICENSE-APACHE](LICENSE-APACHE) for details.
 
