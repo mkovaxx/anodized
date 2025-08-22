@@ -17,13 +17,13 @@ fn test_parse_simple_contract() -> Result<()> {
 
     let expected = Contract {
         requires: vec![Condition {
-            cfg: None,
             expr: parse_quote! { x > 0 },
+            cfg: None,
         }],
         maintains: vec![],
         ensures: vec![ConditionClosure {
-            cfg: None,
             closure: parse_quote! { |output| output > x },
+            cfg: None,
         }],
     };
 
@@ -43,16 +43,16 @@ fn test_parse_all_clauses() -> Result<()> {
 
     let expected = Contract {
         requires: vec![Condition {
-            cfg: None,
             expr: parse_quote! { x > 0 },
+            cfg: None,
         }],
         maintains: vec![Condition {
-            cfg: None,
             expr: parse_quote! { y.is_valid() },
+            cfg: None,
         }],
         ensures: vec![ConditionClosure {
-            cfg: None,
             closure: parse_quote! { |z| z > x },
+            cfg: None,
         }],
     };
 
@@ -99,23 +99,23 @@ fn test_parse_array_of_conditions() -> Result<()> {
     let expected = Contract {
         requires: vec![
             Condition {
-                cfg: None,
                 expr: parse_quote! { x > 0 },
+                cfg: None,
             },
             Condition {
-                cfg: None,
                 expr: parse_quote! { y > 0 },
+                cfg: None,
             },
         ],
         maintains: vec![],
         ensures: vec![
             ConditionClosure {
-                cfg: None,
                 closure: parse_quote! { |output| output > x },
+                cfg: None,
             },
             ConditionClosure {
-                cfg: None,
                 closure: parse_quote! { |output| output > y },
+                cfg: None,
             },
         ],
     };
@@ -135,8 +135,8 @@ fn test_parse_ensures_with_closure() -> Result<()> {
         requires: vec![],
         maintains: vec![],
         ensures: vec![ConditionClosure {
-            cfg: None,
             closure: parse_quote! { |result| result.is_ok() },
+            cfg: None,
         }],
     };
 
@@ -157,23 +157,23 @@ fn test_parse_multiple_clauses_of_same_flavor() -> Result<()> {
     let expected = Contract {
         requires: vec![
             Condition {
-                cfg: None,
                 expr: parse_quote! { x > 0 },
+                cfg: None,
             },
             Condition {
-                cfg: None,
                 expr: parse_quote! { y > 0 },
+                cfg: None,
             },
         ],
         maintains: vec![],
         ensures: vec![
             ConditionClosure {
-                cfg: None,
                 closure: parse_quote! { |output| output > x },
+                cfg: None,
             },
             ConditionClosure {
-                cfg: None,
                 closure: parse_quote! { |output| output > y },
+                cfg: None,
             },
         ],
     };
@@ -201,31 +201,31 @@ fn test_parse_mixed_single_and_array_clauses() -> Result<()> {
     let expected = Contract {
         requires: vec![
             Condition {
-                cfg: None,
                 expr: parse_quote! { x > 0 },
+                cfg: None,
             },
             Condition {
-                cfg: None,
                 expr: parse_quote! { y > 1 },
+                cfg: None,
             },
             Condition {
-                cfg: None,
                 expr: parse_quote! { z > 2 },
+                cfg: None,
             },
         ],
         maintains: vec![],
         ensures: vec![
             ConditionClosure {
-                cfg: None,
                 closure: parse_quote! { |output| output > y },
+                cfg: None,
             },
             ConditionClosure {
-                cfg: None,
                 closure: parse_quote! { |output| output > z },
+                cfg: None,
             },
             ConditionClosure {
-                cfg: None,
                 closure: parse_quote! { |output| output > x },
+                cfg: None,
             },
         ],
     };
@@ -244,13 +244,13 @@ fn test_parse_cfg_attributes() -> Result<()> {
 
     let expected = Contract {
         requires: vec![Condition {
-            cfg: Some(parse_quote! { test }),
             expr: parse_quote! { x > 0 },
+            cfg: Some(parse_quote! { test }),
         }],
         maintains: vec![],
         ensures: vec![ConditionClosure {
-            cfg: Some(parse_quote! { not(debug_assertions) }),
             closure: parse_quote! { |output| output > x },
+            cfg: Some(parse_quote! { not(debug_assertions) }),
         }],
     };
 

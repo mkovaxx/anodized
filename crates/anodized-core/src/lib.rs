@@ -24,19 +24,19 @@ pub struct Contract {
 /// A Condition represented by a `bool`-valued expression.
 #[derive(Debug)]
 pub struct Condition {
-    /// A setting to control when the condition should be present via a `#[cfg]` annotation.
-    pub cfg: Option<Meta>,
     /// The expression.
     pub expr: Expr,
+    /// A setting to control when the condition should be present via a `#[cfg]` annotation.
+    pub cfg: Option<Meta>,
 }
 
 /// A Condition represented by a `bool`-valued closure.
 #[derive(Debug)]
 pub struct ConditionClosure {
-    /// A setting to control when the condition should be present via a `#[cfg]` annotation.
-    pub cfg: Option<Meta>,
     /// The closure.
     pub closure: ExprClosure,
+    /// A setting to control when the condition should be present via a `#[cfg]` annotation.
+    pub cfg: Option<Meta>,
 }
 
 #[derive(PartialEq, PartialOrd, Clone, Copy, Debug)]
@@ -73,21 +73,21 @@ impl TryFrom<ContractArgs> for Contract {
                 ContractArg::Requires { cfg, expr } => {
                     if let Expr::Array(conditions) = expr {
                         requires.extend(conditions.elems.into_iter().map(|expr| Condition {
-                            cfg: cfg.clone(),
                             expr,
+                            cfg: cfg.clone(),
                         }));
                     } else {
-                        requires.push(Condition { cfg, expr });
+                        requires.push(Condition { expr, cfg });
                     }
                 }
                 ContractArg::Maintains { cfg, expr } => {
                     if let Expr::Array(conditions) = expr {
                         maintains.extend(conditions.elems.into_iter().map(|expr| Condition {
-                            cfg: cfg.clone(),
                             expr,
+                            cfg: cfg.clone(),
                         }));
                     } else {
-                        maintains.push(Condition { cfg, expr });
+                        maintains.push(Condition { expr, cfg });
                     }
                 }
                 ContractArg::Binds { pattern } => {
@@ -102,11 +102,11 @@ impl TryFrom<ContractArgs> for Contract {
                 ContractArg::Ensures { cfg, expr } => {
                     if let Expr::Array(conditions) = expr {
                         ensures_exprs.extend(conditions.elems.into_iter().map(|expr| Condition {
-                            cfg: cfg.clone(),
                             expr,
+                            cfg: cfg.clone(),
                         }));
                     } else {
-                        ensures_exprs.push(Condition { cfg, expr });
+                        ensures_exprs.push(Condition { expr, cfg });
                     }
                 }
             }
@@ -127,8 +127,8 @@ impl TryFrom<ContractArgs> for Contract {
                     parse_quote! { |#default_closure_pattern| #inner_condition }
                 };
                 Ok(ConditionClosure {
-                    cfg: condition.cfg,
                     closure,
+                    cfg: condition.cfg,
                 })
             })
             .collect::<Result<Vec<ConditionClosure>>>()?;
