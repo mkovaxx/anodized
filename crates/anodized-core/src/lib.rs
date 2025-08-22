@@ -147,6 +147,13 @@ impl TryFrom<ContractArgs> for Contract {
     }
 }
 
+impl Parse for Contract {
+    fn parse(input: ParseStream) -> Result<Self> {
+        let args = input.parse::<ContractArgs>()?;
+        Contract::try_from(args)
+    }
+}
+
 /// A container for all parsed arguments from the `#[contract]` attribute.
 pub struct ContractArgs {
     pub items: Vec<ContractArg>,
