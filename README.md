@@ -107,9 +107,9 @@ You can include any number of each flavor. Multiple conditions of the same flavo
 fn push(&mut self, value: T) { /* ... */ }
 ```
 
-### Conditional Checks a'la `#[cfg]`
+### Configure Runtime Checks a'la `#[cfg]`
 
-You can conditionally enable or disable condition checks using `cfg` attributes, just like you would with regular Rust code. This is useful for adding expensive checks that you only want to run in specific build configurations, such as during testing or when debug assertions are enabled.
+You can conditionally enable or disable _runtime_ condition checks using settings similar to the `#[cfg]` attribute, just like you would with regular Rust code. This is useful for e.g. expensive checks that you only want to run in specific build configurations, such as during testing or when debug assertions are enabled.
 
 ```rust,ignore
 #[contract(
