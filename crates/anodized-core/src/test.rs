@@ -16,9 +16,11 @@ fn test_parse_simple_contract() -> Result<()> {
     })?;
 
     let expected = Contract {
-        requires: vec![Condition::from_expr(parse_quote! { x > 0 })],
+        requires: vec![Condition::no_cfg(parse_quote! { x > 0 })],
         maintains: vec![],
-        ensures: vec![ConditionClosure::from_closure(parse_quote! { |output| output > x })],
+        ensures: vec![ConditionClosure::no_cfg(
+            parse_quote! { |output| output > x },
+        )],
     };
 
     assert_contract_eq(&contract, &expected);
@@ -36,9 +38,9 @@ fn test_parse_all_clauses() -> Result<()> {
     })?;
 
     let expected = Contract {
-        requires: vec![Condition::from_expr(parse_quote! { x > 0 })],
-        maintains: vec![Condition::from_expr(parse_quote! { y.is_valid() })],
-        ensures: vec![ConditionClosure::from_closure(parse_quote! { |z| z > x })],
+        requires: vec![Condition::no_cfg(parse_quote! { x > 0 })],
+        maintains: vec![Condition::no_cfg(parse_quote! { y.is_valid() })],
+        ensures: vec![ConditionClosure::no_cfg(parse_quote! { |z| z > x })],
     };
 
     assert_contract_eq(&contract, &expected);
@@ -83,13 +85,13 @@ fn test_parse_array_of_conditions() -> Result<()> {
 
     let expected = Contract {
         requires: vec![
-            Condition::from_expr(parse_quote! { x > 0 }),
-            Condition::from_expr(parse_quote! { y > 0 }),
+            Condition::no_cfg(parse_quote! { x > 0 }),
+            Condition::no_cfg(parse_quote! { y > 0 }),
         ],
         maintains: vec![],
         ensures: vec![
-            ConditionClosure::from_closure(parse_quote! { |output| output > x }),
-            ConditionClosure::from_closure(parse_quote! { |output| output > y }),
+            ConditionClosure::no_cfg(parse_quote! { |output| output > x }),
+            ConditionClosure::no_cfg(parse_quote! { |output| output > y }),
         ],
     };
 
@@ -107,7 +109,7 @@ fn test_parse_ensures_with_closure() -> Result<()> {
     let expected = Contract {
         requires: vec![],
         maintains: vec![],
-        ensures: vec![ConditionClosure::from_closure(
+        ensures: vec![ConditionClosure::no_cfg(
             parse_quote! { |result| result.is_ok() },
         )],
     };
@@ -128,13 +130,13 @@ fn test_parse_multiple_clauses_of_same_flavor() -> Result<()> {
 
     let expected = Contract {
         requires: vec![
-            Condition::from_expr(parse_quote! { x > 0 }),
-            Condition::from_expr(parse_quote! { y > 0 }),
+            Condition::no_cfg(parse_quote! { x > 0 }),
+            Condition::no_cfg(parse_quote! { y > 0 }),
         ],
         maintains: vec![],
         ensures: vec![
-            ConditionClosure::from_closure(parse_quote! { |output| output > x }),
-            ConditionClosure::from_closure(parse_quote! { |output| output > y }),
+            ConditionClosure::no_cfg(parse_quote! { |output| output > x }),
+            ConditionClosure::no_cfg(parse_quote! { |output| output > y }),
         ],
     };
 
@@ -160,15 +162,15 @@ fn test_parse_mixed_single_and_array_clauses() -> Result<()> {
 
     let expected = Contract {
         requires: vec![
-            Condition::from_expr(parse_quote! { x > 0 }),
-            Condition::from_expr(parse_quote! { y > 1 }),
-            Condition::from_expr(parse_quote! { z > 2 }),
+            Condition::no_cfg(parse_quote! { x > 0 }),
+            Condition::no_cfg(parse_quote! { y > 1 }),
+            Condition::no_cfg(parse_quote! { z > 2 }),
         ],
         maintains: vec![],
         ensures: vec![
-            ConditionClosure::from_closure(parse_quote! { |output| output > y }),
-            ConditionClosure::from_closure(parse_quote! { |output| output > z }),
-            ConditionClosure::from_closure(parse_quote! { |output| output > x }),
+            ConditionClosure::no_cfg(parse_quote! { |output| output > y }),
+            ConditionClosure::no_cfg(parse_quote! { |output| output > z }),
+            ConditionClosure::no_cfg(parse_quote! { |output| output > x }),
         ],
     };
 

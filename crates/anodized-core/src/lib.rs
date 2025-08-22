@@ -40,13 +40,13 @@ pub struct ConditionClosure {
 }
 
 impl Condition {
-    fn from_expr(expr: Expr) -> Self {
+    fn no_cfg(expr: Expr) -> Self {
         Self { expr, cfg: None }
     }
 }
 
 impl ConditionClosure {
-    fn from_closure(closure: ExprClosure) -> Self {
+    fn no_cfg(closure: ExprClosure) -> Self {
         Self { closure, cfg: None }
     }
 }
