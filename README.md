@@ -183,6 +183,22 @@ use anodized::contract;
 fn sort_pair(pair: (i32, i32)) -> (i32, i32) { /* ... */ }
 ```
 
+### Conditional Contracts
+
+You can conditionally enable or disable contract checks using `cfg` attributes, just like you would with regular Rust code. This is useful for adding expensive checks that you only want to run in specific build configurations, such as during testing or when debug assertions are enabled.
+
+```rust,ignore
+#[contract(
+    // This precondition is only checked during tests.
+    requires(test): self.is_valid_for_testing(),
+    // This postcondition is only checked when debug assertions are enabled.
+    ensures(debug_assertions): output.is_sane(),
+)]
+fn perform_complex_operation(&mut self) -> Result { /* ... */ }
+```
+
+This gives you fine-grained control over the performance impact of your contracts, allowing you to write thorough, expensive checks without affecting the performance of your release builds.
+
 ### Why Conditions Are Rust Expressions
 
 A core design principle of Anodized is that a condition is written as a **standard Rust expression** that evaluates to `bool`. This is a deliberate choice that provides key benefits over using a custom language.
