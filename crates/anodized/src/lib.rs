@@ -4,7 +4,7 @@ use proc_macro::TokenStream;
 use quote::ToTokens;
 use syn::{ItemFn, parse_macro_input};
 
-use anodized_core::{Contract, ContractArgs, instrument_function_body};
+use anodized_core::{Contract, instrument_function_body};
 
 /// The main procedural macro for defining contracts on functions.
 ///
@@ -13,14 +13,9 @@ use anodized_core::{Contract, ContractArgs, instrument_function_body};
 #[proc_macro_attribute]
 pub fn contract(args: TokenStream, input: TokenStream) -> TokenStream {
     // Parse the contract arguments from the attribute, e.g., `requires: x > 0, ...`
-    let contract_args = parse_macro_input!(args as ContractArgs);
+    let contract = parse_macro_input!(args as Contract);
     // Parse the function to which the attribute is attached.
     let mut func = parse_macro_input!(input as ItemFn);
-
-    let contract = match Contract::try_from(contract_args) {
-        Ok(contract) => contract,
-        Err(e) => return e.to_compile_error().into(),
-    };
 
     // Generate the new, instrumented function body.
     let new_body = match instrument_function_body(&contract, &func) {
