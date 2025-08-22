@@ -21,33 +21,36 @@ pub struct Contract {
     pub ensures: Vec<ExprClosure>,
 }
 
+#[derive(PartialEq, PartialOrd, Clone, Copy, Debug)]
+enum ArgOrder {
+    Requires,
+    Maintains,
+    Binds,
+    Ensures,
+}
+
 impl TryFrom<ContractArgs> for Contract {
     type Error = syn::Error;
 
     fn try_from(args: ContractArgs) -> Result<Self> {
-        let mut binds_pattern: Option<&Pat> = None;
+        let mut last_arg_order: Option<ArgOrder> = None;
+        let mut binds_pattern: Option<Pat> = None;
         let mut requires: Vec<Expr> = vec![];
         let mut maintains: Vec<Expr> = vec![];
-        let mut ensures: Vec<ExprClosure> = vec![];
-
-        for arg in &args.items {
-            if let ContractArg::Binds { pattern } = arg {
-                if binds_pattern.is_some() {
-                    return Err(syn::Error::new(
-                        pattern.span(),
-                        "multiple `binds` parameters are not allowed",
-                    ));
-                }
-                binds_pattern = Some(pattern);
-            }
-        }
-
-        // The default pattern for `ensures` conditions.
-        let default_closure_pattern = binds_pattern
-            .map(|p| p.to_token_stream())
-            .unwrap_or_else(|| quote! { output });
+        let mut ensures_exprs: Vec<Expr> = vec![];
 
         for arg in args.items {
+            let current_arg_order = arg.get_order();
+            if let Some(last_order) = last_arg_order {
+                if current_arg_order < last_order {
+                    return Err(syn::Error::new(
+                        arg.span(),
+                        "parameters are out of order: expected `requires`, `maintains`, `binds`, `ensures`",
+                    ));
+                }
+            }
+            last_arg_order = Some(current_arg_order);
+
             match arg {
                 ContractArg::Requires { expr } => {
                     if let Expr::Array(conditions) = expr {
@@ -63,27 +66,41 @@ impl TryFrom<ContractArgs> for Contract {
                         maintains.push(expr);
                     }
                 }
+                ContractArg::Binds { pattern } => {
+                    if binds_pattern.is_some() {
+                        return Err(syn::Error::new(
+                            pattern.span(),
+                            "multiple `binds` parameters are not allowed",
+                        ));
+                    }
+                    binds_pattern = Some(pattern);
+                }
                 ContractArg::Ensures { expr } => {
-                    let conditions: Vec<Expr> = if let Expr::Array(conditions) = expr {
-                        conditions.elems.into_iter().collect()
+                    if let Expr::Array(conditions) = expr {
+                        ensures_exprs.extend(conditions.elems);
                     } else {
-                        vec![expr]
-                    };
-
-                    for condition in conditions {
-                        if let Expr::Closure(closure) = condition {
-                            ensures.push(closure);
-                        } else {
-                            // Convert a simple expression into a closure.
-                            let closure: ExprClosure =
-                                syn::parse_quote! { |#default_closure_pattern| #condition };
-                            ensures.push(closure);
-                        }
+                        ensures_exprs.push(expr);
                     }
                 }
-                ContractArg::Binds { .. } => {}
             }
         }
+
+        let default_closure_pattern = binds_pattern
+            .as_ref()
+            .map(|p| p.to_token_stream())
+            .unwrap_or_else(|| quote! { output });
+
+        let ensures = ensures_exprs
+            .into_iter()
+            .map(|condition| {
+                if let Expr::Closure(closure) = condition {
+                    Ok(closure)
+                } else {
+                    let closure: ExprClosure = syn::parse_quote! { |#default_closure_pattern| #condition };
+                    Ok(closure)
+                }
+            })
+            .collect::<Result<Vec<ExprClosure>>>()?;
 
         Ok(Contract {
             requires,
@@ -116,6 +133,26 @@ pub enum ContractArg {
     Ensures { expr: Expr },
     Maintains { expr: Expr },
     Binds { pattern: Pat },
+}
+
+impl ContractArg {
+    fn get_order(&self) -> ArgOrder {
+        match self {
+            ContractArg::Requires { .. } => ArgOrder::Requires,
+            ContractArg::Maintains { .. } => ArgOrder::Maintains,
+            ContractArg::Binds { .. } => ArgOrder::Binds,
+            ContractArg::Ensures { .. } => ArgOrder::Ensures,
+        }
+    }
+
+    fn span(&self) -> Span {
+        match self {
+            ContractArg::Requires { expr } => expr.span(),
+            ContractArg::Ensures { expr } => expr.span(),
+            ContractArg::Maintains { expr } => expr.span(),
+            ContractArg::Binds { pattern } => pattern.span(),
+        }
+    }
 }
 
 impl Parse for ContractArg {
