@@ -43,25 +43,21 @@ fn test_parse_all_clauses() {
 }
 
 #[test]
-fn test_parse_out_of_order() -> Result<()> {
+fn test_parse_out_of_order() {
     let result = parse_contract(quote! {
         ensures: output > x,
         requires: x > 0,
     });
     assert!(result.is_err());
-
-    Ok(())
 }
 
 #[test]
-fn test_parse_multiple_binds() -> Result<()> {
+fn test_parse_multiple_binds() {
     let result = parse_contract(quote! {
         binds: y,
         binds: z,
     });
     assert!(result.is_err());
-
-    Ok(())
 }
 
 #[test]
@@ -182,7 +178,7 @@ fn test_parse_cfg_attributes() {
 }
 
 #[test]
-fn test_parse_non_cfg_attribute() -> Result<()> {
+fn test_parse_non_cfg_attribute() {
     let error = parse_contract(quote! {
         #[allow(dead_code)]
         requires: x > 0,
@@ -193,12 +189,10 @@ fn test_parse_non_cfg_attribute() -> Result<()> {
         error.to_string(),
         "unsupported attribute; only `cfg` is allowed"
     );
-
-    Ok(())
 }
 
 #[test]
-fn test_parse_multiple_cfg_attributes() -> Result<()> {
+fn test_parse_multiple_cfg_attributes() {
     let error = parse_contract(quote! {
         #[cfg(test)]
         #[cfg(debug_assertions)]
@@ -210,12 +204,10 @@ fn test_parse_multiple_cfg_attributes() -> Result<()> {
         error.to_string(),
         "multiple `cfg` attributes are not supported"
     );
-
-    Ok(())
 }
 
 #[test]
-fn test_parse_cfg_on_binds() -> Result<()> {
+fn test_parse_cfg_on_binds() {
     let error = parse_contract(quote! {
         #[cfg(test)]
         binds: y,
@@ -226,6 +218,4 @@ fn test_parse_cfg_on_binds() -> Result<()> {
         error.to_string(),
         "`cfg` attribute is not supported on `binds`"
     );
-
-    Ok(())
 }
