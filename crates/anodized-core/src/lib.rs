@@ -3,12 +3,11 @@
 use proc_macro2::Span;
 use quote::{ToTokens, quote};
 use syn::{
-    parenthesized,
+    Block, Expr, ExprClosure, Ident, ItemFn, Meta, Pat, Token, parenthesized,
     parse::{Parse, ParseStream, Result},
     parse_quote,
     punctuated::Punctuated,
     spanned::Spanned,
-    Block, Expr, ExprClosure, Ident, ItemFn, Meta, Pat, Token,
 };
 
 /// A contract specifies the intended behavior of a function or method.
@@ -22,17 +21,21 @@ pub struct Contract {
     pub ensures: Vec<ConditionClosure>,
 }
 
-/// An expression guarded by a `cfg` attribute.
+/// A Condition represented by a `bool`-valued expression.
 #[derive(Debug)]
 pub struct Condition {
+    /// A setting to control when the condition should be present via a `#[cfg]` annotation.
     pub cfg: Option<Meta>,
+    /// The expression.
     pub expr: Expr,
 }
 
-/// A closure expression guarded by a `cfg` attribute.
+/// A Condition represented by a `bool`-valued closure.
 #[derive(Debug)]
 pub struct ConditionClosure {
+    /// A setting to control when the condition should be present via a `#[cfg]` annotation.
     pub cfg: Option<Meta>,
+    /// The closure.
     pub closure: ExprClosure,
 }
 
@@ -69,24 +72,20 @@ impl TryFrom<ContractArgs> for Contract {
             match arg {
                 ContractArg::Requires { cfg, expr } => {
                     if let Expr::Array(conditions) = expr {
-                        requires.extend(
-                            conditions
-                                .elems
-                                .into_iter()
-                                .map(|expr| Condition { cfg: cfg.clone(), expr }),
-                        );
+                        requires.extend(conditions.elems.into_iter().map(|expr| Condition {
+                            cfg: cfg.clone(),
+                            expr,
+                        }));
                     } else {
                         requires.push(Condition { cfg, expr });
                     }
                 }
                 ContractArg::Maintains { cfg, expr } => {
                     if let Expr::Array(conditions) = expr {
-                        maintains.extend(
-                            conditions
-                                .elems
-                                .into_iter()
-                                .map(|expr| Condition { cfg: cfg.clone(), expr }),
-                        );
+                        maintains.extend(conditions.elems.into_iter().map(|expr| Condition {
+                            cfg: cfg.clone(),
+                            expr,
+                        }));
                     } else {
                         maintains.push(Condition { cfg, expr });
                     }
@@ -102,12 +101,10 @@ impl TryFrom<ContractArgs> for Contract {
                 }
                 ContractArg::Ensures { cfg, expr } => {
                     if let Expr::Array(conditions) = expr {
-                        ensures_exprs.extend(
-                            conditions
-                                .elems
-                                .into_iter()
-                                .map(|expr| Condition { cfg: cfg.clone(), expr }),
-                        );
+                        ensures_exprs.extend(conditions.elems.into_iter().map(|expr| Condition {
+                            cfg: cfg.clone(),
+                            expr,
+                        }));
                     } else {
                         ensures_exprs.push(Condition { cfg, expr });
                     }
@@ -297,7 +294,10 @@ pub fn instrument_function_body(contract: &Contract, func: &ItemFn) -> Result<Bl
         .chain(contract.ensures.iter().map(|condition_closure| {
             let closure = &condition_closure.closure;
             let msg = format!("Postcondition failed: {}", closure.to_token_stream());
-            let cfg = condition_closure.cfg.as_ref().map(|c| quote! { #[cfg(#c)] });
+            let cfg = condition_closure
+                .cfg
+                .as_ref()
+                .map(|c| quote! { #[cfg(#c)] });
             quote! { #cfg assert!((#closure)(#binding_ident), #msg); }
         }));
 
