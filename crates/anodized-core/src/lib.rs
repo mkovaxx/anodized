@@ -21,13 +21,6 @@ pub struct Contract {
     pub ensures: Vec<ConditionClosure>,
 }
 
-impl Parse for Contract {
-    fn parse(input: ParseStream) -> Result<Self> {
-        let args = input.parse::<ContractArgs>()?;
-        Contract::try_from(args)
-    }
-}
-
 /// A condition represented by a `bool`-valued expression.
 #[derive(Debug)]
 pub struct Condition {
@@ -52,25 +45,17 @@ pub struct ConditionClosure {
     pub cfg: Option<Meta>,
 }
 
-#[derive(PartialEq, PartialOrd, Clone, Copy, Debug)]
-enum ArgOrder {
-    Requires,
-    Maintains,
-    Binds,
-    Ensures,
-}
+impl Parse for Contract {
+    fn parse(input: ParseStream) -> Result<Self> {
+        let items = Punctuated::<ContractArg, Token![,]>::parse_terminated(input)?;
 
-impl TryFrom<ContractArgs> for Contract {
-    type Error = syn::Error;
-
-    fn try_from(args: ContractArgs) -> Result<Self> {
         let mut last_arg_order: Option<ArgOrder> = None;
         let mut binds_pattern: Option<Pat> = None;
         let mut requires: Vec<Condition> = vec![];
         let mut maintains: Vec<Condition> = vec![];
         let mut ensures_exprs: Vec<Condition> = vec![];
 
-        for arg in args.items {
+        for arg in items {
             let current_arg_order = arg.get_order();
             if let Some(last_order) = last_arg_order {
                 if current_arg_order < last_order {
@@ -136,6 +121,7 @@ impl TryFrom<ContractArgs> for Contract {
                 let closure: ExprClosure = if let Expr::Closure(closure) = condition.expr {
                     closure
                 } else {
+                    // Convert "naked" postcondition to closure
                     let inner_condition = condition.expr;
                     parse_quote! { |#default_closure_pattern| #inner_condition }
                 };
@@ -154,21 +140,12 @@ impl TryFrom<ContractArgs> for Contract {
     }
 }
 
-/// A container for all parsed arguments from the `#[contract]` attribute.
-struct ContractArgs {
-    pub items: Vec<ContractArg>,
-}
-
-impl Parse for ContractArgs {
-    /// Custom parser for the contents of `#[contract(...)]`.
-    fn parse(input: ParseStream) -> Result<Self> {
-        // The arguments are a comma-separated list of conditions or a `binds` setting.
-        let items = Punctuated::<ContractArg, Token![,]>::parse_terminated(input)?;
-
-        Ok(ContractArgs {
-            items: items.into_iter().collect(),
-        })
-    }
+#[derive(PartialEq, PartialOrd, Clone, Copy, Debug)]
+enum ArgOrder {
+    Requires,
+    Maintains,
+    Binds,
+    Ensures,
 }
 
 /// An intermediate enum to help parse either a condition or a `binds` setting.
