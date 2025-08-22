@@ -213,7 +213,7 @@ impl Parse for ContractArg {
                 pattern: Pat::parse_single(input)?,
             })
         } else if lookahead.peek(kw::requires) {
-            // Parse `requires: <expr>`
+            // Parse `requires: <conditions>`
             let keyword = input.parse::<kw::requires>()?;
             let cfg = if input.peek(syn::token::Paren) {
                 let content;
@@ -229,7 +229,7 @@ impl Parse for ContractArg {
                 expr: input.parse()?,
             })
         } else if lookahead.peek(kw::maintains) {
-            // Parse `maintains: <expr>`
+            // Parse `maintains: <conditions>`
             let keyword = input.parse::<kw::maintains>()?;
             let cfg = if input.peek(syn::token::Paren) {
                 let content;
@@ -245,7 +245,7 @@ impl Parse for ContractArg {
                 expr: input.parse()?,
             })
         } else if lookahead.peek(kw::ensures) {
-            // Parse `ensures: <expr>`
+            // Parse `ensures: <conditions>`
             let keyword = input.parse::<kw::ensures>()?;
             let cfg = if input.peek(syn::token::Paren) {
                 let content;
