@@ -116,6 +116,7 @@ You can use the standard `#[cfg]` attribute to conditionally enable or disable t
     // Runtime checks only during `cargo test`.
     #[cfg(test)]
     requires: self.is_valid_for_testing(),
+
     // Runtime checks only when debug assertions are enabled.
     #[cfg(debug_assertions)]
     ensures: output.is_sane(),
