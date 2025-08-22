@@ -68,7 +68,10 @@ fn test_parse_array_of_conditions() {
     };
 
     let expected = Contract {
-        requires: vec![parse_quote! { x >= 0 }, parse_quote! { y.len() < 10 }],
+        requires: vec![
+            parse_quote! { x >= 0 },
+            parse_quote! { y.len() < 10 },
+        ],
         maintains: vec![],
         ensures: vec![
             parse_quote! { |output| output != x },
@@ -205,7 +208,7 @@ fn test_parse_cfg_on_binds() {
 }
 
 #[test]
-fn test_parse_basic_enum() {
+fn test_parse_macro_in_condition() {
     let contract: Contract = parse_quote! {
         requires: matches!(self.state, State::Idle),
         maintains: matches!(self.state, State::Idle | State::Running | State::Finished),
@@ -224,28 +227,13 @@ fn test_parse_basic_enum() {
 }
 
 #[test]
-fn test_parse_basic_function() {
-    let contract: Contract = parse_quote! {
-        requires: divisor != 0,
-        ensures: output < dividend,
-    };
-
-    let expected = Contract {
-        requires: vec![parse_quote! { divisor != 0 }],
-        maintains: vec![],
-        ensures: vec![parse_quote! { |output| output < dividend }],
-    };
-
-    assert_contract_eq(&contract, &expected);
-}
-
-#[test]
-fn test_parse_default_output_pattern() {
+fn test_parse_binds_pattern() {
     let contract: Contract = parse_quote! {
         binds: (a, b),
         ensures: [
             a <= b,
             (a, b) == pair || (b, a) == pair,
+            |(a, b)| (a, b) == pair || (b, a) == pair,
         ],
     };
 
@@ -255,22 +243,8 @@ fn test_parse_default_output_pattern() {
         ensures: vec![
             parse_quote! { |(a, b)| a <= b },
             parse_quote! { |(a, b)| (a, b) == pair || (b, a) == pair },
+            parse_quote! { |(a, b)| (a, b) == pair || (b, a) == pair },
         ],
-    };
-
-    assert_contract_eq(&contract, &expected);
-}
-
-#[test]
-fn test_parse_method_with_invariant() {
-    let contract: Contract = parse_quote! {
-        maintains: self.count <= self.capacity,
-    };
-
-    let expected = Contract {
-        requires: vec![],
-        maintains: vec![parse_quote! { self.count <= self.capacity }],
-        ensures: vec![],
     };
 
     assert_contract_eq(&contract, &expected);
@@ -282,8 +256,8 @@ fn test_parse_multiple_conditions() {
         requires: [
             self.initialized,
             !self.locked,
-            index < self.items.len(),
         ],
+        requires: index < self.items.len(),
         maintains: self.items.len() <= self.items.capacity(),
     };
 
@@ -295,27 +269,6 @@ fn test_parse_multiple_conditions() {
         ],
         maintains: vec![parse_quote! { self.items.len() <= self.items.capacity() }],
         ensures: vec![],
-    };
-
-    assert_contract_eq(&contract, &expected);
-}
-
-#[test]
-fn test_parse_pattern_in_closure() {
-    let contract: Contract = parse_quote! {
-        ensures: [
-            |(a, b)| a <= b,
-            |(a, b)| (a, b) == pair || (b, a) == pair,
-        ],
-    };
-
-    let expected = Contract {
-        requires: vec![],
-        maintains: vec![],
-        ensures: vec![
-            parse_quote! { |(a, b)| a <= b },
-            parse_quote! { |(a, b)| (a, b) == pair || (b, a) == pair },
-        ],
     };
 
     assert_contract_eq(&contract, &expected);
