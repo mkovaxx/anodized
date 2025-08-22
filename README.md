@@ -107,6 +107,22 @@ You can include any number of each flavor. Multiple conditions of the same flavo
 fn push(&mut self, value: T) { /* ... */ }
 ```
 
+### Conditional Checks a'la `#[cfg]`
+
+You can conditionally enable or disable condition checks using `cfg` attributes, just like you would with regular Rust code. This is useful for adding expensive checks that you only want to run in specific build configurations, such as during testing or when debug assertions are enabled.
+
+```rust,ignore
+#[contract(
+    // This precondition is only checked during tests.
+    requires(test): self.is_valid_for_testing(),
+    // This postcondition is only checked when debug assertions are enabled.
+    ensures(debug_assertions): output.is_sane(),
+)]
+fn perform_complex_operation(&mut self) -> Result { /* ... */ }
+```
+
+This gives you fine-grained control over the performance impact of your contracts, allowing you to write thorough, expensive checks without affecting the performance of your release builds.
+
 ### Binding the Return Value
 
 In **postconditions** (`ensures`), you can refer to the function's return value by the default name `output`.
@@ -182,22 +198,6 @@ use anodized::contract;
 )]
 fn sort_pair(pair: (i32, i32)) -> (i32, i32) { /* ... */ }
 ```
-
-### Conditional Contracts
-
-You can conditionally enable or disable contract checks using `cfg` attributes, just like you would with regular Rust code. This is useful for adding expensive checks that you only want to run in specific build configurations, such as during testing or when debug assertions are enabled.
-
-```rust,ignore
-#[contract(
-    // This precondition is only checked during tests.
-    requires(test): self.is_valid_for_testing(),
-    // This postcondition is only checked when debug assertions are enabled.
-    ensures(debug_assertions): output.is_sane(),
-)]
-fn perform_complex_operation(&mut self) -> Result { /* ... */ }
-```
-
-This gives you fine-grained control over the performance impact of your contracts, allowing you to write thorough, expensive checks without affecting the performance of your release builds.
 
 ### Why Conditions Are Rust Expressions
 
