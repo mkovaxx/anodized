@@ -39,17 +39,7 @@ pub struct ConditionClosure {
     pub cfg: Option<Meta>,
 }
 
-impl Condition {
-    fn no_cfg(expr: Expr) -> Self {
-        Self { expr, cfg: None }
-    }
-}
 
-impl ConditionClosure {
-    fn no_cfg(closure: ExprClosure) -> Self {
-        Self { closure, cfg: None }
-    }
-}
 
 #[derive(PartialEq, PartialOrd, Clone, Copy, Debug)]
 enum ArgOrder {

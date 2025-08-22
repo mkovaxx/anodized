@@ -1,5 +1,24 @@
 use crate::{Condition, ConditionClosure, Contract};
 use quote::ToTokens;
+use syn::parse::{Parse, ParseStream, Result};
+
+impl Parse for Condition {
+    fn parse(input: ParseStream) -> Result<Self> {
+        Ok(Condition {
+            expr: input.parse()?,
+            cfg: None,
+        })
+    }
+}
+
+impl Parse for ConditionClosure {
+    fn parse(input: ParseStream) -> Result<Self> {
+        Ok(ConditionClosure {
+            closure: input.parse()?,
+            cfg: None,
+        })
+    }
+}
 
 impl ToTokens for Condition {
     fn to_tokens(&self, tokens: &mut proc_macro2::TokenStream) {
