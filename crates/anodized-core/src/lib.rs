@@ -254,7 +254,7 @@ pub fn instrument_function_body(contract: &Contract, func: &ItemFn) -> Result<Bl
 }
 
 #[cfg(test)]
-mod test_util;
+mod test;
 
 #[cfg(test)]
-mod test;
+mod test_util;
