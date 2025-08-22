@@ -1,75 +1,107 @@
 use super::*;
 use quote::quote;
-use syn::parse2;
+use syn::{parse2, parse_quote};
+
+fn parse_contract(tokens: proc_macro2::TokenStream) -> Result<Contract> {
+    let args: ContractArgs = parse2(tokens)?;
+    Contract::try_from(args)
+}
 
 #[test]
 fn test_parse_simple_contract() {
-    let tokens = quote! {
+    let contract = parse_contract(quote! {
         requires: x > 0,
         ensures: output > x,
-    };
-    let args: ContractArgs = parse2(tokens.into()).unwrap();
-    let contract = Contract::try_from(args).unwrap();
+    })
+    .unwrap();
 
-    assert_eq!(contract.requires.len(), 1);
-    assert_eq!(contract.maintains.len(), 0);
-    assert_eq!(contract.ensures.len(), 1);
+    let expected = Contract {
+        requires: vec![parse_quote! { x > 0 }],
+        maintains: vec![],
+        ensures: vec![parse_quote! { |output| output > x }],
+    };
+
+    assert_eq!(contract, expected);
 }
 
 #[test]
 fn test_parse_all_clauses() {
-    let tokens = quote! {
+    let contract = parse_contract(quote! {
         requires: x > 0,
         maintains: y.is_valid(),
         binds: z,
         ensures: z > x,
-    };
-    let args: ContractArgs = parse2(tokens.into()).unwrap();
-    let contract = Contract::try_from(args).unwrap();
+    })
+    .unwrap();
 
-    assert_eq!(contract.requires.len(), 1);
-    assert_eq!(contract.maintains.len(), 1);
-    assert_eq!(contract.ensures.len(), 1);
+    let expected = Contract {
+        requires: vec![parse_quote! { x > 0 }],
+        maintains: vec![parse_quote! { y.is_valid() }],
+        ensures: vec![parse_quote! { |z| z > x }],
+    };
+
+    assert_eq!(contract, expected);
 }
 
 #[test]
 fn test_parse_out_of_order() {
-    let tokens = quote! {
+    let result = parse_contract(quote! {
         ensures: output > x,
         requires: x > 0,
-    };
-    let args: ContractArgs = parse2(tokens.into()).unwrap();
-    let result = Contract::try_from(args);
+    });
     assert!(result.is_err());
 }
 
 #[test]
 fn test_parse_multiple_binds() {
-    let tokens = quote! {
+    let result = parse_contract(quote! {
         binds: y,
         binds: z,
-    };
-    let args: ContractArgs = parse2(tokens.into()).unwrap();
-    let result = Contract::try_from(args);
+    });
     assert!(result.is_err());
 }
 
 #[test]
 fn test_parse_array_of_conditions() {
-    let tokens = quote! {
+    let contract = parse_contract(quote! {
         requires: [
             x > 0,
             y > 0,
         ],
         ensures: [
             output > x,
-            output > y,
+            |output| output > y,
+        ],
+    })
+    .unwrap();
+
+    let expected = Contract {
+        requires: vec![
+            parse_quote! { x > 0 },
+            parse_quote! { y > 0 },
+        ],
+        maintains: vec![],
+        ensures: vec![
+            parse_quote! { |output| output > x },
+            parse_quote! { |output| output > y },
         ],
     };
-    let args: ContractArgs = parse2(tokens.into()).unwrap();
-    let contract = Contract::try_from(args).unwrap();
 
-    assert_eq!(contract.requires.len(), 2);
-    assert_eq!(contract.maintains.len(), 0);
-    assert_eq!(contract.ensures.len(), 2);
+    assert_eq!(contract, expected);
+}
+
+#[test]
+fn test_parse_ensures_with_closure() {
+    let contract = parse_contract(quote! {
+        ensures: |result| result.is_ok(),
+    })
+    .unwrap();
+
+    let expected = Contract {
+        requires: vec![],
+        maintains: vec![],
+        ensures: vec![parse_quote! { |result| result.is_ok() }],
+    };
+
+    assert_eq!(contract, expected);
 }
