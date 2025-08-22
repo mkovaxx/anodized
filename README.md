@@ -177,7 +177,7 @@ use anodized::contract;
     ensures: [
         a <= b,
         // They can also reference the arguments.
-        ensures: (a, b) == pair || (b, a) == pair,
+        (a, b) == pair || (b, a) == pair,
     ],
 )]
 fn sort_pair(pair: (i32, i32)) -> (i32, i32) { /* ... */ }
