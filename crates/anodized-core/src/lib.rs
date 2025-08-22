@@ -3,22 +3,37 @@
 use proc_macro2::Span;
 use quote::{ToTokens, quote};
 use syn::{
-    Block, Expr, ExprClosure, Ident, ItemFn, Pat, Token,
+    parenthesized,
     parse::{Parse, ParseStream, Result},
     parse_quote,
     punctuated::Punctuated,
     spanned::Spanned,
+    Block, Expr, ExprClosure, Ident, ItemFn, Meta, Pat, Token,
 };
 
 /// A contract specifies the intended behavior of a function or method.
 #[derive(Debug)]
 pub struct Contract {
     /// Preconditions: conditions that must hold when the function is called.
-    pub requires: Vec<Expr>,
+    pub requires: Vec<CfgExpr>,
     /// Invariants: conditions that must hold both when the function is called and when it returns.
-    pub maintains: Vec<Expr>,
+    pub maintains: Vec<CfgExpr>,
     /// Postconditions: conditions that must hold when the function returns.
-    pub ensures: Vec<ExprClosure>,
+    pub ensures: Vec<CfgExprClosure>,
+}
+
+/// An expression guarded by a `cfg` attribute.
+#[derive(Debug)]
+pub struct CfgExpr {
+    pub cfg: Option<Meta>,
+    pub expr: Expr,
+}
+
+/// A closure expression guarded by a `cfg` attribute.
+#[derive(Debug)]
+pub struct CfgExprClosure {
+    pub cfg: Option<Meta>,
+    pub closure: ExprClosure,
 }
 
 #[derive(PartialEq, PartialOrd, Clone, Copy, Debug)]
@@ -35,9 +50,9 @@ impl TryFrom<ContractArgs> for Contract {
     fn try_from(args: ContractArgs) -> Result<Self> {
         let mut last_arg_order: Option<ArgOrder> = None;
         let mut binds_pattern: Option<Pat> = None;
-        let mut requires: Vec<Expr> = vec![];
-        let mut maintains: Vec<Expr> = vec![];
-        let mut ensures_exprs: Vec<Expr> = vec![];
+        let mut requires: Vec<CfgExpr> = vec![];
+        let mut maintains: Vec<CfgExpr> = vec![];
+        let mut ensures_exprs: Vec<CfgExpr> = vec![];
 
         for arg in args.items {
             let current_arg_order = arg.get_order();
@@ -52,18 +67,28 @@ impl TryFrom<ContractArgs> for Contract {
             last_arg_order = Some(current_arg_order);
 
             match arg {
-                ContractArg::Requires { expr } => {
+                ContractArg::Requires { cfg, expr } => {
                     if let Expr::Array(conditions) = expr {
-                        requires.extend(conditions.elems);
+                        requires.extend(
+                            conditions
+                                .elems
+                                .into_iter()
+                                .map(|expr| CfgExpr { cfg: cfg.clone(), expr }),
+                        );
                     } else {
-                        requires.push(expr);
+                        requires.push(CfgExpr { cfg, expr });
                     }
                 }
-                ContractArg::Maintains { expr } => {
+                ContractArg::Maintains { cfg, expr } => {
                     if let Expr::Array(conditions) = expr {
-                        maintains.extend(conditions.elems);
+                        maintains.extend(
+                            conditions
+                                .elems
+                                .into_iter()
+                                .map(|expr| CfgExpr { cfg: cfg.clone(), expr }),
+                        );
                     } else {
-                        maintains.push(expr);
+                        maintains.push(CfgExpr { cfg, expr });
                     }
                 }
                 ContractArg::Binds { pattern } => {
@@ -75,11 +100,16 @@ impl TryFrom<ContractArgs> for Contract {
                     }
                     binds_pattern = Some(pattern);
                 }
-                ContractArg::Ensures { expr } => {
+                ContractArg::Ensures { cfg, expr } => {
                     if let Expr::Array(conditions) = expr {
-                        ensures_exprs.extend(conditions.elems);
+                        ensures_exprs.extend(
+                            conditions
+                                .elems
+                                .into_iter()
+                                .map(|expr| CfgExpr { cfg: cfg.clone(), expr }),
+                        );
                     } else {
-                        ensures_exprs.push(expr);
+                        ensures_exprs.push(CfgExpr { cfg, expr });
                     }
                 }
             }
@@ -92,16 +122,19 @@ impl TryFrom<ContractArgs> for Contract {
 
         let ensures = ensures_exprs
             .into_iter()
-            .map(|condition| {
-                if let Expr::Closure(closure) = condition {
-                    Ok(closure)
+            .map(|cfg_expr| {
+                let closure: ExprClosure = if let Expr::Closure(closure) = cfg_expr.expr {
+                    closure
                 } else {
-                    let closure: ExprClosure =
-                        parse_quote! { |#default_closure_pattern| #condition };
-                    Ok(closure)
-                }
+                    let condition = cfg_expr.expr;
+                    parse_quote! { |#default_closure_pattern| #condition }
+                };
+                Ok(CfgExprClosure {
+                    cfg: cfg_expr.cfg,
+                    closure,
+                })
             })
-            .collect::<Result<Vec<ExprClosure>>>()?;
+            .collect::<Result<Vec<CfgExprClosure>>>()?;
 
         Ok(Contract {
             requires,
@@ -130,9 +163,9 @@ impl Parse for ContractArgs {
 
 /// An intermediate enum to help parse either a condition or a `binds` setting.
 pub enum ContractArg {
-    Requires { expr: Expr },
-    Ensures { expr: Expr },
-    Maintains { expr: Expr },
+    Requires { cfg: Option<Meta>, expr: Expr },
+    Ensures { cfg: Option<Meta>, expr: Expr },
+    Maintains { cfg: Option<Meta>, expr: Expr },
     Binds { pattern: Pat },
 }
 
@@ -148,9 +181,9 @@ impl ContractArg {
 
     fn span(&self) -> Span {
         match self {
-            ContractArg::Requires { expr } => expr.span(),
-            ContractArg::Ensures { expr } => expr.span(),
-            ContractArg::Maintains { expr } => expr.span(),
+            ContractArg::Requires { expr, .. } => expr.span(),
+            ContractArg::Ensures { expr, .. } => expr.span(),
+            ContractArg::Maintains { expr, .. } => expr.span(),
             ContractArg::Binds { pattern } => pattern.span(),
         }
     }
@@ -169,22 +202,46 @@ impl Parse for ContractArg {
         } else if lookahead.peek(kw::requires) {
             // Parse `requires: <expr>`
             input.parse::<kw::requires>()?;
+            let cfg = if input.peek(syn::token::Paren) {
+                let content;
+                parenthesized!(content in input);
+                Some(content.parse()?)
+            } else {
+                None
+            };
             input.parse::<Token![:]>()?;
             Ok(ContractArg::Requires {
+                cfg,
                 expr: input.parse()?,
             })
         } else if lookahead.peek(kw::maintains) {
             // Parse `maintains: <expr>`
             input.parse::<kw::maintains>()?;
+            let cfg = if input.peek(syn::token::Paren) {
+                let content;
+                parenthesized!(content in input);
+                Some(content.parse()?)
+            } else {
+                None
+            };
             input.parse::<Token![:]>()?;
             Ok(ContractArg::Maintains {
+                cfg,
                 expr: input.parse()?,
             })
         } else if lookahead.peek(kw::ensures) {
             // Parse `ensures: <expr>`
             input.parse::<kw::ensures>()?;
+            let cfg = if input.peek(syn::token::Paren) {
+                let content;
+                parenthesized!(content in input);
+                Some(content.parse()?)
+            } else {
+                None
+            };
             input.parse::<Token![:]>()?;
             Ok(ContractArg::Ensures {
+                cfg,
                 expr: input.parse()?,
             })
         } else {
@@ -214,26 +271,34 @@ pub fn instrument_function_body(contract: &Contract, func: &ItemFn) -> Result<Bl
     let preconditions = contract
         .requires
         .iter()
-        .map(|predicate| {
+        .map(|cfg_expr| {
+            let predicate = &cfg_expr.expr;
             let msg = format!("Precondition failed: {}", predicate.to_token_stream());
-            quote! { assert!(#predicate, #msg); }
+            let cfg = cfg_expr.cfg.as_ref().map(|c| quote! { #[cfg(#c)] });
+            quote! { #cfg assert!(#predicate, #msg); }
         })
-        .chain(contract.maintains.iter().map(|predicate| {
+        .chain(contract.maintains.iter().map(|cfg_expr| {
+            let predicate = &cfg_expr.expr;
             let msg = format!("Pre-invariant failed: {}", predicate.to_token_stream());
-            quote! { assert!(#predicate, #msg); }
+            let cfg = cfg_expr.cfg.as_ref().map(|c| quote! { #[cfg(#c)] });
+            quote! { #cfg assert!(#predicate, #msg); }
         }));
 
     // --- Generate Postcondition Checks ---
     let postconditions = contract
         .maintains
         .iter()
-        .map(|predicate| {
+        .map(|cfg_expr| {
+            let predicate = &cfg_expr.expr;
             let msg = format!("Post-invariant failed: {}", predicate.to_token_stream());
-            quote! { assert!(#predicate, #msg); }
+            let cfg = cfg_expr.cfg.as_ref().map(|c| quote! { #[cfg(#c)] });
+            quote! { #cfg assert!(#predicate, #msg); }
         })
-        .chain(contract.ensures.iter().map(|closure| {
+        .chain(contract.ensures.iter().map(|cfg_expr_closure| {
+            let closure = &cfg_expr_closure.closure;
             let msg = format!("Postcondition failed: {}", closure.to_token_stream());
-            quote! { assert!((#closure)(#binding_ident), #msg); }
+            let cfg = cfg_expr_closure.cfg.as_ref().map(|c| quote! { #[cfg(#c)] });
+            quote! { #cfg assert!((#closure)(#binding_ident), #msg); }
         }));
 
     // --- Construct the New Body ---

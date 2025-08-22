@@ -1,5 +1,17 @@
-use crate::Contract;
+use crate::{CfgExpr, CfgExprClosure, Contract};
 use quote::ToTokens;
+
+impl ToTokens for CfgExpr {
+    fn to_tokens(&self, tokens: &mut proc_macro2::TokenStream) {
+        self.expr.to_tokens(tokens);
+    }
+}
+
+impl ToTokens for CfgExprClosure {
+    fn to_tokens(&self, tokens: &mut proc_macro2::TokenStream) {
+        self.closure.to_tokens(tokens);
+    }
+}
 
 pub fn assert_contract_eq(left: &Contract, right: &Contract) {
     assert_token_streams_eq(&left.requires, &right.requires, "requires");
