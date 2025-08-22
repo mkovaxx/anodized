@@ -26,7 +26,7 @@ pub struct Contract {
 pub struct Condition {
     /// The expression.
     pub expr: Expr,
-    /// A setting to control when the condition should be present via a `#[cfg]` annotation.
+    /// A setting to control when the condition should be present via a `cfg!()` guard.
     pub cfg: Option<Meta>,
 }
 
@@ -35,7 +35,7 @@ pub struct Condition {
 pub struct ConditionClosure {
     /// The closure.
     pub closure: ExprClosure,
-    /// A setting to control when the condition should be present via a `#[cfg]` annotation.
+    /// A setting to control when the condition should be present via a `cfg!()` guard.
     pub cfg: Option<Meta>,
 }
 
@@ -290,14 +290,22 @@ pub fn instrument_function_body(contract: &Contract, func: &ItemFn) -> Result<Bl
         .map(|condition| {
             let predicate = &condition.expr;
             let msg = format!("Precondition failed: {}", predicate.to_token_stream());
-            let cfg = condition.cfg.as_ref().map(|c| quote! { #[cfg(#c)] });
-            quote! { #cfg assert!(#predicate, #msg); }
+            let assert = quote! { assert!(#predicate, #msg); };
+            if let Some(cfg) = &condition.cfg {
+                quote! { if cfg!(#cfg) { #assert } }
+            } else {
+                assert
+            }
         })
         .chain(contract.maintains.iter().map(|condition| {
             let predicate = &condition.expr;
             let msg = format!("Pre-invariant failed: {}", predicate.to_token_stream());
-            let cfg = condition.cfg.as_ref().map(|c| quote! { #[cfg(#c)] });
-            quote! { #cfg assert!(#predicate, #msg); }
+            let assert = quote! { assert!(#predicate, #msg); };
+            if let Some(cfg) = &condition.cfg {
+                quote! { if cfg!(#cfg) { #assert } }
+            } else {
+                assert
+            }
         }));
 
     // --- Generate Postcondition Checks ---
@@ -307,17 +315,22 @@ pub fn instrument_function_body(contract: &Contract, func: &ItemFn) -> Result<Bl
         .map(|condition| {
             let predicate = &condition.expr;
             let msg = format!("Post-invariant failed: {}", predicate.to_token_stream());
-            let cfg = condition.cfg.as_ref().map(|c| quote! { #[cfg(#c)] });
-            quote! { #cfg assert!(#predicate, #msg); }
+            let assert = quote! { assert!(#predicate, #msg); };
+            if let Some(cfg) = &condition.cfg {
+                quote! { if cfg!(#cfg) { #assert } }
+            } else {
+                assert
+            }
         })
         .chain(contract.ensures.iter().map(|condition_closure| {
             let closure = &condition_closure.closure;
             let msg = format!("Postcondition failed: {}", closure.to_token_stream());
-            let cfg = condition_closure
-                .cfg
-                .as_ref()
-                .map(|c| quote! { #[cfg(#c)] });
-            quote! { #cfg assert!((#closure)(#binding_ident), #msg); }
+            let assert = quote! { assert!((#closure)(#binding_ident), #msg); };
+            if let Some(cfg) = &condition_closure.cfg {
+                quote! { if cfg!(#cfg) { #assert } }
+            } else {
+                assert
+            }
         }));
 
     // --- Construct the New Body ---
