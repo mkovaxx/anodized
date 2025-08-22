@@ -21,6 +21,13 @@ pub struct Contract {
     pub ensures: Vec<ConditionClosure>,
 }
 
+impl Parse for Contract {
+    fn parse(input: ParseStream) -> Result<Self> {
+        let args = input.parse::<ContractArgs>()?;
+        Contract::try_from(args)
+    }
+}
+
 /// A condition represented by a `bool`-valued expression.
 #[derive(Debug)]
 pub struct Condition {
@@ -144,13 +151,6 @@ impl TryFrom<ContractArgs> for Contract {
             maintains,
             ensures,
         })
-    }
-}
-
-impl Parse for Contract {
-    fn parse(input: ParseStream) -> Result<Self> {
-        let args = input.parse::<ContractArgs>()?;
-        Contract::try_from(args)
     }
 }
 
@@ -292,8 +292,8 @@ fn parse_cfg_attribute(attrs: &[Attribute]) -> Result<Option<Meta>> {
     Ok(cfg_attrs.pop())
 }
 
-// Custom keywords for parsing. This allows us to use `requires`, `ensures`, etc.,
-// as if they were built-in Rust keywords during parsing.
+/// Custom keywords for parsing. This allows us to use `requires`, `ensures`, etc.,
+/// as if they were built-in Rust keywords during parsing.
 mod kw {
     syn::custom_keyword!(requires);
     syn::custom_keyword!(maintains);
