@@ -26,8 +26,9 @@ pub struct Contract {
 pub struct Condition {
     /// The expression.
     pub expr: Expr,
+    /// **Static analyzers can safely ignore this field.**
+    ///
     /// Build configuration filter to decide whether to add runtime checks.
-    /// Static analyzers can safely ignore this field.
     /// Passed to a `cfg!()` guard in the instrumented function.
     pub cfg: Option<Meta>,
 }
@@ -37,8 +38,9 @@ pub struct Condition {
 pub struct ConditionClosure {
     /// The closure.
     pub closure: ExprClosure,
+    /// **Static analyzers can safely ignore this field.**
+    ///
     /// Build configuration filter to decide whether to add runtime checks.
-    /// Static analyzers can safely ignore this field.
     /// Passed to a `cfg!()` guard in the instrumented function.
     pub cfg: Option<Meta>,
 }
