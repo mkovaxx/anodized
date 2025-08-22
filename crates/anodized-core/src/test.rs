@@ -1,12 +1,6 @@
 use super::*;
 use crate::test_util::assert_contract_eq;
-use quote::quote;
-use syn::{parse_quote, parse2, Result};
-
-fn parse_contract(tokens: proc_macro2::TokenStream) -> Result<Contract> {
-    let args: ContractArgs = parse2(tokens)?;
-    Contract::try_from(args)
-}
+use syn::parse_quote;
 
 #[test]
 fn test_parse_simple_contract() {
@@ -43,21 +37,21 @@ fn test_parse_all_clauses() {
 }
 
 #[test]
+#[should_panic(expected = "parameters are out of order")]
 fn test_parse_out_of_order() {
-    let result = parse_contract(quote! {
+    let _: Contract = parse_quote! {
         ensures: output > x,
         requires: x > 0,
-    });
-    assert!(result.is_err());
+    };
 }
 
 #[test]
+#[should_panic(expected = "multiple `binds` parameters are not allowed")]
 fn test_parse_multiple_binds() {
-    let result = parse_contract(quote! {
+    let _: Contract = parse_quote! {
         binds: y,
         binds: z,
-    });
-    assert!(result.is_err());
+    };
 }
 
 #[test]
@@ -178,44 +172,29 @@ fn test_parse_cfg_attributes() {
 }
 
 #[test]
+#[should_panic(expected = "unsupported attribute; only `cfg` is allowed")]
 fn test_parse_non_cfg_attribute() {
-    let error = parse_contract(quote! {
+    let _: Contract = parse_quote! {
         #[allow(dead_code)]
         requires: x > 0,
-    })
-    .expect_err("parsing should have failed but it succeeded");
-
-    assert_eq!(
-        error.to_string(),
-        "unsupported attribute; only `cfg` is allowed"
-    );
+    };
 }
 
 #[test]
+#[should_panic(expected = "multiple `cfg` attributes are not supported")]
 fn test_parse_multiple_cfg_attributes() {
-    let error = parse_contract(quote! {
+    let _: Contract = parse_quote! {
         #[cfg(test)]
         #[cfg(debug_assertions)]
         requires: x > 0,
-    })
-    .expect_err("parsing should have failed but it succeeded");
-
-    assert_eq!(
-        error.to_string(),
-        "multiple `cfg` attributes are not supported"
-    );
+    };
 }
 
 #[test]
+#[should_panic(expected = "`cfg` attribute is not supported on `binds`")]
 fn test_parse_cfg_on_binds() {
-    let error = parse_contract(quote! {
+    let _: Contract = parse_quote! {
         #[cfg(test)]
         binds: y,
-    })
-    .expect_err("parsing should have failed but it succeeded");
-
-    assert_eq!(
-        error.to_string(),
-        "`cfg` attribute is not supported on `binds`"
-    );
+    };
 }
