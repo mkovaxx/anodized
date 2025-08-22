@@ -87,7 +87,7 @@ Contracts are built from conditions, which come in three flavors:
 
 For convenience `<conditions>` can be either a single condition or a list (i.e. `[<condition>, <condition>, ...]`).
 
-The clauses must be specified in the following order: `requires`, `maintains`, `binds`, and `ensures`.
+The conditions must be specified in the following order: `requires`, `maintains`, and `ensures`.
 
 A condition is a `bool`-valued Rust expression; as simple as that. This is a non-trivial design choice, so its benefits are explained in the section below: [Why Conditions Are Rust Expressions](#why-conditions-are-rust-expressions).
 
