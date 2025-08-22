@@ -262,7 +262,7 @@ mod tests {
     fn test_parse_simple_contract() {
         let tokens = quote! {
             requires: x > 0,
-            ensures: output > x
+            ensures: output > x,
         };
         let args: ContractArgs = parse2(tokens.into()).unwrap();
         let contract = Contract::try_from(args).unwrap();
@@ -278,7 +278,7 @@ mod tests {
             requires: x > 0,
             maintains: y.is_valid(),
             binds: z,
-            ensures: z > x
+            ensures: z > x,
         };
         let args: ContractArgs = parse2(tokens.into()).unwrap();
         let contract = Contract::try_from(args).unwrap();
@@ -292,7 +292,7 @@ mod tests {
     fn test_parse_out_of_order() {
         let tokens = quote! {
             ensures: output > x,
-            requires: x > 0
+            requires: x > 0,
         };
         let args: ContractArgs = parse2(tokens.into()).unwrap();
         let result = Contract::try_from(args);
@@ -303,7 +303,7 @@ mod tests {
     fn test_parse_multiple_binds() {
         let tokens = quote! {
             binds: y,
-            binds: z
+            binds: z,
         };
         let args: ContractArgs = parse2(tokens.into()).unwrap();
         let result = Contract::try_from(args);
@@ -314,7 +314,7 @@ mod tests {
     fn test_parse_array_of_conditions() {
         let tokens = quote! {
             requires: [x > 0, y > 0],
-            ensures: [output > x, output > y]
+            ensures: [output > x, output > y],
         };
         let args: ContractArgs = parse2(tokens.into()).unwrap();
         let contract = Contract::try_from(args).unwrap();
