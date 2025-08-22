@@ -1,4 +1,5 @@
 use super::*;
+use crate::test_util::TestContract;
 use quote::quote;
 use syn::{parse2, parse_quote};
 
@@ -21,7 +22,7 @@ fn test_parse_simple_contract() {
         ensures: vec![parse_quote! { |output| output > x }],
     };
 
-    assert_eq!(contract, expected);
+    assert_eq!(TestContract(contract), TestContract(expected));
 }
 
 #[test]
@@ -40,7 +41,7 @@ fn test_parse_all_clauses() {
         ensures: vec![parse_quote! { |z| z > x }],
     };
 
-    assert_eq!(contract, expected);
+    assert_eq!(TestContract(contract), TestContract(expected));
 }
 
 #[test]
@@ -87,7 +88,7 @@ fn test_parse_array_of_conditions() {
         ],
     };
 
-    assert_eq!(contract, expected);
+    assert_eq!(TestContract(contract), TestContract(expected));
 }
 
 #[test]
@@ -103,5 +104,5 @@ fn test_parse_ensures_with_closure() {
         ensures: vec![parse_quote! { |result| result.is_ok() }],
     };
 
-    assert_eq!(contract, expected);
+    assert_eq!(TestContract(contract), TestContract(expected));
 }

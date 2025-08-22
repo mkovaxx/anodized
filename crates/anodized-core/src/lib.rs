@@ -21,20 +21,7 @@ pub struct Contract {
     pub ensures: Vec<ExprClosure>,
 }
 
-impl PartialEq for Contract {
-    fn eq(&self, other: &Self) -> bool {
-        let self_requires = self.requires.iter().map(|e| e.to_token_stream().to_string()).collect::<Vec<_>>();
-        let other_requires = other.requires.iter().map(|e| e.to_token_stream().to_string()).collect::<Vec<_>>();
-        let self_maintains = self.maintains.iter().map(|e| e.to_token_stream().to_string()).collect::<Vec<_>>();
-        let other_maintains = other.maintains.iter().map(|e| e.to_token_stream().to_string()).collect::<Vec<_>>();
-        let self_ensures = self.ensures.iter().map(|e| e.to_token_stream().to_string()).collect::<Vec<_>>();
-        let other_ensures = other.ensures.iter().map(|e| e.to_token_stream().to_string()).collect::<Vec<_>>();
 
-        self_requires == other_requires &&
-        self_maintains == other_maintains &&
-        self_ensures == other_ensures
-    }
-}
 
 #[derive(PartialEq, PartialOrd, Clone, Copy, Debug)]
 enum ArgOrder {
@@ -267,6 +254,9 @@ pub fn instrument_function_body(contract: &Contract, func: &ItemFn) -> Result<Bl
         }
     })
 }
+
+#[cfg(test)]
+mod test_util;
 
 #[cfg(test)]
 mod tests;
