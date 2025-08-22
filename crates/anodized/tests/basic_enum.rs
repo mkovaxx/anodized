@@ -1,6 +1,7 @@
 use anodized::contract;
 
 #[derive(Debug, PartialEq, Eq)]
+#[allow(dead_code)]
 enum State {
     Idle,
     Running,
@@ -13,8 +14,8 @@ struct Job {
 
 impl Job {
     #[contract(
-        maintains: matches!(self.state, State::Idle | State::Running | State::Finished),
         requires: matches!(self.state, State::Idle),
+        maintains: matches!(self.state, State::Idle | State::Running | State::Finished),
         ensures: matches!(self.state, State::Running),
     )]
     fn start(&mut self) {

@@ -85,7 +85,9 @@ Contracts are built from conditions, which come in three flavors:
 
 - **Invariants** (using `maintains: <conditions>`): A convenience for conditions that must hold true both before and after the function runs. It's most useful for expressing properties of `self` that a method must preserve.
 
-For convenience `<conditions>` can be either a single condition or a list (i.e. `[<condition>, <condition>, ...]`).
+For convenience, `<conditions>` can be either a single condition or a list (i.e. `[<condition>, <condition>, ...]`).
+
+The conditions must be given in the following order: `requires`, `maintains`, and `ensures`. This order is enforced to mirror the logical flow of a function's execution: preconditions (`requires`) are checked upon entry, invariants (`maintains`) must hold true upon both entry and exit, and postconditions (`ensures`) are checked upon exit.
 
 A condition is a `bool`-valued Rust expression; as simple as that. This is a non-trivial design choice, so its benefits are explained in the section below: [Why Conditions Are Rust Expressions](#why-conditions-are-rust-expressions).
 
@@ -120,7 +122,7 @@ fn get_positive_value() -> i32 { /* ... */ }
 
 If the name `output` collides with an existing identifier, you can choose a different name for it in two ways:
 
-**1. Contract-Wide Binding**: Use the `binds` parameter to set a new name for the return value across all postconditions in the contract.
+**1. Contract-Wide Binding**: Use the `binds` parameter to set a new name for the return value across all postconditions in the contract. It must be placed immediately before any `ensures` conditions.
 
 ```rust,ignore
 #[contract(
@@ -175,7 +177,7 @@ use anodized::contract;
     ensures: [
         a <= b,
         // They can also reference the arguments.
-        ensures: (a, b) == pair || (b, a) == pair,
+        (a, b) == pair || (b, a) == pair,
     ],
 )]
 fn sort_pair(pair: (i32, i32)) -> (i32, i32) { /* ... */ }

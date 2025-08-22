@@ -8,12 +8,12 @@ struct SafeBuffer<T> {
 
 impl<T> SafeBuffer<T> {
     #[contract(
-        maintains: self.items.len() <= self.items.capacity(),
         requires: [
             self.initialized,
             !self.locked,
             index < self.items.len(),
         ],
+        maintains: self.items.len() <= self.items.capacity(),
     )]
     fn get_element(&self, index: usize) -> &T {
         &self.items[index]
