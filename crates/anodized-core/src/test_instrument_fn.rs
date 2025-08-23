@@ -271,7 +271,7 @@ fn test_instrument_ensures_with_mixed_conditions() {
             CONDITION_1,
             |PATTERN_1| CONDITION_2,
             CONDITION_3,
-            |PATTERN_2| CONDITION_4,
+            |PATTERN_2| CONDITION_4
         ],
     };
     let body = make_fn_body();
@@ -296,6 +296,45 @@ fn test_instrument_ensures_with_mixed_conditions() {
                 (|PATTERN_2| CONDITION_4)(__anodized_output),
                 "Postcondition failed: | PATTERN_2 | CONDITION_4"
             );
+            __anodized_output
+        }
+    };
+
+    let observed = instrument_fn_body(&contract, &body, is_async).unwrap();
+    assert_block_eq(&observed, &expected);
+}
+
+#[test]
+fn test_instrument_with_cfg_attributes() {
+    let contract: Contract = parse_quote! {
+        #[cfg(SETTING_1)]
+        requires: CONDITION_1,
+        #[cfg(SETTING_2)]
+        maintains: CONDITION_2,
+        #[cfg(SETTING_3)]
+        ensures: CONDITION_3,
+    };
+    let body = make_fn_body();
+    let is_async = false;
+
+    let expected: Block = parse_quote! {
+        {
+            if cfg!(SETTING_1) {
+                assert!(CONDITION_1, "Precondition failed: CONDITION_1");
+            }
+            if cfg!(SETTING_2) {
+                assert!(CONDITION_2, "Pre-invariant failed: CONDITION_2");
+            }
+            let __anodized_output = #body;
+            if cfg!(SETTING_2) {
+                assert!(CONDITION_2, "Post-invariant failed: CONDITION_2");
+            }
+            if cfg!(SETTING_3) {
+                assert!(
+                    (|output| CONDITION_3)(__anodized_output),
+                    "Postcondition failed: | output | CONDITION_3"
+                );
+            }
             __anodized_output
         }
     };
