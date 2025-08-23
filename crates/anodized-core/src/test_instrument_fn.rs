@@ -76,7 +76,7 @@ fn test_instrument_simple_ensures() {
 }
 
 #[test]
-fn test_instrument_requires_and_maintains() {
+fn test_instrument_simple_requires_and_maintains() {
     let contract: Contract = parse_quote! {
         requires: CONDITION_1,
         maintains: CONDITION_2,
@@ -99,7 +99,7 @@ fn test_instrument_requires_and_maintains() {
 }
 
 #[test]
-fn test_instrument_requires_and_ensures() {
+fn test_instrument_simple_requires_and_ensures() {
     let contract: Contract = parse_quote! {
         requires: CONDITION_1,
         ensures: CONDITION_2,
@@ -124,7 +124,7 @@ fn test_instrument_requires_and_ensures() {
 }
 
 #[test]
-fn test_instrument_maintains_and_ensures() {
+fn test_instrument_simple_maintains_and_ensures() {
     let contract: Contract = parse_quote! {
         maintains: CONDITION_1,
         ensures: CONDITION_2,
@@ -164,6 +164,34 @@ fn test_instrument_simple_requires_maintains_and_ensures() {
             assert!(CONDITION_1, "Precondition failed: CONDITION_1");
             assert!(CONDITION_2, "Pre-invariant failed: CONDITION_2");
             let __anodized_output = #body;
+            assert!(CONDITION_2, "Post-invariant failed: CONDITION_2");
+            assert!(
+                (|output| CONDITION_3)(__anodized_output),
+                "Postcondition failed: | output | CONDITION_3"
+            );
+            __anodized_output
+        }
+    };
+
+    let observed = instrument_fn_body(&contract, &body, is_async).unwrap();
+    assert_block_eq(&observed, &expected);
+}
+
+#[test]
+fn test_instrument_simple_async_requires_maintains_and_ensures() {
+    let contract: Contract = parse_quote! {
+        requires: CONDITION_1,
+        maintains: CONDITION_2,
+        ensures: CONDITION_3,
+    };
+    let body = make_fn_body();
+    let is_async = true;
+
+    let expected: Block = parse_quote! {
+        {
+            assert!(CONDITION_1, "Precondition failed: CONDITION_1");
+            assert!(CONDITION_2, "Pre-invariant failed: CONDITION_2");
+            let __anodized_output = async #body.await;
             assert!(CONDITION_2, "Post-invariant failed: CONDITION_2");
             assert!(
                 (|output| CONDITION_3)(__anodized_output),
