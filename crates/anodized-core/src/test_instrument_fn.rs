@@ -384,3 +384,63 @@ fn test_instrument_with_cfg_on_single_and_list_conditions() {
     let observed = instrument_fn_body(&contract, &body, is_async).unwrap();
     assert_block_eq(&observed, &expected);
 }
+
+#[test]
+fn test_instrument_with_complex_mixed_conditions() {
+    let contract: Contract = parse_quote! {
+        requires: CONDITION_1,
+        #[cfg(SETTING_1)]
+        requires: [CONDITION_2, CONDITION_3],
+        maintains: [CONDITION_4, CONDITION_5],
+        #[cfg(SETTING_2)]
+        maintains: CONDITION_6,
+        ensures: CONDITION_7,
+        #[cfg(SETTING_3)]
+        ensures: [CONDITION_8, |PATTERN_1| CONDITION_9],
+    };
+    let body = make_fn_body();
+    let is_async = false;
+
+    let expected: Block = parse_quote! {
+        {
+            assert!(CONDITION_1, "Precondition failed: CONDITION_1");
+            if cfg!(SETTING_1) {
+                assert!(CONDITION_2, "Precondition failed: CONDITION_2");
+            }
+            if cfg!(SETTING_1) {
+                assert!(CONDITION_3, "Precondition failed: CONDITION_3");
+            }
+            assert!(CONDITION_4, "Pre-invariant failed: CONDITION_4");
+            assert!(CONDITION_5, "Pre-invariant failed: CONDITION_5");
+            if cfg!(SETTING_2) {
+                assert!(CONDITION_6, "Pre-invariant failed: CONDITION_6");
+            }
+            let __anodized_output = #body;
+            assert!(CONDITION_4, "Post-invariant failed: CONDITION_4");
+            assert!(CONDITION_5, "Post-invariant failed: CONDITION_5");
+            if cfg!(SETTING_2) {
+                assert!(CONDITION_6, "Post-invariant failed: CONDITION_6");
+            }
+            assert!(
+                (|output| CONDITION_7)(__anodized_output),
+                "Postcondition failed: | output | CONDITION_7"
+            );
+            if cfg!(SETTING_3) {
+                assert!(
+                    (|output| CONDITION_8)(__anodized_output),
+                    "Postcondition failed: | output | CONDITION_8"
+                );
+            }
+            if cfg!(SETTING_3) {
+                assert!(
+                    (|PATTERN_1| CONDITION_9)(__anodized_output),
+                    "Postcondition failed: | PATTERN_1 | CONDITION_9"
+                );
+            }
+            __anodized_output
+        }
+    };
+
+    let observed = instrument_fn_body(&contract, &body, is_async).unwrap();
+    assert_block_eq(&observed, &expected);
+}
