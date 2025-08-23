@@ -21,7 +21,7 @@ fn test_instrument_simple() {
 
     let expected: Block = parse_quote! {
         {
-            assert!(x > 0, "Precondition failed: self.is_valid()");
+            assert!(self.is_valid(), "Precondition failed: self.is_valid()");
             let __anodized_output = #body;
             __anodized_output
         }
