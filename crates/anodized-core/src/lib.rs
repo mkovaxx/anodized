@@ -3,7 +3,7 @@
 use proc_macro2::Span;
 use quote::{ToTokens, quote};
 use syn::{
-    Attribute, Block, Expr, ExprClosure, Ident, ItemFn, Meta, Pat, Token,
+    Attribute, Block, Expr, ExprClosure, Ident, Meta, Pat, Token,
     parse::{Parse, ParseStream, Result},
     parse_quote,
     punctuated::Punctuated,
