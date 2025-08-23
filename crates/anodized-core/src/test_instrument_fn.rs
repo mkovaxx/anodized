@@ -239,3 +239,27 @@ fn test_instrument_multiple_conditions_in_clauses() {
     let observed = instrument_fn_body(&contract, &body, is_async).unwrap();
     assert_block_eq(&observed, &expected);
 }
+
+#[test]
+fn test_instrument_with_binds_parameter() {
+    let contract: Contract = parse_quote! {
+        binds: OUTPUT_PATTERN,
+        ensures: CONDITION_1,
+    };
+    let body = make_fn_body();
+    let is_async = false;
+
+    let expected: Block = parse_quote! {
+        {
+            let __anodized_output = #body;
+            assert!(
+                (|OUTPUT_PATTERN| CONDITION_1)(__anodized_output),
+                "Postcondition failed: | OUTPUT_PATTERN | CONDITION_1"
+            );
+            __anodized_output
+        }
+    };
+
+    let observed = instrument_fn_body(&contract, &body, is_async).unwrap();
+    assert_block_eq(&observed, &expected);
+}
