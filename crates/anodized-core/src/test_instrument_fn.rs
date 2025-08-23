@@ -263,3 +263,43 @@ fn test_instrument_with_binds_parameter() {
     let observed = instrument_fn_body(&contract, &body, is_async).unwrap();
     assert_block_eq(&observed, &expected);
 }
+
+#[test]
+fn test_instrument_ensures_with_mixed_conditions() {
+    let contract: Contract = parse_quote! {
+        ensures: [
+            CONDITION_1,
+            |PATTERN_1| CONDITION_2,
+            CONDITION_3,
+            |PATTERN_2| CONDITION_4,
+        ],
+    };
+    let body = make_fn_body();
+    let is_async = false;
+
+    let expected: Block = parse_quote! {
+        {
+            let __anodized_output = #body;
+            assert!(
+                (|output| CONDITION_1)(__anodized_output),
+                "Postcondition failed: | output | CONDITION_1"
+            );
+            assert!(
+                (|PATTERN_1| CONDITION_2)(__anodized_output),
+                "Postcondition failed: | PATTERN_1 | CONDITION_2"
+            );
+            assert!(
+                (|output| CONDITION_3)(__anodized_output),
+                "Postcondition failed: | output | CONDITION_3"
+            );
+            assert!(
+                (|PATTERN_2| CONDITION_4)(__anodized_output),
+                "Postcondition failed: | PATTERN_2 | CONDITION_4"
+            );
+            __anodized_output
+        }
+    };
+
+    let observed = instrument_fn_body(&contract, &body, is_async).unwrap();
+    assert_block_eq(&observed, &expected);
+}
