@@ -342,3 +342,45 @@ fn test_instrument_with_cfg_attributes() {
     let observed = instrument_fn_body(&contract, &body, is_async).unwrap();
     assert_block_eq(&observed, &expected);
 }
+
+#[test]
+fn test_instrument_with_cfg_on_single_and_list_conditions() {
+    let contract: Contract = parse_quote! {
+        #[cfg(SETTING_1)]
+        requires: CONDITION_1,
+        maintains: [CONDITION_2, CONDITION_3],
+        #[cfg(SETTING_2)]
+        ensures: [CONDITION_4, CONDITION_5],
+    };
+    let body = make_fn_body();
+    let is_async = false;
+
+    let expected: Block = parse_quote! {
+        {
+            if cfg!(SETTING_1) {
+                assert!(CONDITION_1, "Precondition failed: CONDITION_1");
+            }
+            assert!(CONDITION_2, "Pre-invariant failed: CONDITION_2");
+            assert!(CONDITION_3, "Pre-invariant failed: CONDITION_3");
+            let __anodized_output = #body;
+            assert!(CONDITION_2, "Post-invariant failed: CONDITION_2");
+            assert!(CONDITION_3, "Post-invariant failed: CONDITION_3");
+            if cfg!(SETTING_2) {
+                assert!(
+                    (|output| CONDITION_4)(__anodized_output),
+                    "Postcondition failed: | output | CONDITION_4"
+                );
+            }
+            if cfg!(SETTING_2) {
+                assert!(
+                    (|output| CONDITION_5)(__anodized_output),
+                    "Postcondition failed: | output | CONDITION_5"
+                );
+            }
+            __anodized_output
+        }
+    };
+
+    let observed = instrument_fn_body(&contract, &body, is_async).unwrap();
+    assert_block_eq(&observed, &expected);
+}
