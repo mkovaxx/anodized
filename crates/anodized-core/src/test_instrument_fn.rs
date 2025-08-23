@@ -204,3 +204,38 @@ fn test_instrument_simple_async_requires_maintains_and_ensures() {
     let observed = instrument_fn_body(&contract, &body, is_async).unwrap();
     assert_block_eq(&observed, &expected);
 }
+
+#[test]
+fn test_instrument_multiple_conditions_in_clauses() {
+    let contract: Contract = parse_quote! {
+        requires: [CONDITION_1, CONDITION_2],
+        maintains: [CONDITION_3, CONDITION_4],
+        ensures: [CONDITION_5, CONDITION_6],
+    };
+    let body = make_fn_body();
+    let is_async = false;
+
+    let expected: Block = parse_quote! {
+        {
+            assert!(CONDITION_1, "Precondition failed: CONDITION_1");
+            assert!(CONDITION_2, "Precondition failed: CONDITION_2");
+            assert!(CONDITION_3, "Pre-invariant failed: CONDITION_3");
+            assert!(CONDITION_4, "Pre-invariant failed: CONDITION_4");
+            let __anodized_output = #body;
+            assert!(CONDITION_3, "Post-invariant failed: CONDITION_3");
+            assert!(CONDITION_4, "Post-invariant failed: CONDITION_4");
+            assert!(
+                (|output| CONDITION_5)(__anodized_output),
+                "Postcondition failed: | output | CONDITION_5"
+            );
+            assert!(
+                (|output| CONDITION_6)(__anodized_output),
+                "Postcondition failed: | output | CONDITION_6"
+            );
+            __anodized_output
+        }
+    };
+
+    let observed = instrument_fn_body(&contract, &body, is_async).unwrap();
+    assert_block_eq(&observed, &expected);
+}
