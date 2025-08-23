@@ -1,6 +1,6 @@
 use crate::{Condition, ConditionClosure, Contract};
 use quote::ToTokens;
-use syn::parse::{Parse, ParseStream, Result};
+use syn::{parse::{Parse, ParseStream, Result}, Block};
 
 impl Parse for Condition {
     fn parse(input: ParseStream) -> Result<Self> {
@@ -18,6 +18,12 @@ impl Parse for ConditionClosure {
             cfg: None,
         })
     }
+}
+
+pub fn assert_block_eq(left: &Block, right: &Block) {
+    let left_str = left.to_token_stream().to_string();
+    let right_str = right.to_token_stream().to_string();
+    assert_eq!(left_str, right_str);
 }
 
 pub fn assert_contract_eq(left: &Contract, right: &Contract) {

@@ -1,12 +1,7 @@
-use super::*;
-use quote::ToTokens;
-use syn::{Block, parse_quote};
+use crate::test_util::assert_block_eq;
 
-fn assert_block_eq(left: &Block, right: &Block) {
-    let left_str = left.to_token_stream().to_string();
-    let right_str = right.to_token_stream().to_string();
-    assert_eq!(left_str, right_str);
-}
+use super::*;
+use syn::{Block, parse_quote};
 
 #[test]
 fn test_instrument_simple() {
@@ -20,6 +15,7 @@ fn test_instrument_simple() {
         }
     };
     let is_async = false;
+
     let expected: Block = parse_quote! {
         {
             assert!(x > 0, "Precondition failed: x > 0");
