@@ -278,7 +278,7 @@ mod kw {
     syn::custom_keyword!(ensures);
 }
 
-/// Takes the contract and the function, and returns a new instrumented function body.
+/// Takes the contract and the original body and returns a new instrumented function body.
 pub fn instrument_fn_body(
     contract: &Contract,
     original_body: &Block,
