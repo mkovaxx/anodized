@@ -14,24 +14,23 @@ fn test_instrument_simple() {
         requires: x > 0,
         ensures: output > x,
     };
-    let func: ItemFn = parse_quote! {
-        fn example_function() {
+    let body: Block = parse_quote! {
+        {
             this_is_the_function_body()
         }
     };
+    let is_async = false;
     let expected: Block = parse_quote! {
         {
             assert!(x > 0, "Precondition failed: x > 0");
             let __anodized_output = {
-                {
-                    this_is_the_function_body()
-                }
+                this_is_the_function_body()
             };
             assert!((|output| output > x)(__anodized_output), "Postcondition failed: | output | output > x");
             __anodized_output
         }
     };
 
-    let observed = instrument_function_body(&contract, &func).unwrap();
+    let observed = instrument_function_body(&contract, &body, is_async).unwrap();
     assert_body_eq(&observed, &expected);
 }
