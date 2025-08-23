@@ -355,7 +355,7 @@ pub fn instrument_fn_body(
 }
 
 #[cfg(test)]
-mod test;
+mod test_parse_contract;
 
 #[cfg(test)]
 mod test_instrument_fn;
