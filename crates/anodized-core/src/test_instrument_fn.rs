@@ -12,17 +12,61 @@ fn make_fn_body() -> Block {
 }
 
 #[test]
-fn test_instrument_simple() {
+fn test_instrument_simple_requires() {
     let contract: Contract = parse_quote! {
-        requires: self.is_valid(),
+        requires: CONDITION_1,
     };
     let body = make_fn_body();
     let is_async = false;
 
     let expected: Block = parse_quote! {
         {
-            assert!(self.is_valid(), "Precondition failed: self.is_valid()");
+            assert!(CONDITION_1, "Precondition failed: CONDITION_1");
             let __anodized_output = #body;
+            __anodized_output
+        }
+    };
+
+    let observed = instrument_fn_body(&contract, &body, is_async).unwrap();
+    assert_block_eq(&observed, &expected);
+}
+
+#[test]
+fn test_instrument_simple_maintains() {
+    let contract: Contract = parse_quote! {
+        maintains: CONDITION_1,
+    };
+    let body = make_fn_body();
+    let is_async = false;
+
+    let expected: Block = parse_quote! {
+        {
+            assert!(CONDITION_1, "Pre-invariant failed: CONDITION_1");
+            let __anodized_output = #body;
+            assert!(CONDITION_1, "Post-invariant failed: CONDITION_1");
+            __anodized_output
+        }
+    };
+
+    let observed = instrument_fn_body(&contract, &body, is_async).unwrap();
+    assert_block_eq(&observed, &expected);
+}
+
+#[test]
+fn test_instrument_simple_ensures() {
+    let contract: Contract = parse_quote! {
+        ensures: CONDITION_1,
+    };
+    let body = make_fn_body();
+    let is_async = false;
+
+    let expected: Block = parse_quote! {
+        {
+            let __anodized_output = #body;
+            assert!(
+                (|output| CONDITION_1)(__anodized_output),
+                "Postcondition failed: | output | CONDITION_1"
+            );
             __anodized_output
         }
     };
