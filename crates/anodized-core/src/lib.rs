@@ -279,7 +279,7 @@ mod kw {
 }
 
 /// Takes the contract and the function, and returns a new instrumented function body.
-pub fn instrument_function_body(
+pub fn instrument_fn_body(
     contract: &Contract,
     original_body: &Block,
     is_async: bool,

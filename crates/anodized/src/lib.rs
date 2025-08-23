@@ -4,7 +4,7 @@ use proc_macro::TokenStream;
 use quote::ToTokens;
 use syn::{ItemFn, parse_macro_input};
 
-use anodized_core::{Contract, instrument_function_body};
+use anodized_core::{Contract, instrument_fn_body};
 
 /// The main procedural macro for defining contracts on functions.
 ///
@@ -19,7 +19,7 @@ pub fn contract(args: TokenStream, input: TokenStream) -> TokenStream {
     let is_async = func.sig.asyncness.is_some();
 
     // Generate the new, instrumented function body.
-    let new_body = match instrument_function_body(&contract, &func.block, is_async) {
+    let new_body = match instrument_fn_body(&contract, &func.block, is_async) {
         Ok(body) => body,
         Err(e) => return e.to_compile_error().into(),
     };

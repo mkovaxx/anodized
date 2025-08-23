@@ -1,6 +1,6 @@
 use super::*;
 use quote::ToTokens;
-use syn::{Block, ItemFn, parse_quote};
+use syn::{Block, parse_quote};
 
 fn assert_body_eq(actual: &Block, expected: &Block) {
     let actual_str = actual.to_token_stream().to_string();
@@ -31,6 +31,6 @@ fn test_instrument_simple() {
         }
     };
 
-    let observed = instrument_function_body(&contract, &body, is_async).unwrap();
+    let observed = instrument_fn_body(&contract, &body, is_async).unwrap();
     assert_body_eq(&observed, &expected);
 }
