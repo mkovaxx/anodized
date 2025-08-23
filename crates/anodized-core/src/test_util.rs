@@ -1,6 +1,9 @@
 use crate::{Condition, ConditionClosure, Contract};
 use quote::ToTokens;
-use syn::{parse::{Parse, ParseStream, Result}, Block};
+use syn::{
+    Block,
+    parse::{Parse, ParseStream, Result},
+};
 
 impl Parse for Condition {
     fn parse(input: ParseStream) -> Result<Self> {
