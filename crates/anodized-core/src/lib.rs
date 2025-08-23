@@ -3,7 +3,7 @@
 use proc_macro2::Span;
 use quote::{ToTokens, quote};
 use syn::{
-    Attribute, Block, Expr, ExprClosure, Ident, ItemFn, Meta, Pat, Token,
+    Attribute, Block, Expr, ExprClosure, Ident, Meta, Pat, Token,
     parse::{Parse, ParseStream, Result},
     parse_quote,
     punctuated::Punctuated,
@@ -278,11 +278,12 @@ mod kw {
     syn::custom_keyword!(ensures);
 }
 
-/// Takes the contract and the function, and returns a new instrumented function body.
-pub fn instrument_function_body(contract: &Contract, func: &ItemFn) -> Result<Block> {
-    let original_body = &func.block;
-    let is_async = func.sig.asyncness.is_some();
-
+/// Takes the contract and the original body and returns a new instrumented function body.
+pub fn instrument_fn_body(
+    contract: &Contract,
+    original_body: &Block,
+    is_async: bool,
+) -> Result<Block> {
     // The identifier for the return value binding. It's hygienic to prevent collisions.
     let binding_ident = Ident::new("__anodized_output", Span::mixed_site());
 
@@ -338,9 +339,9 @@ pub fn instrument_function_body(contract: &Contract, func: &ItemFn) -> Result<Bl
 
     // --- Construct the New Body ---
     let body_expr = if is_async {
-        quote! { async { #original_body }.await }
+        quote! { async #original_body.await }
     } else {
-        quote! { { #original_body } }
+        quote! { #original_body }
     };
 
     Ok(parse_quote! {
@@ -354,7 +355,10 @@ pub fn instrument_function_body(contract: &Contract, func: &ItemFn) -> Result<Bl
 }
 
 #[cfg(test)]
-mod test;
+mod test_parse_contract;
+
+#[cfg(test)]
+mod test_instrument_fn;
 
 #[cfg(test)]
 mod test_util;

@@ -1,5 +1,6 @@
-use super::*;
 use crate::test_util::assert_contract_eq;
+
+use super::*;
 use syn::parse_quote;
 
 #[test]
