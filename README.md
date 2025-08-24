@@ -272,14 +272,14 @@ ensures_params   = { ensures_param };
 requires_param  = [ cfg_attr ] , `requires:` , conditions, `,`;
 maintains_param = [ cfg_attr ] , `maintains:` , conditions, `,`;
 binds_param     = `binds:` , pattern, `,`;
-ensures_param   = [ cfg_attr ] , `ensures:` , post_conditions, `,`;
+ensures_param   = [ cfg_attr ] , `ensures:` , post_conds, `,`;
 
 conditions = expr | condition_list;
 condition_list = `[` , expr , { `,` , expr } , [ `,` ] , `]`;
 
-post_conditions = post_condition_expr | post_condition_list;
-post_condition_list = `[` , post_condition_expr , { `,` , post_condition_expr } , [ `,` ] , `]`;
-post_condition_expr = expr | closure;
+post_conds = post_cond_expr | post_cond_list;
+post_cond_list = `[` , post_cond_expr , { `,` , post_cond_expr } , [ `,` ] , `]`;
+post_cond_expr = expr | closure;
 
 cfg_attr = `#[cfg(` , meta , `)]`;
 ```
