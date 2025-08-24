@@ -259,10 +259,10 @@ Contributions are welcome! Please feel free to open an issue or submit a pull re
 The `#[contract]` attribute's parameters follow a specific grammar, which is formally defined using EBNF as follows.
 
 ```ebnf
-params = [ requires_params ]
-       , [ maintains_params ]
-       , [ binds_param ]
-       , [ ensures_params ];
+params = [ requires_params , `,` ]
+       , [ maintains_params , `,` ]
+       , [ binds_param , `,` ]
+       , [ ensures_params , `,` ];
 
 requires_params  = requires_param , { `,` , requires_param };
 maintains_params = maintains_param , { `,` , maintains_param };
@@ -285,6 +285,7 @@ cfg_attr = `#[cfg(` , meta , `)]`;
 
 **Notes:**
 
+- The last `,` is optional.
 - The `params` rule defines a sequence of optional parameter groups that must appear in the specified order. Commas are required to separate any provided groups.
 - `expr` refers to a Rust expression that must evaluate to `bool`.
 - `closure` refers to a Rust closure that takes the function's return value as an argument and evaluates to `bool`.
