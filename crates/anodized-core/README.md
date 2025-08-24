@@ -1,4 +1,4 @@
-<img width="100" alt="Anodized Logo" src="https://raw.githubusercontent.com/mkovaxx/anodized/mate-logo/assets/logo.svg">
+<img width="100" alt="Anodized Logo" src="https://raw.githubusercontent.com/mkovaxx/anodized/main/assets/logo.svg">
 
 # Anodized Core
 
