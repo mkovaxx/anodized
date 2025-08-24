@@ -259,7 +259,10 @@ Contributions are welcome! Please feel free to open an issue or submit a pull re
 The `#[contract]` attribute's parameters follow a specific grammar, which is formally defined using EBNF as follows.
 
 ```ebnf
-params = [ requires_params ] , [ maintains_params ] , [ binds_param ] , [ ensures_params ];
+params = [ requires_params ]
+       , [ maintains_params ]
+       , [ binds_param ]
+       , [ ensures_params ];
 
 requires_params  = requires_param , { `,` , requires_param };
 maintains_params = maintains_param , { `,` , maintains_param };
