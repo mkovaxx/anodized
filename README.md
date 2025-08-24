@@ -256,21 +256,29 @@ Contributions are welcome! Please feel free to open an issue or submit a pull re
 
 ### Contract Syntax
 
-The `#[contract]` attribute's parameters follow a specific grammar, which is formally defined as follows.
+The `#[contract]` attribute's parameters follow a specific grammar, which is formally defined using EBNF as follows.
 
-args ::= ( param `,`? )*  
-param  ::= requires_param | maintains_param | binds_param | ensures_param  
-  
-requires_param  ::= attribute? `requires:` ( expr | `[` expr (`,` expr)* `,`? `]` )  
-maintains_param ::= attribute? `maintains:` ( expr | `[` expr (`,` expr)* `,`? `]` )  
-binds_param     ::= `binds:` pattern  
-ensures_param   ::= attribute? `ensures:` ( expr | `[` expr (`,` expr)* `,`? `]` )  
-  
-attribute ::= `#[cfg(` meta `)]`
+```ebnf
+params = [ requires_params ] , [ maintains_params ] , [ binds_param ] , [ ensures_params ];
+
+requires_params  = requires_param , { `,` , requires_param };
+maintains_params = maintains_param , { `,` , maintains_param };
+ensures_params   = ensures_param , { `,` , ensures_param };
+
+requires_param  = [ attribute ] , `requires:` , conditions;
+maintains_param = [ attribute ] , `maintains:` , conditions;
+binds_param     = `binds:` , pattern;
+ensures_param   = [ attribute ] , `ensures:` , conditions;
+
+conditions = expr | condition_list;
+condition_list = `[` , expr , { `,` , expr } , [ `,` ] , `]`;
+
+attribute = `#[cfg(` , meta , `)]`;
+```
 
 **Notes:**
 
-- The parameters must appear in the following order: `requires`, `maintains`, `binds`, `ensures`.
+- The `params` rule defines a sequence of optional parameter groups that must appear in the specified order. Commas are required to separate any provided groups.
 - `expr` refers to a Rust expression that must evaluate to `bool`.
 - `pattern` refers to any valid Rust pattern used for binding a value.
 - `meta` is the content of the `cfg` attribute (e.g., `test`, `debug_assertions`).
