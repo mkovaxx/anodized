@@ -265,15 +265,15 @@ requires_params  = requires_param , { `,` , requires_param };
 maintains_params = maintains_param , { `,` , maintains_param };
 ensures_params   = ensures_param , { `,` , ensures_param };
 
-requires_param  = [ attribute ] , `requires:` , conditions;
-maintains_param = [ attribute ] , `maintains:` , conditions;
+requires_param  = [ cfg_attr ] , `requires:` , conditions;
+maintains_param = [ cfg_attr ] , `maintains:` , conditions;
 binds_param     = `binds:` , pattern;
-ensures_param   = [ attribute ] , `ensures:` , conditions;
+ensures_param   = [ cfg_attr ] , `ensures:` , conditions;
 
 conditions = expr | condition_list;
 condition_list = `[` , expr , { `,` , expr } , [ `,` ] , `]`;
 
-attribute = `#[cfg(` , meta , `)]`;
+cfg_attr = `#[cfg(` , meta , `)]`;
 ```
 
 **Notes:**
