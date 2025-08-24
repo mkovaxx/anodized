@@ -281,17 +281,23 @@ post_conds = post_cond_expr | post_cond_list;
 post_cond_list = `[` , post_cond_expr , { `,` , post_cond_expr } , [ `,` ] , `]`;
 post_cond_expr = expr | closure;
 
-cfg_attr = `#[cfg(` , meta , `)]`;
+cfg_attr = `#[cfg(` , settings , `)]`;
+
+bool_expr = expr (* that evaluates to `bool` *).
+bool_closure = closure (* that returns `bool` *).
+settings = meta (* that the standard `[#cfg]` attribute expects *)
 ```
 
 **Notes:**
 
 - The last `,` is optional.
 - The `params` rule defines a sequence of optional parameter groups that must appear in the specified order. Commas are required to separate any provided groups.
-- `expr` refers to a Rust expression that must evaluate to `bool`.
-- `closure` refers to a Rust closure that takes the function's return value as an argument and evaluates to `bool`.
-- `pattern` refers to any valid Rust pattern used for binding a value.
-- `meta` is the content of the `cfg` attribute (e.g., `test`, `debug_assertions`).
+- `expr` = a Rust expression.
+- `closure` = a Rust closure.
+- `bool_expr` = `expr` (* that evaluates to `bool` *).
+- `bool_closure` = `closure` (* that takes the function's return value as an argument and evaluates to `bool` *).
+- `pattern` = any valid Rust pattern used for binding a value.
+- `settings` = the content of the `cfg` attribute (e.g., `test`, `debug_assertions`).
 
 ### Runtime Checks
 
