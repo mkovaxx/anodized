@@ -141,7 +141,7 @@ In **postconditions** (`ensures`), you can refer to the function's return value 
 fn get_positive_value() -> i32 { /* ... */ }
 ```
 
-**Note** that a postcondition is _always_ a closure, because it needs to bind the return value. When you write a postcondition as a "naked" expression, that is shorthand for using the default binding, i.e. `|output| <expression>`. In error messages, a postcondition is always displayed as a closure to make the binding explicit (e.g., `|output| output > 0`).
+**Note** that a postcondition is _always_ a closure, because it needs to bind the return value. When you write a postcondition as a "naked" expression, that is shorthand for using the default binding, i.e. `|output| <expression>`. In error messages, a postcondition is always displayed as a closure to make the binding explicit (e.g. `|output| output > 0`).
 
 If the name `output` collides with an existing identifier, you can choose a different name for it in two ways:
 
@@ -226,7 +226,7 @@ Anodized differentiates itself with a few key design choices:
 
 - **Unified Attribute**: Anodized uses a single, comprehensive `#[contract]` attribute to group all conditions for a function, presenting the entire contract as one cohesive block.
 
-- **Ergonomic Focus**: The design process has been heavily focused on refining the user-facing syntax (e.g., keyword choices, return value binding) to be as intuitive, approachable, and powerful as possible.
+- **Ergonomic Focus**: The design process has been heavily focused on refining the user-facing syntax (e.g. keyword choices, return value binding) to be as intuitive, approachable, and powerful as possible.
 
 - **Ecosystem Vision**: While `contracts` is an excellent tool for runtime checking, Anodized is designed from the ground up to be a foundational layer for a wider ecosystem of diverse correctness tools, from fuzzing to formal verification.
 
