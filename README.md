@@ -274,12 +274,12 @@ maintains_param = [ cfg_attr ] , `maintains:` , conditions, `,`;
 binds_param     = `binds:` , pattern, `,`;
 ensures_param   = [ cfg_attr ] , `ensures:` , post_conds, `,`;
 
-conditions = bool_expr | condition_list;
-condition_list = `[` , bool_expr , { `,` , bool_expr } , [ `,` ] , `]`;
+conditions = expr | condition_list;
+condition_list = `[` , expr , { `,` , expr } , [ `,` ] , `]`;
 
 post_conds = post_cond_expr | post_cond_list;
 post_cond_list = `[` , post_cond_expr , { `,` , post_cond_expr } , [ `,` ] , `]`;
-post_cond_expr = bool_expr | bool_closure;
+post_cond_expr = expr | closure;
 
 cfg_attr = `#[cfg(` , settings , `)]`;
 ```
@@ -288,12 +288,10 @@ cfg_attr = `#[cfg(` , settings , `)]`;
 
 - The last `,` is optional.
 - The `params` rule defines a sequence of optional parameter groups that must appear in the specified order. Commas are required to separate any provided groups.
-- `expr` = a Rust expression.
-- `closure` = a Rust closure.
-- `bool_expr` = `expr` (* that evaluates to `bool` *).
-- `bool_closure` = `closure` (* that takes the function's return value as an argument and evaluates to `bool` *).
-- `pattern` = any valid Rust pattern used for binding a value.
-- `settings` = the content of the `cfg` attribute (e.g., `test`, `debug_assertions`).
+- `expr` refers to a Rust [`expression`](https://doc.rust-lang.org/reference/expressions.html); type checking will fail if it does not evaluate to `bool`.
+- `closure` refers to a Rust [`closure expression`](https://doc.rust-lang.org/reference/expressions/closure-expr.html); type checking will fail if it does not take the function's return value as an argument and evaluate to `bool`.
+- `pattern` refers to any valid Rust [`pattern`](https://doc.rust-lang.org/reference/patterns.html); type checking will fail if its type does not match the function's return value.
+- `settings` is the content of the [`cfg`](https://doc.rust-lang.org/reference/conditional-compilation.html) attribute (e.g., `test`, `debug_assertions`).
 
 ### Runtime Checks
 
