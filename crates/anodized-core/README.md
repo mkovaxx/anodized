@@ -1,3 +1,5 @@
+<img width="100" alt="Anodized Logo" src="https://raw.githubusercontent.com/mkovaxx/anodized/main/assets/logo.svg">
+
 # Anodized Core
 
 This crate provides the core data structures and logic for the [Anodized](https://github.com/mkovaxx/anodized) ecosystem.
