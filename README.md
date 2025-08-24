@@ -73,7 +73,7 @@ The long-term vision includes developing a suite of `anodized-*` tools, such as:
 
 Anodized aims to support a wide spectrum of correctness tools, enabling you to choose the best combination for each project. From simple runtime checks to full formal proofs, leveraging the exact same contract annotations.
 
-## Annotation Syntax
+## Contracts
 
 The `#[contract]` attribute provides a powerful and ergonomic way to define contracts.
 
@@ -251,3 +251,70 @@ See [LICENSE-MIT](LICENSE-MIT) and [LICENSE-APACHE](LICENSE-APACHE) for details.
 ## Contributing
 
 Contributions are welcome! Please feel free to open an issue or submit a pull request.
+
+## Appendix
+
+### Contract Syntax
+
+The arguments to the `#[contract]` attribute follow a specific grammar, which is formally defined as follows.
+
+```
+contract_args ::= ( contract_arg ","? )*
+contract_arg  ::= requires_arg | maintains_arg | binds_arg | ensures_arg
+
+requires_arg  ::= attribute? "requires" ":" ( expr | "[" expr ( "," expr )* ","? "]" )
+maintains_arg ::= attribute? "maintains" ":" ( expr | "[" expr ( "," expr )* ","? "]" )
+binds_arg     ::= "binds" ":" pattern
+ensures_arg   ::= attribute? "ensures" ":" ( expr | "[" expr ( "," expr )* ","? "]" )
+
+attribute ::= "#" "[" "cfg" "(" meta ")" "]"
+```
+
+**Notes:**
+
+- The arguments must appear in the following order: `requires`, `maintains`, `binds`, `ensures`.
+- `expr` refers to a Rust expression that must evaluate to `bool`.
+- `pattern` refers to any valid Rust pattern used for binding a value.
+- `meta` is the content of the `cfg` attribute (e.g., `test`, `debug_assertions`).
+
+### Runtime Checks
+
+When runtime checks are enabled (by default, in debug builds), the `#[contract]` macro transforms the function body to inject assertions. This process, known as instrumentation, follows a clear pattern.
+
+Given an original function like this:
+
+```rust,ignore
+#[contract(
+    requires: <PRECONDITION>,
+    maintains: <INVARIANT>,
+    ensures: <POSTCONDITION_CLOSURE>,
+)]
+fn my_function(<ARGUMENTS>) -> <RETURN_TYPE> {
+    <BODY>
+}
+```
+
+The macro rewrites the body to be conceptually equivalent to the following:
+
+```rust,ignore
+fn my_function(<ARGUMENTS>) -> <RETURN_TYPE> {
+    // 1. Preconditions and invariants are checked
+    assert!(<PRECONDITION>, "Precondition failed: <PRECONDITION>");
+    assert!(<INVARIANT>, "Pre-invariant failed: <INVARIANT>");
+
+    // 2. The original function body is executed
+    let __anodized_output = {
+        <BODY>
+    };
+
+    // 3. Invariants and postconditions are checked
+    assert!(<INVARIANT>, "Post-invariant failed: <INVARIANT>");
+    assert!((<POSTCONDITION_CLOSURE>)(__anodized_output),
+        "Postcondition failed: <POSTCONDITION_CLOSURE>");
+
+    // 4. The result is returned
+    __anodized_output
+}
+```
+
+This transformation happens hygienically, meaning the `__anodized_output` variable will not conflict with any existing variables in your code. Any `#[cfg]` attributes on conditions are respected, and the corresponding `assert!` will be wrapped in an `if cfg!(...)` block, ensuring that expensive checks can be conditionally compiled. In release builds, this entire instrumentation is disabled, resulting in zero performance overhead.
