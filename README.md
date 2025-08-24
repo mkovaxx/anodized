@@ -274,18 +274,14 @@ maintains_param = [ cfg_attr ] , `maintains:` , conditions, `,`;
 binds_param     = `binds:` , pattern, `,`;
 ensures_param   = [ cfg_attr ] , `ensures:` , post_conds, `,`;
 
-conditions = expr | condition_list;
-condition_list = `[` , expr , { `,` , expr } , [ `,` ] , `]`;
+conditions = bool_expr | condition_list;
+condition_list = `[` , bool_expr , { `,` , bool_expr } , [ `,` ] , `]`;
 
 post_conds = post_cond_expr | post_cond_list;
 post_cond_list = `[` , post_cond_expr , { `,` , post_cond_expr } , [ `,` ] , `]`;
-post_cond_expr = expr | closure;
+post_cond_expr = bool_expr | bool_closure;
 
 cfg_attr = `#[cfg(` , settings , `)]`;
-
-bool_expr = expr (* that evaluates to `bool` *).
-bool_closure = closure (* that returns `bool` *).
-settings = meta (* that the standard `[#cfg]` attribute expects *)
 ```
 
 **Notes:**
