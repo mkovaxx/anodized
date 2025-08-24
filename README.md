@@ -12,7 +12,7 @@
 
 Anodized is a pragmatic suite of tools that helps improve the correctness of your Rust code. Its central idea is **contract** annotations that are deeply integrated with your code, instead of isolated in comments or funky string literals.
 
-Contracts serve as the foundation for a larger **ecosystem of correctness tools**. Anodized connects many disparate aproaches, including fuzz testing, formal verification, and more, into a unified user experience.
+Contracts serve as the foundation for a larger **ecosystem of correctness tools**. Anodized aims to connect many disparate approaches, including fuzz testing, formal verification, and more, into a unified user experience.
 
 ***
 
