@@ -268,10 +268,14 @@ ensures_params   = ensures_param , { `,` , ensures_param };
 requires_param  = [ cfg_attr ] , `requires:` , conditions;
 maintains_param = [ cfg_attr ] , `maintains:` , conditions;
 binds_param     = `binds:` , pattern;
-ensures_param   = [ cfg_attr ] , `ensures:` , conditions;
+ensures_param   = [ cfg_attr ] , `ensures:` , post_conditions;
 
 conditions = expr | condition_list;
 condition_list = `[` , expr , { `,` , expr } , [ `,` ] , `]`;
+
+post_conditions = post_condition_expr | post_condition_list;
+post_condition_list = `[` , post_condition_expr , { `,` , post_condition_expr } , [ `,` ] , `]`;
+post_condition_expr = expr | closure;
 
 cfg_attr = `#[cfg(` , meta , `)]`;
 ```
@@ -280,6 +284,7 @@ cfg_attr = `#[cfg(` , meta , `)]`;
 
 - The `params` rule defines a sequence of optional parameter groups that must appear in the specified order. Commas are required to separate any provided groups.
 - `expr` refers to a Rust expression that must evaluate to `bool`.
+- `closure` refers to a Rust closure that takes the function's return value as an argument and evaluates to `bool`.
 - `pattern` refers to any valid Rust pattern used for binding a value.
 - `meta` is the content of the `cfg` attribute (e.g., `test`, `debug_assertions`).
 
