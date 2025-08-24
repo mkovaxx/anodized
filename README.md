@@ -256,23 +256,21 @@ Contributions are welcome! Please feel free to open an issue or submit a pull re
 
 ### Contract Syntax
 
-The arguments to the `#[contract]` attribute follow a specific grammar, which is formally defined as follows.
+The `#[contract]` attribute's parameters follow a specific grammar, which is formally defined as follows.
 
-```
-contract_args ::= ( contract_arg ","? )*
-contract_arg  ::= requires_arg | maintains_arg | binds_arg | ensures_arg
-
-requires_arg  ::= attribute? "requires" ":" ( expr | "[" expr ( "," expr )* ","? "]" )
-maintains_arg ::= attribute? "maintains" ":" ( expr | "[" expr ( "," expr )* ","? "]" )
-binds_arg     ::= "binds" ":" pattern
-ensures_arg   ::= attribute? "ensures" ":" ( expr | "[" expr ( "," expr )* ","? "]" )
-
-attribute ::= "#" "[" "cfg" "(" meta ")" "]"
-```
+args ::= ( param `,`? )*  
+param  ::= requires_param | maintains_param | binds_param | ensures_param  
+  
+requires_param  ::= attribute? `requires:` ( expr | `[` expr (`,` expr)* `,`? `]` )  
+maintains_param ::= attribute? `maintains:` ( expr | `[` expr (`,` expr)* `,`? `]` )  
+binds_param     ::= `binds:` pattern  
+ensures_param   ::= attribute? `ensures:` ( expr | `[` expr (`,` expr)* `,`? `]` )  
+  
+attribute ::= `#[cfg(` meta `)]`
 
 **Notes:**
 
-- The arguments must appear in the following order: `requires`, `maintains`, `binds`, `ensures`.
+- The parameters must appear in the following order: `requires`, `maintains`, `binds`, `ensures`.
 - `expr` refers to a Rust expression that must evaluate to `bool`.
 - `pattern` refers to any valid Rust pattern used for binding a value.
 - `meta` is the content of the `cfg` attribute (e.g., `test`, `debug_assertions`).
