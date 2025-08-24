@@ -259,19 +259,19 @@ Contributions are welcome! Please feel free to open an issue or submit a pull re
 The `#[contract]` attribute's parameters follow a specific grammar, which is formally defined using EBNF as follows.
 
 ```ebnf
-params = [ requires_params , `,` ]
-       , [ maintains_params , `,` ]
-       , [ binds_param , `,` ]
-       , [ ensures_params , `,` ];
+params = [ requires_params ]
+       , [ maintains_params ]
+       , [ binds_param ]
+       , [ ensures_params ];
 
-requires_params  = requires_param , { `,` , requires_param };
-maintains_params = maintains_param , { `,` , maintains_param };
-ensures_params   = ensures_param , { `,` , ensures_param };
+requires_params  = { requires_param };
+maintains_params = { maintains_param };
+ensures_params   = { ensures_param };
 
-requires_param  = [ cfg_attr ] , `requires:` , conditions;
-maintains_param = [ cfg_attr ] , `maintains:` , conditions;
-binds_param     = `binds:` , pattern;
-ensures_param   = [ cfg_attr ] , `ensures:` , post_conditions;
+requires_param  = [ cfg_attr ] , `requires:` , conditions, `,`;
+maintains_param = [ cfg_attr ] , `maintains:` , conditions, `,`;
+binds_param     = `binds:` , pattern, `,`;
+ensures_param   = [ cfg_attr ] , `ensures:` , post_conditions, `,`;
 
 conditions = expr | condition_list;
 condition_list = `[` , expr , { `,` , expr } , [ `,` ] , `]`;
