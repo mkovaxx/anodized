@@ -261,7 +261,7 @@ The `#[contract]` attribute's parameters follow a specific grammar, which is for
 ```ebnf
 params = [ requires_params ]
        , [ maintains_params ]
-       (* the lack of plural here is not a typo: at most one 'binds' is allowed *)
+       (* not a typo: at most one `binds` *)
        , [ binds_param ]
        , [ ensures_params ];
 
