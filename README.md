@@ -255,3 +255,38 @@ Contributions are welcome! Please feel free to open an issue or submit a pull re
 ## Technical Documentation
 
 For detailed technical documentation including the formal contract grammar and runtime check implementation details, see the [`anodized-core`](https://docs.rs/anodized-core) documentation.
+
+## [TEMP] New Example Collection
+
+### Example 1: API Boundary Contracts
+```rust
+#[contract(
+    requires: [
+        token.len() == 32,
+        token.chars().all(|c| c.is_ascii_hexdigit()),
+    ],
+    ensures: output.is_ok() == !self.is_revoked(&token),
+)]
+fn authenticate(&self, token: &str) -> Result<Session, AuthError> { /* ... */ }
+```
+
+### Example 2: Invariant-Driven Data Structure
+```rust
+impl<T: Ord> SortedVec<T> {
+    #[contract(
+        maintains: self.is_sorted(),
+        ensures: self.contains(&item),
+    )]
+    fn insert(&mut self, item: T) { /* ... */ }
+    
+    #[contract(
+        requires: !self.is_empty(),
+        maintains: self.is_sorted(),
+        clones: self as old_self,
+        ensures: [
+            old_self.contains(&output),
+            self.iter().all(|x| output <= x),
+        ],
+    )]
+    fn pop_min(&mut self) -> T { /* ... */ }
+}
