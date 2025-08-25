@@ -55,7 +55,7 @@ cfg_attr = `#[cfg(` , settings , `)]`;
 - `expr` refers to a Rust [`expression`](https://doc.rust-lang.org/reference/expressions.html); type checking will fail if it does not evaluate to `bool`.
 - `closure` refers to a Rust [`closure expression`](https://doc.rust-lang.org/reference/expressions/closure-expr.html); type checking will fail if it does not take the function's return value as an argument and evaluate to `bool`.
 - `pattern` refers to any valid Rust [`pattern`](https://doc.rust-lang.org/reference/patterns.html); type checking will fail if its type does not match the function's return value.
-- `settings` is the content of the [`cfg`](https://doc.rust-lang.org/reference/conditional-compilation.html) attribute (e.g., `test`, `debug_assertions`).
+- `settings` is the content of the [`cfg`](https://doc.rust-lang.org/reference/conditional-compilation.html) attribute (e.g. `test`, `debug_assertions`).
 
 ## Runtime Checks
 
