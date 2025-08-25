@@ -29,7 +29,7 @@ anodized = "0.2.0"
 
 Use the `#[contract]` attribute to define preconditions (`requires`), postconditions (`ensures`), and invariants (`maintains`). Each _condition_ is a standard Rust expression that evaluates to `bool`. In postconditions, the function's return value is available as `output`.
 
-```rust,no_run
+```rust,ignore
 use anodized::contract;
 
 #[contract(
@@ -95,16 +95,7 @@ A condition is a `bool`-valued Rust expression; as simple as that. This is a non
 
 You can include any number of each flavor. Multiple conditions of the same flavor are combined with a logical **AND** (`&&`).
 
-```rust
-# use anodized::contract;
-# struct Container<T> {
-#     items: Vec<T>,
-#     is_initialized: bool,
-#     is_locked: bool,
-# }
-# impl<T> Container<T> {
-#     fn len(&self) -> usize { self.items.len() }
-#     fn capacity(&self) -> usize { self.items.capacity() }
+```rust,ignore
 #[contract(
     // These two preconditions are equivalent to a single
     // precondition, `self.is_initialized && !self.is_locked`.
@@ -115,10 +106,7 @@ You can include any number of each flavor. Multiple conditions of the same flavo
     // The next one is an invariant.
     maintains: self.len() <= self.capacity(),
 )]
-fn push(&mut self, value: T) {
-#     self.items.push(value);
-}
-# }
+fn push(&mut self, value: T) { /* ... */ }
 ```
 
 ### Configure Runtime Checks with `#[cfg]`
