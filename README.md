@@ -125,7 +125,7 @@ fn push(&mut self, value: T) {
 
 You can use the standard `#[cfg]` attribute to conditionally enable or disable the *runtime checks* for any condition. This is ideal for expensive checks that you only want to run during testing or in debug builds.
 
-```rust,ignore
+```rust
 #[contract(
     // Runtime checks only during `cargo test`.
     #[cfg(test)]
@@ -146,7 +146,7 @@ This gives you fine-grained control over the performance impact of your contract
 
 In **postconditions** (`ensures`), you can refer to the function's return value by the default name `output`.
 
-```rust,ignore
+```rust
 #[contract(
     ensures: output > 0,
 )]
@@ -159,7 +159,7 @@ If the name `output` collides with an existing identifier, you can choose a diff
 
 **1. Contract-Wide Binding**: Use the `binds` parameter to set a new name for the return value across all postconditions in the contract. It must be placed immediately before any `ensures` conditions.
 
-```rust,ignore
+```rust
 #[contract(
     binds: new_value,
     ensures: new_value > old_value,
@@ -169,7 +169,7 @@ fn increment(old_value: i32) -> i32 { /* ... */ }
 
  **2. Closure Binding**: Write the postcondition as a closure. This has the highest precedence and affects only that single condition.
 
-```rust,ignore
+```rust
 #[contract(
     ensures: [
         // This postcondition uses the default binding `output`.
@@ -183,7 +183,7 @@ fn create_data() -> Data { /* ... */ }
 
 **3. Binding Precedence**: The closure's binding takes precedence; same as in Rust. Plain postconditions still use the contract-wide binding.
 
-```rust,ignore
+```rust
 // A function where 'output' is an argument name, requiring a different name.
 #[contract(
     // Set a contract-wide name for the return value: `result`.
@@ -202,7 +202,7 @@ fn calculate_even_result(output: i32) -> i32 { /* ... */ }
 
 The `binds` parameter also lets you destructure return values, making complex postconditions easier to read and write. You can use any valid Rust pattern, including tuple patterns, struct patterns, or even more complex nested patterns.
 
-```rust,ignore
+```rust
 use anodized::contract;
 
 #[contract(
