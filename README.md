@@ -29,7 +29,7 @@ anodized = "0.2.0"
 
 Use the `#[contract]` attribute to define preconditions (`requires`), postconditions (`ensures`), and invariants (`maintains`). Each _condition_ is a standard Rust expression that evaluates to `bool`. In postconditions, the function's return value is available as `output`.
 
-```rust,ignore
+```rust
 use anodized::contract;
 
 #[contract(
@@ -95,7 +95,7 @@ A condition is a `bool`-valued Rust expression; as simple as that. This is a non
 
 You can include any number of each flavor. Multiple conditions of the same flavor are combined with a logical **AND** (`&&`).
 
-```rust,ignore
+```rust
 #[contract(
     // These two preconditions are equivalent to a single
     // precondition, `self.is_initialized && !self.is_locked`.
