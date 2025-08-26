@@ -223,15 +223,17 @@ A core design principle of Anodized is that a condition is written as a **standa
 
 ## Why "Spec" Instead of "Contract"
 
-Anodized uses the term "specification" (shortened to "spec") rather than "contract" for a deliberate and practical reason. While the Design by Contract methodology has a rich history in software engineering, the term "contract" has become strongly associated with blockchain smart contracts in recent years, particularly in the Rust ecosystem where many blockchain platforms use Rust as their primary development language.
+The choice of "specification" (or "spec") over "contract" is deliberate. While Design by Contract has a rich history, the term "contract" is now strongly associated with blockchain. This is particularly true in Rust, which has become a leading language for smart contract development.
 
-This naming collision creates confusion for developers searching for correctness tools. When someone searches for "Rust contract," they're far more likely to be looking for blockchain-related tools than Design by Contract libraries. By using "specification" instead, Anodized:
+This naming collision hurts discoverability. Searching for "Rust contract" yields blockchain results, not correctness tools.
 
-- **Improves discoverability**: Developers looking for correctness and verification tools are more likely to find what they're looking for.
-- **Reduces confusion**: The distinction from blockchain technology is immediately clear.
-- **Maintains clarity**: "Specification" accurately describes what these annotations are: formal specifications of intended behavior.
+Using "specification" instead:
 
-The term "spec" is already familiar to developers from contexts like test specifications, API specifications, and formal specifications. It conveys the same meaning as "contract" in the Design by Contract sense, while avoiding the modern ambiguity.
+- **Improves discoverability**: Developers find correctness tools when searching for them.
+- **Reduces confusion**: The distinction from blockchain is immediately clear.
+- **Maintains clarity**: "Specification" accurately describes these formal behavior annotations.
+
+The term "spec" is already familiar from test specs, API specs, and formal specifications. It conveys the same meaning as Design by Contract while avoiding modern ambiguity.
 
 ## Prior Art and Motivation
 
