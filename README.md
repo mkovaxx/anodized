@@ -12,7 +12,7 @@
 
 Anodized is a pragmatic suite of tools that helps improve the correctness of your Rust code. Its central idea is **contract** annotations that are deeply integrated with your code, instead of isolated in comments or funky string literals.
 
-Contracts serve as the foundation for a larger **ecosystem of correctness tools**. Anodized connects many disparate aproaches, including fuzz testing, formal verification, and more, into a unified user experience.
+Contracts serve as the foundation for a larger **ecosystem of correctness tools**. Anodized aims to connect many disparate approaches, including fuzz testing, formal verification, and more, into a unified user experience.
 
 ***
 
@@ -29,23 +29,30 @@ anodized = "0.2.0"
 
 Use the `#[contract]` attribute to define preconditions (`requires`), postconditions (`ensures`), and invariants (`maintains`). Each _condition_ is a standard Rust expression that evaluates to `bool`. In postconditions, the function's return value is available as `output`.
 
-```rust,ignore
+```rust
 use anodized::contract;
 
 #[contract(
-    requires: divisor != 0,
-    ensures: output < dividend,
+    requires: [
+        part >= 0.0,
+        part <= whole,
+        whole > 0.0,
+    ],
+    ensures: [
+        output >= 0.0,
+        output <= 100.0,
+    ],
 )]
-fn checked_divide(dividend: i32, divisor: i32) -> i32 {
-    dividend / divisor
+fn calculate_percentage(part: f64, whole: f64) -> f64 {
+    (part / whole) * 100.0
 }
 
 fn main() {
     // This call satisfies the contract and runs fine.
-    println!("10 / 2 = {}", checked_divide(10, 2));
+    println!("25 out of 100 = {}%", calculate_percentage(25.0, 100.0));
 
     // This call violates the precondition and will panic in debug builds.
-    println!("10 / 0 = {}", checked_divide(10, 0));
+    println!("10 out of 0 = {}%", calculate_percentage(10.0, 0.0));
 }
 ```
 
@@ -54,7 +61,7 @@ fn main() {
 In a **debug build** (`cargo run` or `cargo test`), your code is automatically instrumented to check the contracts. A contract violation will cause a panic with a descriptive error message:
 
 ```ignore
-thread 'main' panicked at 'Precondition failed: divisor != 0', src/main.rs:17:5
+thread 'main' panicked at 'Precondition failed: whole > 0', src/main.rs:17:5
 ```
 
 In a **release build** (`cargo run --release`), _runtime_ contract-checking is disabled, resulting in **zero performance cost** to your production code. Note that the compiler still checks contracts for errors such as bad syntax, unknown identifiers, type mismatches, etc.
@@ -73,7 +80,7 @@ The long-term vision includes developing a suite of `anodized-*` tools, such as:
 
 Anodized aims to support a wide spectrum of correctness tools, enabling you to choose the best combination for each project. From simple runtime checks to full formal proofs, leveraging the exact same contract annotations.
 
-## Annotation Syntax
+## Contracts
 
 The `#[contract]` attribute provides a powerful and ergonomic way to define contracts.
 
@@ -95,7 +102,7 @@ A condition is a `bool`-valued Rust expression; as simple as that. This is a non
 
 You can include any number of each flavor. Multiple conditions of the same flavor are combined with a logical **AND** (`&&`).
 
-```rust,ignore
+```rust
 #[contract(
     // These two preconditions are equivalent to a single
     // precondition, `self.is_initialized && !self.is_locked`.
@@ -111,9 +118,9 @@ fn push(&mut self, value: T) { /* ... */ }
 
 ### Configure Runtime Checks with `#[cfg]`
 
-You can use the standard `#[cfg]` attribute to conditionally enable or disable the *runtime checks* for any condition. This is ideal for expensive checks that you only want to run during testing or in debug builds.
+You can use the standard `#[cfg]` attribute to conditionally enable or disable the _runtime checks_ for any condition. This is ideal for expensive checks that you only want to run during testing or in debug builds.
 
-```rust,ignore
+```rust
 #[contract(
     // Runtime checks only during `cargo test`.
     #[cfg(test)]
@@ -126,7 +133,7 @@ You can use the standard `#[cfg]` attribute to conditionally enable or disable t
 fn perform_complex_operation(&mut self) -> Result { /* ... */ }
 ```
 
-**Important:** Anodized guarantees that all your contracts are syntactically valid and type-correct, regardless of the `#[cfg]` attribute. The attribute only controls whether a check is performed at *runtime*. This ensures that e.g. a contract valid in `test` builds can't become invalid in `release` builds, and it allows other tools in the ecosystem (like static analyzers) to always see the full contract.
+**Important:** Anodized guarantees that all your contracts are syntactically valid and type-correct, regardless of the `#[cfg]` attribute. The attribute only controls whether a check is performed at _runtime_. This ensures that e.g. a contract valid in `test` builds can't become invalid in `release` builds, and it allows other tools in the ecosystem (like static analyzers) to always see the full contract.
 
 This gives you fine-grained control over the performance impact of your contracts, allowing you to write the conditions thoroughly without affecting release build performance.
 
@@ -134,20 +141,20 @@ This gives you fine-grained control over the performance impact of your contract
 
 In **postconditions** (`ensures`), you can refer to the function's return value by the default name `output`.
 
-```rust,ignore
+```rust
 #[contract(
     ensures: output > 0,
 )]
 fn get_positive_value() -> i32 { /* ... */ }
 ```
 
-**Note** that a postcondition is _always_ a closure, because it needs to bind the return value. When you write a postcondition as a "naked" expression, that is shorthand for using the default binding, i.e. `|output| <expression>`. In error messages, a postcondition is always displayed as a closure to make the binding explicit (e.g., `|output| output > 0`).
+**Note** that a postcondition is _always_ a closure, because it needs to bind the return value. When you write a postcondition as a "naked" expression, that is shorthand for using the default binding, i.e. `|output| <expression>`. In error messages, a postcondition is always displayed as a closure to make the binding explicit (e.g. `|output| output > 0`).
 
 If the name `output` collides with an existing identifier, you can choose a different name for it in two ways:
 
 **1. Contract-Wide Binding**: Use the `binds` parameter to set a new name for the return value across all postconditions in the contract. It must be placed immediately before any `ensures` conditions.
 
-```rust,ignore
+```rust
 #[contract(
     binds: new_value,
     ensures: new_value > old_value,
@@ -157,7 +164,7 @@ fn increment(old_value: i32) -> i32 { /* ... */ }
 
  **2. Closure Binding**: Write the postcondition as a closure. This has the highest precedence and affects only that single condition.
 
-```rust,ignore
+```rust
 #[contract(
     ensures: [
         // This postcondition uses the default binding `output`.
@@ -171,7 +178,7 @@ fn create_data() -> Data { /* ... */ }
 
 **3. Binding Precedence**: The closure's binding takes precedence; same as in Rust. Plain postconditions still use the contract-wide binding.
 
-```rust,ignore
+```rust
 // A function where 'output' is an argument name, requiring a different name.
 #[contract(
     // Set a contract-wide name for the return value: `result`.
@@ -190,7 +197,7 @@ fn calculate_even_result(output: i32) -> i32 { /* ... */ }
 
 The `binds` parameter also lets you destructure return values, making complex postconditions easier to read and write. You can use any valid Rust pattern, including tuple patterns, struct patterns, or even more complex nested patterns.
 
-```rust,ignore
+```rust
 use anodized::contract;
 
 #[contract(
@@ -226,7 +233,7 @@ Anodized differentiates itself with a few key design choices:
 
 - **Unified Attribute**: Anodized uses a single, comprehensive `#[contract]` attribute to group all conditions for a function, presenting the entire contract as one cohesive block.
 
-- **Ergonomic Focus**: The design process has been heavily focused on refining the user-facing syntax (e.g., keyword choices, return value binding) to be as intuitive, approachable, and powerful as possible.
+- **Ergonomic Focus**: The design process has been heavily focused on refining the user-facing syntax (e.g. keyword choices, return value binding) to be as intuitive, approachable, and powerful as possible.
 
 - **Ecosystem Vision**: While `contracts` is an excellent tool for runtime checking, Anodized is designed from the ground up to be a foundational layer for a wider ecosystem of diverse correctness tools, from fuzzing to formal verification.
 
@@ -251,3 +258,7 @@ See [LICENSE-MIT](LICENSE-MIT) and [LICENSE-APACHE](LICENSE-APACHE) for details.
 ## Contributing
 
 Contributions are welcome! Please feel free to open an issue or submit a pull request.
+
+## Technical Documentation
+
+For detailed technical documentation including the formal contract grammar and runtime check implementation details, see the [`anodized-core`](https://docs.rs/anodized-core) documentation.
