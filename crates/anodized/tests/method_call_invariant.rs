@@ -1,4 +1,4 @@
-use anodized::contract;
+use anodized::spec;
 
 struct Validator {
     valid: bool,
@@ -9,7 +9,7 @@ impl Validator {
         self.valid
     }
 
-    #[contract(
+    #[spec(
         maintains: self.is_valid(),
     )]
     fn set_validity(&mut self, new_validity: bool) {

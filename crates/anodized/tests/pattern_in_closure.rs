@@ -1,6 +1,6 @@
-use anodized::contract;
+use anodized::spec;
 
-#[contract(
+#[spec(
     ensures: [
         |(a, b)| a <= b,
         |(a, b)| (a, b) == pair || (b, a) == pair,

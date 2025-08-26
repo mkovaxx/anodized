@@ -1,6 +1,6 @@
-use anodized::contract;
+use anodized::spec;
 
-#[contract(
+#[spec(
     requires: divisor != 0,
     ensures: output < dividend,
 )]

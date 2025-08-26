@@ -1,6 +1,6 @@
-use anodized::contract;
+use anodized::spec;
 
-#[contract(
+#[spec(
     binds: result,
     ensures: [
         result > output,
@@ -21,7 +21,7 @@ fn test_rename_success() {
     calculate_even_result(5);
 }
 
-#[contract(
+#[spec(
     binds: result,
     ensures: result % 2 == 0,
 )]

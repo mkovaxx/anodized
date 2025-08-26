@@ -1,46 +1,46 @@
-use crate::test_util::assert_contract_eq;
+use crate::test_util::assert_spec_eq;
 
 use super::*;
 use syn::parse_quote;
 
 #[test]
 fn test_parse_simple_contract() {
-    let contract: Contract = parse_quote! {
+    let contract: Spec = parse_quote! {
         requires: is_valid(x),
         ensures: output > x,
     };
 
-    let expected = Contract {
+    let expected = Spec {
         requires: vec![parse_quote! { is_valid(x) }],
         maintains: vec![],
         ensures: vec![parse_quote! { |output| output > x }],
     };
 
-    assert_contract_eq(&contract, &expected);
+    assert_spec_eq(&contract, &expected);
 }
 
 #[test]
 fn test_parse_all_clauses() {
-    let contract: Contract = parse_quote! {
+    let contract: Spec = parse_quote! {
         requires: x > 0 && x.is_power_of_two(),
         maintains: self.is_valid(),
         binds: z,
         ensures: z >= x,
     };
 
-    let expected = Contract {
+    let expected = Spec {
         requires: vec![parse_quote! { x > 0 && x.is_power_of_two() }],
         maintains: vec![parse_quote! { self.is_valid() }],
         ensures: vec![parse_quote! { |z| z >= x }],
     };
 
-    assert_contract_eq(&contract, &expected);
+    assert_spec_eq(&contract, &expected);
 }
 
 #[test]
 #[should_panic(expected = "parameters are out of order")]
 fn test_parse_out_of_order() {
-    let _: Contract = parse_quote! {
+    let _: Spec = parse_quote! {
         ensures: output == x,
         requires: x > 0 && !is_zero(x),
     };
@@ -49,7 +49,7 @@ fn test_parse_out_of_order() {
 #[test]
 #[should_panic(expected = "multiple `binds` parameters are not allowed")]
 fn test_parse_multiple_binds() {
-    let _: Contract = parse_quote! {
+    let _: Spec = parse_quote! {
         binds: y,
         binds: z,
     };
@@ -57,7 +57,7 @@ fn test_parse_multiple_binds() {
 
 #[test]
 fn test_parse_array_of_conditions() {
-    let contract: Contract = parse_quote! {
+    let contract: Spec = parse_quote! {
         requires: [
             x >= 0,
             y.len() < 10,
@@ -68,7 +68,7 @@ fn test_parse_array_of_conditions() {
         ],
     };
 
-    let expected = Contract {
+    let expected = Spec {
         requires: vec![
             parse_quote! { x >= 0 },
             parse_quote! { y.len() < 10 },
@@ -80,16 +80,16 @@ fn test_parse_array_of_conditions() {
         ],
     };
 
-    assert_contract_eq(&contract, &expected);
+    assert_spec_eq(&contract, &expected);
 }
 
 #[test]
 fn test_parse_ensures_with_closure() {
-    let contract: Contract = parse_quote! {
+    let contract: Spec = parse_quote! {
         ensures: |result| result.is_ok() || result.unwrap_err().kind() == ErrorKind::NotFound,
     };
 
-    let expected = Contract {
+    let expected = Spec {
         requires: vec![],
         maintains: vec![],
         ensures: vec![
@@ -97,19 +97,19 @@ fn test_parse_ensures_with_closure() {
         ],
     };
 
-    assert_contract_eq(&contract, &expected);
+    assert_spec_eq(&contract, &expected);
 }
 
 #[test]
 fn test_parse_multiple_clauses_of_same_flavor() {
-    let contract: Contract = parse_quote! {
+    let contract: Spec = parse_quote! {
         requires: x > 0 || x < -10,
         requires: y.is_ascii(),
         ensures: output < x,
         ensures: |output| output.len() >= y.len(),
     };
 
-    let expected = Contract {
+    let expected = Spec {
         requires: vec![
             parse_quote! { x > 0 || x < -10 },
             parse_quote! { y.is_ascii() },
@@ -121,12 +121,12 @@ fn test_parse_multiple_clauses_of_same_flavor() {
         ],
     };
 
-    assert_contract_eq(&contract, &expected);
+    assert_spec_eq(&contract, &expected);
 }
 
 #[test]
 fn test_parse_mixed_single_and_array_clauses() {
-    let contract: Contract = parse_quote! {
+    let contract: Spec = parse_quote! {
         requires: x == 0,
         requires: [
             y > 1,
@@ -139,7 +139,7 @@ fn test_parse_mixed_single_and_array_clauses() {
         ensures: output.len() > x,
     };
 
-    let expected = Contract {
+    let expected = Spec {
         requires: vec![
             parse_quote! { x == 0 },
             parse_quote! { y > 1 },
@@ -153,19 +153,19 @@ fn test_parse_mixed_single_and_array_clauses() {
         ],
     };
 
-    assert_contract_eq(&contract, &expected);
+    assert_spec_eq(&contract, &expected);
 }
 
 #[test]
 fn test_parse_cfg_attributes() {
-    let contract: Contract = parse_quote! {
+    let contract: Spec = parse_quote! {
         #[cfg(test)]
         requires: x > 0 && is_test_mode(),
         #[cfg(not(debug_assertions))]
         ensures: output < x,
     };
 
-    let expected = Contract {
+    let expected = Spec {
         requires: vec![Condition {
             expr: parse_quote! { x > 0 && is_test_mode() },
             cfg: Some(parse_quote! { test }),
@@ -177,13 +177,13 @@ fn test_parse_cfg_attributes() {
         }],
     };
 
-    assert_contract_eq(&contract, &expected);
+    assert_spec_eq(&contract, &expected);
 }
 
 #[test]
 #[should_panic(expected = "unsupported attribute; only `cfg` is allowed")]
 fn test_parse_non_cfg_attribute() {
-    let _: Contract = parse_quote! {
+    let _: Spec = parse_quote! {
         #[allow(dead_code)]
         requires: x > 0,
     };
@@ -192,7 +192,7 @@ fn test_parse_non_cfg_attribute() {
 #[test]
 #[should_panic(expected = "multiple `cfg` attributes are not supported")]
 fn test_parse_multiple_cfg_attributes() {
-    let _: Contract = parse_quote! {
+    let _: Spec = parse_quote! {
         #[cfg(test)]
         #[cfg(debug_assertions)]
         requires: x > 0,
@@ -202,7 +202,7 @@ fn test_parse_multiple_cfg_attributes() {
 #[test]
 #[should_panic(expected = "`cfg` attribute is not supported on `binds`")]
 fn test_parse_cfg_on_binds() {
-    let _: Contract = parse_quote! {
+    let _: Spec = parse_quote! {
         #[cfg(test)]
         binds: y,
     };
@@ -210,13 +210,13 @@ fn test_parse_cfg_on_binds() {
 
 #[test]
 fn test_parse_macro_in_condition() {
-    let contract: Contract = parse_quote! {
+    let contract: Spec = parse_quote! {
         requires: matches!(self.state, State::Idle),
         maintains: matches!(self.state, State::Idle | State::Running | State::Finished),
         ensures: matches!(self.state, State::Running),
     };
 
-    let expected = Contract {
+    let expected = Spec {
         requires: vec![parse_quote! { matches!(self.state, State::Idle) }],
         maintains: vec![
             parse_quote! { matches!(self.state, State::Idle | State::Running | State::Finished) },
@@ -224,12 +224,12 @@ fn test_parse_macro_in_condition() {
         ensures: vec![parse_quote! { |output| matches!(self.state, State::Running) }],
     };
 
-    assert_contract_eq(&contract, &expected);
+    assert_spec_eq(&contract, &expected);
 }
 
 #[test]
 fn test_parse_binds_pattern() {
-    let contract: Contract = parse_quote! {
+    let contract: Spec = parse_quote! {
         binds: (a, b),
         ensures: [
             a <= b,
@@ -238,7 +238,7 @@ fn test_parse_binds_pattern() {
         ],
     };
 
-    let expected = Contract {
+    let expected = Spec {
         requires: vec![],
         maintains: vec![],
         ensures: vec![
@@ -248,12 +248,12 @@ fn test_parse_binds_pattern() {
         ],
     };
 
-    assert_contract_eq(&contract, &expected);
+    assert_spec_eq(&contract, &expected);
 }
 
 #[test]
 fn test_parse_multiple_conditions() {
-    let contract: Contract = parse_quote! {
+    let contract: Spec = parse_quote! {
         requires: [
             self.initialized,
             !self.locked,
@@ -262,7 +262,7 @@ fn test_parse_multiple_conditions() {
         maintains: self.items.len() <= self.items.capacity(),
     };
 
-    let expected = Contract {
+    let expected = Spec {
         requires: vec![
             parse_quote! { self.initialized },
             parse_quote! { !self.locked },
@@ -272,12 +272,12 @@ fn test_parse_multiple_conditions() {
         ensures: vec![],
     };
 
-    assert_contract_eq(&contract, &expected);
+    assert_spec_eq(&contract, &expected);
 }
 
 #[test]
 fn test_parse_rename_return_value() {
-    let contract: Contract = parse_quote! {
+    let contract: Spec = parse_quote! {
         binds: result,
         ensures: [
             result > output,
@@ -285,7 +285,7 @@ fn test_parse_rename_return_value() {
         ],
     };
 
-    let expected = Contract {
+    let expected = Spec {
         requires: vec![],
         maintains: vec![],
         ensures: vec![
@@ -294,5 +294,5 @@ fn test_parse_rename_return_value() {
         ],
     };
 
-    assert_contract_eq(&contract, &expected);
+    assert_spec_eq(&contract, &expected);
 }

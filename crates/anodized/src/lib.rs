@@ -5,14 +5,14 @@ use proc_macro::TokenStream;
 use quote::ToTokens;
 use syn::{Item, ItemFn, parse_macro_input};
 
-use anodized_core::{Contract, instrument_fn_body};
+use anodized_core::{Spec, instrument_fn_body};
 
-/// The main procedural macro for defining contracts on functions.
+/// The main procedural macro for defining specifications on functions.
 ///
-/// This macro parses contract annotations and injects `assert!` statements
+/// This macro parses spec annotations and injects `assert!` statements
 /// into the function body to perform runtime checks in debug builds.
 #[proc_macro_attribute]
-pub fn contract(args: TokenStream, input: TokenStream) -> TokenStream {
+pub fn spec(args: TokenStream, input: TokenStream) -> TokenStream {
     // Parse the item to which the attribute is attached.
     let item = parse_macro_input!(input as Item);
 
@@ -21,7 +21,7 @@ pub fn contract(args: TokenStream, input: TokenStream) -> TokenStream {
         item => {
             let item_type = item_to_string(&item);
             let msg = format!(
-                r#"The `#[contract]` attribute doesn't yet support this item: `{}`.
+                r#"The `#[spec]` attribute doesn't yet support this item: `{}`.
 If this is a problem for your use case, please open a feature
 request at https://github.com/mkovaxx/anodized/issues/new"#,
                 item_type
@@ -34,11 +34,11 @@ request at https://github.com/mkovaxx/anodized/issues/new"#,
 }
 
 fn handle_fn(args: TokenStream, mut func: ItemFn) -> TokenStream {
-    let contract = parse_macro_input!(args as Contract);
+    let spec = parse_macro_input!(args as Spec);
     let is_async = func.sig.asyncness.is_some();
 
     // Generate the new, instrumented function body.
-    let new_body = match instrument_fn_body(&contract, &func.block, is_async) {
+    let new_body = match instrument_fn_body(&spec, &func.block, is_async) {
         Ok(body) => body,
         Err(e) => return e.to_compile_error().into(),
     };

@@ -11,9 +11,9 @@ use syn::{
     spanned::Spanned,
 };
 
-/// A contract specifies the intended behavior of a function or method.
+/// A spec specifies the intended behavior of a function or method.
 #[derive(Debug)]
-pub struct Contract {
+pub struct Spec {
     /// Preconditions: conditions that must hold when the function is called.
     pub requires: Vec<Condition>,
     /// Invariants: conditions that must hold both when the function is called and when it returns.
@@ -46,9 +46,9 @@ pub struct ConditionClosure {
     pub cfg: Option<Meta>,
 }
 
-impl Parse for Contract {
+impl Parse for Spec {
     fn parse(input: ParseStream) -> Result<Self> {
-        let args = Punctuated::<ContractArg, Token![,]>::parse_terminated(input)?;
+        let args = Punctuated::<SpecArg, Token![,]>::parse_terminated(input)?;
 
         let mut last_arg_order: Option<ArgOrder> = None;
         let mut requires: Vec<Condition> = vec![];
@@ -69,7 +69,7 @@ impl Parse for Contract {
             last_arg_order = Some(current_arg_order);
 
             match arg {
-                ContractArg::Requires { cfg, expr, .. } => {
+                SpecArg::Requires { cfg, expr, .. } => {
                     if let Expr::Array(conditions) = expr {
                         requires.extend(conditions.elems.into_iter().map(|expr| Condition {
                             expr,
@@ -79,7 +79,7 @@ impl Parse for Contract {
                         requires.push(Condition { expr, cfg });
                     }
                 }
-                ContractArg::Maintains { cfg, expr, .. } => {
+                SpecArg::Maintains { cfg, expr, .. } => {
                     if let Expr::Array(conditions) = expr {
                         maintains.extend(conditions.elems.into_iter().map(|expr| Condition {
                             expr,
@@ -89,7 +89,7 @@ impl Parse for Contract {
                         maintains.push(Condition { expr, cfg });
                     }
                 }
-                ContractArg::Binds { keyword, pattern } => {
+                SpecArg::Binds { keyword, pattern } => {
                     if binds_pattern.is_some() {
                         return Err(syn::Error::new(
                             keyword.span(),
@@ -98,7 +98,7 @@ impl Parse for Contract {
                     }
                     binds_pattern = Some(pattern);
                 }
-                ContractArg::Ensures { cfg, expr, .. } => {
+                SpecArg::Ensures { cfg, expr, .. } => {
                     if let Expr::Array(conditions) = expr {
                         ensures_exprs.extend(conditions.elems.into_iter().map(|expr| Condition {
                             expr,
@@ -133,7 +133,7 @@ impl Parse for Contract {
             })
             .collect::<Result<Vec<ConditionClosure>>>()?;
 
-        Ok(Contract {
+        Ok(Spec {
             requires,
             maintains,
             ensures,
@@ -150,7 +150,7 @@ enum ArgOrder {
 }
 
 /// An intermediate enum to help parse either a condition or a `binds` setting.
-enum ContractArg {
+enum SpecArg {
     Requires {
         keyword: kw::requires,
         cfg: Option<Meta>,
@@ -172,27 +172,27 @@ enum ContractArg {
     },
 }
 
-impl ContractArg {
+impl SpecArg {
     fn get_order(&self) -> ArgOrder {
         match self {
-            ContractArg::Requires { .. } => ArgOrder::Requires,
-            ContractArg::Maintains { .. } => ArgOrder::Maintains,
-            ContractArg::Binds { .. } => ArgOrder::Binds,
-            ContractArg::Ensures { .. } => ArgOrder::Ensures,
+            SpecArg::Requires { .. } => ArgOrder::Requires,
+            SpecArg::Maintains { .. } => ArgOrder::Maintains,
+            SpecArg::Binds { .. } => ArgOrder::Binds,
+            SpecArg::Ensures { .. } => ArgOrder::Ensures,
         }
     }
 
     fn get_keyword_span(&self) -> Span {
         match self {
-            ContractArg::Requires { keyword, .. } => keyword.span,
-            ContractArg::Ensures { keyword, .. } => keyword.span,
-            ContractArg::Maintains { keyword, .. } => keyword.span,
-            ContractArg::Binds { keyword, .. } => keyword.span,
+            SpecArg::Requires { keyword, .. } => keyword.span,
+            SpecArg::Ensures { keyword, .. } => keyword.span,
+            SpecArg::Maintains { keyword, .. } => keyword.span,
+            SpecArg::Binds { keyword, .. } => keyword.span,
         }
     }
 }
 
-impl Parse for ContractArg {
+impl Parse for SpecArg {
     fn parse(input: ParseStream) -> Result<Self> {
         let attrs = input.call(Attribute::parse_outer)?;
         let cfg = parse_cfg_attribute(&attrs)?;
@@ -209,7 +209,7 @@ impl Parse for ContractArg {
             // Parse `binds: <pattern>`
             let keyword = input.parse::<kw::binds>()?;
             input.parse::<Token![:]>()?;
-            Ok(ContractArg::Binds {
+            Ok(SpecArg::Binds {
                 keyword,
                 pattern: Pat::parse_single(input)?,
             })
@@ -217,7 +217,7 @@ impl Parse for ContractArg {
             // Parse `requires: <conditions>`
             let keyword = input.parse::<kw::requires>()?;
             input.parse::<Token![:]>()?;
-            Ok(ContractArg::Requires {
+            Ok(SpecArg::Requires {
                 keyword,
                 cfg,
                 expr: input.parse()?,
@@ -226,7 +226,7 @@ impl Parse for ContractArg {
             // Parse `maintains: <conditions>`
             let keyword = input.parse::<kw::maintains>()?;
             input.parse::<Token![:]>()?;
-            Ok(ContractArg::Maintains {
+            Ok(SpecArg::Maintains {
                 keyword,
                 cfg,
                 expr: input.parse()?,
@@ -235,7 +235,7 @@ impl Parse for ContractArg {
             // Parse `ensures: <conditions>`
             let keyword = input.parse::<kw::ensures>()?;
             input.parse::<Token![:]>()?;
-            Ok(ContractArg::Ensures {
+            Ok(SpecArg::Ensures {
                 keyword,
                 cfg,
                 expr: input.parse()?,
@@ -279,9 +279,9 @@ mod kw {
     syn::custom_keyword!(ensures);
 }
 
-/// Takes the contract and the original body and returns a new instrumented function body.
+/// Takes the spec and the original body and returns a new instrumented function body.
 pub fn instrument_fn_body(
-    contract: &Contract,
+    spec: &Spec,
     original_body: &Block,
     is_async: bool,
 ) -> Result<Block> {
@@ -289,7 +289,7 @@ pub fn instrument_fn_body(
     let binding_ident = Ident::new("__anodized_output", Span::mixed_site());
 
     // --- Generate Precondition Checks ---
-    let preconditions = contract
+    let preconditions = spec
         .requires
         .iter()
         .map(|condition| {
@@ -302,7 +302,7 @@ pub fn instrument_fn_body(
                 assert
             }
         })
-        .chain(contract.maintains.iter().map(|condition| {
+        .chain(spec.maintains.iter().map(|condition| {
             let expr = &condition.expr;
             let msg = format!("Pre-invariant failed: {}", expr.to_token_stream());
             let assert = quote! { assert!(#expr, #msg); };
@@ -314,7 +314,7 @@ pub fn instrument_fn_body(
         }));
 
     // --- Generate Postcondition Checks ---
-    let postconditions = contract
+    let postconditions = spec
         .maintains
         .iter()
         .map(|condition| {
@@ -327,7 +327,7 @@ pub fn instrument_fn_body(
                 assert
             }
         })
-        .chain(contract.ensures.iter().map(|condition_closure| {
+        .chain(spec.ensures.iter().map(|condition_closure| {
             let closure = &condition_closure.closure;
             let msg = format!("Postcondition failed: {}", closure.to_token_stream());
             let assert = quote! { assert!((#closure)(#binding_ident), #msg); };
@@ -356,7 +356,7 @@ pub fn instrument_fn_body(
 }
 
 #[cfg(test)]
-mod test_parse_contract;
+mod test_parse_spec;
 
 #[cfg(test)]
 mod test_instrument_fn;

@@ -1,4 +1,4 @@
-use anodized::contract;
+use anodized::spec;
 
 struct Counter {
     count: u32,
@@ -6,7 +6,7 @@ struct Counter {
 }
 
 impl Counter {
-    #[contract(
+    #[spec(
         maintains: self.count <= self.capacity,
     )]
     fn increment(&mut self) {

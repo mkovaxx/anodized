@@ -1,6 +1,6 @@
-use anodized::contract;
+use anodized::spec;
 
-#[contract(
+#[spec(
     binds: (a, b),
     ensures: [
         a <= b,

@@ -1,4 +1,4 @@
-use crate::{Condition, ConditionClosure, Contract};
+use crate::{Condition, ConditionClosure, Spec};
 use quote::ToTokens;
 use syn::{
     Block,
@@ -29,7 +29,7 @@ pub fn assert_block_eq(left: &Block, right: &Block) {
     assert_eq!(left_str, right_str);
 }
 
-pub fn assert_contract_eq(left: &Contract, right: &Contract) {
+pub fn assert_spec_eq(left: &Spec, right: &Spec) {
     assert_slice_eq(
         &left.requires,
         &right.requires,

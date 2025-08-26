@@ -1,4 +1,4 @@
-use anodized::contract;
+use anodized::spec;
 
 struct SafeBuffer<T> {
     items: Vec<T>,
@@ -7,7 +7,7 @@ struct SafeBuffer<T> {
 }
 
 impl<T> SafeBuffer<T> {
-    #[contract(
+    #[spec(
         requires: [
             self.initialized,
             !self.locked,
