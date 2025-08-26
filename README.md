@@ -221,7 +221,7 @@ A core design principle of Anodized is that a condition is written as a **standa
 
 - **An Integral Part of Your Code**: Conditions aren't special comments or strings; they are real Rust expressions, fully integrated with your code. The Rust compiler checks every condition for syntax and type errors, just like any other part of your code. If you misspell a variable, compare incompatible types, or make any other mistake, you'll get a familiar compiler error pointing directly to the condition that needs fixing.
 
-## Why "Spec" Instead of "Contract"?
+## Why "Spec" Instead of "Contract"
 
 Anodized uses the term "specification" (shortened to "spec") rather than "contract" for a deliberate and practical reason. While the Design by Contract methodology has a rich history in software engineering, the term "contract" has become strongly associated with blockchain smart contracts in recent years, particularly in the Rust ecosystem where many blockchain platforms use Rust as their primary development language.
 

@@ -10,7 +10,7 @@ use anodized_core::{Spec, instrument_fn_body};
 /// The main procedural macro for defining specifications on functions.
 ///
 /// This macro parses spec annotations and injects `assert!` statements
-/// into the function body to perform runtime checks in debug builds.
+/// into the function body to perform runtime checks.
 #[proc_macro_attribute]
 pub fn spec(args: TokenStream, input: TokenStream) -> TokenStream {
     // Parse the item to which the attribute is attached.
