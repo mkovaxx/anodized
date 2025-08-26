@@ -229,7 +229,7 @@ This naming collision creates confusion for developers searching for correctness
 
 - **Improves discoverability**: Developers looking for correctness and verification tools are more likely to find what they're looking for.
 - **Reduces confusion**: The distinction from blockchain technology is immediately clear.
-- **Maintains clarity**: "Specification" accurately describes what these annotations are—formal specifications of intended behavior.
+- **Maintains clarity**: "Specification" accurately describes what these annotations are - formal specifications of intended behavior.
 
 The term "spec" is already familiar to developers from contexts like test specifications, API specifications, and formal specifications. It conveys the same meaning as "contract" in the Design by Contract sense, while avoiding the modern ambiguity.
 
