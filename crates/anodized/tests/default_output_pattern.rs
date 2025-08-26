@@ -1,6 +1,6 @@
-use anodized::contract;
+use anodized::spec;
 
-#[contract(
+#[spec(
     binds: (a, b),
     ensures: [
         a <= b,
@@ -8,7 +8,7 @@ use anodized::contract;
     ],
 )]
 fn sort_pair(pair: (i32, i32)) -> (i32, i32) {
-    // Deliberately wrong implementation to break the contract.
+    // Deliberately wrong implementation to break the spec.
     pair
 }
 

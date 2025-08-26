@@ -13,7 +13,7 @@ fn make_fn_body() -> Block {
 
 #[test]
 fn test_instrument_simple_requires() {
-    let contract: Contract = parse_quote! {
+    let spec: Spec = parse_quote! {
         requires: CONDITION_1,
     };
     let body = make_fn_body();
@@ -27,13 +27,13 @@ fn test_instrument_simple_requires() {
         }
     };
 
-    let observed = instrument_fn_body(&contract, &body, is_async).unwrap();
+    let observed = instrument_fn_body(&spec, &body, is_async).unwrap();
     assert_block_eq(&observed, &expected);
 }
 
 #[test]
 fn test_instrument_simple_maintains() {
-    let contract: Contract = parse_quote! {
+    let spec: Spec = parse_quote! {
         maintains: CONDITION_1,
     };
     let body = make_fn_body();
@@ -48,13 +48,13 @@ fn test_instrument_simple_maintains() {
         }
     };
 
-    let observed = instrument_fn_body(&contract, &body, is_async).unwrap();
+    let observed = instrument_fn_body(&spec, &body, is_async).unwrap();
     assert_block_eq(&observed, &expected);
 }
 
 #[test]
 fn test_instrument_simple_ensures() {
-    let contract: Contract = parse_quote! {
+    let spec: Spec = parse_quote! {
         ensures: CONDITION_1,
     };
     let body = make_fn_body();
@@ -71,13 +71,13 @@ fn test_instrument_simple_ensures() {
         }
     };
 
-    let observed = instrument_fn_body(&contract, &body, is_async).unwrap();
+    let observed = instrument_fn_body(&spec, &body, is_async).unwrap();
     assert_block_eq(&observed, &expected);
 }
 
 #[test]
 fn test_instrument_simple_requires_and_maintains() {
-    let contract: Contract = parse_quote! {
+    let spec: Spec = parse_quote! {
         requires: CONDITION_1,
         maintains: CONDITION_2,
     };
@@ -94,13 +94,13 @@ fn test_instrument_simple_requires_and_maintains() {
         }
     };
 
-    let observed = instrument_fn_body(&contract, &body, is_async).unwrap();
+    let observed = instrument_fn_body(&spec, &body, is_async).unwrap();
     assert_block_eq(&observed, &expected);
 }
 
 #[test]
 fn test_instrument_simple_requires_and_ensures() {
-    let contract: Contract = parse_quote! {
+    let spec: Spec = parse_quote! {
         requires: CONDITION_1,
         ensures: CONDITION_2,
     };
@@ -119,13 +119,13 @@ fn test_instrument_simple_requires_and_ensures() {
         }
     };
 
-    let observed = instrument_fn_body(&contract, &body, is_async).unwrap();
+    let observed = instrument_fn_body(&spec, &body, is_async).unwrap();
     assert_block_eq(&observed, &expected);
 }
 
 #[test]
 fn test_instrument_simple_maintains_and_ensures() {
-    let contract: Contract = parse_quote! {
+    let spec: Spec = parse_quote! {
         maintains: CONDITION_1,
         ensures: CONDITION_2,
     };
@@ -145,13 +145,13 @@ fn test_instrument_simple_maintains_and_ensures() {
         }
     };
 
-    let observed = instrument_fn_body(&contract, &body, is_async).unwrap();
+    let observed = instrument_fn_body(&spec, &body, is_async).unwrap();
     assert_block_eq(&observed, &expected);
 }
 
 #[test]
 fn test_instrument_simple_requires_maintains_and_ensures() {
-    let contract: Contract = parse_quote! {
+    let spec: Spec = parse_quote! {
         requires: CONDITION_1,
         maintains: CONDITION_2,
         ensures: CONDITION_3,
@@ -173,13 +173,13 @@ fn test_instrument_simple_requires_maintains_and_ensures() {
         }
     };
 
-    let observed = instrument_fn_body(&contract, &body, is_async).unwrap();
+    let observed = instrument_fn_body(&spec, &body, is_async).unwrap();
     assert_block_eq(&observed, &expected);
 }
 
 #[test]
 fn test_instrument_simple_async_requires_maintains_and_ensures() {
-    let contract: Contract = parse_quote! {
+    let spec: Spec = parse_quote! {
         requires: CONDITION_1,
         maintains: CONDITION_2,
         ensures: CONDITION_3,
@@ -201,13 +201,13 @@ fn test_instrument_simple_async_requires_maintains_and_ensures() {
         }
     };
 
-    let observed = instrument_fn_body(&contract, &body, is_async).unwrap();
+    let observed = instrument_fn_body(&spec, &body, is_async).unwrap();
     assert_block_eq(&observed, &expected);
 }
 
 #[test]
 fn test_instrument_multiple_conditions_in_clauses() {
-    let contract: Contract = parse_quote! {
+    let spec: Spec = parse_quote! {
         requires: [CONDITION_1, CONDITION_2],
         maintains: [CONDITION_3, CONDITION_4],
         ensures: [CONDITION_5, CONDITION_6],
@@ -236,13 +236,13 @@ fn test_instrument_multiple_conditions_in_clauses() {
         }
     };
 
-    let observed = instrument_fn_body(&contract, &body, is_async).unwrap();
+    let observed = instrument_fn_body(&spec, &body, is_async).unwrap();
     assert_block_eq(&observed, &expected);
 }
 
 #[test]
 fn test_instrument_with_binds_parameter() {
-    let contract: Contract = parse_quote! {
+    let spec: Spec = parse_quote! {
         binds: OUTPUT_PATTERN,
         ensures: CONDITION_1,
     };
@@ -260,13 +260,13 @@ fn test_instrument_with_binds_parameter() {
         }
     };
 
-    let observed = instrument_fn_body(&contract, &body, is_async).unwrap();
+    let observed = instrument_fn_body(&spec, &body, is_async).unwrap();
     assert_block_eq(&observed, &expected);
 }
 
 #[test]
 fn test_instrument_ensures_with_mixed_conditions() {
-    let contract: Contract = parse_quote! {
+    let spec: Spec = parse_quote! {
         ensures: [
             CONDITION_1,
             |PATTERN_1| CONDITION_2,
@@ -300,13 +300,13 @@ fn test_instrument_ensures_with_mixed_conditions() {
         }
     };
 
-    let observed = instrument_fn_body(&contract, &body, is_async).unwrap();
+    let observed = instrument_fn_body(&spec, &body, is_async).unwrap();
     assert_block_eq(&observed, &expected);
 }
 
 #[test]
 fn test_instrument_with_cfg_attributes() {
-    let contract: Contract = parse_quote! {
+    let spec: Spec = parse_quote! {
         #[cfg(SETTING_1)]
         requires: CONDITION_1,
         #[cfg(SETTING_2)]
@@ -339,13 +339,13 @@ fn test_instrument_with_cfg_attributes() {
         }
     };
 
-    let observed = instrument_fn_body(&contract, &body, is_async).unwrap();
+    let observed = instrument_fn_body(&spec, &body, is_async).unwrap();
     assert_block_eq(&observed, &expected);
 }
 
 #[test]
 fn test_instrument_with_cfg_on_single_and_list_conditions() {
-    let contract: Contract = parse_quote! {
+    let spec: Spec = parse_quote! {
         #[cfg(SETTING_1)]
         requires: CONDITION_1,
         maintains: [CONDITION_2, CONDITION_3],
@@ -381,13 +381,13 @@ fn test_instrument_with_cfg_on_single_and_list_conditions() {
         }
     };
 
-    let observed = instrument_fn_body(&contract, &body, is_async).unwrap();
+    let observed = instrument_fn_body(&spec, &body, is_async).unwrap();
     assert_block_eq(&observed, &expected);
 }
 
 #[test]
 fn test_instrument_with_complex_mixed_conditions() {
-    let contract: Contract = parse_quote! {
+    let spec: Spec = parse_quote! {
         requires: CONDITION_1,
         #[cfg(SETTING_1)]
         requires: [CONDITION_2, CONDITION_3],
@@ -441,6 +441,6 @@ fn test_instrument_with_complex_mixed_conditions() {
         }
     };
 
-    let observed = instrument_fn_body(&contract, &body, is_async).unwrap();
+    let observed = instrument_fn_body(&spec, &body, is_async).unwrap();
     assert_block_eq(&observed, &expected);
 }

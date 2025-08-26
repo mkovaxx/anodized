@@ -6,21 +6,25 @@ This crate provides the core data structures and logic for the [Anodized](https:
 
 ## Who Is This For?
 
-- **If you want to add contracts to your code...**
+- **If you want to add specifications to your code...**
 
-  You're looking for the [`anodized`](https://crates.io/crates/anodized) crate, which provides the `#[contract]` macro.
+  You're looking for the [`anodized`](https://crates.io/crates/anodized) crate, which provides the `#[spec]` macro.
 
-- **If you're building a tool and want to work with Anodized contracts...**
+- **If you're building a tool and want to work with Anodized specifications...**
 
-  You're in the right place! This crate provides the necessary components to parse and interact with Anodized contract annotations.
+  You're in the right place! This crate provides the necessary components to parse and interact with Anodized specification annotations.
+
+- **If you're looking for blockchain smart contracts...**
+
+  _"These are not the **contracts** you're looking for."_ 🤖 But don't leave yet! While Anodized is about Design by Contract (not blockchain), it can still help make your smart contracts more robust through formal specifications.
 
 This crate is the foundational layer that enables interoperability between different tools in the Anodized correctness ecosystem.
 
 ***
 
-## Contract Syntax
+## Specification Syntax
 
-The `#[contract]` attribute's parameters follow a specific grammar, which is formally defined using EBNF as follows.
+The `#[spec]` attribute's parameters follow a specific grammar, which is formally defined using EBNF as follows.
 
 ```ebnf
 params = [ requires_params ]
@@ -59,12 +63,12 @@ cfg_attr = `#[cfg(` , settings , `)]`;
 
 ## Runtime Checks
 
-When runtime checks are enabled (by default, in debug builds), the `#[contract]` macro transforms the function body to inject assertions. This process, known as instrumentation, follows a clear pattern.
+When runtime checks are enabled (by default, in debug builds), the `#[spec]` macro transforms the function body to inject assertions. This process, known as instrumentation, follows a clear pattern.
 
 Given an original function like this:
 
 ```rust,ignore
-#[contract(
+#[spec(
     requires: <PRECONDITION>,
     maintains: <INVARIANT>,
     ensures: <POSTCONDITION_CLOSURE>,

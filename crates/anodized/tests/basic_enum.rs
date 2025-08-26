@@ -1,4 +1,4 @@
-use anodized::contract;
+use anodized::spec;
 
 #[derive(Debug, PartialEq, Eq)]
 #[allow(dead_code)]
@@ -13,7 +13,7 @@ struct Job {
 }
 
 impl Job {
-    #[contract(
+    #[spec(
         requires: matches!(self.state, State::Idle),
         maintains: matches!(self.state, State::Idle | State::Running | State::Finished),
         ensures: matches!(self.state, State::Running),
