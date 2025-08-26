@@ -33,19 +33,22 @@ Use the `#[contract]` attribute to define preconditions (`requires`), postcondit
 use anodized::contract;
 
 #[contract(
-    requires: divisor != 0,
-    ensures: output < dividend,
+    requires: [
+        part <= whole,
+        whole > 0,
+    ],
+    ensures: (0.0..=100.0).contains(&output),
 )]
-fn checked_divide(dividend: i32, divisor: i32) -> i32 {
-    dividend / divisor
+fn calculate_percentage(part: u32, whole: u32) -> f64 {
+    (part as f64 / whole as f64) * 100.0
 }
 
 fn main() {
     // This call satisfies the contract and runs fine.
-    println!("10 / 2 = {}", checked_divide(10, 2));
+    println!("25 out of 100 = {}%", calculate_percentage(25, 100));
 
     // This call violates the precondition and will panic in debug builds.
-    println!("10 / 0 = {}", checked_divide(10, 0));
+    println!("10 out of 0 = {}%", calculate_percentage(10, 0));
 }
 ```
 
@@ -54,7 +57,7 @@ fn main() {
 In a **debug build** (`cargo run` or `cargo test`), your code is automatically instrumented to check the contracts. A contract violation will cause a panic with a descriptive error message:
 
 ```ignore
-thread 'main' panicked at 'Precondition failed: divisor != 0', src/main.rs:17:5
+thread 'main' panicked at 'Precondition failed: whole > 0', src/main.rs:17:5
 ```
 
 In a **release build** (`cargo run --release`), _runtime_ contract-checking is disabled, resulting in **zero performance cost** to your production code. Note that the compiler still checks contracts for errors such as bad syntax, unknown identifiers, type mismatches, etc.
@@ -255,135 +258,3 @@ Contributions are welcome! Please feel free to open an issue or submit a pull re
 ## Technical Documentation
 
 For detailed technical documentation including the formal contract grammar and runtime check implementation details, see the [`anodized-core`](https://docs.rs/anodized-core) documentation.
-
-## [TEMP] New Example Collection
-
-### Example 1: API Boundary Contracts
-```rust
-#[contract(
-    requires: [
-        token.len() == 32,
-        token.chars().all(|c| c.is_ascii_hexdigit()),
-    ],
-    ensures: output.is_ok() == !self.is_revoked(&token),
-)]
-fn authenticate(&self, token: &str) -> Result<Session, AuthError> { /* ... */ }
-```
-
-### Example 2: Invariant-Driven Data Structure
-```rust
-impl<T: Ord> SortedVec<T> {
-    #[contract(
-        maintains: self.is_sorted(),
-        ensures: self.contains(&item),
-    )]
-    fn insert(&mut self, item: T) { /* ... */ }
-    
-    #[contract(
-        requires: !self.is_empty(),
-        maintains: self.is_sorted(),
-        clones: self as old_self,
-        ensures: [
-            old_self.contains(&output),
-            self.iter().all(|x| output <= x),
-        ],
-    )]
-    fn pop_min(&mut self) -> T { /* ... */ }
-}
-```
-
-### Example 3: State Machine Transitions (PROVISIONAL)
-```rust
-enum ConnectionState { Disconnected, Connecting, Connected, Failed }
-
-impl Connection {
-    #[contract(
-        requires: matches!(self.state, ConnectionState::Disconnected),
-        ensures: matches!(self.state, ConnectionState::Connecting | ConnectionState::Failed),
-    )]
-    fn connect(&mut self) -> Result<(), Error> { /* ... */ }
-    
-    #[contract(
-        requires: matches!(self.state, ConnectionState::Connected),
-        ensures: matches!(self.state, ConnectionState::Disconnected),
-    )]
-    fn disconnect(&mut self) -> Result<(), Error> { /* ... */ }
-}
-```
-
-### Example 4: Resource Pool Management (PROVISIONAL)
-```rust
-impl ResourcePool {
-    #[contract(
-        requires: self.available() > 0,
-        maintains: self.total_count() == POOL_SIZE,
-        ensures: output.is_some(),
-    )]
-    fn acquire(&mut self) -> Option<Resource> { /* ... */ }
-    
-    #[contract(
-        maintains: self.total_count() == POOL_SIZE,
-        clones: self as old_self,
-        ensures: self.available() == old_self.available() + 1,
-    )]
-    fn release(&mut self, resource: Resource) { /* ... */ }
-}
-```
-
-### Example 5: Percentage Calculations (PROVISIONAL)
-```rust
-#[contract(
-    requires: [
-        part <= whole,
-        whole > 0,
-    ],
-    ensures: (0.0..=100.0).contains(&output),
-)]
-fn calculate_percentage(part: u32, whole: u32) -> f64 { /* ... */ }
-```
-
-### Example 6: Builder Pattern Validation (PROVISIONAL)
-```rust
-impl RequestBuilder {
-    #[contract(
-        requires: url.starts_with("https://"),
-        ensures: self.url.is_some(),
-    )]
-    fn with_url(mut self, url: &str) -> Self { /* ... */ }
-    
-    #[contract(
-        requires: [
-            self.url.is_some(),
-            self.method.is_some(),
-        ],
-        ensures: output.is_ok(),
-    )]
-    fn build(self) -> Result<Request, BuildError> { /* ... */ }
-}
-```
-
-### Example 7: Monotonic Counter (PROVISIONAL)
-```rust
-struct MonotonicCounter { value: u64 }
-
-impl MonotonicCounter {
-    #[contract(
-        requires: increment > 0,
-        maintains: self.value < u64::MAX,
-        clones: self as old_self,
-        ensures: self.value == old_self.value.saturating_add(increment),
-    )]
-    fn advance(&mut self, increment: u64) { /* ... */ }
-}
-```
-
-### Example 8: Port Binding (PROVISIONAL)
-```rust
-#[contract(
-    requires: [
-        port > 1024,
-        port < 65536,
-    ],
-    ensures: output.is_err() == self.ports_in_use.contains(&port),
-)]
-fn bind_port(&mut self, port: u16) -> Result<Socket, BindError> { /* ... */ }
