@@ -51,7 +51,7 @@ cfg_attr = `#[cfg(` , settings , `)]`;
 **Notes:**
 
 - The last `,` is optional.
-- The `params` rule defines a sequence of optional parameter groups that must appear in the specified order. Commas are required to separate any provided groups.
+- The `params` rule defines a sequence of optional parameter groups that must appear in the specified order.
 - `expr` refers to a Rust [`expression`](https://doc.rust-lang.org/reference/expressions.html); type checking will fail if it does not evaluate to `bool`.
 - `closure` refers to a Rust [`closure expression`](https://doc.rust-lang.org/reference/expressions/closure-expr.html); type checking will fail if it does not take the function's return value as an argument and evaluate to `bool`.
 - `pattern` refers to any valid Rust [`pattern`](https://doc.rust-lang.org/reference/patterns.html); type checking will fail if its type does not match the function's return value.
