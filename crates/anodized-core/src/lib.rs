@@ -280,11 +280,7 @@ mod kw {
 }
 
 /// Takes the spec and the original body and returns a new instrumented function body.
-pub fn instrument_fn_body(
-    spec: &Spec,
-    original_body: &Block,
-    is_async: bool,
-) -> Result<Block> {
+pub fn instrument_fn_body(spec: &Spec, original_body: &Block, is_async: bool) -> Result<Block> {
     // The identifier for the return value binding. It's hygienic to prevent collisions.
     let binding_ident = Ident::new("__anodized_output", Span::mixed_site());
 

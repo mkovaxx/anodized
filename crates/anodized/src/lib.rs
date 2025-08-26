@@ -26,9 +26,7 @@ If this is a problem for your use case, please open a feature
 request at https://github.com/mkovaxx/anodized/issues/new"#,
                 item_type
             );
-            syn::Error::new_spanned(item, msg)
-                .to_compile_error()
-                .into()
+            syn::Error::new_spanned(item, msg).to_compile_error().into()
         }
     }
 }
