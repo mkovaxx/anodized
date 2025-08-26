@@ -22,7 +22,7 @@ Specifications serve as the foundation for a larger **ecosystem of correctness t
 
 ```toml
 [dependencies]
-anodized = "0.2.0"
+anodized = "0.2.1"
 ```
 
 **2. Add specifications to your functions.**
