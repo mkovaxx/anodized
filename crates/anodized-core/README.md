@@ -14,6 +14,10 @@ This crate provides the core data structures and logic for the [Anodized](https:
 
   You're in the right place! This crate provides the necessary components to parse and interact with Anodized specification annotations.
 
+- **If you're looking for blockchain smart contracts...**
+
+  *"These are not the contracts you're looking for."* 🤖 But don't leave yet! While Anodized is about Design by Contract (not blockchain), it can still help make your smart contract code more robust through formal specifications.
+
 This crate is the foundational layer that enables interoperability between different tools in the Anodized correctness ecosystem.
 
 ***
