@@ -4,7 +4,7 @@ description.workspace = true
 
 version.workspace = true
 edition.workspace = true
-readme = "../../README.md"
+readme = "README.md"
 repository.workspace = true
 categories.workspace = true
 keywords.workspace = true
