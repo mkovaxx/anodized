@@ -1,5 +1,6 @@
-#![cfg(not(doctest))]
-#![doc = include_str!("../README.md")]
+//! Core interoperability for the Anodized correctness ecosystem.
+//!
+#![cfg_attr(not(doctest), doc = include_str!("../README.md"))]
 
 use proc_macro2::Span;
 use quote::{ToTokens, quote};
