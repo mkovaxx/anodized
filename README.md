@@ -34,21 +34,25 @@ use anodized::contract;
 
 #[contract(
     requires: [
+        part >= 0.0,
         part <= whole,
-        whole > 0,
+        whole > 0.0,
     ],
-    ensures: (0.0..=100.0).contains(&output),
+    ensures: [
+        output >= 0.0,
+        output <= 100.0,
+    ],
 )]
-fn calculate_percentage(part: u32, whole: u32) -> f64 {
-    (part as f64 / whole as f64) * 100.0
+fn calculate_percentage(part: f64, whole: f64) -> f64 {
+    (part / whole) * 100.0
 }
 
 fn main() {
     // This call satisfies the contract and runs fine.
-    println!("25 out of 100 = {}%", calculate_percentage(25, 100));
+    println!("25 out of 100 = {}%", calculate_percentage(25.0, 100.0));
 
     // This call violates the precondition and will panic in debug builds.
-    println!("10 out of 0 = {}%", calculate_percentage(10, 0));
+    println!("10 out of 0 = {}%", calculate_percentage(10.0, 0.0));
 }
 ```
 
