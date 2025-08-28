@@ -284,6 +284,19 @@ impl Parse for SpecArg {
     }
 }
 
+/// Try to interpret an Expr::Array as a list of CloneBindings
+fn interpret_array_as_clone_bindings(array: syn::ExprArray) -> Result<Vec<CloneBinding>> {
+    let mut bindings = Vec::new();
+    
+    for elem in array.elems {
+        // Try to interpret each element as a binding
+        // If any fails, propagate that error immediately
+        bindings.push(interpret_as_clone_binding(elem)?);
+    }
+    
+    Ok(bindings)
+}
+
 /// Try to interpret an Expr as a single CloneBinding
 fn interpret_as_clone_binding(expr: Expr) -> Result<CloneBinding> {
     match expr {
