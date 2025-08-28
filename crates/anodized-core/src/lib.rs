@@ -227,17 +227,10 @@ impl Parse for SpecArg {
             let keyword = input.parse::<kw::clones>()?;
             input.parse::<Token![:]>()?;
             
-            // Parse either a single binding or an array of bindings
-            let bindings = if input.peek(syn::token::Bracket) {
-                // Parse array: [binding1, binding2, ...]
-                let content;
-                syn::bracketed!(content in input);
-                let bindings_list = Punctuated::<CloneBinding, Token![,]>::parse_terminated(&content)?;
-                bindings_list.into_iter().collect()
-            } else {
-                // Parse single binding
-                vec![input.parse::<CloneBinding>()?]
-            };
+            // Parse an expression and interpret as a single binding
+            let expr: Expr = input.parse()?;
+            let binding = interpret_as_clone_binding(expr)?;
+            let bindings = vec![binding];
             
             Ok(SpecArg::Clones {
                 keyword,
@@ -291,14 +284,22 @@ impl Parse for SpecArg {
     }
 }
 
-impl Parse for CloneBinding {
-    fn parse(input: ParseStream) -> Result<Self> {
-        // Parse the expression (could be just an identifier or a complex expression)
-        let expr: Expr = input.parse()?;
-        
-        // Check if we got a cast expression (expr as Type)
-        // In this case, we interpret the Type as the alias identifier
-        if let Expr::Cast(cast) = expr {
+/// Try to interpret an Expr as a single CloneBinding
+fn interpret_as_clone_binding(expr: Expr) -> Result<CloneBinding> {
+    match expr {
+        // Simple identifier: count -> old_count
+        Expr::Path(ref path) 
+            if path.path.segments.len() == 1 
+            && path.path.leading_colon.is_none()
+            && path.attrs.is_empty()
+            && path.qself.is_none() => 
+        {
+            let ident = &path.path.segments[0].ident;
+            let alias = Ident::new(&format!("old_{}", ident), ident.span());
+            Ok(CloneBinding { expr, alias })
+        }
+        // Cast expression: value as old_value
+        Expr::Cast(cast) => {
             // The cast.ty should be a simple identifier that we use as the alias
             if let syn::Type::Path(ref type_path) = *cast.ty {
                 if type_path.path.segments.len() == 1 
@@ -312,36 +313,19 @@ impl Parse for CloneBinding {
                     });
                 }
             }
-            return Err(syn::Error::new_spanned(
+            Err(syn::Error::new_spanned(
                 cast,
                 "alias must be a simple identifier"
-            ));
-        }
-        
-        // Not a cast expression - must be a simple identifier to auto-generate old_ prefix
-        if let Expr::Path(ref path) = expr {
-            if path.path.segments.len() == 1 
-                && path.path.leading_colon.is_none()
-                && path.attrs.is_empty()
-                && path.qself.is_none()
-            {
-                let ident = &path.path.segments[0].ident;
-                let alias = Ident::new(&format!("old_{}", ident), ident.span());
-                Ok(CloneBinding { expr, alias })
-            } else {
-                Err(syn::Error::new_spanned(
-                    expr,
-                    "complex expressions require an explicit alias using `as`"
-                ))
-            }
-        } else {
-            Err(syn::Error::new_spanned(
-                expr,
-                "complex expressions require an explicit alias using `as`"
             ))
         }
+        // Any other expression requires an explicit alias
+        _ => Err(syn::Error::new_spanned(
+            expr,
+            "complex expressions require an explicit alias using `as`"
+        ))
     }
 }
+
 
 fn parse_cfg_attribute(attrs: &[Attribute]) -> Result<Option<Meta>> {
     let mut cfg_attrs: Vec<Meta> = vec![];
