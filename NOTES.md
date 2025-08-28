@@ -21,7 +21,7 @@ Implementing support for saving entry-time values of function arguments using a 
 fn push(&mut self, item: T) { /* ... */ }
 ```
 
-## Completed Work
+## COMPLETED IMPLEMENTATION ✓
 
 ### 1. Data Structures ✓
 - Added `CloneBinding` struct with `expr: Expr` and `alias: Ident` fields
@@ -35,18 +35,19 @@ fn push(&mut self, item: T) { /* ... */ }
   - Simple identifier: `count` → auto-generates `old_count`
   - Cast expression: `value as old_val` → explicit alias
   - Array of bindings: `[count, value as old_val]` → multiple bindings
+- Added check to disallow multiple `clones:` parameters (must use array for multiple values)
+- Added check to disallow `#[cfg]` attributes on `clones:`
 
-### 3. Parser Edge Cases ✓
-- Discovered that `value as alias` parses as `Expr::Cast`, not separate tokens
-- Solved ambiguity between `[a, b, c]` (array of bindings) vs `[a, b, c] as slice` (array expression)
-- Solution: If top-level expr is array, try interpreting elements as bindings; propagate first error if any fail
+### 3. Code Generation ✓
+- Implemented in `instrument_fn_body()`
+- Clone statements generated after preconditions/pre-invariants, before body execution
+- Uses tuple destructuring to prevent scope creep: `let (alias1, alias2) = (expr1.clone(), expr2.clone());`
+- Empty tuple `let () = ()` avoided when no clones present
+- Aliases available to postconditions through lexical scoping
 
-### 4. Test Infrastructure ✓
-- Updated `assert_spec_eq` to compare `clones` field
-- Refactored test utilities to use pattern matching for compile-time safety
-- Added comprehensive parser tests for all cases
+### 4. Tests ✓
 
-### 5. Tests Written ✓
+#### Parser Tests
 - `test_parse_clones_simple_identifier` - simple identifier with auto-generated alias
 - `test_parse_clones_identifier_with_alias` - identifier with explicit alias
 - `test_parse_clones_array` - array of mixed bindings
@@ -54,43 +55,81 @@ fn push(&mut self, item: T) { /* ... */ }
 - `test_parse_clones_out_of_order` - parameter ordering validation
 - `test_parse_clones_array_expression` - array literal with alias (edge case)
 
+#### Error Case Tests
+- `test_parse_clones_complex_expr_without_alias` - complex expressions require explicit alias
+- `test_parse_clones_method_call_without_alias` - method calls require explicit alias
+- `test_parse_clones_binary_expr_without_alias` - binary expressions require explicit alias
+- `test_parse_clones_array_with_complex_expr_no_alias` - mixed array with complex expr
+- `test_parse_cfg_on_clones` - cfg attribute not allowed on clones
+- `test_parse_multiple_clones` - multiple clones parameters not allowed
+
+#### Instrumentation Test
+- `test_instrument_with_clones` - verifies correct code generation
+
+#### Integration Test
+- `crates/anodized/tests/clones_feature.rs` - end-to-end feature test
+
+## Key Design Decisions
+
+### Evaluation Order
+- Preconditions run first (check true entry state)
+- Clones capture after preconditions (avoiding corrupted state checks)
+- Function body executes
+- Postconditions can use cloned values
+
+### Scope Management
+- Clone aliases NOT available to preconditions/maintains (enforced by lexical scoping)
+- Tuple destructuring prevents scope creep between clone expressions
+- Span preservation for good error messages
+
+### Restrictions
+- At most one `clones:` parameter allowed (use array for multiple)
+- No `#[cfg]` attributes on clones (must execute unconditionally)
+- Complex expressions require explicit alias
+
+## Implementation Insights
+
+1. **Span vs Hygiene**: Spans only affect error message location, not identifier resolution or shadowing
+
+2. **Tuple Destructuring**: Elegant solution to prevent scope creep between clone expressions
+
+3. **Empty Clones**: Generate no code rather than `let () = ()`
+
+4. **Test Patterns**: Use opaque placeholders (EXPR_1, ALIAS_1, CONDITION_1) in tests to verify transformation logic
+
 ## Remaining Work
 
-### 1. Code Generation
-- Generate clone statements in `instrument_fn_body()` after preconditions/invariants
-- Each binding becomes: `let alias = expr.clone();`
-- Use hygienic identifiers to avoid collisions
-
-### 2. Scope Management
-- Make cloned identifiers available to postcondition closures
-- Ensure they're NOT available to preconditions or maintains
-
-### 3. Error Case Tests
-- Test missing alias for complex expressions
-- Test duplicate aliases
-- Test invalid expressions
-
-### 4. Documentation
+### Documentation
 - Update README with clones feature
-- Add examples to documentation
+- Add examples to main documentation
 
-## Key Insights
+### Import System Compatibility Issue
+- **Critical**: When importing from the `contracts` crate (which uses separate attributes like `#[requires]`, `#[invariant]`, `#[ensures]`), the ORDER of attributes matters for instrumentation
+- The `old()` function in `contracts` captures values at function entry
+- The `contracts` crate uses `ret` as the name for the return value (vs our `output`)
+- Need to determine: Does attribute order affect when `old()` captures occur relative to precondition/invariant checks?
+- **KEY QUESTION**: If attributes are reordered, does behavior change? E.g.:
+  ```rust
+  #[requires(x > 0)]
+  #[ensures(ret == old(x) + 1)]
+  fn foo(x: i32) -> i32 { ... }
+  ```
+  vs.
+  ```rust
+  #[ensures(ret == old(x) + 1)]
+  #[requires(x > 0)]
+  fn foo(x: i32) -> i32 { ... }
+  ```
+  Does reversing the order change when `old(x)` is captured relative to checking `x > 0`?
+- This affects our clones implementation - we currently capture AFTER preconditions
+- May need to analyze how `contracts` crate handles this and ensure compatibility
+- Consider: Should import system preserve original attribute order or normalize to our ordering?
 
-1. **Parser Ambiguity**: The main challenge was distinguishing between `[a, b, c]` as multiple bindings vs. an array expression. Solved by attempting to interpret array elements as bindings first (common case), falling back to requiring explicit alias.
-
-2. **Cast Expression**: Rust parses `ident as alias` as a single `Expr::Cast`, not separate tokens. This simplified our implementation once discovered.
-
-3. **Interpretation vs Parsing**: Clean separation between parsing (getting an `Expr`) and interpretation (converting to `CloneBinding`).
-
-4. **Test Utilities**: Using pattern matching in test utilities ensures compile-time safety when adding new struct fields.
-
-## Next Steps
-
-The next major task is implementing the code generation in `instrument_fn_body()` to actually generate the clone statements and make them available to postconditions.
-
-## Commit History (on branch)
-- Initial data structures and field additions
-- Parser implementation with cast expression handling  
-- Test infrastructure updates
-- Array interpretation for list of bindings
-- All parser tests passing
+## Recent Commits
+- Add error case tests for clones parsing
+- Fix cfg attribute check for clones parameter
+- Implement code generation for clones feature
+- Add integration tests for clones feature
+- Add unit test for instrument_fn_body with clones
+- Fix test to use opaque placeholder pattern
+- Disallow multiple clones parameters with helpful error message
