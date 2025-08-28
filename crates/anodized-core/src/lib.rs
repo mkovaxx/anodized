@@ -223,6 +223,13 @@ impl Parse for SpecArg {
 
         let lookahead = input.lookahead1();
         if lookahead.peek(kw::clones) {
+            if cfg.is_some() {
+                return Err(syn::Error::new(
+                    attrs[0].span(),
+                    "`cfg` attribute is not supported on `clones`",
+                ));
+            }
+            
             // Parse `clones: <bindings>`
             let keyword = input.parse::<kw::clones>()?;
             input.parse::<Token![:]>()?;
