@@ -416,6 +416,19 @@ pub fn instrument_fn_body(spec: &Spec, original_body: &Block, is_async: bool) ->
             }
         }));
 
+    // --- Generate Clone Statements ---
+    // Use tuple destructuring to prevent scope creep between clone expressions
+    let clone_statements = if !spec.clones.is_empty() {
+        let aliases: Vec<_> = spec.clones.iter().map(|cb| &cb.alias).collect();
+        let exprs: Vec<_> = spec.clones.iter().map(|cb| {
+            let expr = &cb.expr;
+            quote! { (#expr).clone() }
+        }).collect();
+        vec![quote! { let (#(#aliases),*) = (#(#exprs),*); }]
+    } else {
+        vec![]
+    };
+
     // --- Generate Postcondition Checks ---
     let postconditions = spec
         .maintains
@@ -451,6 +464,7 @@ pub fn instrument_fn_body(spec: &Spec, original_body: &Block, is_async: bool) ->
     Ok(parse_quote! {
         {
             #(#preconditions)*
+            #(#clone_statements)*
             let #binding_ident = #body_expr;
             #(#postconditions)*
             #binding_ident
