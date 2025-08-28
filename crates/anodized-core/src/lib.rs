@@ -102,6 +102,9 @@ impl Parse for Spec {
                         maintains.push(Condition { expr, cfg });
                     }
                 }
+                SpecArg::Clones { bindings, .. } => {
+                    clones.extend(bindings);
+                }
                 SpecArg::Binds { keyword, pattern } => {
                     if binds_pattern.is_some() {
                         return Err(syn::Error::new(
@@ -219,7 +222,19 @@ impl Parse for SpecArg {
         let cfg = parse_cfg_attribute(&attrs)?;
 
         let lookahead = input.lookahead1();
-        if lookahead.peek(kw::binds) {
+        if lookahead.peek(kw::clones) {
+            // Parse `clones: <bindings>`
+            let keyword = input.parse::<kw::clones>()?;
+            input.parse::<Token![:]>()?;
+            
+            // For now, just parse as an expression and return empty bindings
+            // We'll implement proper parsing logic later
+            let _expr: Expr = input.parse()?;
+            Ok(SpecArg::Clones {
+                keyword,
+                bindings: vec![],
+            })
+        } else if lookahead.peek(kw::binds) {
             if cfg.is_some() {
                 return Err(syn::Error::new(
                     attrs[0].span(),
@@ -296,6 +311,7 @@ fn parse_cfg_attribute(attrs: &[Attribute]) -> Result<Option<Meta>> {
 mod kw {
     syn::custom_keyword!(requires);
     syn::custom_keyword!(maintains);
+    syn::custom_keyword!(clones);
     syn::custom_keyword!(binds);
     syn::custom_keyword!(ensures);
 }
