@@ -441,3 +441,52 @@ fn test_parse_clones_array_expression() {
 
     assert_spec_eq(&spec, &expected);
 }
+
+#[test]
+#[should_panic(expected = "complex expressions require an explicit alias using `as`")]
+fn test_parse_clones_complex_expr_without_alias() {
+    let _: Spec = parse_quote! {
+        clones: self.items.len(),
+        ensures: output > 0,
+    };
+}
+
+#[test]
+#[should_panic(expected = "complex expressions require an explicit alias using `as`")]
+fn test_parse_clones_method_call_without_alias() {
+    let _: Spec = parse_quote! {
+        clones: foo.bar(),
+        ensures: output > 0,
+    };
+}
+
+#[test]
+#[should_panic(expected = "complex expressions require an explicit alias using `as`")]
+fn test_parse_clones_binary_expr_without_alias() {
+    let _: Spec = parse_quote! {
+        clones: a + b,
+        ensures: output > 0,
+    };
+}
+
+#[test]
+#[should_panic(expected = "complex expressions require an explicit alias using `as`")]
+fn test_parse_clones_array_with_complex_expr_no_alias() {
+    let _: Spec = parse_quote! {
+        clones: [
+            count,
+            self.items.len(),  // This should fail - complex expr needs alias
+        ],
+        ensures: output > 0,
+    };
+}
+
+#[test]
+#[should_panic(expected = "`cfg` attribute is not supported on `clones`")]
+fn test_parse_cfg_on_clones() {
+    let _: Spec = parse_quote! {
+        #[cfg(test)]
+        clones: value as old_value,
+        ensures: output > old_value,
+    };
+}
