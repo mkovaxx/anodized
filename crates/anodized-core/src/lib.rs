@@ -102,7 +102,13 @@ impl Parse for Spec {
                         maintains.push(Condition { expr, cfg });
                     }
                 }
-                SpecArg::Clones { bindings, .. } => {
+                SpecArg::Clones { keyword, bindings } => {
+                    if !clones.is_empty() {
+                        return Err(syn::Error::new(
+                            keyword.span(),
+                            "at most one `clones` parameter is allowed; to clone multiple values, use a list: `clones: [expr1, expr2, ...]`",
+                        ));
+                    }
                     clones.extend(bindings);
                 }
                 SpecArg::Binds { keyword, pattern } => {

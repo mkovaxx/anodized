@@ -58,6 +58,15 @@ fn test_parse_multiple_binds() {
 }
 
 #[test]
+#[should_panic(expected = "at most one `clones` parameter is allowed; to clone multiple values, use a list")]
+fn test_parse_multiple_clones() {
+    let _: Spec = parse_quote! {
+        clones: value,
+        clones: count as old_count,
+    };
+}
+
+#[test]
 fn test_parse_array_of_conditions() {
     let spec: Spec = parse_quote! {
         requires: [
