@@ -421,3 +421,23 @@ fn test_parse_clones_out_of_order() {
         maintains: self.is_valid(),
     };
 }
+
+#[test]
+fn test_parse_clones_array_expression() {
+    let spec: Spec = parse_quote! {
+        clones: [a, b, c] as slice,
+        ensures: slice.len() == 3,
+    };
+
+    let expected = Spec {
+        requires: vec![],
+        maintains: vec![],
+        clones: vec![CloneBinding {
+            expr: parse_quote! { [a, b, c] },
+            alias: parse_quote! { slice },
+        }],
+        ensures: vec![parse_quote! { |output| slice.len() == 3 }],
+    };
+
+    assert_spec_eq(&spec, &expected);
+}
