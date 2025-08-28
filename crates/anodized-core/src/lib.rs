@@ -227,10 +227,15 @@ impl Parse for SpecArg {
             let keyword = input.parse::<kw::clones>()?;
             input.parse::<Token![:]>()?;
             
-            // Parse an expression and interpret as a single binding
+            // Parse an expression and interpret as binding(s)
             let expr: Expr = input.parse()?;
-            let binding = interpret_as_clone_binding(expr)?;
-            let bindings = vec![binding];
+            
+            let bindings = match expr {
+                // Array: interpret as list of bindings
+                Expr::Array(array) => interpret_array_as_clone_bindings(array)?,
+                // Single expression: interpret as single binding
+                _ => vec![interpret_as_clone_binding(expr)?],
+            };
             
             Ok(SpecArg::Clones {
                 keyword,
