@@ -444,3 +444,40 @@ fn test_instrument_with_complex_mixed_conditions() {
     let observed = instrument_fn_body(&spec, &body, is_async).unwrap();
     assert_block_eq(&observed, &expected);
 }
+
+#[test]
+fn test_instrument_with_clones() {
+    let spec: Spec = parse_quote! {
+        requires: count > 0,
+        clones: [
+            count as old_count,
+            value,
+        ],
+        ensures: [
+            output == old_count + 1,
+            old_value == output - 1,
+        ],
+    };
+    let body = make_fn_body();
+    let is_async = false;
+
+    let expected: Block = parse_quote! {
+        {
+            assert!(count > 0, "Precondition failed: count > 0");
+            let (old_count, old_value) = ((count).clone(), (value).clone());
+            let __anodized_output = #body;
+            assert!(
+                (|output| output == old_count + 1)(__anodized_output),
+                "Postcondition failed: | output | output == old_count + 1"
+            );
+            assert!(
+                (|output| old_value == output - 1)(__anodized_output),
+                "Postcondition failed: | output | old_value == output - 1"
+            );
+            __anodized_output
+        }
+    };
+
+    let observed = instrument_fn_body(&spec, &body, is_async).unwrap();
+    assert_block_eq(&observed, &expected);
+}
