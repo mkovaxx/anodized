@@ -448,14 +448,14 @@ fn test_instrument_with_complex_mixed_conditions() {
 #[test]
 fn test_instrument_with_clones() {
     let spec: Spec = parse_quote! {
-        requires: count > 0,
+        requires: CONDITION_1,
         clones: [
-            count as old_count,
-            value,
+            EXPR_1 as ALIAS_1,
+            EXPR_2 as ALIAS_2,
         ],
         ensures: [
-            output == old_count + 1,
-            old_value == output - 1,
+            CONDITION_2,
+            CONDITION_3,
         ],
     };
     let body = make_fn_body();
@@ -463,16 +463,16 @@ fn test_instrument_with_clones() {
 
     let expected: Block = parse_quote! {
         {
-            assert!(count > 0, "Precondition failed: count > 0");
-            let (old_count, old_value) = ((count).clone(), (value).clone());
+            assert!(CONDITION_1, "Precondition failed: CONDITION_1");
+            let (ALIAS_1, ALIAS_2) = ((EXPR_1).clone(), (EXPR_2).clone());
             let __anodized_output = #body;
             assert!(
-                (|output| output == old_count + 1)(__anodized_output),
-                "Postcondition failed: | output | output == old_count + 1"
+                (|output| CONDITION_2)(__anodized_output),
+                "Postcondition failed: | output | CONDITION_2"
             );
             assert!(
-                (|output| old_value == output - 1)(__anodized_output),
-                "Postcondition failed: | output | old_value == output - 1"
+                (|output| CONDITION_3)(__anodized_output),
+                "Postcondition failed: | output | CONDITION_3"
             );
             __anodized_output
         }
