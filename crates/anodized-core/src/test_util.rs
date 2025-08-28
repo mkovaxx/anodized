@@ -1,4 +1,4 @@
-use crate::{Condition, ConditionClosure, Spec};
+use crate::{CloneBinding, Condition, ConditionClosure, Spec};
 use quote::ToTokens;
 use syn::{
     Block,
@@ -41,6 +41,12 @@ pub fn assert_spec_eq(left: &Spec, right: &Spec) {
         &right.maintains,
         "maintains",
         &assert_condition_eq,
+    );
+    assert_slice_eq(
+        &left.clones,
+        &right.clones,
+        "clones",
+        &assert_clone_binding_eq,
     );
     assert_slice_eq(
         &left.ensures,
@@ -99,6 +105,22 @@ fn assert_condition_closure_eq(
         left.cfg.to_token_stream().to_string(),
         right.cfg.to_token_stream().to_string(),
         "{}`cfg` does not match",
+        msg_prefix
+    );
+}
+
+fn assert_clone_binding_eq(left: &CloneBinding, right: &CloneBinding, msg_prefix: &str) {
+    assert_eq!(
+        left.expr.to_token_stream().to_string(),
+        right.expr.to_token_stream().to_string(),
+        "{}`expr` does not match",
+        msg_prefix
+    );
+
+    assert_eq!(
+        left.alias.to_token_stream().to_string(),
+        right.alias.to_token_stream().to_string(),
+        "{}`alias` does not match",
         msg_prefix
     );
 }

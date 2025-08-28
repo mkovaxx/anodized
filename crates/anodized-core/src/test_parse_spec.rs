@@ -307,3 +307,117 @@ fn test_parse_rename_return_value() {
 
     assert_spec_eq(&spec, &expected);
 }
+
+#[test]
+fn test_parse_clones_simple_identifier() {
+    let spec: Spec = parse_quote! {
+        clones: count,
+        ensures: output == old_count + 1,
+    };
+
+    let expected = Spec {
+        requires: vec![],
+        maintains: vec![],
+        clones: vec![CloneBinding {
+            expr: parse_quote! { count },
+            alias: parse_quote! { old_count },
+        }],
+        ensures: vec![parse_quote! { |output| output == old_count + 1 }],
+    };
+
+    assert_spec_eq(&spec, &expected);
+}
+
+#[test]
+fn test_parse_clones_identifier_with_alias() {
+    let spec: Spec = parse_quote! {
+        clones: value as prev_value,
+        ensures: output > prev_value,
+    };
+
+    let expected = Spec {
+        requires: vec![],
+        maintains: vec![],
+        clones: vec![CloneBinding {
+            expr: parse_quote! { value },
+            alias: parse_quote! { prev_value },
+        }],
+        ensures: vec![parse_quote! { |output| output > prev_value }],
+    };
+
+    assert_spec_eq(&spec, &expected);
+}
+
+#[test]
+fn test_parse_clones_array() {
+    let spec: Spec = parse_quote! {
+        clones: [
+            count,
+            index as old_index,
+            value as old_value,
+        ],
+        ensures: [
+            count == old_count + 1,
+            index == old_index + 1,
+            value > old_value,
+        ],
+    };
+
+    let expected = Spec {
+        requires: vec![],
+        maintains: vec![],
+        clones: vec![
+            CloneBinding {
+                expr: parse_quote! { count },
+                alias: parse_quote! { old_count },
+            },
+            CloneBinding {
+                expr: parse_quote! { index },
+                alias: parse_quote! { old_index },
+            },
+            CloneBinding {
+                expr: parse_quote! { value },
+                alias: parse_quote! { old_value },
+            },
+        ],
+        ensures: vec![
+            parse_quote! { |output| count == old_count + 1 },
+            parse_quote! { |output| index == old_index + 1 },
+            parse_quote! { |output| value > old_value },
+        ],
+    };
+
+    assert_spec_eq(&spec, &expected);
+}
+
+#[test]
+fn test_parse_clones_with_all_clauses() {
+    let spec: Spec = parse_quote! {
+        requires: x > 0,
+        maintains: self.is_valid(),
+        clones: value as old_val,
+        binds: result,
+        ensures: result > old_val,
+    };
+
+    let expected = Spec {
+        requires: vec![parse_quote! { x > 0 }],
+        maintains: vec![parse_quote! { self.is_valid() }],
+        clones: vec![CloneBinding {
+            expr: parse_quote! { value },
+            alias: parse_quote! { old_val },
+        }],
+        ensures: vec![parse_quote! { |result| result > old_val }],
+    };
+
+    assert_spec_eq(&spec, &expected);
+}
+
+#[test]
+#[should_panic(expected = "parameters are out of order")]
+fn test_parse_clones_out_of_order() {
+    let _: Spec = parse_quote! {
+        clones: value,
+        maintains: self.is_valid(),
+    };
+}
