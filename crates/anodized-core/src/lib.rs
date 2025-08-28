@@ -19,6 +19,8 @@ pub struct Spec {
     pub requires: Vec<Condition>,
     /// Invariants: conditions that must hold both when the function is called and when it returns.
     pub maintains: Vec<Condition>,
+    /// Clone bindings: expressions to clone at function entry for use in postconditions.
+    pub clones: Vec<CloneBinding>,
     /// Postconditions: conditions that must hold when the function returns.
     pub ensures: Vec<ConditionClosure>,
 }
@@ -47,6 +49,15 @@ pub struct ConditionClosure {
     pub cfg: Option<Meta>,
 }
 
+/// A clone binding that captures an expression's value at function entry.
+#[derive(Debug)]
+pub struct CloneBinding {
+    /// The expression to clone.
+    pub expr: Expr,
+    /// The identifier to bind the cloned value to.
+    pub alias: Ident,
+}
+
 impl Parse for Spec {
     fn parse(input: ParseStream) -> Result<Self> {
         let args = Punctuated::<SpecArg, Token![,]>::parse_terminated(input)?;
@@ -54,6 +65,7 @@ impl Parse for Spec {
         let mut last_arg_order: Option<ArgOrder> = None;
         let mut requires: Vec<Condition> = vec![];
         let mut maintains: Vec<Condition> = vec![];
+        let mut clones: Vec<CloneBinding> = vec![];
         let mut binds_pattern: Option<Pat> = None;
         let mut ensures_exprs: Vec<Condition> = vec![];
 
@@ -63,7 +75,7 @@ impl Parse for Spec {
                 if current_arg_order < last_order {
                     return Err(syn::Error::new(
                         arg.get_keyword_span(),
-                        "parameters are out of order: their order must be `requires`, `maintains`, `binds`, `ensures`",
+                        "parameters are out of order: their order must be `requires`, `maintains`, `clones`, `binds`, `ensures`",
                     ));
                 }
             }
@@ -137,6 +149,7 @@ impl Parse for Spec {
         Ok(Spec {
             requires,
             maintains,
+            clones,
             ensures,
         })
     }
@@ -146,6 +159,7 @@ impl Parse for Spec {
 enum ArgOrder {
     Requires,
     Maintains,
+    Clones,
     Binds,
     Ensures,
 }
@@ -167,6 +181,10 @@ enum SpecArg {
         cfg: Option<Meta>,
         expr: Expr,
     },
+    Clones {
+        keyword: kw::clones,
+        bindings: Vec<CloneBinding>,
+    },
     Binds {
         keyword: kw::binds,
         pattern: Pat,
@@ -178,6 +196,7 @@ impl SpecArg {
         match self {
             SpecArg::Requires { .. } => ArgOrder::Requires,
             SpecArg::Maintains { .. } => ArgOrder::Maintains,
+            SpecArg::Clones { .. } => ArgOrder::Clones,
             SpecArg::Binds { .. } => ArgOrder::Binds,
             SpecArg::Ensures { .. } => ArgOrder::Ensures,
         }
@@ -188,6 +207,7 @@ impl SpecArg {
             SpecArg::Requires { keyword, .. } => keyword.span,
             SpecArg::Ensures { keyword, .. } => keyword.span,
             SpecArg::Maintains { keyword, .. } => keyword.span,
+            SpecArg::Clones { keyword, .. } => keyword.span,
             SpecArg::Binds { keyword, .. } => keyword.span,
         }
     }
