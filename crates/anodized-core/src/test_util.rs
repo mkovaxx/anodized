@@ -30,27 +30,42 @@ pub fn assert_block_eq(left: &Block, right: &Block) {
 }
 
 pub fn assert_spec_eq(left: &Spec, right: &Spec) {
+    // Destructure to ensure we handle all fields - compilation will fail if fields are added
+    let Spec {
+        requires: left_requires,
+        maintains: left_maintains,
+        clones: left_clones,
+        ensures: left_ensures,
+    } = left;
+    
+    let Spec {
+        requires: right_requires,
+        maintains: right_maintains,
+        clones: right_clones,
+        ensures: right_ensures,
+    } = right;
+    
     assert_slice_eq(
-        &left.requires,
-        &right.requires,
+        left_requires,
+        right_requires,
         "requires",
         &assert_condition_eq,
     );
     assert_slice_eq(
-        &left.maintains,
-        &right.maintains,
+        left_maintains,
+        right_maintains,
         "maintains",
         &assert_condition_eq,
     );
     assert_slice_eq(
-        &left.clones,
-        &right.clones,
+        left_clones,
+        right_clones,
         "clones",
         &assert_clone_binding_eq,
     );
     assert_slice_eq(
-        &left.ensures,
-        &right.ensures,
+        left_ensures,
+        right_ensures,
         "ensures",
         &assert_condition_closure_eq,
     );
@@ -74,16 +89,27 @@ where
 }
 
 fn assert_condition_eq(left: &Condition, right: &Condition, msg_prefix: &str) {
+    // Destructure to ensure we handle all fields
+    let Condition {
+        expr: left_expr,
+        cfg: left_cfg,
+    } = left;
+    
+    let Condition {
+        expr: right_expr,
+        cfg: right_cfg,
+    } = right;
+    
     assert_eq!(
-        left.expr.to_token_stream().to_string(),
-        right.expr.to_token_stream().to_string(),
+        left_expr.to_token_stream().to_string(),
+        right_expr.to_token_stream().to_string(),
         "{}`expr` does not match",
         msg_prefix
     );
 
     assert_eq!(
-        left.cfg.to_token_stream().to_string(),
-        right.cfg.to_token_stream().to_string(),
+        left_cfg.to_token_stream().to_string(),
+        right_cfg.to_token_stream().to_string(),
         "{}`cfg` does not match",
         msg_prefix
     );
@@ -94,32 +120,54 @@ fn assert_condition_closure_eq(
     right: &ConditionClosure,
     msg_prefix: &str,
 ) {
+    // Destructure to ensure we handle all fields
+    let ConditionClosure {
+        closure: left_closure,
+        cfg: left_cfg,
+    } = left;
+    
+    let ConditionClosure {
+        closure: right_closure,
+        cfg: right_cfg,
+    } = right;
+    
     assert_eq!(
-        left.closure.to_token_stream().to_string(),
-        right.closure.to_token_stream().to_string(),
+        left_closure.to_token_stream().to_string(),
+        right_closure.to_token_stream().to_string(),
         "{}`closure` does not match",
         msg_prefix
     );
 
     assert_eq!(
-        left.cfg.to_token_stream().to_string(),
-        right.cfg.to_token_stream().to_string(),
+        left_cfg.to_token_stream().to_string(),
+        right_cfg.to_token_stream().to_string(),
         "{}`cfg` does not match",
         msg_prefix
     );
 }
 
 fn assert_clone_binding_eq(left: &CloneBinding, right: &CloneBinding, msg_prefix: &str) {
+    // Destructure to ensure we handle all fields
+    let CloneBinding {
+        expr: left_expr,
+        alias: left_alias,
+    } = left;
+    
+    let CloneBinding {
+        expr: right_expr,
+        alias: right_alias,
+    } = right;
+    
     assert_eq!(
-        left.expr.to_token_stream().to_string(),
-        right.expr.to_token_stream().to_string(),
+        left_expr.to_token_stream().to_string(),
+        right_expr.to_token_stream().to_string(),
         "{}`expr` does not match",
         msg_prefix
     );
 
     assert_eq!(
-        left.alias.to_token_stream().to_string(),
-        right.alias.to_token_stream().to_string(),
+        left_alias.to_token_stream().to_string(),
+        right_alias.to_token_stream().to_string(),
         "{}`alias` does not match",
         msg_prefix
     );
