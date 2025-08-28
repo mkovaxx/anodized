@@ -229,21 +229,21 @@ impl Parse for SpecArg {
                     "`cfg` attribute is not supported on `clones`",
                 ));
             }
-            
+
             // Parse `clones: <bindings>`
             let keyword = input.parse::<kw::clones>()?;
             input.parse::<Token![:]>()?;
-            
+
             // Parse an expression and interpret as binding(s)
             let expr: Expr = input.parse()?;
-            
+
             let bindings = match expr {
                 // Array: interpret as list of bindings
                 Expr::Array(array) => interpret_array_as_clone_bindings(array)?,
                 // Single expression: interpret as single binding
                 _ => vec![interpret_as_clone_binding(expr)?],
             };
-            
+
             Ok(SpecArg::Clones {
                 keyword,
                 bindings,
@@ -299,13 +299,13 @@ impl Parse for SpecArg {
 /// Try to interpret an Expr::Array as a list of CloneBindings
 fn interpret_array_as_clone_bindings(array: syn::ExprArray) -> Result<Vec<CloneBinding>> {
     let mut bindings = Vec::new();
-    
+
     for elem in array.elems {
         // Try to interpret each element as a binding
         // If any fails, propagate that error immediately
         bindings.push(interpret_as_clone_binding(elem)?);
     }
-    
+
     Ok(bindings)
 }
 
@@ -313,11 +313,11 @@ fn interpret_array_as_clone_bindings(array: syn::ExprArray) -> Result<Vec<CloneB
 fn interpret_as_clone_binding(expr: Expr) -> Result<CloneBinding> {
     match expr {
         // Simple identifier: count -> old_count
-        Expr::Path(ref path) 
-            if path.path.segments.len() == 1 
+        Expr::Path(ref path)
+            if path.path.segments.len() == 1
             && path.path.leading_colon.is_none()
             && path.attrs.is_empty()
-            && path.qself.is_none() => 
+            && path.qself.is_none() =>
         {
             let ident = &path.path.segments[0].ident;
             let alias = Ident::new(&format!("old_{}", ident), ident.span());
@@ -327,7 +327,7 @@ fn interpret_as_clone_binding(expr: Expr) -> Result<CloneBinding> {
         Expr::Cast(cast) => {
             // The cast.ty should be a simple identifier that we use as the alias
             if let syn::Type::Path(ref type_path) = *cast.ty {
-                if type_path.path.segments.len() == 1 
+                if type_path.path.segments.len() == 1
                     && type_path.path.leading_colon.is_none()
                     && type_path.qself.is_none()
                 {
@@ -418,15 +418,15 @@ pub fn instrument_fn_body(spec: &Spec, original_body: &Block, is_async: bool) ->
 
     // --- Generate Clone Statements ---
     // Use tuple destructuring to prevent scope creep between clone expressions
-    let clone_statements = if !spec.clones.is_empty() {
+    let clone_statement = if !spec.clones.is_empty() {
         let aliases: Vec<_> = spec.clones.iter().map(|cb| &cb.alias).collect();
         let exprs: Vec<_> = spec.clones.iter().map(|cb| {
             let expr = &cb.expr;
             quote! { (#expr).clone() }
         }).collect();
-        vec![quote! { let (#(#aliases),*) = (#(#exprs),*); }]
+        quote! { let (#(#aliases),*) = (#(#exprs),*); }
     } else {
-        vec![]
+        quote! {}
     };
 
     // --- Generate Postcondition Checks ---
@@ -464,7 +464,7 @@ pub fn instrument_fn_body(spec: &Spec, original_body: &Block, is_async: bool) ->
     Ok(parse_quote! {
         {
             #(#preconditions)*
-            #(#clone_statements)*
+            #clone_statement
             let #binding_ident = #body_expr;
             #(#postconditions)*
             #binding_ident
