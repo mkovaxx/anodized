@@ -418,9 +418,11 @@ pub fn instrument_fn_body(spec: &Spec, original_body: &Block, is_async: bool) ->
             }
         }));
 
-    // --- Generate Clone Statements ---
-    // Use tuple destructuring to prevent scope creep between clone expressions
-    let clone_statement = if !spec.clones.is_empty() {
+    // --- Generate Combined Body and Clone Statement ---
+    // Capture clones FIRST, then execute body, all in a single tuple assignment
+    // This ensures cloned values are captured before body executes but aren't 
+    // accessible to the body itself
+    let body_and_clones = if !spec.clones.is_empty() {
         let aliases: Vec<_> = spec.clones.iter().map(|cb| &cb.alias).collect();
         let exprs: Vec<_> = spec
             .clones
@@ -430,9 +432,30 @@ pub fn instrument_fn_body(spec: &Spec, original_body: &Block, is_async: bool) ->
                 quote! { (#expr).clone() }
             })
             .collect();
-        quote! { let (#(#aliases),*) = (#(#exprs),*); }
+        
+        // The trick: evaluate clones first, then body, but assign them together
+        // This prevents the body from seeing the cloned names
+        let body_expr = if is_async {
+            quote! { async #original_body.await }
+        } else {
+            quote! { #original_body }
+        };
+        
+        quote! { 
+            let ((#(#aliases),*), #binding_ident) = {
+                let clones = (#(#exprs),*);
+                let output = #body_expr;
+                (clones, output)
+            };
+        }
     } else {
-        quote! {}
+        // No clones, just execute the body normally
+        let body_expr = if is_async {
+            quote! { async #original_body.await }
+        } else {
+            quote! { #original_body }
+        };
+        quote! { let #binding_ident = #body_expr; }
     };
 
     // --- Generate Postcondition Checks ---
@@ -460,27 +483,10 @@ pub fn instrument_fn_body(spec: &Spec, original_body: &Block, is_async: bool) ->
             }
         }));
 
-    // --- Construct the New Body ---
-    // Define the body as a closure/async block BEFORE clones to ensure scope isolation
-    // This prevents the function body from accessing the cloned values
-    let body_closure_def = if is_async {
-        quote! { let __anodized_body = async #original_body; }
-    } else {
-        quote! { let __anodized_body = || #original_body; }
-    };
-    
-    let body_call = if is_async {
-        quote! { __anodized_body.await }
-    } else {
-        quote! { __anodized_body() }
-    };
-
     Ok(parse_quote! {
         {
-            #body_closure_def
             #(#preconditions)*
-            #clone_statement
-            let #binding_ident = #body_call;
+            #body_and_clones
             #(#postconditions)*
             #binding_ident
         }
