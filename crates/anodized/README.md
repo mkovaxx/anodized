@@ -96,7 +96,7 @@ Specifications are built from conditions, which come in three flavors:
 
 For convenience, `<conditions>` can be either a single condition or a list (i.e. `[<condition>, <condition>, ...]`).
 
-The conditions must be given in the following order: `requires`, `maintains`, and `ensures`. This order is enforced to mirror the logical flow of a function's execution: preconditions (`requires`) are checked upon entry, invariants (`maintains`) must hold true upon both entry and exit, and postconditions (`ensures`) are checked upon exit.
+The conditions must be given in the following order: `requires`, `maintains`, `clones`, `binds`, and `ensures`. This order is enforced to mirror the logical flow of a function's execution: preconditions (`requires`) are checked upon entry, invariants (`maintains`) must hold true upon both entry and exit, clone bindings (`clones`) capture values at entry, and postconditions (`ensures`) are checked upon exit.
 
 A condition is a `bool`-valued Rust expression; as simple as that. This is a non-trivial design choice, so its benefits are explained in the section below: [Why Conditions Are Rust Expressions](#why-conditions-are-rust-expressions).
 
@@ -211,6 +211,57 @@ use anodized::spec;
     ],
 )]
 fn sort_pair(pair: (i32, i32)) -> (i32, i32) { /* ... */ }
+```
+
+### Capturing Entry-Time Values with `clones`
+
+Sometimes postconditions need to compare the function's final state with its initial state. The `clones` parameter lets you capture values at function entry for use in postconditions.
+
+```rust
+use anodized::spec;
+
+#[spec(
+    clones: [
+        // Simple identifier: auto-generates `old_count`
+        count,
+        // Complex expression: requires explicit alias
+        self.items.len() as orig_len,
+    ],
+    ensures: [
+        count == old_count + 1,
+        self.items.len() == orig_len + 1,
+    ],
+)]
+fn push(&mut self, count: &mut usize, item: T) {
+    self.items.push(item);
+    *count += 1;
+}
+```
+
+**Key Points about `clones`:**
+
+- **Simple identifiers** get an automatic `old_` prefix: `count` becomes `old_count`
+- **Complex expressions** require an explicit alias using `as`: `self.items.len() as orig_len`
+- Clone bindings are captured **after** preconditions are checked but **before** the function body executes
+- The cloned values are **only** available to postconditions, not to the function body itself
+- Values are cloned using Rust's `Clone` trait, so the types must implement `Clone`
+
+**Example with all specification parameters:**
+
+```rust
+#[spec(
+    requires: balance >= amount,
+    maintains: self.is_valid(),
+    clones: [
+        balance as initial_balance,
+        self.transaction_count() as initial_txns,
+    ],
+    ensures: [
+        balance == initial_balance - amount,
+        self.transaction_count() == initial_txns + 1,
+    ],
+)]
+fn withdraw(&mut self, balance: &mut u64, amount: u64) { /* ... */ }
 ```
 
 ### Why Conditions Are Rust Expressions
