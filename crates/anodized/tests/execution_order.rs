@@ -1,10 +1,22 @@
 use anodized::spec;
 
 #[spec(
-    requires: log.push("requires") == (),
-    maintains: log.push("maintains") == (),
-    clones: log.push("clone") as _clone,
-    ensures: log.push("ensures") == (),
+    requires: [
+        log.push("requires1") == (),
+        log.push("requires2") == (),
+    ],
+    maintains: [
+        log.push("maintains1") == (),
+        log.push("maintains2") == (),
+    ],
+    clones: [
+        log.push("clone1") as _clone1,
+        log.push("clone2") as _clone2,
+    ],
+    ensures: [
+        log.push("ensures1") == (),
+        log.push("ensures2") == (),
+    ],
 )]
 fn instrumented_function(log: &mut Vec<&'static str>) {
     log.push("body");
@@ -18,55 +30,18 @@ fn test_execution_order() {
     // Verify the exact execution order
     assert_eq!(
         log,
-        vec!["requires", "maintains", "clone", "body", "maintains", "ensures"]
+        vec![
+            "requires1",
+            "requires2",
+            "maintains1",
+            "maintains2",
+            "clone1",
+            "clone2",
+            "body",
+            "maintains1",
+            "maintains2",
+            "ensures1",
+            "ensures2",
+        ]
     );
-}
-
-#[spec(
-    requires: [
-        log.push("req1") == (),
-        log.push("req2") == (),
-    ],
-    clones: [
-        log.push("clone1") as _clone1,
-        log.push("clone2") as _clone2,
-    ],
-    ensures: [
-        log.push("ens1") == (),
-        log.push("ens2") == (),
-    ],
-)]
-fn multiple_conditions(log: &mut Vec<&'static str>) {
-    log.push("body");
-}
-
-#[test]
-fn test_multiple_conditions_order() {
-    let mut log = Vec::new();
-    multiple_conditions(&mut log);
-
-    assert_eq!(
-        log,
-        vec!["req1", "req2", "clone1", "clone2", "body", "ens1", "ens2"]
-    );
-}
-
-// Test that clones are evaluated in a single expression (left-to-right)
-#[spec(
-    clones: [
-        log.push("clone1") as _clone1,
-        log.push("clone2") as _clone2,
-    ],
-    ensures: () == (),
-)]
-fn clone_evaluation_order(log: &mut Vec<&'static str>) {
-    log.push("body");
-}
-
-#[test]
-fn test_clone_evaluation_order() {
-    let mut log = Vec::new();
-    clone_evaluation_order(&mut log);
-
-    assert_eq!(log, vec!["clone1", "clone2", "body"]);
 }
