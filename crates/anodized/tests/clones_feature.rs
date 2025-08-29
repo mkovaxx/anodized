@@ -83,14 +83,14 @@ fn test_clone_with_explicit_alias() {
 #[test]
 fn test_multiple_clones() {
     let mut container = Container::new();
-    
+
     // Add items up to capacity
     for i in 0..10 {
         container.push_item(format!("item_{}", i));
     }
     assert_eq!(container.items.len(), 10);
     assert_eq!(container.capacity, 10);
-    
+
     // This should trigger capacity doubling
     container.push_item("item_10".to_string());
     assert_eq!(container.items.len(), 11);
@@ -101,7 +101,7 @@ fn test_multiple_clones() {
 fn test_clones_with_preconditions() {
     let mut container = Container::new();
     container.counter = 50;
-    
+
     container.increment_if_valid();
     assert_eq!(container.counter, 51);
 }
@@ -114,9 +114,9 @@ fn test_clone_postcondition_failure() {
         ensures: value == old_value + 10,
     )]
     fn bad_increment(value: i32) -> i32 {
-        value + 5  // Wrong! Should add 10
+        value + 5 // Wrong! Should add 10
     }
-    
+
     bad_increment(5);
 }
 
@@ -126,7 +126,7 @@ fn test_precondition_runs_before_clones() {
     struct TestStruct {
         counter: u32,
     }
-    
+
     impl TestStruct {
         #[spec(
             requires: self.counter < 100,
@@ -137,7 +137,7 @@ fn test_precondition_runs_before_clones() {
             self.counter += 1;
         }
     }
-    
+
     let mut test = TestStruct { counter: 100 };
     test.increment(); // Should panic on precondition, not reach clones
 }

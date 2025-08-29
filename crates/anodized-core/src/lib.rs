@@ -250,10 +250,7 @@ impl Parse for SpecArg {
                 _ => vec![interpret_as_clone_binding(expr)?],
             };
 
-            Ok(SpecArg::Clones {
-                keyword,
-                bindings,
-            })
+            Ok(SpecArg::Clones { keyword, bindings })
         } else if lookahead.peek(kw::binds) {
             if cfg.is_some() {
                 return Err(syn::Error::new(
@@ -321,9 +318,9 @@ fn interpret_as_clone_binding(expr: Expr) -> Result<CloneBinding> {
         // Simple identifier: count -> old_count
         Expr::Path(ref path)
             if path.path.segments.len() == 1
-            && path.path.leading_colon.is_none()
-            && path.attrs.is_empty()
-            && path.qself.is_none() =>
+                && path.path.leading_colon.is_none()
+                && path.attrs.is_empty()
+                && path.qself.is_none() =>
         {
             let ident = &path.path.segments[0].ident;
             let alias = Ident::new(&format!("old_{}", ident), ident.span());
@@ -346,17 +343,16 @@ fn interpret_as_clone_binding(expr: Expr) -> Result<CloneBinding> {
             }
             Err(syn::Error::new_spanned(
                 cast,
-                "alias must be a simple identifier"
+                "alias must be a simple identifier",
             ))
         }
         // Any other expression requires an explicit alias
         _ => Err(syn::Error::new_spanned(
             expr,
-            "complex expressions require an explicit alias using `as`"
-        ))
+            "complex expressions require an explicit alias using `as`",
+        )),
     }
 }
-
 
 fn parse_cfg_attribute(attrs: &[Attribute]) -> Result<Option<Meta>> {
     let mut cfg_attrs: Vec<Meta> = vec![];
@@ -426,10 +422,14 @@ pub fn instrument_fn_body(spec: &Spec, original_body: &Block, is_async: bool) ->
     // Use tuple destructuring to prevent scope creep between clone expressions
     let clone_statement = if !spec.clones.is_empty() {
         let aliases: Vec<_> = spec.clones.iter().map(|cb| &cb.alias).collect();
-        let exprs: Vec<_> = spec.clones.iter().map(|cb| {
-            let expr = &cb.expr;
-            quote! { (#expr).clone() }
-        }).collect();
+        let exprs: Vec<_> = spec
+            .clones
+            .iter()
+            .map(|cb| {
+                let expr = &cb.expr;
+                quote! { (#expr).clone() }
+            })
+            .collect();
         quote! { let (#(#aliases),*) = (#(#exprs),*); }
     } else {
         quote! {}

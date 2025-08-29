@@ -37,14 +37,14 @@ pub fn assert_spec_eq(left: &Spec, right: &Spec) {
         clones: left_clones,
         ensures: left_ensures,
     } = left;
-    
+
     let Spec {
         requires: right_requires,
         maintains: right_maintains,
         clones: right_clones,
         ensures: right_ensures,
     } = right;
-    
+
     assert_slice_eq(
         left_requires,
         right_requires,
@@ -94,12 +94,12 @@ fn assert_condition_eq(left: &Condition, right: &Condition, msg_prefix: &str) {
         expr: left_expr,
         cfg: left_cfg,
     } = left;
-    
+
     let Condition {
         expr: right_expr,
         cfg: right_cfg,
     } = right;
-    
+
     assert_eq!(
         left_expr.to_token_stream().to_string(),
         right_expr.to_token_stream().to_string(),
@@ -125,12 +125,12 @@ fn assert_condition_closure_eq(
         closure: left_closure,
         cfg: left_cfg,
     } = left;
-    
+
     let ConditionClosure {
         closure: right_closure,
         cfg: right_cfg,
     } = right;
-    
+
     assert_eq!(
         left_closure.to_token_stream().to_string(),
         right_closure.to_token_stream().to_string(),
@@ -152,12 +152,12 @@ fn assert_clone_binding_eq(left: &CloneBinding, right: &CloneBinding, msg_prefix
         expr: left_expr,
         alias: left_alias,
     } = left;
-    
+
     let CloneBinding {
         expr: right_expr,
         alias: right_alias,
     } = right;
-    
+
     assert_eq!(
         left_expr.to_token_stream().to_string(),
         right_expr.to_token_stream().to_string(),

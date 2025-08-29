@@ -58,7 +58,9 @@ fn test_parse_multiple_binds() {
 }
 
 #[test]
-#[should_panic(expected = "at most one `clones` parameter is allowed; to clone multiple values, use a list")]
+#[should_panic(
+    expected = "at most one `clones` parameter is allowed; to clone multiple values, use a list"
+)]
 fn test_parse_multiple_clones() {
     let _: Spec = parse_quote! {
         clones: value,
@@ -80,10 +82,7 @@ fn test_parse_array_of_conditions() {
     };
 
     let expected = Spec {
-        requires: vec![
-            parse_quote! { x >= 0 },
-            parse_quote! { y.len() < 10 },
-        ],
+        requires: vec![parse_quote! { x >= 0 }, parse_quote! { y.len() < 10 }],
         maintains: vec![],
         clones: vec![],
         ensures: vec![
