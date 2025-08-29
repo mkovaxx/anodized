@@ -72,6 +72,7 @@ fn push(&mut self, item: T) { /* ... */ }
 - `crates/anodized/tests/clones_feature.rs` - end-to-end feature test
 - `crates/anodized/tests/execution_order.rs` - verifies exact execution order of all spec clauses
 - `crates/anodized/tests/block_expressions.rs` - tests block expressions in spec conditions
+- `crates/anodized/tests/compile-fail/clones_scope_isolation.rs` - compile-fail test verifying scope isolation
 
 ## Key Design Decisions
 
@@ -142,3 +143,5 @@ fn push(&mut self, item: T) { /* ... */ }
 - Fix assert format strings to handle block expressions
 - Refactor code generation to use iterator chains
 - Fix remaining unit test format expectations
+- Update NOTES.md to document scope isolation fix and recent improvements
+- Add compile-fail test for clone alias scope isolation
