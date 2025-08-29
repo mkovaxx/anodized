@@ -421,28 +421,28 @@ pub fn instrument_fn_body(spec: &Spec, original_body: &Block, is_async: bool) ->
     // --- Generate Combined Body and Clone Statement ---
     // Capture clones and execute body in a single tuple assignment
     // This ensures cloned values aren't accessible to the body itself
-    
+
     // Chain clone aliases with output binding
     let aliases = spec
         .clones
         .iter()
         .map(|cb| &cb.alias)
         .chain(std::iter::once(&binding_ident));
-    
+
     // Chain clone expressions with body expression
     let clone_exprs = spec.clones.iter().map(|cb| {
         let expr = &cb.expr;
         quote! { (#expr).clone() }
     });
-    
+
     let body_expr = if is_async {
         quote! { async #original_body.await }
     } else {
         quote! { #original_body }
     };
-    
+
     let exprs = clone_exprs.chain(std::iter::once(body_expr));
-    
+
     // Simple tuple assignment (works even when clones is empty)
     let body_and_clones = quote! { let (#(#aliases),*) = (#(#exprs),*); };
 
