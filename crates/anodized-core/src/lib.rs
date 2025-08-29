@@ -461,17 +461,26 @@ pub fn instrument_fn_body(spec: &Spec, original_body: &Block, is_async: bool) ->
         }));
 
     // --- Construct the New Body ---
-    let body_expr = if is_async {
-        quote! { async #original_body.await }
+    // Define the body as a closure/async block BEFORE clones to ensure scope isolation
+    // This prevents the function body from accessing the cloned values
+    let body_closure_def = if is_async {
+        quote! { let __anodized_body = async #original_body; }
     } else {
-        quote! { #original_body }
+        quote! { let __anodized_body = || #original_body; }
+    };
+    
+    let body_call = if is_async {
+        quote! { __anodized_body.await }
+    } else {
+        quote! { __anodized_body() }
     };
 
     Ok(parse_quote! {
         {
+            #body_closure_def
             #(#preconditions)*
             #clone_statement
-            let #binding_ident = #body_expr;
+            let #binding_ident = #body_call;
             #(#postconditions)*
             #binding_ident
         }
