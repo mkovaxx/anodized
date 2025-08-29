@@ -1,10 +1,14 @@
 # Clones Feature - COMPLETED ✓
 
-## Branch
-`mate-support-clones` - Ready to merge
+## Current Status
+- **Branch**: `mate-support-clones` - Ready to merge to main
+- **Feature**: COMPLETE - All implementation, tests, and documentation done
+- **Recent commits**: 
+  - `76a83f3` - Fix example to include all specification parameters including binds
+  - `908ec81` - Add clones feature documentation to README
 
 ## Feature Overview
-Support for saving entry-time values of function arguments using a `clones:` parameter, similar to the `old()` operator in the `contracts` crate.
+Support for saving entry-time values of function arguments using a `clones:` parameter, similar to the `old()` operator in the `contracts` crate. This allows postconditions to compare final state with initial state.
 
 ## Design
 ```rust
@@ -102,12 +106,27 @@ fn push(&mut self, item: T) { /* ... */ }
 
 4. **Test Patterns**: Use opaque placeholders (EXPR_1, ALIAS_1, CONDITION_1) in tests to verify transformation logic
 
-## Documentation Updates ✓
-- Added comprehensive clones feature documentation to README.md
-- Added examples showing simple identifiers, complex expressions, and integration with other spec parameters
+## What Was Completed
+
+### Documentation Updates ✓
+- Added comprehensive clones feature documentation to README.md (see sections on "Capturing Entry-Time Values with `clones`")
+- Updated parameter ordering documentation to include `clones` in the correct sequence
+- Added examples showing:
+  - Simple identifiers with auto-generated `old_` prefix
+  - Complex expressions requiring explicit aliases  
+  - Integration with all spec parameters (requires, maintains, clones, binds, ensures)
 - Integration tests in `crates/anodized/tests/clones_feature.rs` serve as additional examples
 
-## Future Work
+### Key Files Modified
+- `crates/anodized/README.md` - Added clones documentation
+- `NOTES.md` - Updated to reflect completion status
+
+## Next Steps
+1. **Merge to main** - The feature is complete and ready to merge
+2. **Version bump** - Consider updating version in Cargo.toml files for release
+3. **Changelog** - Update CHANGELOG.md with the new clones feature
+
+## Future Work (Not Blocking)
 
 ### Import System Compatibility Investigation
 - **Critical**: When importing from the `contracts` crate (which uses separate attributes like `#[requires]`, `#[invariant]`, `#[ensures]`), the ORDER of attributes matters for instrumentation
