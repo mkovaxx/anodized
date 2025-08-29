@@ -256,12 +256,14 @@ fn push(&mut self, count: &mut usize, item: T) {
         balance as initial_balance,
         self.transaction_count() as initial_txns,
     ],
+    binds: (new_balance, receipt),
     ensures: [
-        balance == initial_balance - amount,
+        new_balance == initial_balance - amount,
+        receipt.amount == amount,
         self.transaction_count() == initial_txns + 1,
     ],
 )]
-fn withdraw(&mut self, balance: &mut u64, amount: u64) { /* ... */ }
+fn withdraw(&mut self, balance: &mut u64, amount: u64) -> (u64, Receipt) { /* ... */ }
 ```
 
 ### Why Conditions Are Rust Expressions
