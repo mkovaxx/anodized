@@ -40,9 +40,11 @@ fn push(&mut self, item: T) { /* ... */ }
 
 ### 3. Code Generation ✓
 - Implemented in `instrument_fn_body()`
-- Clone statements generated after preconditions/pre-invariants, before body execution
-- Uses tuple destructuring to prevent scope creep: `let (alias1, alias2) = (expr1.clone(), expr2.clone());`
-- Empty tuple `let () = ()` avoided when no clones present
+- **CRITICAL FIX**: Uses tuple assignment to ensure cloned values are NOT accessible to function body
+  - Evaluates clones and body together: `let (alias1, alias2, output) = (expr1.clone(), expr2.clone(), body)`
+  - This prevents scope leakage - body cannot reference clone aliases
+- Uses iterator chains for clean code generation
+- Works correctly even when no clones present (generates single-element tuple)
 - Aliases available to postconditions through lexical scoping
 
 ### 4. Tests ✓
@@ -66,8 +68,10 @@ fn push(&mut self, item: T) { /* ... */ }
 #### Instrumentation Test
 - `test_instrument_with_clones` - verifies correct code generation
 
-#### Integration Test
+#### Integration Tests
 - `crates/anodized/tests/clones_feature.rs` - end-to-end feature test
+- `crates/anodized/tests/execution_order.rs` - verifies exact execution order of all spec clauses
+- `crates/anodized/tests/block_expressions.rs` - tests block expressions in spec conditions
 
 ## Key Design Decisions
 
@@ -89,11 +93,11 @@ fn push(&mut self, item: T) { /* ... */ }
 
 ## Implementation Insights
 
-1. **Span vs Hygiene**: Spans only affect error message location, not identifier resolution or shadowing
+1. **Scope Isolation Solution**: Using tuple assignment `let (clones..., output) = (clone_exprs..., body)` ensures cloned values cannot be accessed by the function body, preventing semantic changes to user code
 
-2. **Tuple Destructuring**: Elegant solution to prevent scope creep between clone expressions
+2. **Format String Fix**: Changed assert macros from compile-time interpolation to runtime formatting to handle block expressions with braces correctly
 
-3. **Empty Clones**: Generate no code rather than `let () = ()`
+3. **Iterator Chains**: Refactored to use iterator chains instead of mutable vectors for cleaner code generation
 
 4. **Test Patterns**: Use opaque placeholders (EXPR_1, ALIAS_1, CONDITION_1) in tests to verify transformation logic
 
@@ -133,3 +137,8 @@ fn push(&mut self, item: T) { /* ... */ }
 - Add unit test for instrument_fn_body with clones
 - Fix test to use opaque placeholder pattern
 - Disallow multiple clones parameters with helpful error message
+- Fix critical scope isolation issue with tuple assignment
+- Add execution order and block expression tests
+- Fix assert format strings to handle block expressions
+- Refactor code generation to use iterator chains
+- Fix remaining unit test format expectations
