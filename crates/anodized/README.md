@@ -96,7 +96,7 @@ Specifications are built from conditions, which come in three flavors:
 
 For convenience, `<conditions>` can be either a single condition or a list (i.e. `[<condition>, <condition>, ...]`).
 
-The conditions must be given in the following order: `requires`, `maintains`, `clones`, `binds`, and `ensures`. This order is enforced to mirror the logical flow of a function's execution: preconditions (`requires`) are checked upon entry, invariants (`maintains`) must hold true upon both entry and exit, clone bindings (`clones`) capture values at entry, and postconditions (`ensures`) are checked upon exit.
+The conditions must be given in the following order: `requires`, `maintains`, and `ensures`. This order is enforced to mirror the logical flow of a function's execution: preconditions (`requires`) are checked upon entry, invariants (`maintains`) must hold true upon both entry and exit, and postconditions (`ensures`) are checked upon exit.
 
 A condition is a `bool`-valued Rust expression; as simple as that. This is a non-trivial design choice, so its benefits are explained in the section below: [Why Conditions Are Rust Expressions](#why-conditions-are-rust-expressions).
 
