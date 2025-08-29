@@ -399,8 +399,8 @@ pub fn instrument_fn_body(spec: &Spec, original_body: &Block, is_async: bool) ->
         .iter()
         .map(|condition| {
             let expr = &condition.expr;
-            let msg = format!("Precondition failed: {}", expr.to_token_stream());
-            let assert = quote! { assert!(#expr, #msg); };
+            let expr_str = expr.to_token_stream().to_string();
+            let assert = quote! { assert!(#expr, "Precondition failed: {}", #expr_str); };
             if let Some(cfg) = &condition.cfg {
                 quote! { if cfg!(#cfg) { #assert } }
             } else {
@@ -409,8 +409,8 @@ pub fn instrument_fn_body(spec: &Spec, original_body: &Block, is_async: bool) ->
         })
         .chain(spec.maintains.iter().map(|condition| {
             let expr = &condition.expr;
-            let msg = format!("Pre-invariant failed: {}", expr.to_token_stream());
-            let assert = quote! { assert!(#expr, #msg); };
+            let expr_str = expr.to_token_stream().to_string();
+            let assert = quote! { assert!(#expr, "Pre-invariant failed: {}", #expr_str); };
             if let Some(cfg) = &condition.cfg {
                 quote! { if cfg!(#cfg) { #assert } }
             } else {
@@ -452,8 +452,8 @@ pub fn instrument_fn_body(spec: &Spec, original_body: &Block, is_async: bool) ->
         .iter()
         .map(|condition| {
             let expr = &condition.expr;
-            let msg = format!("Post-invariant failed: {}", expr.to_token_stream());
-            let assert = quote! { assert!(#expr, #msg); };
+            let expr_str = expr.to_token_stream().to_string();
+            let assert = quote! { assert!(#expr, "Post-invariant failed: {}", #expr_str); };
             if let Some(cfg) = &condition.cfg {
                 quote! { if cfg!(#cfg) { #assert } }
             } else {
@@ -462,8 +462,8 @@ pub fn instrument_fn_body(spec: &Spec, original_body: &Block, is_async: bool) ->
         })
         .chain(spec.ensures.iter().map(|condition_closure| {
             let closure = &condition_closure.closure;
-            let msg = format!("Postcondition failed: {}", closure.to_token_stream());
-            let assert = quote! { assert!((#closure)(#binding_ident), #msg); };
+            let closure_str = closure.to_token_stream().to_string();
+            let assert = quote! { assert!((#closure)(#binding_ident), "Postcondition failed: {}", #closure_str); };
             if let Some(cfg) = &condition_closure.cfg {
                 quote! { if cfg!(#cfg) { #assert } }
             } else {
