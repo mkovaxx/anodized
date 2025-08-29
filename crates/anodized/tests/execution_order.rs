@@ -9,7 +9,7 @@ use anodized::spec;
         log.push("maintains-pre");
         true
     },
-    clones: log.push("clone") as _,
+    clones: log.push("clone") as _clone,
     ensures: {
         log.push("ensures");
         true
@@ -50,8 +50,8 @@ fn test_execution_order() {
         },
     ],
     clones: [
-        log.push("clone1") as _,
-        log.push("clone2") as _,
+        log.push("clone1") as _clone1,
+        log.push("clone2") as _clone2,
     ],
     ensures: [
         {
@@ -90,8 +90,8 @@ fn test_multiple_conditions_order() {
 // Test that clones are evaluated in a single expression (left-to-right)
 #[spec(
     clones: [
-        log.push("clone1") as _,
-        log.push("clone2") as _,
+        log.push("clone1") as _clone1,
+        log.push("clone2") as _clone2,
     ],
     ensures: true,
 )]
