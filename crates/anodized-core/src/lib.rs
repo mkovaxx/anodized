@@ -419,12 +419,15 @@ pub fn instrument_fn_body(spec: &Spec, original_body: &Block, is_async: bool) ->
         }));
 
     // --- Generate Combined Body and Clone Statement ---
-    // Capture clones FIRST, then execute body, all in a single tuple assignment
-    // This ensures cloned values are captured before body executes but aren't 
-    // accessible to the body itself
+    // Capture clones and execute body in a single tuple assignment
+    // This ensures cloned values aren't accessible to the body itself
     let body_and_clones = if !spec.clones.is_empty() {
-        let aliases: Vec<_> = spec.clones.iter().map(|cb| &cb.alias).collect();
-        let exprs: Vec<_> = spec
+        // Build list of all aliases: clones + output
+        let mut aliases: Vec<_> = spec.clones.iter().map(|cb| &cb.alias).collect();
+        aliases.push(&binding_ident);
+        
+        // Build list of all expressions: clone expressions + body
+        let mut exprs: Vec<_> = spec
             .clones
             .iter()
             .map(|cb| {
@@ -433,21 +436,15 @@ pub fn instrument_fn_body(spec: &Spec, original_body: &Block, is_async: bool) ->
             })
             .collect();
         
-        // The trick: evaluate clones first, then body, but assign them together
-        // This prevents the body from seeing the cloned names
         let body_expr = if is_async {
             quote! { async #original_body.await }
         } else {
             quote! { #original_body }
         };
+        exprs.push(body_expr);
         
-        quote! { 
-            let ((#(#aliases),*), #binding_ident) = {
-                let clones = (#(#exprs),*);
-                let output = #body_expr;
-                (clones, output)
-            };
-        }
+        // Simple tuple assignment
+        quote! { let (#(#aliases),*) = (#(#exprs),*); }
     } else {
         // No clones, just execute the body normally
         let body_expr = if is_async {
