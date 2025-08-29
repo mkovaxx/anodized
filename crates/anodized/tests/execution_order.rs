@@ -1,19 +1,10 @@
 use anodized::spec;
 
 #[spec(
-    requires: {
-        log.push("requires");
-        true
-    },
-    maintains: {
-        log.push("maintains");
-        true
-    },
+    requires: log.push("requires") == (),
+    maintains: log.push("maintains") == (),
     clones: log.push("clone") as _clone,
-    ensures: {
-        log.push("ensures");
-        true
-    },
+    ensures: log.push("ensures") == (),
 )]
 fn instrumented_function(log: &mut Vec<&'static str>) {
     log.push("body");
@@ -33,28 +24,16 @@ fn test_execution_order() {
 
 #[spec(
     requires: [
-        {
-            log.push("req1");
-            true
-        },
-        {
-            log.push("req2");
-            true
-        },
+        log.push("req1") == (),
+        log.push("req2") == (),
     ],
     clones: [
         log.push("clone1") as _clone1,
         log.push("clone2") as _clone2,
     ],
     ensures: [
-        {
-            log.push("ens1");
-            true
-        },
-        {
-            log.push("ens2");
-            true
-        },
+        log.push("ens1") == (),
+        log.push("ens2") == (),
     ],
 )]
 fn multiple_conditions(log: &mut Vec<&'static str>) {
@@ -78,7 +57,7 @@ fn test_multiple_conditions_order() {
         log.push("clone1") as _clone1,
         log.push("clone2") as _clone2,
     ],
-    ensures: true,
+    ensures: () == (),
 )]
 fn clone_evaluation_order(log: &mut Vec<&'static str>) {
     log.push("body");
