@@ -232,10 +232,7 @@ use anodized::spec;
         self.items.len() == orig_len + 1,
     ],
 )]
-fn push(&mut self, count: &mut usize, item: T) {
-    self.items.push(item);
-    *count += 1;
-}
+fn add_item(&mut self, count: &mut usize, item: T) { /* ... */ }
 ```
 
 **Key Points about `clones`:**
