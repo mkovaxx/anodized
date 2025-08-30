@@ -80,7 +80,7 @@ The long-term vision includes developing a suite of `anodized-*` tools, such as:
 
 Anodized aims to support a wide spectrum of correctness tools, enabling you to choose the best combination for each project. From simple runtime checks to full formal proofs, leveraging the exact same specification annotations.
 
-## Specifications
+## `#[spec]`: Specifications
 
 The `#[spec]` attribute provides a powerful and ergonomic way to define specifications.
 
@@ -88,11 +88,11 @@ The `#[spec]` attribute provides a powerful and ergonomic way to define specific
 
 Specifications are built from conditions, which come in three flavors:
 
-- **Preconditions** (using `requires: <conditions>`): Must be true when the function is called.
+- **`requires: <conditions>`: Preconditions** must be true when the function is called.
 
-- **Postconditions** (using `ensures: <conditions>`): Must be true when the function returns.
+- **`ensures: <conditions>`: Postconditions** must be true when the function returns.
 
-- **Invariants** (using `maintains: <conditions>`): A convenience for conditions that must hold true both before and after the function runs. It's most useful for expressing properties of `self` that a method must preserve.
+- **`maintains: <conditions>`: Invariants** must hold true both before and after the function runs. It's most useful for expressing properties of `self` that a method must preserve.
 
 For convenience, `<conditions>` can be either a single condition or a list (i.e. `[<condition>, <condition>, ...]`).
 
@@ -116,7 +116,7 @@ You can include any number of each flavor. Multiple conditions of the same flavo
 fn push(&mut self, value: T) { /* ... */ }
 ```
 
-### Configure Runtime Checks with `#[cfg]`
+### `#[cfg]`: Configure Runtime Checks
 
 You can use the standard `#[cfg]` attribute to conditionally enable or disable the _runtime checks_ for any condition. This is ideal for expensive checks that you only want to run during testing or in debug builds.
 
@@ -137,7 +137,7 @@ fn perform_complex_operation(&mut self) -> Result { /* ... */ }
 
 This gives you fine-grained control over the performance impact of your specifications, allowing you to write the conditions thoroughly without affecting release build performance.
 
-### Capturing Entry-Time Values with `clones`
+### `clones`: Capture Entry-Time Values
 
 Sometimes postconditions need to compare the function's final state with its initial state. The `clones` parameter lets you capture values at function entry for use in postconditions.
 
@@ -159,15 +159,13 @@ use anodized::spec;
 fn add_item(&mut self, count: &mut usize, item: T) { /* ... */ }
 ```
 
-**Key Points about `clones`:**
-
 - **Simple identifiers** get an automatic `old_` prefix, i.e. `count` becomes `old_count`.
 - **Complex expressions** require an explicit alias using `as`, i.e. `self.items.len() as orig_len`.
 - Clone bindings are captured **after** preconditions are checked but **before** the function body executes.
 - The cloned values are **only** available to postconditions, not to preconditions or the function body itself.
 - Values are cloned using Rust's `Clone` trait, so the types must implement `Clone`.
 
-### Binding the Return Value
+### `binds`: Bind the Return Value
 
 In **postconditions** (`ensures`), you can refer to the function's return value by the default name `output`.
 
@@ -243,7 +241,7 @@ use anodized::spec;
 fn sort_pair(pair: (i32, i32)) -> (i32, i32) { /* ... */ }
 ```
 
-### Example with All Specification Parameters
+### Example With All Specification Parameters
 
 ```rust
 #[spec(
