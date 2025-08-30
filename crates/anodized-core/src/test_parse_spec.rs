@@ -483,7 +483,8 @@ fn test_parse_clones_array_with_complex_expr_no_alias() {
     let _: Spec = parse_quote! {
         clones: [
             count,
-            self.items.len(),  // This should fail - complex expr needs alias
+            // This should fail - complex expression needs explicit alias
+            self.items.len(),
         ],
         ensures: output > 0,
     };
