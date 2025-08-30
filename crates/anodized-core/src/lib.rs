@@ -104,7 +104,7 @@ impl Parse for Spec {
                 }
                 SpecArg::Captures {
                     keyword,
-                    captures: bindings,
+                    captures: caps,
                 } => {
                     if !captures.is_empty() {
                         return Err(syn::Error::new(
@@ -112,7 +112,7 @@ impl Parse for Spec {
                             "at most one `captures` parameter is allowed; to capture multiple values, use a list: `captures: [expr1, expr2, ...]`",
                         ));
                     }
-                    captures.extend(bindings);
+                    captures.extend(caps);
                 }
                 SpecArg::Binds { keyword, pattern } => {
                     if binds_pattern.is_some() {
