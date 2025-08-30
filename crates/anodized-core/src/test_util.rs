@@ -61,7 +61,7 @@ pub fn assert_spec_eq(left: &Spec, right: &Spec) {
         left_captures,
         right_captures,
         "captures",
-        &assert_clone_binding_eq,
+        &assert_capture_eq,
     );
     assert_slice_eq(
         left_ensures,
@@ -146,7 +146,7 @@ fn assert_condition_closure_eq(
     );
 }
 
-fn assert_clone_binding_eq(left: &Capture, right: &Capture, msg_prefix: &str) {
+fn assert_capture_eq(left: &Capture, right: &Capture, msg_prefix: &str) {
     // Destructure to ensure we handle all fields
     let Capture {
         expr: left_expr,
