@@ -102,17 +102,18 @@ impl Parse for Spec {
                         maintains.push(Condition { expr, cfg });
                     }
                 }
-                SpecArg::Captures {
-                    keyword,
-                    captures: caps,
-                } => {
+                SpecArg::Captures { keyword, expr } => {
                     if !captures.is_empty() {
                         return Err(syn::Error::new(
                             keyword.span(),
                             "at most one `captures` parameter is allowed; to capture multiple values, use a list: `captures: [expr1, expr2, ...]`",
                         ));
                     }
-                    captures.extend(caps);
+                    if let Expr::Array(array) = expr {
+                        captures.extend(interpret_array_as_captures(array)?);
+                    } else {
+                        captures.push(interpret_expr_as_capture(expr)?);
+                    }
                 }
                 SpecArg::Binds { keyword, pattern } => {
                     if binds_pattern.is_some() {
@@ -195,7 +196,7 @@ enum SpecArg {
     },
     Captures {
         keyword: kw::captures,
-        captures: Vec<Capture>,
+        expr: Expr,
     },
     Binds {
         keyword: kw::binds,
@@ -242,20 +243,9 @@ impl Parse for SpecArg {
             // Parse `captures: <captures>`
             let keyword = input.parse::<kw::captures>()?;
             input.parse::<Token![:]>()?;
-
-            // Parse an expression and interpret as capture(s)
-            let expr: Expr = input.parse()?;
-
-            let bindings = match expr {
-                // Array: interpret as list of captures
-                Expr::Array(array) => interpret_array_as_captures(array)?,
-                // Single expression: interpret as single capture
-                _ => vec![interpret_expr_as_capture(expr)?],
-            };
-
             Ok(SpecArg::Captures {
                 keyword,
-                captures: bindings,
+                expr: input.parse()?,
             })
         } else if lookahead.peek(kw::binds) {
             if cfg.is_some() {
