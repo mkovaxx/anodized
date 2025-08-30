@@ -10,7 +10,7 @@ use anodized::spec;
         let length = vec.len();
         length < 100
     },
-    clones: {
+    captures: {
         let snapshot = vec.clone();
         snapshot.len()
     } as old_len,
