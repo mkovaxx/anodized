@@ -157,11 +157,11 @@ fn test_explicit_clone_for_non_copy_types() {
     let mut container = Container::new();
     container.items.push("first".to_string());
     container.items.push("second".to_string());
-    
+
     // Should not push
     container.maybe_push("third".to_string(), false);
     assert_eq!(container.items.len(), 2);
-    
+
     // Should push
     container.maybe_push("third".to_string(), true);
     assert_eq!(container.items.len(), 3);
