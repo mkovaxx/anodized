@@ -146,7 +146,7 @@ use anodized::spec;
 
 #[spec(
     clones: [
-        // Simple identifier: auto-generates `old_count`
+        // Simple identifier: shorthand for `count as old_count`
         count,
         // Complex expression: requires explicit alias
         self.items.len() as orig_len,
@@ -161,31 +161,11 @@ fn add_item(&mut self, count: &mut usize, item: T) { /* ... */ }
 
 **Key Points about `clones`:**
 
-- **Simple identifiers** get an automatic `old_` prefix: `count` becomes `old_count`
-- **Complex expressions** require an explicit alias using `as`: `self.items.len() as orig_len`
-- Clone bindings are captured **after** preconditions are checked but **before** the function body executes
-- The cloned values are **only** available to postconditions, not to the function body itself
-- Values are cloned using Rust's `Clone` trait, so the types must implement `Clone`
-
-**Example with all specification parameters:**
-
-```rust
-#[spec(
-    requires: balance >= amount,
-    maintains: self.is_valid(),
-    clones: [
-        balance as initial_balance,
-        self.transaction_count() as initial_txns,
-    ],
-    binds: (new_balance, receipt),
-    ensures: [
-        new_balance == initial_balance - amount,
-        receipt.amount == amount,
-        self.transaction_count() == initial_txns + 1,
-    ],
-)]
-fn withdraw(&mut self, balance: &mut u64, amount: u64) -> (u64, Receipt) { /* ... */ }
-```
+- **Simple identifiers** get an automatic `old_` prefix, i.e. `count` becomes `old_count`.
+- **Complex expressions** require an explicit alias using `as`, i.e. `self.items.len() as orig_len`.
+- Clone bindings are captured **after** preconditions are checked but **before** the function body executes.
+- The cloned values are **only** available to postconditions, not to preconditions or the function body itself.
+- Values are cloned using Rust's `Clone` trait, so the types must implement `Clone`.
 
 ### Binding the Return Value
 
@@ -261,6 +241,26 @@ use anodized::spec;
     ],
 )]
 fn sort_pair(pair: (i32, i32)) -> (i32, i32) { /* ... */ }
+```
+
+### Example with All Specification Parameters
+
+```rust
+#[spec(
+    requires: balance >= amount,
+    maintains: self.is_valid(),
+    clones: [
+        balance as initial_balance,
+        self.transaction_count() as initial_txns,
+    ],
+    binds: (new_balance, receipt),
+    ensures: [
+        new_balance == initial_balance - amount,
+        receipt.amount == amount,
+        self.transaction_count() == initial_txns + 1,
+    ],
+)]
+fn withdraw(&mut self, balance: &mut u64, amount: u64) -> (u64, Receipt) { /* ... */ }
 ```
 
 ### Why Conditions Are Rust Expressions
