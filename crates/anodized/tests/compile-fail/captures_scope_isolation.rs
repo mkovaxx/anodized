@@ -14,7 +14,7 @@ use anodized::spec;
     ],
 )]
 fn test_captures_not_in_body(x: i32, y: i32) -> i32 {
-    // Clone aliases should not be accessible in function body
+    // Capture aliases should not be accessible in function body
     let a = old_x; // Should be an error: `old_x` must not be in scope.
     let b = old_y; // Should be an error: `old_y` must not be in scope.
     x + y

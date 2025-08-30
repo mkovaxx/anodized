@@ -492,7 +492,7 @@ fn test_parse_captures_array_with_complex_expr_no_alias() {
 
 #[test]
 #[should_panic(expected = "`cfg` attribute is not supported on `captures`")]
-fn test_parse_cfg_on_clones() {
+fn test_parse_cfg_on_captures() {
     let _: Spec = parse_quote! {
         #[cfg(test)]
         captures: value as old_value,

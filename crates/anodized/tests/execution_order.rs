@@ -10,8 +10,8 @@ use anodized::spec;
         log.push("maintains2") == (),
     ],
     captures: [
-        log.push("clone1") as _clone1,
-        log.push("clone2") as _clone2,
+        log.push("captures1") as _alias1,
+        log.push("captures2") as _alias2,
     ],
     ensures: [
         log.push("ensures1") == (),
@@ -35,8 +35,8 @@ fn test_execution_order() {
             "requires2",
             "maintains1",
             "maintains2",
-            "clone1",
-            "clone2",
+            "captures1",
+            "captures2",
             "body",
             "maintains1",
             "maintains2",
