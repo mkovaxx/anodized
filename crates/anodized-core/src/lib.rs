@@ -243,13 +243,13 @@ impl Parse for SpecArg {
             let keyword = input.parse::<kw::captures>()?;
             input.parse::<Token![:]>()?;
 
-            // Parse an expression and interpret as binding(s)
+            // Parse an expression and interpret as capture(s)
             let expr: Expr = input.parse()?;
 
             let bindings = match expr {
-                // Array: interpret as list of bindings
+                // Array: interpret as list of captures
                 Expr::Array(array) => interpret_array_as_captures(array)?,
-                // Single expression: interpret as single binding
+                // Single expression: interpret as single capture
                 _ => vec![interpret_expr_as_capture(expr)?],
             };
 
