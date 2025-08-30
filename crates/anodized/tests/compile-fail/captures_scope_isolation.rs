@@ -1,6 +1,6 @@
 use anodized::spec;
 
-// This test verifies that clone aliases are not accessible in the function body
+// This test verifies that capture aliases are not accessible in the function body
 // or in requires/maintains conditions
 
 #[spec(
@@ -13,7 +13,7 @@ use anodized::spec;
         old_y == 10, // OK: aliases are available in ensures
     ],
 )]
-fn test_clones_not_in_body(x: i32, y: i32) -> i32 {
+fn test_captures_not_in_body(x: i32, y: i32) -> i32 {
     // Clone aliases should not be accessible in function body
     let a = old_x; // Should be an error: `old_x` must not be in scope.
     let b = old_y; // Should be an error: `old_y` must not be in scope.
@@ -28,7 +28,7 @@ fn test_clones_not_in_body(x: i32, y: i32) -> i32 {
         x as old_x,
     ],
 )]
-fn test_clones_not_in_requires(x: i32) {
+fn test_captures_not_in_requires(x: i32) {
     // Function body
 }
 
@@ -40,7 +40,7 @@ fn test_clones_not_in_requires(x: i32) {
         x as old_x,
     ],
 )]
-fn test_clones_not_in_maintains(x: i32) {
+fn test_captures_not_in_maintains(x: i32) {
     // Function body
 }
 

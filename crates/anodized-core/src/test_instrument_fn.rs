@@ -446,7 +446,7 @@ fn test_instrument_with_complex_mixed_conditions() {
 }
 
 #[test]
-fn test_instrument_with_clones() {
+fn test_instrument_with_captures() {
     let spec: Spec = parse_quote! {
         requires: CONDITION_1,
         captures: [

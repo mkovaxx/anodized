@@ -1,6 +1,6 @@
 use anodized::spec;
 
-// Test simple identifier cloning with auto-generated alias
+// Test simple identifier capturing with auto-generated alias
 #[spec(
     captures: count,
     ensures: old_count <= count,
@@ -67,13 +67,13 @@ impl Container {
 }
 
 #[test]
-fn test_simple_clone_with_auto_alias() {
+fn test_simple_capture_with_auto_alias() {
     assert_eq!(increment_counter(5), 6);
     assert_eq!(increment_counter(0), 1);
 }
 
 #[test]
-fn test_clone_with_explicit_alias() {
+fn test_capture_with_explicit_alias() {
     let mut container = Container::new();
     container.value = 10;
     container.add_to_value(5);
@@ -81,7 +81,7 @@ fn test_clone_with_explicit_alias() {
 }
 
 #[test]
-fn test_multiple_clones() {
+fn test_multiple_captures() {
     let mut container = Container::new();
 
     // Add items up to capacity
@@ -98,7 +98,7 @@ fn test_multiple_clones() {
 }
 
 #[test]
-fn test_clones_with_preconditions() {
+fn test_captures_with_preconditions() {
     let mut container = Container::new();
     container.counter = 50;
 
@@ -108,7 +108,7 @@ fn test_clones_with_preconditions() {
 
 #[test]
 #[should_panic(expected = "Postcondition failed")]
-fn test_clone_postcondition_failure() {
+fn test_capture_postcondition_failure() {
     #[spec(
         captures: value as old_value,
         ensures: value == old_value + 10,
@@ -122,7 +122,7 @@ fn test_clone_postcondition_failure() {
 
 #[test]
 #[should_panic(expected = "Precondition failed")]
-fn test_precondition_runs_before_clones() {
+fn test_precondition_runs_before_captures() {
     struct TestStruct {
         counter: u32,
     }
@@ -139,5 +139,5 @@ fn test_precondition_runs_before_clones() {
     }
 
     let mut test = TestStruct { counter: 100 };
-    test.increment(); // Should panic on precondition, not reach clones
+    test.increment(); // Should panic on precondition, not reach captures
 }

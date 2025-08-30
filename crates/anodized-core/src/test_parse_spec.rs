@@ -61,7 +61,7 @@ fn test_parse_multiple_binds() {
 #[should_panic(
     expected = "at most one `captures` parameter is allowed; to capture multiple values, use a list"
 )]
-fn test_parse_multiple_clones() {
+fn test_parse_multiple_captures() {
     let _: Spec = parse_quote! {
         captures: value,
         captures: count as old_count,
@@ -317,7 +317,7 @@ fn test_parse_rename_return_value() {
 }
 
 #[test]
-fn test_parse_clones_simple_identifier() {
+fn test_parse_captures_simple_identifier() {
     let spec: Spec = parse_quote! {
         captures: count,
         ensures: output == old_count + 1,
@@ -337,7 +337,7 @@ fn test_parse_clones_simple_identifier() {
 }
 
 #[test]
-fn test_parse_clones_identifier_with_alias() {
+fn test_parse_captures_identifier_with_alias() {
     let spec: Spec = parse_quote! {
         captures: value as prev_value,
         ensures: output > prev_value,
@@ -357,7 +357,7 @@ fn test_parse_clones_identifier_with_alias() {
 }
 
 #[test]
-fn test_parse_clones_array() {
+fn test_parse_captures_array() {
     let spec: Spec = parse_quote! {
         captures: [
             count,
@@ -399,7 +399,7 @@ fn test_parse_clones_array() {
 }
 
 #[test]
-fn test_parse_clones_with_all_clauses() {
+fn test_parse_captures_with_all_clauses() {
     let spec: Spec = parse_quote! {
         requires: x > 0,
         maintains: self.is_valid(),
@@ -423,7 +423,7 @@ fn test_parse_clones_with_all_clauses() {
 
 #[test]
 #[should_panic(expected = "parameters are out of order")]
-fn test_parse_clones_out_of_order() {
+fn test_parse_captures_out_of_order() {
     let _: Spec = parse_quote! {
         captures: value,
         maintains: self.is_valid(),
@@ -431,7 +431,7 @@ fn test_parse_clones_out_of_order() {
 }
 
 #[test]
-fn test_parse_clones_array_expression() {
+fn test_parse_captures_array_expression() {
     let spec: Spec = parse_quote! {
         captures: [a, b, c] as slice,
         ensures: slice.len() == 3,
@@ -452,7 +452,7 @@ fn test_parse_clones_array_expression() {
 
 #[test]
 #[should_panic(expected = "complex expressions require an explicit alias using `as`")]
-fn test_parse_clones_complex_expr_without_alias() {
+fn test_parse_captures_complex_expr_without_alias() {
     let _: Spec = parse_quote! {
         captures: self.items.len(),
         ensures: output > 0,
@@ -461,7 +461,7 @@ fn test_parse_clones_complex_expr_without_alias() {
 
 #[test]
 #[should_panic(expected = "complex expressions require an explicit alias using `as`")]
-fn test_parse_clones_method_call_without_alias() {
+fn test_parse_captures_method_call_without_alias() {
     let _: Spec = parse_quote! {
         captures: foo.bar(),
         ensures: output > 0,
@@ -470,7 +470,7 @@ fn test_parse_clones_method_call_without_alias() {
 
 #[test]
 #[should_panic(expected = "complex expressions require an explicit alias using `as`")]
-fn test_parse_clones_binary_expr_without_alias() {
+fn test_parse_captures_binary_expr_without_alias() {
     let _: Spec = parse_quote! {
         captures: a + b,
         ensures: output > 0,
@@ -479,7 +479,7 @@ fn test_parse_clones_binary_expr_without_alias() {
 
 #[test]
 #[should_panic(expected = "complex expressions require an explicit alias using `as`")]
-fn test_parse_clones_array_with_complex_expr_no_alias() {
+fn test_parse_captures_array_with_complex_expr_no_alias() {
     let _: Spec = parse_quote! {
         captures: [
             count,
@@ -501,7 +501,7 @@ fn test_parse_cfg_on_clones() {
 }
 
 #[test]
-fn test_parse_clones_edge_case_cast_expr() {
+fn test_parse_captures_edge_case_cast_expr() {
     let spec: Spec = parse_quote! {
         captures: r as u8 as old_red,
     };
@@ -520,7 +520,7 @@ fn test_parse_clones_edge_case_cast_expr() {
 }
 
 #[test]
-fn test_parse_clones_edge_case_array_of_cast_exprs() {
+fn test_parse_captures_edge_case_array_of_cast_exprs() {
     let spec: Spec = parse_quote! {
         captures: [
             r as u8,
@@ -549,7 +549,7 @@ fn test_parse_clones_edge_case_array_of_cast_exprs() {
 }
 
 #[test]
-fn test_parse_clones_edge_case_list_of_cast_exprs() {
+fn test_parse_captures_edge_case_list_of_cast_exprs() {
     let spec: Spec = parse_quote! {
         captures: [
             r as u8 as old_red,
