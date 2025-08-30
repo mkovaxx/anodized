@@ -501,14 +501,32 @@ fn test_parse_cfg_on_clones() {
 }
 
 #[test]
-fn test_parse_clones_edge_case_cast_exprs() {
+fn test_parse_clones_edge_case_cast_expr() {
+    let spec: Spec = parse_quote! {
+        clones: r as u8 as old_red,
+    };
+
+    let expected = Spec {
+        requires: vec![],
+        maintains: vec![],
+        clones: vec![CloneBinding {
+            expr: parse_quote! { r as u8 },
+            alias: parse_quote! { old_red },
+        }],
+        ensures: vec![],
+    };
+
+    assert_spec_eq(&spec, &expected);
+}
+
+#[test]
+fn test_parse_clones_edge_case_array_of_cast_exprs() {
     let spec: Spec = parse_quote! {
         clones: [
             r as u8,
             g as u8,
             b as u8,
         ] as r8g8b8,
-        ensures: r8g8b8[0] == 0xFF,
     };
 
     let expected = Spec {
@@ -524,7 +542,40 @@ fn test_parse_clones_edge_case_cast_exprs() {
             },
             alias: parse_quote! { r8g8b8 },
         }],
-        ensures: vec![parse_quote! { |output| r8g8b8[0] == 0xFF }],
+        ensures: vec![],
+    };
+
+    assert_spec_eq(&spec, &expected);
+}
+
+#[test]
+fn test_parse_clones_edge_case_list_of_cast_exprs() {
+    let spec: Spec = parse_quote! {
+        clones: [
+            r as u8 as old_red,
+            g as u8 as old_green,
+            b as u8 as old_blue,
+        ],
+    };
+
+    let expected = Spec {
+        requires: vec![],
+        maintains: vec![],
+        clones: vec![
+            CloneBinding {
+                expr: parse_quote! { r as u8 },
+                alias: parse_quote! { old_red },
+            },
+            CloneBinding {
+                expr: parse_quote! { g as u8 },
+                alias: parse_quote! { old_green },
+            },
+            CloneBinding {
+                expr: parse_quote! { b as u8 },
+                alias: parse_quote! { old_blue },
+            },
+        ],
+        ensures: vec![],
     };
 
     assert_spec_eq(&spec, &expected);
