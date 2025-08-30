@@ -438,7 +438,7 @@ pub fn instrument_fn_body(spec: &Spec, original_body: &Block, is_async: bool) ->
     // Chain capture expressions with body expression
     let capture_exprs = spec.captures.iter().map(|cb| {
         let expr = &cb.expr;
-        quote! { (#expr).clone() }
+        quote! { #expr }
     });
 
     let body_expr = if is_async {

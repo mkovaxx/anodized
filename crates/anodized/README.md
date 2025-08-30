@@ -137,23 +137,25 @@ fn perform_complex_operation(&mut self) -> Result { /* ... */ }
 
 This gives you fine-grained control over the performance impact of your specifications, allowing you to write the conditions thoroughly without affecting release build performance.
 
-### `clones`: Capture Entry-Time Values
+### `captures`: Capture Entry-Time Values
 
-Sometimes postconditions need to compare the function's final state with its initial state. The `clones` parameter lets you capture values at function entry for use in postconditions.
+Sometimes postconditions need to compare the function's final state with its initial state. The `captures` parameter lets you capture values at function entry for use in postconditions.
 
 ```rust
 use anodized::spec;
 
 #[spec(
-    clones: [
-        // Simple identifier: shorthand for `count as old_count`
+    captures: [
+        // Copy types: captured directly
         count,
-        // Complex expression: requires explicit alias
         self.items.len() as orig_len,
+        // Non-Copy types: use .clone() explicitly
+        self.items.clone() as orig_items,
     ],
     ensures: [
         count == old_count + 1,
         self.items.len() == orig_len + 1,
+        self.items[0] == orig_items[0],
     ],
 )]
 fn add_item(&mut self, count: &mut usize, item: T) { /* ... */ }
@@ -161,9 +163,9 @@ fn add_item(&mut self, count: &mut usize, item: T) { /* ... */ }
 
 - **Simple identifiers** get an automatic `old_` prefix, i.e. `count` becomes `old_count`.
 - **Complex expressions** require an explicit alias using `as`, i.e. `self.items.len() as orig_len`.
-- Clone bindings are captured **after** preconditions are checked but **before** the function body executes.
-- The cloned values are **only** available to postconditions, not to preconditions or the function body itself.
-- Values are cloned using Rust's `Clone` trait, so the types must implement `Clone`.
+- **No automatic cloning**: Values are captured as-is. For `Copy` types this is automatic, but for other types you must explicitly use `.clone()`, `.to_owned()`, or other appropriate methods.
+- Captures happen **after** preconditions are checked but **before** the function body executes.
+- The captured values are **only** available to postconditions, not to preconditions or the function body itself.
 
 ### `binds`: Bind the Return Value
 
@@ -247,7 +249,7 @@ fn sort_pair(pair: (i32, i32)) -> (i32, i32) { /* ... */ }
 #[spec(
     requires: balance >= amount,
     maintains: self.is_valid(),
-    clones: [
+    captures: [
         balance as initial_balance,
         self.transaction_count() as initial_txns,
     ],

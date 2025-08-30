@@ -464,7 +464,7 @@ fn test_instrument_with_captures() {
     let expected: Block = parse_quote! {
         {
             assert!(CONDITION_1, "Precondition failed: {}", "CONDITION_1");
-            let (ALIAS_1, ALIAS_2, __anodized_output) = ((EXPR_1).clone(), (EXPR_2).clone(), #body);
+            let (ALIAS_1, ALIAS_2, __anodized_output) = (EXPR_1, EXPR_2, #body);
             assert!(
                 (|output| CONDITION_2)(__anodized_output),
                 "Postcondition failed: {}", "| output | CONDITION_2"

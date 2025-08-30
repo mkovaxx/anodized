@@ -40,6 +40,16 @@ impl Container {
     }
 
     #[spec(
+        captures: self.items.clone() as original_items,
+        ensures: self.items.len() == original_items.len() || self.items.len() == original_items.len() + 1,
+    )]
+    fn maybe_push(&mut self, item: String, should_push: bool) {
+        if should_push {
+            self.items.push(item);
+        }
+    }
+
+    #[spec(
         captures: [
             self.items.len() as original_len,
             self.capacity as original_cap,
@@ -140,4 +150,19 @@ fn test_precondition_runs_before_captures() {
 
     let mut test = TestStruct { counter: 100 };
     test.increment(); // Should panic on precondition, not reach captures
+}
+
+#[test]
+fn test_explicit_clone_for_non_copy_types() {
+    let mut container = Container::new();
+    container.items.push("first".to_string());
+    container.items.push("second".to_string());
+    
+    // Should not push
+    container.maybe_push("third".to_string(), false);
+    assert_eq!(container.items.len(), 2);
+    
+    // Should push
+    container.maybe_push("third".to_string(), true);
+    assert_eq!(container.items.len(), 3);
 }
