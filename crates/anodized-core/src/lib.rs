@@ -247,7 +247,7 @@ impl Parse for SpecArg {
                 // Array: interpret as list of bindings
                 Expr::Array(array) => interpret_array_as_clone_bindings(array)?,
                 // Single expression: interpret as single binding
-                _ => vec![interpret_as_clone_binding(expr)?],
+                _ => vec![interpret_expr_as_clone_binding(expr)?],
             };
 
             Ok(SpecArg::Clones { keyword, bindings })
@@ -306,14 +306,14 @@ fn interpret_array_as_clone_bindings(array: syn::ExprArray) -> Result<Vec<CloneB
     for elem in array.elems {
         // Try to interpret each element as a binding
         // If any fails, propagate that error immediately
-        bindings.push(interpret_as_clone_binding(elem)?);
+        bindings.push(interpret_expr_as_clone_binding(elem)?);
     }
 
     Ok(bindings)
 }
 
 /// Try to interpret an Expr as a single CloneBinding
-fn interpret_as_clone_binding(expr: Expr) -> Result<CloneBinding> {
+fn interpret_expr_as_clone_binding(expr: Expr) -> Result<CloneBinding> {
     match expr {
         // Simple identifier: count -> old_count
         Expr::Path(ref path)
