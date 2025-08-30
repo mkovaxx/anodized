@@ -137,6 +137,56 @@ fn perform_complex_operation(&mut self) -> Result { /* ... */ }
 
 This gives you fine-grained control over the performance impact of your specifications, allowing you to write the conditions thoroughly without affecting release build performance.
 
+### Capturing Entry-Time Values with `clones`
+
+Sometimes postconditions need to compare the function's final state with its initial state. The `clones` parameter lets you capture values at function entry for use in postconditions.
+
+```rust
+use anodized::spec;
+
+#[spec(
+    clones: [
+        // Simple identifier: auto-generates `old_count`
+        count,
+        // Complex expression: requires explicit alias
+        self.items.len() as orig_len,
+    ],
+    ensures: [
+        count == old_count + 1,
+        self.items.len() == orig_len + 1,
+    ],
+)]
+fn add_item(&mut self, count: &mut usize, item: T) { /* ... */ }
+```
+
+**Key Points about `clones`:**
+
+- **Simple identifiers** get an automatic `old_` prefix: `count` becomes `old_count`
+- **Complex expressions** require an explicit alias using `as`: `self.items.len() as orig_len`
+- Clone bindings are captured **after** preconditions are checked but **before** the function body executes
+- The cloned values are **only** available to postconditions, not to the function body itself
+- Values are cloned using Rust's `Clone` trait, so the types must implement `Clone`
+
+**Example with all specification parameters:**
+
+```rust
+#[spec(
+    requires: balance >= amount,
+    maintains: self.is_valid(),
+    clones: [
+        balance as initial_balance,
+        self.transaction_count() as initial_txns,
+    ],
+    binds: (new_balance, receipt),
+    ensures: [
+        new_balance == initial_balance - amount,
+        receipt.amount == amount,
+        self.transaction_count() == initial_txns + 1,
+    ],
+)]
+fn withdraw(&mut self, balance: &mut u64, amount: u64) -> (u64, Receipt) { /* ... */ }
+```
+
 ### Binding the Return Value
 
 In **postconditions** (`ensures`), you can refer to the function's return value by the default name `output`.
@@ -211,56 +261,6 @@ use anodized::spec;
     ],
 )]
 fn sort_pair(pair: (i32, i32)) -> (i32, i32) { /* ... */ }
-```
-
-### Capturing Entry-Time Values with `clones`
-
-Sometimes postconditions need to compare the function's final state with its initial state. The `clones` parameter lets you capture values at function entry for use in postconditions.
-
-```rust
-use anodized::spec;
-
-#[spec(
-    clones: [
-        // Simple identifier: auto-generates `old_count`
-        count,
-        // Complex expression: requires explicit alias
-        self.items.len() as orig_len,
-    ],
-    ensures: [
-        count == old_count + 1,
-        self.items.len() == orig_len + 1,
-    ],
-)]
-fn add_item(&mut self, count: &mut usize, item: T) { /* ... */ }
-```
-
-**Key Points about `clones`:**
-
-- **Simple identifiers** get an automatic `old_` prefix: `count` becomes `old_count`
-- **Complex expressions** require an explicit alias using `as`: `self.items.len() as orig_len`
-- Clone bindings are captured **after** preconditions are checked but **before** the function body executes
-- The cloned values are **only** available to postconditions, not to the function body itself
-- Values are cloned using Rust's `Clone` trait, so the types must implement `Clone`
-
-**Example with all specification parameters:**
-
-```rust
-#[spec(
-    requires: balance >= amount,
-    maintains: self.is_valid(),
-    clones: [
-        balance as initial_balance,
-        self.transaction_count() as initial_txns,
-    ],
-    binds: (new_balance, receipt),
-    ensures: [
-        new_balance == initial_balance - amount,
-        receipt.amount == amount,
-        self.transaction_count() == initial_txns + 1,
-    ],
-)]
-fn withdraw(&mut self, balance: &mut u64, amount: u64) -> (u64, Receipt) { /* ... */ }
 ```
 
 ### Why Conditions Are Rust Expressions
