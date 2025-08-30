@@ -449,7 +449,7 @@ fn test_instrument_with_complex_mixed_conditions() {
 fn test_instrument_with_clones() {
     let spec: Spec = parse_quote! {
         requires: CONDITION_1,
-        clones: [
+        captures: [
             EXPR_1 as ALIAS_1,
             EXPR_2 as ALIAS_2,
         ],

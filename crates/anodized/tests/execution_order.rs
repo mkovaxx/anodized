@@ -9,7 +9,7 @@ use anodized::spec;
         log.push("maintains1") == (),
         log.push("maintains2") == (),
     ],
-    clones: [
+    captures: [
         log.push("clone1") as _clone1,
         log.push("clone2") as _clone2,
     ],

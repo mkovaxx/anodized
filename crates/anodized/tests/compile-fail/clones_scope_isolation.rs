@@ -4,7 +4,7 @@ use anodized::spec;
 // or in requires/maintains conditions
 
 #[spec(
-    clones: [
+    captures: [
         x as old_x,
         y as old_y,
     ],
@@ -24,7 +24,7 @@ fn test_clones_not_in_body(x: i32, y: i32) -> i32 {
     requires: [
         old_x > 0, // Should be an error: `old_x` must not be in scope.
     ],
-    clones: [
+    captures: [
         x as old_x,
     ],
 )]
@@ -36,7 +36,7 @@ fn test_clones_not_in_requires(x: i32) {
     maintains: [
         old_x > 0, // Should be an error: `old_x` must not be in scope.
     ],
-    clones: [
+    captures: [
         x as old_x,
     ],
 )]

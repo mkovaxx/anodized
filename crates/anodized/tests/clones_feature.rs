@@ -2,7 +2,7 @@ use anodized::spec;
 
 // Test simple identifier cloning with auto-generated alias
 #[spec(
-    clones: count,
+    captures: count,
     ensures: old_count <= count,
 )]
 fn increment_counter(count: u32) -> u32 {
@@ -32,7 +32,7 @@ impl Container {
     }
 
     #[spec(
-        clones: self.value as initial_value,
+        captures: self.value as initial_value,
         ensures: self.value == initial_value + amount,
     )]
     fn add_to_value(&mut self, amount: i32) {
@@ -40,7 +40,7 @@ impl Container {
     }
 
     #[spec(
-        clones: [
+        captures: [
             self.items.len() as original_len,
             self.capacity as original_cap,
         ],
@@ -58,7 +58,7 @@ impl Container {
 
     #[spec(
         requires: self.is_valid(),
-        clones: self.counter as old_counter,
+        captures: self.counter as old_counter,
         ensures: self.counter == old_counter + 1,
     )]
     fn increment_if_valid(&mut self) {
@@ -110,7 +110,7 @@ fn test_clones_with_preconditions() {
 #[should_panic(expected = "Postcondition failed")]
 fn test_clone_postcondition_failure() {
     #[spec(
-        clones: value as old_value,
+        captures: value as old_value,
         ensures: value == old_value + 10,
     )]
     fn bad_increment(value: i32) -> i32 {
@@ -130,7 +130,7 @@ fn test_precondition_runs_before_clones() {
     impl TestStruct {
         #[spec(
             requires: self.counter < 100,
-            clones: self.counter as old_counter,
+            captures: self.counter as old_counter,
             ensures: self.counter == old_counter + 1,
         )]
         fn increment(&mut self) {

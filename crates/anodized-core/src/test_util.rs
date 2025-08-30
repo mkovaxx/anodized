@@ -34,14 +34,14 @@ pub fn assert_spec_eq(left: &Spec, right: &Spec) {
     let Spec {
         requires: left_requires,
         maintains: left_maintains,
-        captures: left_clones,
+        captures: left_captures,
         ensures: left_ensures,
     } = left;
 
     let Spec {
         requires: right_requires,
         maintains: right_maintains,
-        captures: right_clones,
+        captures: right_captures,
         ensures: right_ensures,
     } = right;
 
@@ -58,9 +58,9 @@ pub fn assert_spec_eq(left: &Spec, right: &Spec) {
         &assert_condition_eq,
     );
     assert_slice_eq(
-        left_clones,
-        right_clones,
-        "clones",
+        left_captures,
+        right_captures,
+        "captures",
         &assert_clone_binding_eq,
     );
     assert_slice_eq(
