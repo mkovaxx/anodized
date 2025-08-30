@@ -29,6 +29,7 @@ The `#[spec]` attribute's parameters follow a specific grammar, which is formall
 ```ebnf
 params = [ requires_params ]
        , [ maintains_params ]
+       , [ captures_param ]
        (* not a typo: at most one `binds` *)
        , [ binds_param ]
        , [ ensures_params ];
@@ -39,11 +40,16 @@ ensures_params   = { ensures_param };
 
 requires_param  = [ cfg_attr ] , `requires:` , conditions, `,`;
 maintains_param = [ cfg_attr ] , `maintains:` , conditions, `,`;
+captures_param  = `captures:` , captures, `,`;
 binds_param     = `binds:` , pattern, `,`;
 ensures_param   = [ cfg_attr ] , `ensures:` , post_conds, `,`;
 
 conditions = expr | condition_list;
 condition_list = `[` , expr , { `,` , expr } , [ `,` ] , `]`;
+
+captures = capture_expr | capture_list;
+capture_list = `[` , capture_expr , { `,` , capture_expr } , [ `,` ] , `]`;
+capture_expr = expr | (expr , `as` , ident);
 
 post_conds = post_cond_expr | post_cond_list;
 post_cond_list = `[` , post_cond_expr , { `,` , post_cond_expr } , [ `,` ] , `]`;
