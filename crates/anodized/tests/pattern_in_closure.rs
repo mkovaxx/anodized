@@ -2,8 +2,8 @@ use anodized::spec;
 
 #[spec(
     ensures: [
-        |(a, b)| a <= b,
-        |(a, b)| (a, b) == pair || (b, a) == pair,
+        (a, b) => a <= b,
+        (a, b) => (a, b) == pair || (b, a) == pair,
     ],
 )]
 fn sort_pair(pair: (i32, i32)) -> (i32, i32) {

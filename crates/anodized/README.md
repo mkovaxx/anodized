@@ -128,7 +128,7 @@ use anodized::spec;
 
     // Runtime checks only when debug assertions are enabled.
     #[cfg(debug_assertions)]
-    ensures: |ref output| output.is_ok(),
+    ensures: ref output => output.is_ok(),
 )]
 fn perform_complex_operation(input: i32) -> Result<i32, String> { todo!() }
 ```
@@ -178,7 +178,7 @@ use anodized::spec;
 fn get_positive_value() -> i32 { todo!() }
 ```
 
-**Note** that a postcondition is _always_ a closure, because it needs to bind the return value. When you write a postcondition as a "naked" expression, that is shorthand for using the default binding, i.e. `|output| <expression>`. In error messages, a postcondition is always displayed as a closure to make the binding explicit (e.g. `|output| output > 0`).
+**Note** that a postcondition always binds the return value. When you write a postcondition as a "naked" expression, that is shorthand for using the default binding, i.e. `output => <expression>`. In error messages, a postcondition is always displayed with its binding pattern to make it explicit (e.g. `| output | output > 0`).
 
 If the name `output` collides with an existing identifier, you can choose a different name for it in two ways:
 
@@ -201,10 +201,10 @@ use anodized::spec;
 
 #[spec(
     ensures: [
-        // This postcondition uses the default binding `output` - first element indicates validity
-        |output: (bool, i32)| output.0,
+        // This postcondition uses a typed pattern binding - first element indicates validity
+        output: (bool, i32) => output.0,
         // This postcondition binds the return value as `val` - second element is the ID
-        |val| val.1 != 0,
+        val => val.1 != 0,
     ],
 )]
 fn create_data() -> (bool, i32) { todo!() }
@@ -222,8 +222,8 @@ use anodized::spec;
     ensures: [
         // This postcondition uses the spec-wide name `result`.
         result > output,
-        // This postcondition is written as a closure and binds the return value as `val`.
-        |val| val % 2 == 0,
+        // This postcondition binds the return value as `val`.
+        val => val % 2 == 0,
     ],
 )]
 fn calculate_even_result(output: i32) -> i32 { todo!() }
