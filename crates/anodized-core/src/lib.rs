@@ -22,13 +22,13 @@ pub struct Spec {
     /// Clone bindings: expressions to clone at function entry for use in postconditions.
     pub clones: Vec<CloneBinding>,
     /// Postconditions: conditions that must hold when the function returns.
-    pub ensures: Vec<ConditionClosure>,
+    pub ensures: Vec<PreCondition>,
 }
 
 /// A condition represented by a `bool`-valued expression.
 #[derive(Debug)]
 pub struct Condition {
-    /// The expression.
+    /// The `bool`-valued expression.
     pub expr: Expr,
     /// **Static analyzers can safely ignore this field.**
     ///
@@ -37,11 +37,13 @@ pub struct Condition {
     pub cfg: Option<Meta>,
 }
 
-/// A condition represented by a `bool`-valued closure.
+/// A postcondition represented by a binding pattern and a `bool`-valued expression.
 #[derive(Debug)]
-pub struct ConditionClosure {
-    /// The closure.
-    pub closure: ExprClosure,
+pub struct PreCondition {
+    /// The pattern to bind the return value, e.g. `output`, `ref output`, `(a, b)`.
+    pub pattern: Pat,
+    /// The `bool`-valued expression.
+    pub expr: Expr,
     /// **Static analyzers can safely ignore this field.**
     ///
     /// Build configuration filter to decide whether to add runtime checks.
@@ -148,12 +150,12 @@ impl Parse for Spec {
                     let inner_condition = condition.expr;
                     parse_quote! { |#default_closure_pattern| #inner_condition }
                 };
-                Ok(ConditionClosure {
+                Ok(PreCondition {
                     closure,
                     cfg: condition.cfg,
                 })
             })
-            .collect::<Result<Vec<ConditionClosure>>>()?;
+            .collect::<Result<Vec<PreCondition>>>()?;
 
         Ok(Spec {
             requires,

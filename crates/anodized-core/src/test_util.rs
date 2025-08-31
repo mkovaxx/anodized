@@ -1,4 +1,4 @@
-use crate::{CloneBinding, Condition, ConditionClosure, Spec};
+use crate::{CloneBinding, Condition, PreCondition, Spec};
 use quote::ToTokens;
 use syn::{
     Block,
@@ -14,9 +14,9 @@ impl Parse for Condition {
     }
 }
 
-impl Parse for ConditionClosure {
+impl Parse for PreCondition {
     fn parse(input: ParseStream) -> Result<Self> {
-        Ok(ConditionClosure {
+        Ok(PreCondition {
             closure: input.parse()?,
             cfg: None,
         })
@@ -116,17 +116,17 @@ fn assert_condition_eq(left: &Condition, right: &Condition, msg_prefix: &str) {
 }
 
 fn assert_condition_closure_eq(
-    left: &ConditionClosure,
-    right: &ConditionClosure,
+    left: &PreCondition,
+    right: &PreCondition,
     msg_prefix: &str,
 ) {
     // Destructure to ensure we handle all fields
-    let ConditionClosure {
+    let PreCondition {
         closure: left_closure,
         cfg: left_cfg,
     } = left;
 
-    let ConditionClosure {
+    let PreCondition {
         closure: right_closure,
         cfg: right_cfg,
     } = right;

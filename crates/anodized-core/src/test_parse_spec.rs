@@ -186,7 +186,7 @@ fn test_parse_cfg_attributes() {
         }],
         maintains: vec![],
         clones: vec![],
-        ensures: vec![ConditionClosure {
+        ensures: vec![PreCondition {
             closure: parse_quote! { |output| output < x },
             cfg: Some(parse_quote! { not(debug_assertions) }),
         }],
