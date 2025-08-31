@@ -5,7 +5,7 @@
 use proc_macro2::Span;
 use quote::{ToTokens, quote};
 use syn::{
-    Attribute, Block, Expr, ExprClosure, Ident, Meta, Pat, Token,
+    Attribute, Block, Expr, Ident, Meta, Pat, Token,
     parse::{Parse, ParseStream, Result},
     parse_quote,
     punctuated::Punctuated,
@@ -22,7 +22,7 @@ pub struct Spec {
     /// Clone bindings: expressions to clone at function entry for use in postconditions.
     pub clones: Vec<CloneBinding>,
     /// Postconditions: conditions that must hold when the function returns.
-    pub ensures: Vec<PreCondition>,
+    pub ensures: Vec<PostCondition>,
 }
 
 /// A condition represented by a `bool`-valued expression.
@@ -39,7 +39,7 @@ pub struct Condition {
 
 /// A postcondition represented by a binding pattern and a `bool`-valued expression.
 #[derive(Debug)]
-pub struct PreCondition {
+pub struct PostCondition {
     /// The pattern to bind the return value, e.g. `output`, `ref output`, `(a, b)`.
     pub pattern: Pat,
     /// The `bool`-valued expression.
@@ -135,27 +135,14 @@ impl Parse for Spec {
             }
         }
 
-        let default_closure_pattern = binds_pattern
-            .as_ref()
-            .map(|p| p.to_token_stream())
-            .unwrap_or_else(|| quote! { output });
+        let default_pattern = binds_pattern.unwrap_or_else(|| parse_quote! { output });
 
         let ensures = ensures_exprs
             .into_iter()
             .map(|condition| {
-                let closure: ExprClosure = if let Expr::Closure(closure) = condition.expr {
-                    closure
-                } else {
-                    // Convert "naked" postcondition to closure
-                    let inner_condition = condition.expr;
-                    parse_quote! { |#default_closure_pattern| #inner_condition }
-                };
-                Ok(PreCondition {
-                    closure,
-                    cfg: condition.cfg,
-                })
+                interpret_expr_as_post_condition(condition.expr, &default_pattern, condition.cfg)
             })
-            .collect::<Result<Vec<PreCondition>>>()?;
+            .collect::<Result<Vec<PostCondition>>>()?;
 
         Ok(Spec {
             requires,
@@ -356,6 +343,33 @@ fn interpret_expr_as_clone_binding(expr: Expr) -> Result<CloneBinding> {
     }
 }
 
+/// Try to interpret an Expr as a PostCondition
+fn interpret_expr_as_post_condition(
+    expr: Expr,
+    default_pattern: &Pat,
+    cfg: Option<Meta>,
+) -> Result<PostCondition> {
+    if let Expr::Closure(closure) = expr {
+        // Extract pattern and body from closure
+        if closure.inputs.len() != 1 {
+            return Err(syn::Error::new_spanned(
+                &closure,
+                "postcondition closures must have exactly one parameter",
+            ));
+        }
+        let pattern = closure.inputs[0].clone();
+        let expr = *closure.body;
+        Ok(PostCondition { pattern, expr, cfg })
+    } else {
+        // Naked expression uses default pattern
+        Ok(PostCondition {
+            pattern: default_pattern.clone(),
+            expr,
+            cfg,
+        })
+    }
+}
+
 fn parse_cfg_attribute(attrs: &[Attribute]) -> Result<Option<Meta>> {
     let mut cfg_attrs: Vec<Meta> = vec![];
 
@@ -462,11 +476,17 @@ pub fn instrument_fn_body(spec: &Spec, original_body: &Block, is_async: bool) ->
                 assert
             }
         })
-        .chain(spec.ensures.iter().map(|condition_closure| {
-            let closure = &condition_closure.closure;
-            let closure_str = closure.to_token_stream().to_string();
-            let assert = quote! { assert!((#closure)(#binding_ident), "Postcondition failed: {}", #closure_str); };
-            if let Some(cfg) = &condition_closure.cfg {
+        .chain(spec.ensures.iter().map(|postcondition| {
+            let pattern = &postcondition.pattern;
+            let expr = &postcondition.expr;
+            let expr_str = expr.to_token_stream().to_string();
+            let assert = quote! {
+                {
+                    let #pattern = #binding_ident;
+                    assert!(#expr, "Postcondition failed: {}", #expr_str);
+                }
+            };
+            if let Some(cfg) = &postcondition.cfg {
                 quote! { if cfg!(#cfg) { #assert } }
             } else {
                 assert

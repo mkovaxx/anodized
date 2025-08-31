@@ -1,8 +1,9 @@
-use crate::{CloneBinding, Condition, PreCondition, Spec};
+use crate::{CloneBinding, Condition, PostCondition, Spec};
 use quote::ToTokens;
 use syn::{
-    Block,
+    Block, Expr,
     parse::{Parse, ParseStream, Result},
+    parse_quote,
 };
 
 impl Parse for Condition {
@@ -14,12 +15,32 @@ impl Parse for Condition {
     }
 }
 
-impl Parse for PreCondition {
+impl Parse for PostCondition {
     fn parse(input: ParseStream) -> Result<Self> {
-        Ok(PreCondition {
-            closure: input.parse()?,
-            cfg: None,
-        })
+        // Parse as expression and handle closure syntax
+        let expr: Expr = input.parse()?;
+
+        if let Expr::Closure(closure) = expr {
+            // Extract pattern and body from closure
+            let pattern = if closure.inputs.len() == 1 {
+                closure.inputs[0].clone()
+            } else {
+                parse_quote! { output }
+            };
+            let expr = *closure.body;
+            Ok(PostCondition {
+                pattern,
+                expr,
+                cfg: None,
+            })
+        } else {
+            // Naked expression uses default pattern
+            Ok(PostCondition {
+                pattern: parse_quote! { output },
+                expr,
+                cfg: None,
+            })
+        }
     }
 }
 
@@ -115,26 +136,31 @@ fn assert_condition_eq(left: &Condition, right: &Condition, msg_prefix: &str) {
     );
 }
 
-fn assert_condition_closure_eq(
-    left: &PreCondition,
-    right: &PreCondition,
-    msg_prefix: &str,
-) {
+fn assert_condition_closure_eq(left: &PostCondition, right: &PostCondition, msg_prefix: &str) {
     // Destructure to ensure we handle all fields
-    let PreCondition {
-        closure: left_closure,
+    let PostCondition {
+        pattern: left_pattern,
+        expr: left_expr,
         cfg: left_cfg,
     } = left;
 
-    let PreCondition {
-        closure: right_closure,
+    let PostCondition {
+        pattern: right_pattern,
+        expr: right_expr,
         cfg: right_cfg,
     } = right;
 
     assert_eq!(
-        left_closure.to_token_stream().to_string(),
-        right_closure.to_token_stream().to_string(),
-        "{}`closure` does not match",
+        left_pattern.to_token_stream().to_string(),
+        right_pattern.to_token_stream().to_string(),
+        "{}`pattern` does not match",
+        msg_prefix
+    );
+
+    assert_eq!(
+        left_expr.to_token_stream().to_string(),
+        right_expr.to_token_stream().to_string(),
+        "{}`expr` does not match",
         msg_prefix
     );
 
