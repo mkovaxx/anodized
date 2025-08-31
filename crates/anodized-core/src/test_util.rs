@@ -1,7 +1,8 @@
 use crate::{CloneBinding, Condition, PostCondition, Spec};
 use quote::ToTokens;
+use proc_macro2::TokenStream;
 use syn::{
-    Block, Expr,
+    Arm, Block, Expr,
     parse::{Parse, ParseStream, Result},
     parse_quote,
 };
@@ -17,30 +18,32 @@ impl Parse for Condition {
 
 impl Parse for PostCondition {
     fn parse(input: ParseStream) -> Result<Self> {
-        // Parse as expression and handle closure syntax
+        // First parse as an expression
         let expr: Expr = input.parse()?;
-
-        if let Expr::Closure(closure) = expr {
-            // Extract pattern and body from closure
-            let pattern = if closure.inputs.len() == 1 {
-                closure.inputs[0].clone()
+        
+        // Try to reparse it as a match arm (pattern => expr)
+        let tokens = expr.to_token_stream();
+        if let Ok(arm) = syn::parse2::<Arm>(tokens) {
+            if arm.guard.is_none() {
+                return Ok(PostCondition {
+                    pattern: arm.pat,
+                    expr: *arm.body,
+                    cfg: None,
+                });
             } else {
-                parse_quote! { output }
-            };
-            let expr = *closure.body;
-            Ok(PostCondition {
-                pattern,
-                expr,
-                cfg: None,
-            })
-        } else {
-            // Naked expression uses default pattern
-            Ok(PostCondition {
-                pattern: parse_quote! { output },
-                expr,
-                cfg: None,
-            })
+                return Err(syn::Error::new_spanned(
+                    arm.guard.unwrap().1,
+                    "guards are not supported in postcondition patterns",
+                ));
+            }
         }
+        
+        // Otherwise it's a naked expression with default pattern
+        Ok(PostCondition {
+            pattern: parse_quote! { output },
+            expr,
+            cfg: None,
+        })
     }
 }
 
