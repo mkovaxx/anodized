@@ -360,65 +360,32 @@ struct PostConditionExpr {
 
 impl Parse for PostConditionExpr {
     fn parse(input: ParseStream) -> Result<Self> {
-        // Try parsing as arm first using fork to avoid consuming tokens
-        let fork = input.fork();
-        if let Ok(arm) = fork.parse::<Arm>() {
-            if arm.guard.is_none() {
-                // Advance the original input stream
-                input.parse::<Arm>()?;
-                Ok(PostConditionExpr {
-                    pattern: Some(arm.pat),
-                    expr: *arm.body,
-                })
-            } else {
-                // Has a guard, which isn't allowed
-                Err(syn::Error::new_spanned(
-                    arm.guard.unwrap().1,
-                    "guards are not supported in postcondition patterns",
-                ))
-            }
+        // Parse the first expression
+        let first_expr: Expr = input.parse()?;
+
+        // Check if the next token is `=>`
+        if input.peek(Token![=>]) {
+            // It's a match arm pattern
+            input.parse::<Token![=>]>()?;
+
+            // Try to interpret the first expression as a pattern
+            let pattern = parse_quote! { #first_expr };
+
+            // Parse the expression after `=>`
+            let expr: Expr = input.parse()?;
+
+            Ok(PostConditionExpr {
+                pattern: Some(pattern),
+                expr,
+            })
         } else {
-            // Parse as regular expression
+            // It's a naked expression
             Ok(PostConditionExpr {
                 pattern: None,
-                expr: input.parse()?,
+                expr: first_expr,
             })
         }
     }
-}
-
-/// Try to interpret an Expr as a PostCondition
-fn interpret_expr_as_post_condition(
-    expr: Expr,
-    default_pattern: &Pat,
-    cfg: Option<Meta>,
-) -> Result<PostCondition> {
-    // First try to parse as a match arm (pattern => expr)
-    let tokens = expr.to_token_stream();
-    if let Ok(arm) = syn::parse2::<Arm>(tokens.clone()) {
-        match arm.guard {
-            None => {
-                return Ok(PostCondition {
-                    pattern: arm.pat,
-                    expr: *arm.body,
-                    cfg,
-                });
-            }
-            Some((_, guard_expr)) => {
-                return Err(syn::Error::new_spanned(
-                    guard_expr,
-                    "guards are not supported in postcondition binding patterns",
-                ));
-            }
-        }
-    }
-
-    // Naked expression uses default pattern
-    Ok(PostCondition {
-        pattern: default_pattern.clone(),
-        expr,
-        cfg,
-    })
 }
 
 fn parse_cfg_attribute(attrs: &[Attribute]) -> Result<Option<Meta>> {
