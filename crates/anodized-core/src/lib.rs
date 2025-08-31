@@ -351,7 +351,7 @@ fn interpret_expr_as_clone_binding(expr: Expr) -> Result<CloneBinding> {
 
 /// Internal type to represent a postcondition as either:
 /// - A postcondition with an explicit binding, i.e. pattern => expression
-/// - A "naked" postcondition, i.e. an open expression
+/// - A "naked" postcondition, i.e. an expression with implicit binding
 struct PostConditionExpr {
     pattern: Option<Pat>,
     expr: Expr,
@@ -361,7 +361,7 @@ impl Parse for PostConditionExpr {
     fn parse(input: ParseStream) -> Result<Self> {
         let fork = input.fork();
 
-        // Try to parse as pattern => expr
+        // Try to parse as explicit binding (pattern => expr)
         if Pat::parse_single(&fork).is_ok() && fork.peek(Token![=>]) {
             let pattern = Pat::parse_single(input)?;
             input.parse::<Token![=>]>()?;
@@ -502,7 +502,7 @@ pub fn instrument_fn_body(
         .chain(spec.ensures.iter().map(|postcondition| {
             let pattern = &postcondition.pattern;
             let expr = &postcondition.expr;
-            // Format error message with pattern => expression syntax
+            // Format error message with explicit binding syntax
             let pattern_str = pattern.to_token_stream().to_string();
             let expr_str = expr.to_token_stream().to_string();
             let error_msg = format!("{} => {}", pattern_str, expr_str);

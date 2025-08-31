@@ -111,7 +111,7 @@ fn test_parse_array_of_conditions() {
 }
 
 #[test]
-fn test_parse_ensures_with_match_arm() {
+fn test_parse_ensures_with_explicit_binding() {
     let spec: Spec = parse_quote! {
         ensures: result => result.is_ok() || result.unwrap_err().kind() == ErrorKind::NotFound,
     };

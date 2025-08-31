@@ -1,7 +1,7 @@
 # Postcondition Syntax Migration Notes
 
 ## Summary
-Successfully migrated postcondition syntax from closure-style (`|pattern| expression`) to match-arm style (`pattern => expression`) throughout the Anodized codebase.
+Successfully migrated postcondition syntax from closure-style (`|pattern| expression`) to explicit binding style (`pattern => expression`) throughout the Anodized codebase.
 
 ## Key Changes Made
 
@@ -80,7 +80,7 @@ Initially tried using `syn::Arm` for parsing, but:
 - Ready for merge
 
 ## Commit History (Key Commits)
-1. "Change postcondition syntax from closure to match-arm style"
+1. "Change postcondition syntax from closure to explicit binding style"
 2. "Fix postcondition array parsing to handle both naked and pattern expressions"
 3. "Simplify PostConditionExpr parser to avoid fork" (later reverted)
 4. "Use fork-based parsing for PostConditionExpr to handle all pattern types"
