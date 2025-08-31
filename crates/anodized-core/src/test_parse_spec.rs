@@ -120,13 +120,11 @@ fn test_parse_ensures_with_match_arm() {
         requires: vec![],
         maintains: vec![],
         clones: vec![],
-        ensures: vec![
-            PostCondition {
-                pattern: parse_quote! { result },
-                expr: parse_quote! { result.is_ok() || result.unwrap_err().kind() == ErrorKind::NotFound },
-                cfg: None,
-            },
-        ],
+        ensures: vec![PostCondition {
+            pattern: parse_quote! { result },
+            expr: parse_quote! { result.is_ok() || result.unwrap_err().kind() == ErrorKind::NotFound },
+            cfg: None,
+        }],
     };
 
     assert_spec_eq(&spec, &expected);

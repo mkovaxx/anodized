@@ -19,7 +19,7 @@ impl Parse for PostCondition {
     fn parse(input: ParseStream) -> Result<Self> {
         // First parse as an expression
         let expr: Expr = input.parse()?;
-        
+
         // Try to reparse it as a match arm (pattern => expr)
         let tokens = expr.to_token_stream();
         if let Ok(arm) = syn::parse2::<Arm>(tokens) {
@@ -36,7 +36,7 @@ impl Parse for PostCondition {
                 ));
             }
         }
-        
+
         // Otherwise it's a naked expression with default pattern
         Ok(PostCondition {
             pattern: parse_quote! { output },
