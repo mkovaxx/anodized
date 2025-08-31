@@ -502,14 +502,14 @@ pub fn instrument_fn_body(
         .chain(spec.ensures.iter().map(|postcondition| {
             let pattern = &postcondition.pattern;
             let expr = &postcondition.expr;
-            // Format as closure for error message
+            // Format error message with pattern => expression syntax
             let pattern_str = pattern.to_token_stream().to_string();
             let expr_str = expr.to_token_stream().to_string();
-            let closure_str = format!("| {} | {}", pattern_str, expr_str);
+            let error_msg = format!("{} => {}", pattern_str, expr_str);
             let assert = quote! {
                 {
                     let #pattern = #binding_ident;
-                    assert!(#expr, "Postcondition failed: {}", #closure_str);
+                    assert!(#expr, "Postcondition failed: {}", #error_msg);
                 }
             };
             if let Some(cfg) = &postcondition.cfg {

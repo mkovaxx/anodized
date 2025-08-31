@@ -194,7 +194,7 @@ use anodized::spec;
 fn increment(old_value: i32) -> i32 { todo!() }
 ```
 
- **2. Closure Binding**: Write the postcondition as a closure. This has the highest precedence and affects only that single condition.
+ **2. Pattern Binding**: Write the postcondition with an explicit binding pattern using `pattern => expression` syntax. This has the highest precedence and affects only that single condition.
 
 ```rust, no_run
 use anodized::spec;
@@ -210,7 +210,7 @@ use anodized::spec;
 fn create_data() -> char { todo!() }
 ```
 
-**3. Binding Precedence**: The closure's binding takes precedence; same as in Rust. Plain postconditions still use the spec-wide binding.
+**3. Binding Precedence**: The explicit pattern binding takes precedence; same as in Rust. Plain postconditions still use the spec-wide binding.
 
 ```rust, no_run
 use anodized::spec;
@@ -222,7 +222,7 @@ use anodized::spec;
     ensures: [
         // This postcondition uses the spec-wide name `result`.
         result > output,
-        // This postcondition binds the return value as `val`.
+        // This postcondition uses an explicit pattern binding `val`.
         val => val % 2 == 0,
     ],
 )]

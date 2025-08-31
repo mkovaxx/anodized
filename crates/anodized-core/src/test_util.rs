@@ -90,7 +90,7 @@ pub fn assert_spec_eq(left: &Spec, right: &Spec) {
         left_ensures,
         right_ensures,
         "ensures",
-        &assert_condition_closure_eq,
+        &assert_postcondition_eq,
     );
 }
 
@@ -138,7 +138,7 @@ fn assert_condition_eq(left: &Condition, right: &Condition, msg_prefix: &str) {
     );
 }
 
-fn assert_condition_closure_eq(left: &PostCondition, right: &PostCondition, msg_prefix: &str) {
+fn assert_postcondition_eq(left: &PostCondition, right: &PostCondition, msg_prefix: &str) {
     // Destructure to ensure we handle all fields
     let PostCondition {
         pattern: left_pattern,

@@ -72,7 +72,7 @@ fn test_instrument_simple_ensures() {
             let (__anodized_output): (#ret_type) = (#body);
             {
                 let output = __anodized_output;
-                assert!(CONDITION_1, "Postcondition failed: {}", "| output | CONDITION_1");
+                assert!(CONDITION_1, "Postcondition failed: {}", "output => CONDITION_1");
             }
             __anodized_output
         }
@@ -122,7 +122,7 @@ fn test_instrument_simple_requires_and_ensures() {
             let (__anodized_output): (#ret_type) = (#body);
             {
                 let output = __anodized_output;
-                assert!(CONDITION_2, "Postcondition failed: {}", "| output | CONDITION_2");
+                assert!(CONDITION_2, "Postcondition failed: {}", "output => CONDITION_2");
             }
             __anodized_output
         }
@@ -149,7 +149,7 @@ fn test_instrument_simple_maintains_and_ensures() {
             assert!(CONDITION_1, "Post-invariant failed: {}", "CONDITION_1");
             {
                 let output = __anodized_output;
-                assert!(CONDITION_2, "Postcondition failed: {}", "| output | CONDITION_2");
+                assert!(CONDITION_2, "Postcondition failed: {}", "output => CONDITION_2");
             }
             __anodized_output
         }
@@ -178,7 +178,7 @@ fn test_instrument_simple_requires_maintains_and_ensures() {
             assert!(CONDITION_2, "Post-invariant failed: {}", "CONDITION_2");
             {
                 let output = __anodized_output;
-                assert!(CONDITION_3, "Postcondition failed: {}", "| output | CONDITION_3");
+                assert!(CONDITION_3, "Postcondition failed: {}", "output => CONDITION_3");
             }
             __anodized_output
         }
@@ -207,7 +207,7 @@ fn test_instrument_simple_async_requires_maintains_and_ensures() {
             assert!(CONDITION_2, "Post-invariant failed: {}", "CONDITION_2");
             {
                 let output = __anodized_output;
-                assert!(CONDITION_3, "Postcondition failed: {}", "| output | CONDITION_3");
+                assert!(CONDITION_3, "Postcondition failed: {}", "output => CONDITION_3");
             }
             __anodized_output
         }
@@ -239,11 +239,11 @@ fn test_instrument_multiple_conditions_in_clauses() {
             assert!(CONDITION_4, "Post-invariant failed: {}", "CONDITION_4");
             {
                 let output = __anodized_output;
-                assert!(CONDITION_5, "Postcondition failed: {}", "| output | CONDITION_5");
+                assert!(CONDITION_5, "Postcondition failed: {}", "output => CONDITION_5");
             }
             {
                 let output = __anodized_output;
-                assert!(CONDITION_6, "Postcondition failed: {}", "| output | CONDITION_6");
+                assert!(CONDITION_6, "Postcondition failed: {}", "output => CONDITION_6");
             }
             __anodized_output
         }
@@ -268,7 +268,7 @@ fn test_instrument_with_binds_parameter() {
             let (__anodized_output): (#ret_type) = (#body);
             {
                 let OUTPUT_PATTERN = __anodized_output;
-                assert!(CONDITION_1, "Postcondition failed: {}", "| OUTPUT_PATTERN | CONDITION_1");
+                assert!(CONDITION_1, "Postcondition failed: {}", "OUTPUT_PATTERN => CONDITION_1");
             }
             __anodized_output
         }
@@ -297,19 +297,19 @@ fn test_instrument_ensures_with_mixed_conditions() {
             let (__anodized_output): (#ret_type) = (#body);
             {
                 let output = __anodized_output;
-                assert!(CONDITION_1, "Postcondition failed: {}", "| output | CONDITION_1");
+                assert!(CONDITION_1, "Postcondition failed: {}", "output => CONDITION_1");
             }
             {
                 let PATTERN_1 = __anodized_output;
-                assert!(CONDITION_2, "Postcondition failed: {}", "| PATTERN_1 | CONDITION_2");
+                assert!(CONDITION_2, "Postcondition failed: {}", "PATTERN_1 => CONDITION_2");
             }
             {
                 let output = __anodized_output;
-                assert!(CONDITION_3, "Postcondition failed: {}", "| output | CONDITION_3");
+                assert!(CONDITION_3, "Postcondition failed: {}", "output => CONDITION_3");
             }
             {
                 let PATTERN_2 = __anodized_output;
-                assert!(CONDITION_4, "Postcondition failed: {}", "| PATTERN_2 | CONDITION_4");
+                assert!(CONDITION_4, "Postcondition failed: {}", "PATTERN_2 => CONDITION_4");
             }
             __anodized_output
         }
@@ -348,7 +348,7 @@ fn test_instrument_with_cfg_attributes() {
             if cfg!(SETTING_3) {
                 {
                     let output = __anodized_output;
-                    assert!(CONDITION_3, "Postcondition failed: {}", "| output | CONDITION_3");
+                    assert!(CONDITION_3, "Postcondition failed: {}", "output => CONDITION_3");
                 }
             }
             __anodized_output
@@ -385,13 +385,13 @@ fn test_instrument_with_cfg_on_single_and_list_conditions() {
             if cfg!(SETTING_2) {
                 {
                     let output = __anodized_output;
-                    assert!(CONDITION_4, "Postcondition failed: {}", "| output | CONDITION_4");
+                    assert!(CONDITION_4, "Postcondition failed: {}", "output => CONDITION_4");
                 }
             }
             if cfg!(SETTING_2) {
                 {
                     let output = __anodized_output;
-                    assert!(CONDITION_5, "Postcondition failed: {}", "| output | CONDITION_5");
+                    assert!(CONDITION_5, "Postcondition failed: {}", "output => CONDITION_5");
                 }
             }
             __anodized_output
@@ -441,18 +441,18 @@ fn test_instrument_with_complex_mixed_conditions() {
             }
             {
                 let output = __anodized_output;
-                assert!(CONDITION_7, "Postcondition failed: {}", "| output | CONDITION_7");
+                assert!(CONDITION_7, "Postcondition failed: {}", "output => CONDITION_7");
             }
             if cfg!(SETTING_3) {
                 {
                     let output = __anodized_output;
-                    assert!(CONDITION_8, "Postcondition failed: {}", "| output | CONDITION_8");
+                    assert!(CONDITION_8, "Postcondition failed: {}", "output => CONDITION_8");
                 }
             }
             if cfg!(SETTING_3) {
                 {
                     let PATTERN_1 = __anodized_output;
-                    assert!(CONDITION_9, "Postcondition failed: {}", "| PATTERN_1 | CONDITION_9");
+                    assert!(CONDITION_9, "Postcondition failed: {}", "PATTERN_1 => CONDITION_9");
                 }
             }
             __anodized_output
@@ -486,11 +486,11 @@ fn test_instrument_with_clones() {
             let (ALIAS_1, ALIAS_2, __anodized_output): (_, _, #ret_type) = ((EXPR_1).clone(), (EXPR_2).clone(), #body);
             {
                 let output = __anodized_output;
-                assert!(CONDITION_2, "Postcondition failed: {}", "| output | CONDITION_2");
+                assert!(CONDITION_2, "Postcondition failed: {}", "output => CONDITION_2");
             }
             {
                 let output = __anodized_output;
-                assert!(CONDITION_3, "Postcondition failed: {}", "| output | CONDITION_3");
+                assert!(CONDITION_3, "Postcondition failed: {}", "output => CONDITION_3");
             }
             __anodized_output
         }
