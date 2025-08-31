@@ -44,7 +44,7 @@ use anodized::spec;
     ],
 )]
 fn calculate_percentage(part: f64, whole: f64) -> f64 {
-    (part / whole) * 100.0
+    todo!()
 }
 
 fn main() {
@@ -130,7 +130,7 @@ use anodized::spec;
     #[cfg(debug_assertions)]
     ensures: |ref output| output.is_ok(),
 )]
-fn perform_complex_operation(input: i32) -> Result<i32, String> { Ok(42) }
+fn perform_complex_operation(input: i32) -> Result<i32, String> { todo!() }
 ```
 
 **Important:** Anodized guarantees that all your specifications are syntactically valid and type-correct, regardless of the `#[cfg]` attribute. The attribute only controls whether a check is performed at _runtime_. This ensures that e.g. a specification valid in `test` builds can't become invalid in `release` builds, and it allows other tools in the ecosystem (like static analyzers) to always see the full specification.
@@ -207,7 +207,7 @@ use anodized::spec;
         |val| val.1 != 0,
     ],
 )]
-fn create_data() -> (bool, i32) { (true, 42) }
+fn create_data() -> (bool, i32) { todo!() }
 ```
 
 **3. Binding Precedence**: The closure's binding takes precedence; same as in Rust. Plain postconditions still use the spec-wide binding.
@@ -226,7 +226,7 @@ use anodized::spec;
         |val| val % 2 == 0,
     ],
 )]
-fn calculate_even_result(output: i32) -> i32 { output + 2 }
+fn calculate_even_result(output: i32) -> i32 { todo!() }
 ```
 
 **4. Beyond Names: Destructuring Return Values**
@@ -246,9 +246,7 @@ use anodized::spec;
         (a, b) == pair || (b, a) == pair,
     ],
 )]
-fn sort_pair(pair: (i32, i32)) -> (i32, i32) { 
-    if pair.0 <= pair.1 { pair } else { (pair.1, pair.0) }
-}
+fn sort_pair(pair: (i32, i32)) -> (i32, i32) { todo!() }
 ```
 
 ### Example With All Specification Parameters
@@ -268,10 +266,7 @@ use anodized::spec;
         *balance == new_balance,
     ],
 )]
-fn withdraw(balance: &mut u64, amount: u64) -> (u64, u64) { 
-    *balance -= amount;
-    (*balance, amount)
-}
+fn withdraw(balance: &mut u64, amount: u64) -> (u64, u64) { todo!() }
 ```
 
 ### Why Conditions Are Rust Expressions

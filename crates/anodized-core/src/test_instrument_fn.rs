@@ -1,7 +1,7 @@
 use crate::test_util::assert_block_eq;
 
 use super::*;
-use syn::{Block, parse_quote};
+use syn::{Block, Type, parse_quote};
 
 fn make_fn_body() -> Block {
     parse_quote! {
@@ -11,23 +11,28 @@ fn make_fn_body() -> Block {
     }
 }
 
+fn make_return_type() -> Type {
+    parse_quote! { SomeType }
+}
+
 #[test]
 fn test_instrument_simple_requires() {
     let spec: Spec = parse_quote! {
         requires: CONDITION_1,
     };
     let body = make_fn_body();
+    let ret_type = make_return_type();
     let is_async = false;
 
     let expected: Block = parse_quote! {
         {
             assert!(CONDITION_1, "Precondition failed: {}", "CONDITION_1");
-            let (__anodized_output) = (#body);
+            let (__anodized_output): (#ret_type) = (#body);
             __anodized_output
         }
     };
 
-    let observed = instrument_fn_body(&spec, &body, is_async).unwrap();
+    let observed = instrument_fn_body(&spec, &body, is_async, &ret_type).unwrap();
     assert_block_eq(&observed, &expected);
 }
 
@@ -37,18 +42,19 @@ fn test_instrument_simple_maintains() {
         maintains: CONDITION_1,
     };
     let body = make_fn_body();
+    let ret_type = make_return_type();
     let is_async = false;
 
     let expected: Block = parse_quote! {
         {
             assert!(CONDITION_1, "Pre-invariant failed: {}", "CONDITION_1");
-            let (__anodized_output) = (#body);
+            let (__anodized_output): (#ret_type) = (#body);
             assert!(CONDITION_1, "Post-invariant failed: {}", "CONDITION_1");
             __anodized_output
         }
     };
 
-    let observed = instrument_fn_body(&spec, &body, is_async).unwrap();
+    let observed = instrument_fn_body(&spec, &body, is_async, &ret_type).unwrap();
     assert_block_eq(&observed, &expected);
 }
 
@@ -58,11 +64,12 @@ fn test_instrument_simple_ensures() {
         ensures: CONDITION_1,
     };
     let body = make_fn_body();
+    let ret_type = make_return_type();
     let is_async = false;
 
     let expected: Block = parse_quote! {
         {
-            let (__anodized_output) = (#body);
+            let (__anodized_output): (#ret_type) = (#body);
             {
                 let output = __anodized_output;
                 assert!(CONDITION_1, "Postcondition failed: {}", "| output | CONDITION_1");
@@ -71,7 +78,7 @@ fn test_instrument_simple_ensures() {
         }
     };
 
-    let observed = instrument_fn_body(&spec, &body, is_async).unwrap();
+    let observed = instrument_fn_body(&spec, &body, is_async, &ret_type).unwrap();
     assert_block_eq(&observed, &expected);
 }
 
@@ -82,19 +89,20 @@ fn test_instrument_simple_requires_and_maintains() {
         maintains: CONDITION_2,
     };
     let body = make_fn_body();
+    let ret_type = make_return_type();
     let is_async = false;
 
     let expected: Block = parse_quote! {
         {
             assert!(CONDITION_1, "Precondition failed: {}", "CONDITION_1");
             assert!(CONDITION_2, "Pre-invariant failed: {}", "CONDITION_2");
-            let (__anodized_output) = (#body);
+            let (__anodized_output): (#ret_type) = (#body);
             assert!(CONDITION_2, "Post-invariant failed: {}", "CONDITION_2");
             __anodized_output
         }
     };
 
-    let observed = instrument_fn_body(&spec, &body, is_async).unwrap();
+    let observed = instrument_fn_body(&spec, &body, is_async, &ret_type).unwrap();
     assert_block_eq(&observed, &expected);
 }
 
@@ -105,12 +113,13 @@ fn test_instrument_simple_requires_and_ensures() {
         ensures: CONDITION_2,
     };
     let body = make_fn_body();
+    let ret_type = make_return_type();
     let is_async = false;
 
     let expected: Block = parse_quote! {
         {
             assert!(CONDITION_1, "Precondition failed: {}", "CONDITION_1");
-            let (__anodized_output) = (#body);
+            let (__anodized_output): (#ret_type) = (#body);
             {
                 let output = __anodized_output;
                 assert!(CONDITION_2, "Postcondition failed: {}", "| output | CONDITION_2");
@@ -119,7 +128,7 @@ fn test_instrument_simple_requires_and_ensures() {
         }
     };
 
-    let observed = instrument_fn_body(&spec, &body, is_async).unwrap();
+    let observed = instrument_fn_body(&spec, &body, is_async, &ret_type).unwrap();
     assert_block_eq(&observed, &expected);
 }
 
@@ -130,12 +139,13 @@ fn test_instrument_simple_maintains_and_ensures() {
         ensures: CONDITION_2,
     };
     let body = make_fn_body();
+    let ret_type = make_return_type();
     let is_async = false;
 
     let expected: Block = parse_quote! {
         {
             assert!(CONDITION_1, "Pre-invariant failed: {}", "CONDITION_1");
-            let (__anodized_output) = (#body);
+            let (__anodized_output): (#ret_type) = (#body);
             assert!(CONDITION_1, "Post-invariant failed: {}", "CONDITION_1");
             {
                 let output = __anodized_output;
@@ -145,7 +155,7 @@ fn test_instrument_simple_maintains_and_ensures() {
         }
     };
 
-    let observed = instrument_fn_body(&spec, &body, is_async).unwrap();
+    let observed = instrument_fn_body(&spec, &body, is_async, &ret_type).unwrap();
     assert_block_eq(&observed, &expected);
 }
 
@@ -157,13 +167,14 @@ fn test_instrument_simple_requires_maintains_and_ensures() {
         ensures: CONDITION_3,
     };
     let body = make_fn_body();
+    let ret_type = make_return_type();
     let is_async = false;
 
     let expected: Block = parse_quote! {
         {
             assert!(CONDITION_1, "Precondition failed: {}", "CONDITION_1");
             assert!(CONDITION_2, "Pre-invariant failed: {}", "CONDITION_2");
-            let (__anodized_output) = (#body);
+            let (__anodized_output): (#ret_type) = (#body);
             assert!(CONDITION_2, "Post-invariant failed: {}", "CONDITION_2");
             {
                 let output = __anodized_output;
@@ -173,7 +184,7 @@ fn test_instrument_simple_requires_maintains_and_ensures() {
         }
     };
 
-    let observed = instrument_fn_body(&spec, &body, is_async).unwrap();
+    let observed = instrument_fn_body(&spec, &body, is_async, &ret_type).unwrap();
     assert_block_eq(&observed, &expected);
 }
 
@@ -185,13 +196,14 @@ fn test_instrument_simple_async_requires_maintains_and_ensures() {
         ensures: CONDITION_3,
     };
     let body = make_fn_body();
+    let ret_type = make_return_type();
     let is_async = true;
 
     let expected: Block = parse_quote! {
         {
             assert!(CONDITION_1, "Precondition failed: {}", "CONDITION_1");
             assert!(CONDITION_2, "Pre-invariant failed: {}", "CONDITION_2");
-            let (__anodized_output) = (async #body.await);
+            let (__anodized_output): (#ret_type) = (async #body.await);
             assert!(CONDITION_2, "Post-invariant failed: {}", "CONDITION_2");
             {
                 let output = __anodized_output;
@@ -201,7 +213,7 @@ fn test_instrument_simple_async_requires_maintains_and_ensures() {
         }
     };
 
-    let observed = instrument_fn_body(&spec, &body, is_async).unwrap();
+    let observed = instrument_fn_body(&spec, &body, is_async, &ret_type).unwrap();
     assert_block_eq(&observed, &expected);
 }
 
@@ -213,6 +225,7 @@ fn test_instrument_multiple_conditions_in_clauses() {
         ensures: [CONDITION_5, CONDITION_6],
     };
     let body = make_fn_body();
+    let ret_type = make_return_type();
     let is_async = false;
 
     let expected: Block = parse_quote! {
@@ -221,7 +234,7 @@ fn test_instrument_multiple_conditions_in_clauses() {
             assert!(CONDITION_2, "Precondition failed: {}", "CONDITION_2");
             assert!(CONDITION_3, "Pre-invariant failed: {}", "CONDITION_3");
             assert!(CONDITION_4, "Pre-invariant failed: {}", "CONDITION_4");
-            let (__anodized_output) = (#body);
+            let (__anodized_output): (#ret_type) = (#body);
             assert!(CONDITION_3, "Post-invariant failed: {}", "CONDITION_3");
             assert!(CONDITION_4, "Post-invariant failed: {}", "CONDITION_4");
             {
@@ -236,7 +249,7 @@ fn test_instrument_multiple_conditions_in_clauses() {
         }
     };
 
-    let observed = instrument_fn_body(&spec, &body, is_async).unwrap();
+    let observed = instrument_fn_body(&spec, &body, is_async, &ret_type).unwrap();
     assert_block_eq(&observed, &expected);
 }
 
@@ -247,11 +260,12 @@ fn test_instrument_with_binds_parameter() {
         ensures: CONDITION_1,
     };
     let body = make_fn_body();
+    let ret_type = make_return_type();
     let is_async = false;
 
     let expected: Block = parse_quote! {
         {
-            let (__anodized_output) = (#body);
+            let (__anodized_output): (#ret_type) = (#body);
             {
                 let OUTPUT_PATTERN = __anodized_output;
                 assert!(CONDITION_1, "Postcondition failed: {}", "| OUTPUT_PATTERN | CONDITION_1");
@@ -260,7 +274,7 @@ fn test_instrument_with_binds_parameter() {
         }
     };
 
-    let observed = instrument_fn_body(&spec, &body, is_async).unwrap();
+    let observed = instrument_fn_body(&spec, &body, is_async, &ret_type).unwrap();
     assert_block_eq(&observed, &expected);
 }
 
@@ -275,11 +289,12 @@ fn test_instrument_ensures_with_mixed_conditions() {
         ],
     };
     let body = make_fn_body();
+    let ret_type = make_return_type();
     let is_async = false;
 
     let expected: Block = parse_quote! {
         {
-            let (__anodized_output) = (#body);
+            let (__anodized_output): (#ret_type) = (#body);
             {
                 let output = __anodized_output;
                 assert!(CONDITION_1, "Postcondition failed: {}", "| output | CONDITION_1");
@@ -300,7 +315,7 @@ fn test_instrument_ensures_with_mixed_conditions() {
         }
     };
 
-    let observed = instrument_fn_body(&spec, &body, is_async).unwrap();
+    let observed = instrument_fn_body(&spec, &body, is_async, &ret_type).unwrap();
     assert_block_eq(&observed, &expected);
 }
 
@@ -315,6 +330,7 @@ fn test_instrument_with_cfg_attributes() {
         ensures: CONDITION_3,
     };
     let body = make_fn_body();
+    let ret_type = make_return_type();
     let is_async = false;
 
     let expected: Block = parse_quote! {
@@ -325,7 +341,7 @@ fn test_instrument_with_cfg_attributes() {
             if cfg!(SETTING_2) {
                 assert!(CONDITION_2, "Pre-invariant failed: {}", "CONDITION_2");
             }
-            let (__anodized_output) = (#body);
+            let (__anodized_output): (#ret_type) = (#body);
             if cfg!(SETTING_2) {
                 assert!(CONDITION_2, "Post-invariant failed: {}", "CONDITION_2");
             }
@@ -339,7 +355,7 @@ fn test_instrument_with_cfg_attributes() {
         }
     };
 
-    let observed = instrument_fn_body(&spec, &body, is_async).unwrap();
+    let observed = instrument_fn_body(&spec, &body, is_async, &ret_type).unwrap();
     assert_block_eq(&observed, &expected);
 }
 
@@ -353,6 +369,7 @@ fn test_instrument_with_cfg_on_single_and_list_conditions() {
         ensures: [CONDITION_4, CONDITION_5],
     };
     let body = make_fn_body();
+    let ret_type = make_return_type();
     let is_async = false;
 
     let expected: Block = parse_quote! {
@@ -362,7 +379,7 @@ fn test_instrument_with_cfg_on_single_and_list_conditions() {
             }
             assert!(CONDITION_2, "Pre-invariant failed: {}", "CONDITION_2");
             assert!(CONDITION_3, "Pre-invariant failed: {}", "CONDITION_3");
-            let (__anodized_output) = (#body);
+            let (__anodized_output): (#ret_type) = (#body);
             assert!(CONDITION_2, "Post-invariant failed: {}", "CONDITION_2");
             assert!(CONDITION_3, "Post-invariant failed: {}", "CONDITION_3");
             if cfg!(SETTING_2) {
@@ -381,7 +398,7 @@ fn test_instrument_with_cfg_on_single_and_list_conditions() {
         }
     };
 
-    let observed = instrument_fn_body(&spec, &body, is_async).unwrap();
+    let observed = instrument_fn_body(&spec, &body, is_async, &ret_type).unwrap();
     assert_block_eq(&observed, &expected);
 }
 
@@ -399,6 +416,7 @@ fn test_instrument_with_complex_mixed_conditions() {
         ensures: [CONDITION_8, |PATTERN_1| CONDITION_9],
     };
     let body = make_fn_body();
+    let ret_type = make_return_type();
     let is_async = false;
 
     let expected: Block = parse_quote! {
@@ -415,7 +433,7 @@ fn test_instrument_with_complex_mixed_conditions() {
             if cfg!(SETTING_2) {
                 assert!(CONDITION_6, "Pre-invariant failed: {}", "CONDITION_6");
             }
-            let (__anodized_output) = (#body);
+            let (__anodized_output): (#ret_type) = (#body);
             assert!(CONDITION_4, "Post-invariant failed: {}", "CONDITION_4");
             assert!(CONDITION_5, "Post-invariant failed: {}", "CONDITION_5");
             if cfg!(SETTING_2) {
@@ -441,7 +459,7 @@ fn test_instrument_with_complex_mixed_conditions() {
         }
     };
 
-    let observed = instrument_fn_body(&spec, &body, is_async).unwrap();
+    let observed = instrument_fn_body(&spec, &body, is_async, &ret_type).unwrap();
     assert_block_eq(&observed, &expected);
 }
 
@@ -459,12 +477,13 @@ fn test_instrument_with_clones() {
         ],
     };
     let body = make_fn_body();
+    let ret_type = make_return_type();
     let is_async = false;
 
     let expected: Block = parse_quote! {
         {
             assert!(CONDITION_1, "Precondition failed: {}", "CONDITION_1");
-            let (ALIAS_1, ALIAS_2, __anodized_output) = ((EXPR_1).clone(), (EXPR_2).clone(), #body);
+            let (ALIAS_1, ALIAS_2, __anodized_output): (_, _, #ret_type) = ((EXPR_1).clone(), (EXPR_2).clone(), #body);
             {
                 let output = __anodized_output;
                 assert!(CONDITION_2, "Postcondition failed: {}", "| output | CONDITION_2");
@@ -477,6 +496,6 @@ fn test_instrument_with_clones() {
         }
     };
 
-    let observed = instrument_fn_body(&spec, &body, is_async).unwrap();
+    let observed = instrument_fn_body(&spec, &body, is_async, &ret_type).unwrap();
     assert_block_eq(&observed, &expected);
 }

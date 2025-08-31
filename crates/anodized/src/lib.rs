@@ -35,9 +35,15 @@ request at https://github.com/mkovaxx/anodized/issues/new"#,
 fn handle_fn(args: TokenStream, mut func: ItemFn) -> TokenStream {
     let spec = parse_macro_input!(args as Spec);
     let is_async = func.sig.asyncness.is_some();
+    
+    // Extract the return type from the function signature
+    let return_type = match &func.sig.output {
+        syn::ReturnType::Default => syn::parse_quote!(()),
+        syn::ReturnType::Type(_, ty) => ty.as_ref().clone(),
+    };
 
     // Generate the new, instrumented function body.
-    let new_body = match instrument_fn_body(&spec, &func.block, is_async) {
+    let new_body = match instrument_fn_body(&spec, &func.block, is_async, &return_type) {
         Ok(body) => body,
         Err(e) => return e.to_compile_error().into(),
     };

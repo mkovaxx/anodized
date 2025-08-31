@@ -405,7 +405,7 @@ mod kw {
 }
 
 /// Takes the spec and the original body and returns a new instrumented function body.
-pub fn instrument_fn_body(spec: &Spec, original_body: &Block, is_async: bool) -> Result<Block> {
+pub fn instrument_fn_body(spec: &Spec, original_body: &Block, is_async: bool, return_type: &syn::Type) -> Result<Block> {
     // The identifier for the return value binding. It's hygienic to prevent collisions.
     let binding_ident = Ident::new("__anodized_output", Span::mixed_site());
 
@@ -439,11 +439,10 @@ pub fn instrument_fn_body(spec: &Spec, original_body: &Block, is_async: bool) ->
     // This ensures cloned values aren't accessible to the body itself
 
     // Chain clone aliases with output binding
-    let aliases = spec
-        .clones
-        .iter()
-        .map(|cb| &cb.alias)
-        .chain(std::iter::once(&binding_ident));
+    let aliases = spec.clones.iter().map(|cb| &cb.alias).chain(std::iter::once(&binding_ident));
+    
+    // Chain underscore types with return type for tuple type annotation
+    let types = spec.clones.iter().map(|_| quote! { _ }).chain(std::iter::once(quote! { #return_type }));
 
     // Chain clone expressions with body expression
     let clone_exprs = spec.clones.iter().map(|cb| {
@@ -459,8 +458,10 @@ pub fn instrument_fn_body(spec: &Spec, original_body: &Block, is_async: bool) ->
 
     let exprs = clone_exprs.chain(std::iter::once(body_expr));
 
-    // Simple tuple assignment (works even when clones is empty)
-    let body_and_clones = quote! { let (#(#aliases),*) = (#(#exprs),*); };
+    // Build tuple assignment with type annotation on the tuple
+    let body_and_clones = quote! { 
+        let (#(#aliases),*): (#(#types),*) = (#(#exprs),*); 
+    };
 
     // --- Generate Postcondition Checks ---
     let postconditions = spec
