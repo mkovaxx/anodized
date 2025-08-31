@@ -5,7 +5,7 @@
 use proc_macro2::Span;
 use quote::{ToTokens, quote};
 use syn::{
-    Attribute, Block, Expr, Ident, Meta, Pat, Token,
+    Arm, Attribute, Block, Expr, Ident, Meta, Pat, Token,
     parse::{Parse, ParseStream, Result},
     parse_quote,
     punctuated::Punctuated,
@@ -349,6 +349,27 @@ fn interpret_expr_as_post_condition(
     default_pattern: &Pat,
     cfg: Option<Meta>,
 ) -> Result<PostCondition> {
+    // First try to parse as a match arm (pattern => expr)
+    let tokens = expr.to_token_stream();
+    if let Ok(arm) = syn::parse2::<Arm>(tokens.clone()) {
+        match arm.guard {
+            None => {
+                return Ok(PostCondition {
+                    pattern: arm.pat,
+                    expr: *arm.body,
+                    cfg,
+                });
+            }
+            Some((_, guard_expr)) => {
+                return Err(syn::Error::new_spanned(
+                    guard_expr,
+                    "guards are not supported in postcondition binding patterns",
+                ));
+            }
+        }
+    }
+
+    // Then try closure syntax
     if let Expr::Closure(closure) = expr {
         // Extract pattern and body from closure
         if closure.inputs.len() != 1 {
@@ -405,7 +426,12 @@ mod kw {
 }
 
 /// Takes the spec and the original body and returns a new instrumented function body.
-pub fn instrument_fn_body(spec: &Spec, original_body: &Block, is_async: bool, return_type: &syn::Type) -> Result<Block> {
+pub fn instrument_fn_body(
+    spec: &Spec,
+    original_body: &Block,
+    is_async: bool,
+    return_type: &syn::Type,
+) -> Result<Block> {
     // The identifier for the return value binding. It's hygienic to prevent collisions.
     let binding_ident = Ident::new("__anodized_output", Span::mixed_site());
 
@@ -439,10 +465,18 @@ pub fn instrument_fn_body(spec: &Spec, original_body: &Block, is_async: bool, re
     // This ensures cloned values aren't accessible to the body itself
 
     // Chain clone aliases with output binding
-    let aliases = spec.clones.iter().map(|cb| &cb.alias).chain(std::iter::once(&binding_ident));
-    
+    let aliases = spec
+        .clones
+        .iter()
+        .map(|cb| &cb.alias)
+        .chain(std::iter::once(&binding_ident));
+
     // Chain underscore types with return type for tuple type annotation
-    let types = spec.clones.iter().map(|_| quote! { _ }).chain(std::iter::once(quote! { #return_type }));
+    let types = spec
+        .clones
+        .iter()
+        .map(|_| quote! { _ })
+        .chain(std::iter::once(quote! { #return_type }));
 
     // Chain clone expressions with body expression
     let clone_exprs = spec.clones.iter().map(|cb| {
@@ -459,8 +493,8 @@ pub fn instrument_fn_body(spec: &Spec, original_body: &Block, is_async: bool, re
     let exprs = clone_exprs.chain(std::iter::once(body_expr));
 
     // Build tuple assignment with type annotation on the tuple
-    let body_and_clones = quote! { 
-        let (#(#aliases),*): (#(#types),*) = (#(#exprs),*); 
+    let body_and_clones = quote! {
+        let (#(#aliases),*): (#(#types),*) = (#(#exprs),*);
     };
 
     // --- Generate Postcondition Checks ---
