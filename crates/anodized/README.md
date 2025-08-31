@@ -29,7 +29,7 @@ anodized = "0.2.1"
 
 Use the `#[spec]` attribute to define preconditions (`requires`), postconditions (`ensures`), and invariants (`maintains`). Each _condition_ is a standard Rust expression that evaluates to `bool`. In postconditions, the function's return value is available as `output`.
 
-```rust
+```rust,no_run
 use anodized::spec;
 
 #[spec(
@@ -102,7 +102,7 @@ A condition is a `bool`-valued Rust expression; as simple as that. This is a non
 
 You can include any number of each flavor. Multiple conditions of the same flavor are combined with a logical **AND** (`&&`).
 
-```rust
+```rust, no_run
 #[spec(
     // These two preconditions are equivalent to a single
     // precondition, `self.is_initialized && !self.is_locked`.
@@ -120,7 +120,7 @@ fn push(&mut self, value: T) { /* ... */ }
 
 You can use the standard `#[cfg]` attribute to conditionally enable or disable the _runtime checks_ for any condition. This is ideal for expensive checks that you only want to run during testing or in debug builds.
 
-```rust
+```rust, no_run
 #[spec(
     // Runtime checks only during `cargo test`.
     #[cfg(test)]
@@ -141,7 +141,7 @@ This gives you fine-grained control over the performance impact of your specific
 
 Sometimes postconditions need to compare the function's final state with its initial state. The `clones` parameter lets you capture values at function entry for use in postconditions.
 
-```rust
+```rust, no_run
 use anodized::spec;
 
 #[spec(
@@ -169,7 +169,7 @@ fn add_item(&mut self, count: &mut usize, item: T) { /* ... */ }
 
 In **postconditions** (`ensures`), you can refer to the function's return value by the default name `output`.
 
-```rust
+```rust, no_run
 #[spec(
     ensures: output > 0,
 )]
@@ -182,7 +182,7 @@ If the name `output` collides with an existing identifier, you can choose a diff
 
 **1. Spec-Wide Binding**: Use the `binds` parameter to set a new name for the return value across all postconditions in the specification. It must be placed immediately before any `ensures` conditions.
 
-```rust
+```rust, no_run
 #[spec(
     binds: new_value,
     ensures: new_value > old_value,
@@ -192,7 +192,7 @@ fn increment(old_value: i32) -> i32 { /* ... */ }
 
  **2. Closure Binding**: Write the postcondition as a closure. This has the highest precedence and affects only that single condition.
 
-```rust
+```rust, no_run
 #[spec(
     ensures: [
         // This postcondition uses the default binding `output`.
@@ -206,7 +206,7 @@ fn create_data() -> Data { /* ... */ }
 
 **3. Binding Precedence**: The closure's binding takes precedence; same as in Rust. Plain postconditions still use the spec-wide binding.
 
-```rust
+```rust, no_run
 // A function where 'output' is an argument name, requiring a different name.
 #[spec(
     // Set a spec-wide name for the return value: `result`.
@@ -225,7 +225,7 @@ fn calculate_even_result(output: i32) -> i32 { /* ... */ }
 
 The `binds` parameter also lets you destructure return values, making complex postconditions easier to read and write. You can use any valid Rust pattern, including tuple patterns, struct patterns, or even more complex nested patterns.
 
-```rust
+```rust, no_run
 use anodized::spec;
 
 #[spec(
@@ -243,7 +243,7 @@ fn sort_pair(pair: (i32, i32)) -> (i32, i32) { /* ... */ }
 
 ### Example With All Specification Parameters
 
-```rust
+```rust, no_run
 #[spec(
     requires: balance >= amount,
     maintains: self.is_valid(),
