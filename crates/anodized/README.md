@@ -178,7 +178,7 @@ use anodized::spec;
 fn get_positive_value() -> i32 { todo!() }
 ```
 
-**Note** that a postcondition always binds the return value. When you write a postcondition as a "naked" expression, that is shorthand for using the default binding, i.e. `output => <expression>`. In error messages, a postcondition is always displayed with its binding pattern to make it explicit (e.g. `output => output > 0`).
+**Note** that a postcondition always binds the return value. When you write a postcondition as a "naked" expression, that is shorthand for using the default binding, i.e. `output => <expression>`. In error messages, a postcondition is always displayed with its explicit binding to make it clear (e.g. `output => output > 0`).
 
 If the name `output` collides with an existing identifier, you can choose a different name for it in two ways:
 
@@ -194,7 +194,7 @@ use anodized::spec;
 fn increment(old_value: i32) -> i32 { todo!() }
 ```
 
- **2. Pattern Binding**: Write the postcondition with an explicit binding pattern using `pattern => expression` syntax. This has the highest precedence and affects only that single condition.
+ **2. Explicit Binding**: Write the postcondition with an explicit binding using `pattern => expression` syntax. This has the highest precedence and affects only that single condition.
 
 ```rust, no_run
 use anodized::spec;
@@ -210,7 +210,7 @@ use anodized::spec;
 fn create_data() -> char { todo!() }
 ```
 
-**3. Binding Precedence**: The explicit pattern binding takes precedence; same as in Rust. Plain postconditions still use the spec-wide binding.
+**3. Binding Precedence**: The explicit binding takes precedence; same as in Rust. Plain postconditions still use the spec-wide binding.
 
 ```rust, no_run
 use anodized::spec;
@@ -222,7 +222,7 @@ use anodized::spec;
     ensures: [
         // This postcondition uses the spec-wide name `result`.
         result > output,
-        // This postcondition uses an explicit pattern binding `val`.
+        // This postcondition uses an explicit binding `val`.
         val => val % 2 == 0,
     ],
 )]
