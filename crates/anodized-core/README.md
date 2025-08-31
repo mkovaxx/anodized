@@ -72,7 +72,8 @@ Given an original function like this:
 #[spec(
     requires: <PRECONDITION>,
     maintains: <INVARIANT>,
-    ensures: <POSTCONDITION>,
+    clones: <EXPR> as <ALIAS>,
+    ensures: <PATTERN> => <POSTCONDITION>,
 )]
 fn my_function(<ARGUMENTS>) -> <RETURN_TYPE> {
     <BODY>
@@ -88,9 +89,9 @@ fn my_function(<ARGUMENTS>) -> <RETURN_TYPE> {
     assert!(<INVARIANT>, "Pre-invariant failed: <INVARIANT>");
 
     // 2. The original function body is executed
-    let __anodized_output = {
+    let (<ALIAS>, __anodized_output) = (<EXPR>, {
         <BODY>
-    };
+    });
 
     // 3. Invariants and postconditions are checked
     assert!(<INVARIANT>, "Post-invariant failed: <INVARIANT>");
