@@ -201,13 +201,13 @@ use anodized::spec;
 
 #[spec(
     ensures: [
-        // This postcondition uses the default binding `output` - first element indicates validity
-        output => output.0,
-        // This postcondition binds the return value as `val` - second element is the ID
-        val => val.1 != 0,
+        // This postcondition uses the default binding.
+        output.is_ascii(),
+        // This postcondition binds the output as `c`.
+        c => c.is_digit(16),
     ],
 )]
-fn create_data() -> (bool, i32) { todo!() }
+fn create_data() -> char { todo!() }
 ```
 
 **3. Binding Precedence**: The closure's binding takes precedence; same as in Rust. Plain postconditions still use the spec-wide binding.
