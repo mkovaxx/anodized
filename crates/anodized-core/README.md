@@ -47,8 +47,8 @@ condition_list = `[` , expr , { `,` , expr } , [ `,` ] , `]`;
 
 post_conds = post_cond_expr | post_cond_list;
 post_cond_list = `[` , post_cond_expr , { `,` , post_cond_expr } , [ `,` ] , `]`;
-post_cond_expr = expr | pattern_binding;
-pattern_binding = pattern , `=>` , expr;
+post_cond_expr = expr | closed_expr;
+closed_expr = pattern , `=>` , expr;
 
 cfg_attr = `#[cfg(` , settings , `)]`;
 ```
@@ -58,7 +58,7 @@ cfg_attr = `#[cfg(` , settings , `)]`;
 - The last `,` is optional.
 - The `params` rule defines a sequence of optional parameter groups that must appear in the specified order.
 - `expr` refers to a Rust [`expression`](https://doc.rust-lang.org/reference/expressions.html); type checking will fail if it does not evaluate to `bool`.
-- `pattern_binding` uses match-arm syntax where `pattern` binds the return value and `expr` is evaluated with that binding; type checking will fail if the expression does not evaluate to `bool`.
+- `closed_expr` uses syntax similar to a `match` case, where `pattern` binds the return value and `expr` is evaluated with that binding; type checking will fail if the expression does not evaluate to `bool`.
 - `pattern` refers to any valid Rust [`pattern`](https://doc.rust-lang.org/reference/patterns.html); type checking will fail if its type does not match the function's return value.
 - `settings` is the content of the [`cfg`](https://doc.rust-lang.org/reference/conditional-compilation.html) attribute (e.g. `test`, `debug_assertions`).
 
