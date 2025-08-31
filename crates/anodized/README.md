@@ -178,7 +178,7 @@ use anodized::spec;
 fn get_positive_value() -> i32 { todo!() }
 ```
 
-**Note** that a postcondition always binds the return value. When you write a postcondition as a "naked" expression, that is shorthand for using the default binding, i.e. `output => <expression>`. In error messages, a postcondition is always displayed with its binding pattern to make it explicit (e.g. `| output | output > 0`).
+**Note** that a postcondition always binds the return value. When you write a postcondition as a "naked" expression, that is shorthand for using the default binding, i.e. `output => <expression>`. In error messages, a postcondition is always displayed with its binding pattern to make it explicit (e.g. `output => output > 0`).
 
 If the name `output` collides with an existing identifier, you can choose a different name for it in two ways:
 
