@@ -349,9 +349,9 @@ fn interpret_expr_as_clone_binding(expr: Expr) -> Result<CloneBinding> {
     }
 }
 
-/// Internal type for parsing postconditions that can be either:
-/// - A match arm: pattern => expr
-/// - A naked expression
+/// Internal type to represent a postcondition as either:
+/// - A postcondition with an explicit binding, i.e. pattern => expression
+/// - A "naked" postcondition, i.e. an open expression
 struct PostConditionExpr {
     pattern: Option<Pat>,
     expr: Expr,
