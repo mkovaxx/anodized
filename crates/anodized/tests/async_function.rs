@@ -1,16 +1,16 @@
 use anodized::spec;
 
 #[spec(
-    requires: x > 0,
-    ensures: output == x * 2,
+    requires: x.is_finite(),
+    ensures: output + output == x,
 )]
-async fn double_async(x: i32) -> i32 {
+async fn half_async(x: f32) -> f32 {
     todo!()
 }
 
 #[test]
 fn test_async_function_compiles() {
-    let future = double_async(5);
+    let future = half_async(5.0);
 
     fn is_future<T: core::future::Future>(_: &T) {}
     is_future(&future);
