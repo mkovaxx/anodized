@@ -69,7 +69,7 @@ impl Parse for Spec {
         let mut maintains: Vec<Condition> = vec![];
         let mut clones: Vec<CloneBinding> = vec![];
         let mut binds_pattern: Option<Pat> = None;
-        let mut ensures_exprs: Vec<Condition> = vec![];
+        let mut ensures: Vec<PostCondition> = vec![];
 
         for arg in args {
             let current_arg_order = arg.get_order();
@@ -122,27 +122,20 @@ impl Parse for Spec {
                     }
                     binds_pattern = Some(pattern);
                 }
-                SpecArg::Ensures { cfg, expr, .. } => {
-                    if let Expr::Array(conditions) = expr {
-                        ensures_exprs.extend(conditions.elems.into_iter().map(|expr| Condition {
-                            expr,
+                SpecArg::Ensures { cfg, postconds, .. } => {
+                    let default_pattern = binds_pattern.clone().unwrap_or(parse_quote! { output });
+
+                    // Convert PostConditionExpr directly to PostCondition
+                    for pc in postconds {
+                        ensures.push(PostCondition {
+                            pattern: pc.pattern.unwrap_or(default_pattern.clone()),
+                            expr: pc.expr,
                             cfg: cfg.clone(),
-                        }));
-                    } else {
-                        ensures_exprs.push(Condition { expr, cfg });
+                        });
                     }
                 }
             }
         }
-
-        let default_pattern = binds_pattern.unwrap_or_else(|| parse_quote! { output });
-
-        let ensures = ensures_exprs
-            .into_iter()
-            .map(|condition| {
-                interpret_expr_as_post_condition(condition.expr, &default_pattern, condition.cfg)
-            })
-            .collect::<Result<Vec<PostCondition>>>()?;
 
         Ok(Spec {
             requires,
@@ -172,7 +165,7 @@ enum SpecArg {
     Ensures {
         keyword: kw::ensures,
         cfg: Option<Meta>,
-        expr: Expr,
+        postconds: Vec<PostConditionExpr>,
     },
     Maintains {
         keyword: kw::maintains,
@@ -277,10 +270,24 @@ impl Parse for SpecArg {
             // Parse `ensures: <conditions>`
             let keyword = input.parse::<kw::ensures>()?;
             input.parse::<Token![:]>()?;
+
+            // Parse either a single postcondition or an array
+            let postconds = if input.peek(syn::token::Bracket) {
+                // Parse array using Punctuated
+                let content;
+                syn::bracketed!(content in input);
+                let punctuated: Punctuated<PostConditionExpr, Token![,]> =
+                    content.parse_terminated(PostConditionExpr::parse, Token![,])?;
+                punctuated.into_iter().collect()
+            } else {
+                // Single postcondition
+                vec![input.parse::<PostConditionExpr>()?]
+            };
+
             Ok(SpecArg::Ensures {
                 keyword,
                 cfg,
-                expr: input.parse()?,
+                postconds,
             })
         } else {
             Err(lookahead.error())
@@ -340,6 +347,43 @@ fn interpret_expr_as_clone_binding(expr: Expr) -> Result<CloneBinding> {
             expr,
             "complex expressions require an explicit alias using `as`",
         )),
+    }
+}
+
+/// Internal type for parsing postconditions that can be either:
+/// - A match arm: pattern => expr
+/// - A naked expression
+struct PostConditionExpr {
+    pattern: Option<Pat>,
+    expr: Expr,
+}
+
+impl Parse for PostConditionExpr {
+    fn parse(input: ParseStream) -> Result<Self> {
+        // Try parsing as arm first using fork to avoid consuming tokens
+        let fork = input.fork();
+        if let Ok(arm) = fork.parse::<Arm>() {
+            if arm.guard.is_none() {
+                // Advance the original input stream
+                input.parse::<Arm>()?;
+                Ok(PostConditionExpr {
+                    pattern: Some(arm.pat),
+                    expr: *arm.body,
+                })
+            } else {
+                // Has a guard, which isn't allowed
+                Err(syn::Error::new_spanned(
+                    arm.guard.unwrap().1,
+                    "guards are not supported in postcondition patterns",
+                ))
+            }
+        } else {
+            // Parse as regular expression
+            Ok(PostConditionExpr {
+                pattern: None,
+                expr: input.parse()?,
+            })
+        }
     }
 }
 
