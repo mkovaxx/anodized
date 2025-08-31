@@ -217,12 +217,12 @@ use anodized::spec;
 
 // A function where 'output' is an argument name, requiring a different name.
 #[spec(
-    // Set a spec-wide name for the return value: `result`.
+    // Set a spec-wide binding for the return value: `result`.
     binds: result,
     ensures: [
-        // This postcondition uses the spec-wide name `result`.
+        // This postcondition uses the spec-wide binding: `result`.
         result > output,
-        // This postcondition uses an explicit binding `val`.
+        // This postcondition uses an explicit binding: `val`.
         val => val % 2 == 0,
     ],
 )]
@@ -231,7 +231,7 @@ fn calculate_even_result(output: i32) -> i32 { todo!() }
 
 **4. Beyond Names: Destructuring Return Values**
 
-The `binds` parameter also lets you destructure return values, making complex postconditions easier to read and write. You can use any valid Rust pattern, including tuple patterns, struct patterns, or even more complex nested patterns.
+Bindings also lets you destructure return values, making complex postconditions easier to read and write. You can use any valid Rust pattern, including tuple patterns, struct patterns, or even more complex nested patterns.
 
 ```rust, no_run
 use anodized::spec;
