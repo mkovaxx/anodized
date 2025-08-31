@@ -479,11 +479,14 @@ pub fn instrument_fn_body(spec: &Spec, original_body: &Block, is_async: bool) ->
         .chain(spec.ensures.iter().map(|postcondition| {
             let pattern = &postcondition.pattern;
             let expr = &postcondition.expr;
+            // Format as closure for error message
+            let pattern_str = pattern.to_token_stream().to_string();
             let expr_str = expr.to_token_stream().to_string();
+            let closure_str = format!("| {} | {}", pattern_str, expr_str);
             let assert = quote! {
                 {
                     let #pattern = #binding_ident;
-                    assert!(#expr, "Postcondition failed: {}", #expr_str);
+                    assert!(#expr, "Postcondition failed: {}", #closure_str);
                 }
             };
             if let Some(cfg) = &postcondition.cfg {

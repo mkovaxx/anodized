@@ -128,7 +128,7 @@ use anodized::spec;
 
     // Runtime checks only when debug assertions are enabled.
     #[cfg(debug_assertions)]
-    ensures: |output: Result<i32, String>| output.is_ok(),
+    ensures: |ref output| output.is_ok(),
 )]
 fn perform_complex_operation(input: i32) -> Result<i32, String> { Ok(42) }
 ```
