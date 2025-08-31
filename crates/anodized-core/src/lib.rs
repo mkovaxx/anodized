@@ -276,8 +276,7 @@ impl Parse for SpecArg {
                 // Parse array using Punctuated
                 let content;
                 syn::bracketed!(content in input);
-                let punctuated: Punctuated<PostConditionExpr, Token![,]> =
-                    content.parse_terminated(PostConditionExpr::parse, Token![,])?;
+                let punctuated = content.parse_terminated(PostConditionExpr::parse, Token![,])?;
                 punctuated.into_iter().collect()
             } else {
                 // Single postcondition
