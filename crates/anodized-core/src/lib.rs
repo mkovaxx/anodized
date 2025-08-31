@@ -369,26 +369,12 @@ fn interpret_expr_as_post_condition(
         }
     }
 
-    // Then try closure syntax
-    if let Expr::Closure(closure) = expr {
-        // Extract pattern and body from closure
-        if closure.inputs.len() != 1 {
-            return Err(syn::Error::new_spanned(
-                &closure,
-                "postcondition closures must have exactly one parameter",
-            ));
-        }
-        let pattern = closure.inputs[0].clone();
-        let expr = *closure.body;
-        Ok(PostCondition { pattern, expr, cfg })
-    } else {
-        // Naked expression uses default pattern
-        Ok(PostCondition {
-            pattern: default_pattern.clone(),
-            expr,
-            cfg,
-        })
-    }
+    // Naked expression uses default pattern
+    Ok(PostCondition {
+        pattern: default_pattern.clone(),
+        expr,
+        cfg,
+    })
 }
 
 fn parse_cfg_attribute(attrs: &[Attribute]) -> Result<Option<Meta>> {
