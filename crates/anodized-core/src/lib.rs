@@ -359,29 +359,21 @@ struct PostConditionExpr {
 
 impl Parse for PostConditionExpr {
     fn parse(input: ParseStream) -> Result<Self> {
-        // Parse the first expression
-        let first_expr: Expr = input.parse()?;
+        let fork = input.fork();
 
-        // Check if the next token is `=>`
-        if input.peek(Token![=>]) {
-            // It's a match arm pattern
+        // Try to parse as pattern => expr
+        if Pat::parse_single(&fork).is_ok() && fork.peek(Token![=>]) {
+            let pattern = Pat::parse_single(input)?;
             input.parse::<Token![=>]>()?;
-
-            // Try to interpret the first expression as a pattern
-            let pattern = parse_quote! { #first_expr };
-
-            // Parse the expression after `=>`
-            let expr: Expr = input.parse()?;
-
             Ok(PostConditionExpr {
                 pattern: Some(pattern),
-                expr,
+                expr: input.parse()?,
             })
         } else {
             // It's a naked expression
             Ok(PostConditionExpr {
                 pattern: None,
-                expr: first_expr,
+                expr: input.parse()?,
             })
         }
     }

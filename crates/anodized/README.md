@@ -201,8 +201,8 @@ use anodized::spec;
 
 #[spec(
     ensures: [
-        // This postcondition uses a typed pattern binding - first element indicates validity
-        output: (bool, i32) => output.0,
+        // This postcondition uses the default binding `output` - first element indicates validity
+        output => output.0,
         // This postcondition binds the return value as `val` - second element is the ID
         val => val.1 != 0,
     ],
