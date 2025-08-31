@@ -58,7 +58,7 @@ cfg_attr = `#[cfg(` , settings , `)]`;
 - The last `,` is optional.
 - The `params` rule defines a sequence of optional parameter groups that must appear in the specified order.
 - `expr` refers to a Rust [`expression`](https://doc.rust-lang.org/reference/expressions.html); type checking will fail if it does not evaluate to `bool`.
-- `closed_expr` provides an explicit binding where `pattern` binds the return value and `expr` is evaluated with that binding; type checking will fail if the expression does not evaluate to `bool`.
+- `closed_expr` has a `pattern` to explicitly bind the return value, and `expr` is evaluated with that in scope. Type checking will fail if the expression does not evaluate to `bool`.
 - `pattern` refers to any valid Rust [`pattern`](https://doc.rust-lang.org/reference/patterns.html); type checking will fail if its type does not match the function's return value.
 - `settings` is the content of the [`cfg`](https://doc.rust-lang.org/reference/conditional-compilation.html) attribute (e.g. `test`, `debug_assertions`).
 
@@ -94,7 +94,7 @@ fn my_function(<ARGUMENTS>) -> <RETURN_TYPE> {
 
     // 3. Invariants and postconditions are checked
     assert!(<INVARIANT>, "Post-invariant failed: <INVARIANT>");
-    // Postcondition is checked with the return value bound to a pattern
+    // Postcondition is checked with the return value bound by a pattern
     {
         let <PATTERN> = __anodized_output;
         assert!(<POSTCONDITION>, "Postcondition failed: <PATTERN> => <POSTCONDITION>");
