@@ -1,6 +1,5 @@
 use crate::{CloneBinding, Condition, PostCondition, Spec};
 use quote::ToTokens;
-use proc_macro2::TokenStream;
 use syn::{
     Arm, Block, Expr,
     parse::{Parse, ParseStream, Result},

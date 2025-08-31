@@ -283,9 +283,9 @@ fn test_instrument_ensures_with_mixed_conditions() {
     let spec: Spec = parse_quote! {
         ensures: [
             CONDITION_1,
-            |PATTERN_1| CONDITION_2,
+            PATTERN_1 => CONDITION_2,
             CONDITION_3,
-            |PATTERN_2| CONDITION_4
+            PATTERN_2 => CONDITION_4
         ],
     };
     let body = make_fn_body();
@@ -413,7 +413,7 @@ fn test_instrument_with_complex_mixed_conditions() {
         maintains: CONDITION_6,
         ensures: CONDITION_7,
         #[cfg(SETTING_3)]
-        ensures: [CONDITION_8, |PATTERN_1| CONDITION_9],
+        ensures: [CONDITION_8, PATTERN_1 => CONDITION_9],
     };
     let body = make_fn_body();
     let ret_type = make_return_type();

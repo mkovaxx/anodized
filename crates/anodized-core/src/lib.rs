@@ -5,7 +5,7 @@
 use proc_macro2::Span;
 use quote::{ToTokens, quote};
 use syn::{
-    Arm, Attribute, Block, Expr, Ident, Meta, Pat, Token,
+    Attribute, Block, Expr, Ident, Meta, Pat, Token,
     parse::{Parse, ParseStream, Result},
     parse_quote,
     punctuated::Punctuated,
