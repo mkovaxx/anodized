@@ -1,46 +1,14 @@
 use crate::{CloneBinding, Condition, PostCondition, Spec};
 use quote::ToTokens;
 use syn::{
-    Arm, Block, Expr,
+    Block,
     parse::{Parse, ParseStream, Result},
-    parse_quote,
 };
 
 impl Parse for Condition {
     fn parse(input: ParseStream) -> Result<Self> {
         Ok(Condition {
             expr: input.parse()?,
-            cfg: None,
-        })
-    }
-}
-
-impl Parse for PostCondition {
-    fn parse(input: ParseStream) -> Result<Self> {
-        // First parse as an expression
-        let expr: Expr = input.parse()?;
-
-        // Try to reparse it as a match arm (pattern => expr)
-        let tokens = expr.to_token_stream();
-        if let Ok(arm) = syn::parse2::<Arm>(tokens) {
-            if arm.guard.is_none() {
-                return Ok(PostCondition {
-                    pattern: arm.pat,
-                    expr: *arm.body,
-                    cfg: None,
-                });
-            } else {
-                return Err(syn::Error::new_spanned(
-                    arm.guard.unwrap().1,
-                    "guards are not supported in postcondition patterns",
-                ));
-            }
-        }
-
-        // Otherwise it's a naked expression with default pattern
-        Ok(PostCondition {
-            pattern: parse_quote! { output },
-            expr,
             cfg: None,
         })
     }
