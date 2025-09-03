@@ -14,7 +14,7 @@ Anodized is a pragmatic suite of tools that helps improve the correctness of you
 
 Specifications serve as the foundation for a larger **ecosystem of correctness tools**. Anodized aims to connect many disparate approaches, including fuzz testing, formal verification, and more, into a unified user experience.
 
-***
+---
 
 ## Quick Start
 
@@ -29,7 +29,7 @@ anodized = "0.2.1"
 
 Use the `#[spec]` attribute to define preconditions (`requires`), postconditions (`ensures`), and invariants (`maintains`). Each _condition_ is a standard Rust expression that evaluates to `bool`. In postconditions, the function's return value is available as `output`.
 
-```rust
+```rust,no_run
 use anodized::spec;
 
 #[spec(
@@ -44,7 +44,7 @@ use anodized::spec;
     ],
 )]
 fn calculate_percentage(part: f64, whole: f64) -> f64 {
-    (part / whole) * 100.0
+    todo!()
 }
 
 fn main() {
@@ -60,7 +60,7 @@ fn main() {
 
 In a **debug build** (`cargo run` or `cargo test`), your code is automatically instrumented to check the specifications. A spec violation will cause a panic with a descriptive error message:
 
-```ignore
+```text
 thread 'main' panicked at 'Precondition failed: whole > 0', src/main.rs:17:5
 ```
 
@@ -102,35 +102,35 @@ A condition is a `bool`-valued Rust expression; as simple as that. This is a non
 
 You can include any number of each flavor. Multiple conditions of the same flavor are combined with a logical **AND** (`&&`).
 
-```rust
+```rust, no_run
+use anodized::spec;
+
 #[spec(
-    // These two preconditions are equivalent to a single
-    // precondition, `self.is_initialized && !self.is_locked`.
-    requires: [
-        self.is_initialized,
-        !self.is_locked,
-    ],
-    // The next one is an invariant.
-    maintains: self.len() <= self.capacity(),
+    // Precondition: the vector must have room for at least one more element
+    requires: vec.len() < vec.capacity() || vec.capacity() == 0,
+    // Invariant: length never exceeds capacity
+    maintains: vec.len() <= vec.capacity(),
 )]
-fn push(&mut self, value: T) { /* ... */ }
+fn push_checked<T>(vec: &mut Vec<T>, value: T) { todo!() }
 ```
 
 ### `#[cfg]`: Configure Runtime Checks
 
 You can use the standard `#[cfg]` attribute to conditionally enable or disable the _runtime checks_ for any condition. This is ideal for expensive checks that you only want to run during testing or in debug builds.
 
-```rust
+```rust, no_run
+use anodized::spec;
+
 #[spec(
     // Runtime checks only during `cargo test`.
     #[cfg(test)]
-    requires: self.is_valid_for_testing(),
+    requires: input > 0,
 
     // Runtime checks only when debug assertions are enabled.
     #[cfg(debug_assertions)]
-    ensures: output.is_sane(),
+    ensures: ref output => output.is_ok(),
 )]
-fn perform_complex_operation(&mut self) -> Result { /* ... */ }
+fn perform_complex_operation(input: i32) -> Result<i32, String> { todo!() }
 ```
 
 **Important:** Anodized guarantees that all your specifications are syntactically valid and type-correct, regardless of the `#[cfg]` attribute. The attribute only controls whether a check is performed at _runtime_. This ensures that e.g. a specification valid in `test` builds can't become invalid in `release` builds, and it allows other tools in the ecosystem (like static analyzers) to always see the full specification.
@@ -141,27 +141,25 @@ This gives you fine-grained control over the performance impact of your specific
 
 Sometimes postconditions need to compare the function's final state with its initial state. The `captures` parameter lets you capture values at function entry for use in postconditions.
 
-```rust
+```rust, no_run
 use anodized::spec;
 
 #[spec(
     captures: [
         // Copy types: captured directly
-        count,
-        self.items.len() as orig_len,
+        items.len() as orig_len,
         // Non-Copy types: use .clone() explicitly
-        self.items.clone() as orig_items,
+        items.clone() as orig_items,
     ],
     ensures: [
-        count == old_count + 1,
-        self.items.len() == orig_len + 1,
-        self.items[0] == orig_items[0],
+        items.len() == orig_len + 1,
+        items[0] == orig_items[0],
     ],
 )]
-fn add_item(&mut self, count: &mut usize, item: T) { /* ... */ }
+fn add_item<T: Clone + Eq>(items: &mut Vec<T>, item: T) { todo!() }
 ```
 
-- **Simple identifiers** get an automatic `old_` prefix, i.e. `count` becomes `old_count`.
+- **Simple identifiers** get an automatic `old_` prefix, i.e. `x` becomes `old_x`.
 - **Complex expressions** require an explicit alias using `as`, i.e. `self.items.len() as orig_len`.
 - **No automatic cloning**: Values are captured as-is. For `Copy` types this is automatic, but for other types you must explicitly use `.clone()`, `.to_owned()`, or other appropriate methods.
 - Captures happen **after** preconditions are checked but **before** the function body executes.
@@ -171,63 +169,71 @@ fn add_item(&mut self, count: &mut usize, item: T) { /* ... */ }
 
 In **postconditions** (`ensures`), you can refer to the function's return value by the default name `output`.
 
-```rust
+```rust, no_run
+use anodized::spec;
+
 #[spec(
     ensures: output > 0,
 )]
-fn get_positive_value() -> i32 { /* ... */ }
+fn get_positive_value() -> i32 { todo!() }
 ```
 
-**Note** that a postcondition is _always_ a closure, because it needs to bind the return value. When you write a postcondition as a "naked" expression, that is shorthand for using the default binding, i.e. `|output| <expression>`. In error messages, a postcondition is always displayed as a closure to make the binding explicit (e.g. `|output| output > 0`).
+**Note** that a postcondition always binds the return value. When you write a postcondition as a "naked" expression, that is shorthand for using the default binding, i.e. `output => <expression>`. In error messages, a postcondition is always displayed with its explicit binding to make it clear (e.g. `output => output > 0`).
 
 If the name `output` collides with an existing identifier, you can choose a different name for it in two ways:
 
 **1. Spec-Wide Binding**: Use the `binds` parameter to set a new name for the return value across all postconditions in the specification. It must be placed immediately before any `ensures` conditions.
 
-```rust
+```rust, no_run
+use anodized::spec;
+
 #[spec(
     binds: new_value,
     ensures: new_value > old_value,
 )]
-fn increment(old_value: i32) -> i32 { /* ... */ }
+fn increment(old_value: i32) -> i32 { todo!() }
 ```
 
- **2. Closure Binding**: Write the postcondition as a closure. This has the highest precedence and affects only that single condition.
+**2. Explicit Binding**: Write the postcondition with an explicit binding using `pattern => expression` syntax. This has the highest precedence and affects only that single condition.
 
-```rust
+```rust, no_run
+use anodized::spec;
+
 #[spec(
     ensures: [
-        // This postcondition uses the default binding `output`.
-        output.is_valid(),
-        // This postcondition binds the return value as `val`.
-        |val| val.id() != 0,
+        // This postcondition uses the default binding.
+        output.is_ascii(),
+        // This postcondition binds the output as `c`.
+        c => c.is_digit(16),
     ],
 )]
-fn create_data() -> Data { /* ... */ }
+fn create_data() -> char { todo!() }
 ```
 
-**3. Binding Precedence**: The closure's binding takes precedence; same as in Rust. Plain postconditions still use the spec-wide binding.
+**3. Binding Precedence**: The explicit binding takes precedence; same as in Rust. Plain postconditions still use the spec-wide binding.
 
-```rust
+```rust, no_run
+use anodized::spec;
+
 // A function where 'output' is an argument name, requiring a different name.
 #[spec(
-    // Set a spec-wide name for the return value: `result`.
+    // Set a spec-wide binding for the return value: `result`.
     binds: result,
     ensures: [
-        // This postcondition uses the spec-wide name `result`.
+        // This postcondition uses the spec-wide binding: `result`.
         result > output,
-        // This postcondition is written as a closure and binds the return value as `val`.
-        |val| val % 2 == 0,
+        // This postcondition uses an explicit binding: `val`.
+        val => val % 2 == 0,
     ],
 )]
-fn calculate_even_result(output: i32) -> i32 { /* ... */ }
+fn calculate_even_result(output: i32) -> i32 { todo!() }
 ```
 
 **4. Beyond Names: Destructuring Return Values**
 
-The `binds` parameter also lets you destructure return values, making complex postconditions easier to read and write. You can use any valid Rust pattern, including tuple patterns, struct patterns, or even more complex nested patterns.
+Bindings also lets you destructure return values, making complex postconditions easier to read and write. You can use any valid Rust pattern, including tuple patterns, struct patterns, or even more complex nested patterns.
 
-```rust
+```rust, no_run
 use anodized::spec;
 
 #[spec(
@@ -240,27 +246,26 @@ use anodized::spec;
         (a, b) == pair || (b, a) == pair,
     ],
 )]
-fn sort_pair(pair: (i32, i32)) -> (i32, i32) { /* ... */ }
+fn sort_pair(pair: (i32, i32)) -> (i32, i32) { todo!() }
 ```
 
 ### Example With All Specification Parameters
 
-```rust
+```rust, no_run
+use anodized::spec;
+
 #[spec(
-    requires: balance >= amount,
-    maintains: self.is_valid(),
-    captures: [
-        balance as initial_balance,
-        self.transaction_count() as initial_txns,
-    ],
-    binds: (new_balance, receipt),
+    requires: *balance >= amount,
+    maintains: *balance >= 0,
+    captures: *balance as initial_balance,
+    binds: (new_balance, receipt_amount),
     ensures: [
         new_balance == initial_balance - amount,
-        receipt.amount == amount,
-        self.transaction_count() == initial_txns + 1,
+        receipt_amount == amount,
+        *balance == new_balance,
     ],
 )]
-fn withdraw(&mut self, balance: &mut u64, amount: u64) -> (u64, Receipt) { /* ... */ }
+fn withdraw(balance: &mut u64, amount: u64) -> (u64, u64) { todo!() }
 ```
 
 ### Why Conditions Are Rust Expressions

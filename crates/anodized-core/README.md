@@ -54,7 +54,8 @@ capture_expr = expr | (expr , `as` , ident);
 
 post_conds = post_cond_expr | post_cond_list;
 post_cond_list = `[` , post_cond_expr , { `,` , post_cond_expr } , [ `,` ] , `]`;
-post_cond_expr = expr | closure;
+post_cond_expr = expr | closed_expr;
+closed_expr = pattern , `=>` , expr;
 
 cfg_attr = `#[cfg(` , settings , `)]`;
 ```
@@ -63,8 +64,8 @@ cfg_attr = `#[cfg(` , settings , `)]`;
 
 - The last `,` is optional.
 - The `params` rule defines a sequence of optional parameter groups that must appear in the specified order.
-- `expr` refers to a Rust [`expression`](https://doc.rust-lang.org/reference/expressions.html); type checking will fail if a condition does not evaluate to `bool`.
-- `closure` refers to a Rust [`closure expression`](https://doc.rust-lang.org/reference/expressions/closure-expr.html); type checking will fail if a closure used as a condition does not take the function's return value as an argument and evaluate to `bool`.
+- `expr` refers to a Rust [`expression`](https://doc.rust-lang.org/reference/expressions.html); type checking will fail if it does not evaluate to `bool`.
+- `closed_expr` has a `pattern` to explicitly bind the return value, and `expr` is evaluated with that in scope. Type checking will fail if the expression does not evaluate to `bool`.
 - `pattern` refers to any valid Rust [`pattern`](https://doc.rust-lang.org/reference/patterns.html); type checking will fail if its type does not match the function's return value.
 - `settings` is the content of the [`cfg`](https://doc.rust-lang.org/reference/conditional-compilation.html) attribute (e.g. `test`, `debug_assertions`).
 
@@ -79,7 +80,7 @@ Given an original function like this:
     requires: <PRECONDITION>,
     maintains: <INVARIANT>,
     captures: <CAPTURE_EXPR> as <ALIAS>,
-    ensures: <POSTCONDITION_CLOSURE>,
+    ensures: <PATTERN> => <POSTCONDITION>,
 )]
 fn my_function(<ARGUMENTS>) -> <RETURN_TYPE> {
     <BODY>
@@ -97,15 +98,18 @@ fn my_function(<ARGUMENTS>) -> <RETURN_TYPE> {
     // 2. Values are captured and the original function body is executed
     // Note: captures and body execution happen in a single tuple assignment
     // to ensure captured values aren't accessible to the function body
-    let (<ALIAS>, __anodized_output) = (<CAPTURE_EXPR>, {
+    let (<ALIAS>, __anodized_output): (_, <RETURN_TYPE>) = (<CAPTURE_EXPR>, {
         <BODY>
     });
 
     // 3. Invariants and postconditions are checked
     // The captured value is available to postconditions
     assert!(<INVARIANT>, "Post-invariant failed: <INVARIANT>");
-    assert!((<POSTCONDITION_CLOSURE>)(__anodized_output),
-        "Postcondition failed: <POSTCONDITION_CLOSURE>");
+    // Postcondition is checked with the return value bound by a pattern
+    {
+        let <PATTERN> = __anodized_output;
+        assert!(<POSTCONDITION>, "Postcondition failed: <PATTERN> => <POSTCONDITION>");
+    }
 
     // 4. The result is returned
     __anodized_output

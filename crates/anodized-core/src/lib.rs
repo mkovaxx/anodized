@@ -1,11 +1,11 @@
 //! Core interoperability for the Anodized correctness ecosystem.
 //!
-#![cfg_attr(not(doctest), doc = include_str!("../README.md"))]
+#![doc = include_str!("../README.md")]
 
 use proc_macro2::Span;
 use quote::{ToTokens, quote};
 use syn::{
-    Attribute, Block, Expr, ExprClosure, Ident, Meta, Pat, Token,
+    Attribute, Block, Expr, Ident, Meta, Pat, Token,
     parse::{Parse, ParseStream, Result},
     parse_quote,
     punctuated::Punctuated,
@@ -22,13 +22,13 @@ pub struct Spec {
     /// Captures: expressions to snapshot at function entry for use in postconditions.
     pub captures: Vec<Capture>,
     /// Postconditions: conditions that must hold when the function returns.
-    pub ensures: Vec<ConditionClosure>,
+    pub ensures: Vec<PostCondition>,
 }
 
 /// A condition represented by a `bool`-valued expression.
 #[derive(Debug)]
 pub struct Condition {
-    /// The expression.
+    /// The `bool`-valued expression.
     pub expr: Expr,
     /// **Static analyzers can safely ignore this field.**
     ///
@@ -37,11 +37,13 @@ pub struct Condition {
     pub cfg: Option<Meta>,
 }
 
-/// A condition represented by a `bool`-valued closure.
+/// A postcondition represented by a binding pattern and a `bool`-valued expression.
 #[derive(Debug)]
-pub struct ConditionClosure {
-    /// The closure.
-    pub closure: ExprClosure,
+pub struct PostCondition {
+    /// The pattern to bind the return value, e.g. `output`, `ref output`, `(a, b)`.
+    pub pattern: Pat,
+    /// The `bool`-valued expression.
+    pub expr: Expr,
     /// **Static analyzers can safely ignore this field.**
     ///
     /// Build configuration filter to decide whether to add runtime checks.
@@ -67,7 +69,7 @@ impl Parse for Spec {
         let mut maintains: Vec<Condition> = vec![];
         let mut captures: Vec<Capture> = vec![];
         let mut binds_pattern: Option<Pat> = None;
-        let mut ensures_exprs: Vec<Condition> = vec![];
+        let mut ensures: Vec<PostCondition> = vec![];
 
         for arg in args {
             let current_arg_order = arg.get_order();
@@ -124,40 +126,20 @@ impl Parse for Spec {
                     }
                     binds_pattern = Some(pattern);
                 }
-                SpecArg::Ensures { cfg, expr, .. } => {
-                    if let Expr::Array(conditions) = expr {
-                        ensures_exprs.extend(conditions.elems.into_iter().map(|expr| Condition {
-                            expr,
+                SpecArg::Ensures { cfg, postconds, .. } => {
+                    let default_pattern = binds_pattern.clone().unwrap_or(parse_quote! { output });
+
+                    // Convert PostConditionExpr directly to PostCondition
+                    for pc in postconds {
+                        ensures.push(PostCondition {
+                            pattern: pc.pattern.unwrap_or(default_pattern.clone()),
+                            expr: pc.expr,
                             cfg: cfg.clone(),
-                        }));
-                    } else {
-                        ensures_exprs.push(Condition { expr, cfg });
+                        });
                     }
                 }
             }
         }
-
-        let default_closure_pattern = binds_pattern
-            .as_ref()
-            .map(|p| p.to_token_stream())
-            .unwrap_or_else(|| quote! { output });
-
-        let ensures = ensures_exprs
-            .into_iter()
-            .map(|condition| {
-                let closure: ExprClosure = if let Expr::Closure(closure) = condition.expr {
-                    closure
-                } else {
-                    // Convert "naked" postcondition to closure
-                    let inner_condition = condition.expr;
-                    parse_quote! { |#default_closure_pattern| #inner_condition }
-                };
-                Ok(ConditionClosure {
-                    closure,
-                    cfg: condition.cfg,
-                })
-            })
-            .collect::<Result<Vec<ConditionClosure>>>()?;
 
         Ok(Spec {
             requires,
@@ -187,7 +169,7 @@ enum SpecArg {
     Ensures {
         keyword: kw::ensures,
         cfg: Option<Meta>,
-        expr: Expr,
+        postconds: Vec<PostConditionExpr>,
     },
     Maintains {
         keyword: kw::maintains,
@@ -284,10 +266,23 @@ impl Parse for SpecArg {
             // Parse `ensures: <conditions>`
             let keyword = input.parse::<kw::ensures>()?;
             input.parse::<Token![:]>()?;
+
+            // Parse either a single postcondition or an array
+            let postconds = if input.peek(syn::token::Bracket) {
+                // Parse array using Punctuated
+                let content;
+                syn::bracketed!(content in input);
+                let punctuated = content.parse_terminated(PostConditionExpr::parse, Token![,])?;
+                punctuated.into_iter().collect()
+            } else {
+                // Single postcondition
+                vec![input.parse::<PostConditionExpr>()?]
+            };
+
             Ok(SpecArg::Ensures {
                 keyword,
                 cfg,
-                expr: input.parse()?,
+                postconds,
             })
         } else {
             Err(lookahead.error())
@@ -350,6 +345,36 @@ fn interpret_expr_as_capture(expr: Expr) -> Result<Capture> {
     }
 }
 
+/// Internal type to represent a postcondition as either:
+/// - A postcondition with an explicit binding, i.e. pattern => expression
+/// - A "naked" postcondition, i.e. an expression with implicit binding
+struct PostConditionExpr {
+    pattern: Option<Pat>,
+    expr: Expr,
+}
+
+impl Parse for PostConditionExpr {
+    fn parse(input: ParseStream) -> Result<Self> {
+        let fork = input.fork();
+
+        // Try to parse as explicit binding (pattern => expr)
+        if Pat::parse_single(&fork).is_ok() && fork.peek(Token![=>]) {
+            let pattern = Pat::parse_single(input)?;
+            input.parse::<Token![=>]>()?;
+            Ok(PostConditionExpr {
+                pattern: Some(pattern),
+                expr: input.parse()?,
+            })
+        } else {
+            // It's a naked expression
+            Ok(PostConditionExpr {
+                pattern: None,
+                expr: input.parse()?,
+            })
+        }
+    }
+}
+
 fn parse_cfg_attribute(attrs: &[Attribute]) -> Result<Option<Meta>> {
     let mut cfg_attrs: Vec<Meta> = vec![];
 
@@ -385,7 +410,12 @@ mod kw {
 }
 
 /// Takes the spec and the original body and returns a new instrumented function body.
-pub fn instrument_fn_body(spec: &Spec, original_body: &Block, is_async: bool) -> Result<Block> {
+pub fn instrument_fn_body(
+    spec: &Spec,
+    original_body: &Block,
+    is_async: bool,
+    return_type: &syn::Type,
+) -> Result<Block> {
     // The identifier for the return value binding. It's hygienic to prevent collisions.
     let binding_ident = Ident::new("__anodized_output", Span::mixed_site());
 
@@ -431,6 +461,13 @@ pub fn instrument_fn_body(spec: &Spec, original_body: &Block, is_async: bool) ->
         quote! { #expr }
     });
 
+    // Chain underscore types with return type for tuple type annotation
+    let types = spec
+        .captures
+        .iter()
+        .map(|_| quote! { _ })
+        .chain(std::iter::once(quote! { #return_type }));
+
     let body_expr = if is_async {
         quote! { async #original_body.await }
     } else {
@@ -439,8 +476,10 @@ pub fn instrument_fn_body(spec: &Spec, original_body: &Block, is_async: bool) ->
 
     let exprs = capture_exprs.chain(std::iter::once(body_expr));
 
-    // Simple tuple assignment (works even when captures is empty)
-    let body_and_captures = quote! { let (#(#aliases),*) = (#(#exprs),*); };
+    // Build tuple assignment with type annotation on the tuple
+    let body_and_captures = quote! {
+        let (#(#aliases),*): (#(#types),*) = (#(#exprs),*);
+    };
 
     // --- Generate Postcondition Checks ---
     let postconditions = spec
@@ -456,11 +495,20 @@ pub fn instrument_fn_body(spec: &Spec, original_body: &Block, is_async: bool) ->
                 assert
             }
         })
-        .chain(spec.ensures.iter().map(|condition_closure| {
-            let closure = &condition_closure.closure;
-            let closure_str = closure.to_token_stream().to_string();
-            let assert = quote! { assert!((#closure)(#binding_ident), "Postcondition failed: {}", #closure_str); };
-            if let Some(cfg) = &condition_closure.cfg {
+        .chain(spec.ensures.iter().map(|postcondition| {
+            let pattern = &postcondition.pattern;
+            let expr = &postcondition.expr;
+            // Format error message with explicit binding syntax
+            let pattern_str = pattern.to_token_stream().to_string();
+            let expr_str = expr.to_token_stream().to_string();
+            let error_msg = format!("{} => {}", pattern_str, expr_str);
+            let assert = quote! {
+                {
+                    let #pattern = #binding_ident;
+                    assert!(#expr, "Postcondition failed: {}", #error_msg);
+                }
+            };
+            if let Some(cfg) = &postcondition.cfg {
                 quote! { if cfg!(#cfg) { #assert } }
             } else {
                 assert
