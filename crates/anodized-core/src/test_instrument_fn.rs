@@ -464,10 +464,10 @@ fn test_instrument_with_complex_mixed_conditions() {
 }
 
 #[test]
-fn test_instrument_with_clones() {
+fn test_instrument_with_captures() {
     let spec: Spec = parse_quote! {
         requires: CONDITION_1,
-        clones: [
+        captures: [
             EXPR_1 as ALIAS_1,
             EXPR_2 as ALIAS_2,
         ],
@@ -483,7 +483,7 @@ fn test_instrument_with_clones() {
     let expected: Block = parse_quote! {
         {
             assert!(CONDITION_1, "Precondition failed: {}", "CONDITION_1");
-            let (ALIAS_1, ALIAS_2, __anodized_output): (_, _, #ret_type) = ((EXPR_1).clone(), (EXPR_2).clone(), #body);
+            let (ALIAS_1, ALIAS_2, __anodized_output): (_, _, #ret_type) = (EXPR_1, EXPR_2, #body);
             {
                 let output = __anodized_output;
                 assert!(CONDITION_2, "Postcondition failed: {}", "output => CONDITION_2");

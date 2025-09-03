@@ -1,4 +1,4 @@
-use crate::{CloneBinding, Condition, PostCondition, Spec};
+use crate::{Capture, Condition, PostCondition, Spec};
 use quote::ToTokens;
 use syn::{
     Block,
@@ -25,14 +25,14 @@ pub fn assert_spec_eq(left: &Spec, right: &Spec) {
     let Spec {
         requires: left_requires,
         maintains: left_maintains,
-        clones: left_clones,
+        captures: left_captures,
         ensures: left_ensures,
     } = left;
 
     let Spec {
         requires: right_requires,
         maintains: right_maintains,
-        clones: right_clones,
+        captures: right_captures,
         ensures: right_ensures,
     } = right;
 
@@ -49,10 +49,10 @@ pub fn assert_spec_eq(left: &Spec, right: &Spec) {
         &assert_condition_eq,
     );
     assert_slice_eq(
-        left_clones,
-        right_clones,
-        "clones",
-        &assert_clone_binding_eq,
+        left_captures,
+        right_captures,
+        "captures",
+        &assert_capture_eq,
     );
     assert_slice_eq(
         left_ensures,
@@ -142,14 +142,14 @@ fn assert_postcondition_eq(left: &PostCondition, right: &PostCondition, msg_pref
     );
 }
 
-fn assert_clone_binding_eq(left: &CloneBinding, right: &CloneBinding, msg_prefix: &str) {
+fn assert_capture_eq(left: &Capture, right: &Capture, msg_prefix: &str) {
     // Destructure to ensure we handle all fields
-    let CloneBinding {
+    let Capture {
         expr: left_expr,
         alias: left_alias,
     } = left;
 
-    let CloneBinding {
+    let Capture {
         expr: right_expr,
         alias: right_alias,
     } = right;

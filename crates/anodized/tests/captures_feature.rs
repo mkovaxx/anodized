@@ -1,9 +1,9 @@
 use anodized::spec;
 
-// Test simple identifier cloning with auto-generated alias
+// Test simple identifier capturing with auto-generated alias
 #[spec(
-    clones: count,
-    ensures: old_count <= count,
+    captures: count,
+    ensures: old_count <= output,
 )]
 fn increment_counter(count: u32) -> u32 {
     count + 1
@@ -32,7 +32,7 @@ impl Container {
     }
 
     #[spec(
-        clones: self.value as initial_value,
+        captures: self.value as initial_value,
         ensures: self.value == initial_value + amount,
     )]
     fn add_to_value(&mut self, amount: i32) {
@@ -40,7 +40,17 @@ impl Container {
     }
 
     #[spec(
-        clones: [
+        captures: self.items.clone() as original_items,
+        ensures: self.items.len() == original_items.len() || self.items.len() == original_items.len() + 1,
+    )]
+    fn maybe_push(&mut self, item: String, should_push: bool) {
+        if should_push {
+            self.items.push(item);
+        }
+    }
+
+    #[spec(
+        captures: [
             self.items.len() as original_len,
             self.capacity as original_cap,
         ],
@@ -58,7 +68,7 @@ impl Container {
 
     #[spec(
         requires: self.is_valid(),
-        clones: self.counter as old_counter,
+        captures: self.counter as old_counter,
         ensures: self.counter == old_counter + 1,
     )]
     fn increment_if_valid(&mut self) {
@@ -67,13 +77,13 @@ impl Container {
 }
 
 #[test]
-fn test_simple_clone_with_auto_alias() {
+fn test_simple_capture_with_auto_alias() {
     assert_eq!(increment_counter(5), 6);
     assert_eq!(increment_counter(0), 1);
 }
 
 #[test]
-fn test_clone_with_explicit_alias() {
+fn test_capture_with_explicit_alias() {
     let mut container = Container::new();
     container.value = 10;
     container.add_to_value(5);
@@ -81,7 +91,7 @@ fn test_clone_with_explicit_alias() {
 }
 
 #[test]
-fn test_multiple_clones() {
+fn test_multiple_captures() {
     let mut container = Container::new();
 
     // Add items up to capacity
@@ -98,7 +108,7 @@ fn test_multiple_clones() {
 }
 
 #[test]
-fn test_clones_with_preconditions() {
+fn test_captures_with_preconditions() {
     let mut container = Container::new();
     container.counter = 50;
 
@@ -108,13 +118,14 @@ fn test_clones_with_preconditions() {
 
 #[test]
 #[should_panic(expected = "Postcondition failed")]
-fn test_clone_postcondition_failure() {
+fn test_capture_postcondition_failure() {
     #[spec(
-        clones: value as old_value,
+        captures: value as old_value,
         ensures: value == old_value + 10,
     )]
     fn bad_increment(value: i32) -> i32 {
-        value + 5 // Wrong! Should add 10
+        // Wrong! Should add 10
+        value + 5
     }
 
     bad_increment(5);
@@ -122,7 +133,7 @@ fn test_clone_postcondition_failure() {
 
 #[test]
 #[should_panic(expected = "Precondition failed")]
-fn test_precondition_runs_before_clones() {
+fn test_precondition_runs_before_captures() {
     struct TestStruct {
         counter: u32,
     }
@@ -130,7 +141,7 @@ fn test_precondition_runs_before_clones() {
     impl TestStruct {
         #[spec(
             requires: self.counter < 100,
-            clones: self.counter as old_counter,
+            captures: self.counter as old_counter,
             ensures: self.counter == old_counter + 1,
         )]
         fn increment(&mut self) {
@@ -139,5 +150,21 @@ fn test_precondition_runs_before_clones() {
     }
 
     let mut test = TestStruct { counter: 100 };
-    test.increment(); // Should panic on precondition, not reach clones
+    // Should panic on precondition, not reach captures
+    test.increment();
+}
+
+#[test]
+fn test_explicit_clone_for_non_copy_types() {
+    let mut container = Container::new();
+    container.items.push("first".to_string());
+    container.items.push("second".to_string());
+
+    // Should not push
+    container.maybe_push("third".to_string(), false);
+    assert_eq!(container.items.len(), 2);
+
+    // Should push
+    container.maybe_push("third".to_string(), true);
+    assert_eq!(container.items.len(), 3);
 }

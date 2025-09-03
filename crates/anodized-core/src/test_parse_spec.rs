@@ -13,7 +13,7 @@ fn test_parse_simple_spec() {
     let expected = Spec {
         requires: vec![parse_quote! { is_valid(x) }],
         maintains: vec![],
-        clones: vec![],
+        captures: vec![],
         ensures: vec![PostCondition {
             pattern: parse_quote! { output },
             expr: parse_quote! { output > x },
@@ -36,7 +36,7 @@ fn test_parse_all_clauses() {
     let expected = Spec {
         requires: vec![parse_quote! { x > 0 && x.is_power_of_two() }],
         maintains: vec![parse_quote! { self.is_valid() }],
-        clones: vec![],
+        captures: vec![],
         ensures: vec![PostCondition {
             pattern: parse_quote! { z },
             expr: parse_quote! { z >= x },
@@ -67,12 +67,12 @@ fn test_parse_multiple_binds() {
 
 #[test]
 #[should_panic(
-    expected = "at most one `clones` parameter is allowed; to clone multiple values, use a list"
+    expected = "at most one `captures` parameter is allowed; to capture multiple values, use a list"
 )]
-fn test_parse_multiple_clones() {
+fn test_parse_multiple_captures() {
     let _: Spec = parse_quote! {
-        clones: value,
-        clones: count as old_count,
+        captures: value,
+        captures: count as old_count,
     };
 }
 
@@ -92,7 +92,7 @@ fn test_parse_array_of_conditions() {
     let expected = Spec {
         requires: vec![parse_quote! { x >= 0 }, parse_quote! { y.len() < 10 }],
         maintains: vec![],
-        clones: vec![],
+        captures: vec![],
         ensures: vec![
             PostCondition {
                 pattern: parse_quote! { output },
@@ -119,7 +119,7 @@ fn test_parse_ensures_with_explicit_binding() {
     let expected = Spec {
         requires: vec![],
         maintains: vec![],
-        clones: vec![],
+        captures: vec![],
         ensures: vec![PostCondition {
             pattern: parse_quote! { result },
             expr: parse_quote! { result.is_ok() || result.unwrap_err().kind() == ErrorKind::NotFound },
@@ -145,7 +145,7 @@ fn test_parse_multiple_clauses_of_same_flavor() {
             parse_quote! { y.is_ascii() },
         ],
         maintains: vec![],
-        clones: vec![],
+        captures: vec![],
         ensures: vec![
             PostCondition {
                 pattern: parse_quote! { output },
@@ -185,7 +185,7 @@ fn test_parse_mixed_single_and_array_clauses() {
             parse_quote! { z.is_empty() || z.contains("foo") },
         ],
         maintains: vec![],
-        clones: vec![],
+        captures: vec![],
         ensures: vec![
             PostCondition {
                 pattern: parse_quote! { output },
@@ -223,7 +223,7 @@ fn test_parse_cfg_attributes() {
             cfg: Some(parse_quote! { test }),
         }],
         maintains: vec![],
-        clones: vec![],
+        captures: vec![],
         ensures: vec![PostCondition {
             pattern: parse_quote! { output },
             expr: parse_quote! { output < x },
@@ -275,7 +275,7 @@ fn test_parse_macro_in_condition() {
         maintains: vec![
             parse_quote! { matches!(self.state, State::Idle | State::Running | State::Finished) },
         ],
-        clones: vec![],
+        captures: vec![],
         ensures: vec![PostCondition {
             pattern: parse_quote! { output },
             expr: parse_quote! { matches!(self.state, State::Running) },
@@ -300,7 +300,7 @@ fn test_parse_binds_pattern() {
     let expected = Spec {
         requires: vec![],
         maintains: vec![],
-        clones: vec![],
+        captures: vec![],
         ensures: vec![
             PostCondition {
                 pattern: parse_quote! { (a, b) },
@@ -341,7 +341,7 @@ fn test_parse_multiple_conditions() {
             parse_quote! { index < self.items.len() },
         ],
         maintains: vec![parse_quote! { self.items.len() <= self.items.capacity() }],
-        clones: vec![],
+        captures: vec![],
         ensures: vec![],
     };
 
@@ -361,7 +361,7 @@ fn test_parse_rename_return_value() {
     let expected = Spec {
         requires: vec![],
         maintains: vec![],
-        clones: vec![],
+        captures: vec![],
         ensures: vec![
             PostCondition {
                 pattern: parse_quote! { result },
@@ -380,16 +380,16 @@ fn test_parse_rename_return_value() {
 }
 
 #[test]
-fn test_parse_clones_simple_identifier() {
+fn test_parse_captures_simple_identifier() {
     let spec: Spec = parse_quote! {
-        clones: count,
+        captures: count,
         ensures: output == old_count + 1,
     };
 
     let expected = Spec {
         requires: vec![],
         maintains: vec![],
-        clones: vec![CloneBinding {
+        captures: vec![Capture {
             expr: parse_quote! { count },
             alias: parse_quote! { old_count },
         }],
@@ -404,16 +404,16 @@ fn test_parse_clones_simple_identifier() {
 }
 
 #[test]
-fn test_parse_clones_identifier_with_alias() {
+fn test_parse_captures_identifier_with_alias() {
     let spec: Spec = parse_quote! {
-        clones: value as prev_value,
+        captures: value as prev_value,
         ensures: output > prev_value,
     };
 
     let expected = Spec {
         requires: vec![],
         maintains: vec![],
-        clones: vec![CloneBinding {
+        captures: vec![Capture {
             expr: parse_quote! { value },
             alias: parse_quote! { prev_value },
         }],
@@ -428,9 +428,9 @@ fn test_parse_clones_identifier_with_alias() {
 }
 
 #[test]
-fn test_parse_clones_array() {
+fn test_parse_captures_array() {
     let spec: Spec = parse_quote! {
-        clones: [
+        captures: [
             count,
             index as old_index,
             value as old_value,
@@ -445,16 +445,16 @@ fn test_parse_clones_array() {
     let expected = Spec {
         requires: vec![],
         maintains: vec![],
-        clones: vec![
-            CloneBinding {
+        captures: vec![
+            Capture {
                 expr: parse_quote! { count },
                 alias: parse_quote! { old_count },
             },
-            CloneBinding {
+            Capture {
                 expr: parse_quote! { index },
                 alias: parse_quote! { old_index },
             },
-            CloneBinding {
+            Capture {
                 expr: parse_quote! { value },
                 alias: parse_quote! { old_value },
             },
@@ -482,11 +482,11 @@ fn test_parse_clones_array() {
 }
 
 #[test]
-fn test_parse_clones_with_all_clauses() {
+fn test_parse_captures_with_all_clauses() {
     let spec: Spec = parse_quote! {
         requires: x > 0,
         maintains: self.is_valid(),
-        clones: value as old_val,
+        captures: value as old_val,
         binds: result,
         ensures: result > old_val,
     };
@@ -494,7 +494,7 @@ fn test_parse_clones_with_all_clauses() {
     let expected = Spec {
         requires: vec![parse_quote! { x > 0 }],
         maintains: vec![parse_quote! { self.is_valid() }],
-        clones: vec![CloneBinding {
+        captures: vec![Capture {
             expr: parse_quote! { value },
             alias: parse_quote! { old_val },
         }],
@@ -510,24 +510,24 @@ fn test_parse_clones_with_all_clauses() {
 
 #[test]
 #[should_panic(expected = "parameters are out of order")]
-fn test_parse_clones_out_of_order() {
+fn test_parse_captures_out_of_order() {
     let _: Spec = parse_quote! {
-        clones: value,
+        captures: value,
         maintains: self.is_valid(),
     };
 }
 
 #[test]
-fn test_parse_clones_array_expression() {
+fn test_parse_captures_array_expression() {
     let spec: Spec = parse_quote! {
-        clones: [a, b, c] as slice,
+        captures: [a, b, c] as slice,
         ensures: slice.len() == 3,
     };
 
     let expected = Spec {
         requires: vec![],
         maintains: vec![],
-        clones: vec![CloneBinding {
+        captures: vec![Capture {
             expr: parse_quote! { [a, b, c] },
             alias: parse_quote! { slice },
         }],
@@ -543,36 +543,36 @@ fn test_parse_clones_array_expression() {
 
 #[test]
 #[should_panic(expected = "complex expressions require an explicit alias using `as`")]
-fn test_parse_clones_complex_expr_without_alias() {
+fn test_parse_captures_complex_expr_without_alias() {
     let _: Spec = parse_quote! {
-        clones: self.items.len(),
+        captures: self.items.len(),
         ensures: output > 0,
     };
 }
 
 #[test]
 #[should_panic(expected = "complex expressions require an explicit alias using `as`")]
-fn test_parse_clones_method_call_without_alias() {
+fn test_parse_captures_method_call_without_alias() {
     let _: Spec = parse_quote! {
-        clones: foo.bar(),
+        captures: foo.bar(),
         ensures: output > 0,
     };
 }
 
 #[test]
 #[should_panic(expected = "complex expressions require an explicit alias using `as`")]
-fn test_parse_clones_binary_expr_without_alias() {
+fn test_parse_captures_binary_expr_without_alias() {
     let _: Spec = parse_quote! {
-        clones: a + b,
+        captures: a + b,
         ensures: output > 0,
     };
 }
 
 #[test]
 #[should_panic(expected = "complex expressions require an explicit alias using `as`")]
-fn test_parse_clones_array_with_complex_expr_no_alias() {
+fn test_parse_captures_array_with_complex_expr_no_alias() {
     let _: Spec = parse_quote! {
-        clones: [
+        captures: [
             count,
             // This should fail - complex expression needs explicit alias
             self.items.len(),
@@ -582,25 +582,25 @@ fn test_parse_clones_array_with_complex_expr_no_alias() {
 }
 
 #[test]
-#[should_panic(expected = "`cfg` attribute is not supported on `clones`")]
-fn test_parse_cfg_on_clones() {
+#[should_panic(expected = "`cfg` attribute is not supported on `captures`")]
+fn test_parse_cfg_on_captures() {
     let _: Spec = parse_quote! {
         #[cfg(test)]
-        clones: value as old_value,
+        captures: value as old_value,
         ensures: output > old_value,
     };
 }
 
 #[test]
-fn test_parse_clones_edge_case_cast_expr() {
+fn test_parse_captures_edge_case_cast_expr() {
     let spec: Spec = parse_quote! {
-        clones: r as u8 as old_red,
+        captures: r as u8 as old_red,
     };
 
     let expected = Spec {
         requires: vec![],
         maintains: vec![],
-        clones: vec![CloneBinding {
+        captures: vec![Capture {
             expr: parse_quote! { r as u8 },
             alias: parse_quote! { old_red },
         }],
@@ -611,9 +611,9 @@ fn test_parse_clones_edge_case_cast_expr() {
 }
 
 #[test]
-fn test_parse_clones_edge_case_array_of_cast_exprs() {
+fn test_parse_captures_edge_case_array_of_cast_exprs() {
     let spec: Spec = parse_quote! {
-        clones: [
+        captures: [
             r as u8,
             g as u8,
             b as u8,
@@ -623,7 +623,7 @@ fn test_parse_clones_edge_case_array_of_cast_exprs() {
     let expected = Spec {
         requires: vec![],
         maintains: vec![],
-        clones: vec![CloneBinding {
+        captures: vec![Capture {
             expr: parse_quote! {
                 [
                     r as u8,
@@ -640,9 +640,9 @@ fn test_parse_clones_edge_case_array_of_cast_exprs() {
 }
 
 #[test]
-fn test_parse_clones_edge_case_list_of_cast_exprs() {
+fn test_parse_captures_edge_case_list_of_cast_exprs() {
     let spec: Spec = parse_quote! {
-        clones: [
+        captures: [
             r as u8 as old_red,
             g as u8 as old_green,
             b as u8 as old_blue,
@@ -652,16 +652,16 @@ fn test_parse_clones_edge_case_list_of_cast_exprs() {
     let expected = Spec {
         requires: vec![],
         maintains: vec![],
-        clones: vec![
-            CloneBinding {
+        captures: vec![
+            Capture {
                 expr: parse_quote! { r as u8 },
                 alias: parse_quote! { old_red },
             },
-            CloneBinding {
+            Capture {
                 expr: parse_quote! { g as u8 },
                 alias: parse_quote! { old_green },
             },
-            CloneBinding {
+            Capture {
                 expr: parse_quote! { b as u8 },
                 alias: parse_quote! { old_blue },
             },

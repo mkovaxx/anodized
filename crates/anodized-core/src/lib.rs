@@ -19,8 +19,8 @@ pub struct Spec {
     pub requires: Vec<Condition>,
     /// Invariants: conditions that must hold both when the function is called and when it returns.
     pub maintains: Vec<Condition>,
-    /// Clone bindings: expressions to clone at function entry for use in postconditions.
-    pub clones: Vec<CloneBinding>,
+    /// Captures: expressions to snapshot at function entry for use in postconditions.
+    pub captures: Vec<Capture>,
     /// Postconditions: conditions that must hold when the function returns.
     pub ensures: Vec<PostCondition>,
 }
@@ -51,12 +51,12 @@ pub struct PostCondition {
     pub cfg: Option<Meta>,
 }
 
-/// A clone binding that captures an expression's value at function entry.
+/// Captures an expression's value at function entry.
 #[derive(Debug)]
-pub struct CloneBinding {
-    /// The expression to clone.
+pub struct Capture {
+    /// The expression to capture.
     pub expr: Expr,
-    /// The identifier to bind the cloned value to.
+    /// The identifier to bind the captured value to.
     pub alias: Ident,
 }
 
@@ -67,7 +67,7 @@ impl Parse for Spec {
         let mut last_arg_order: Option<ArgOrder> = None;
         let mut requires: Vec<Condition> = vec![];
         let mut maintains: Vec<Condition> = vec![];
-        let mut clones: Vec<CloneBinding> = vec![];
+        let mut captures: Vec<Capture> = vec![];
         let mut binds_pattern: Option<Pat> = None;
         let mut ensures: Vec<PostCondition> = vec![];
 
@@ -77,7 +77,7 @@ impl Parse for Spec {
                 if current_arg_order < last_order {
                     return Err(syn::Error::new(
                         arg.get_keyword_span(),
-                        "parameters are out of order: their order must be `requires`, `maintains`, `clones`, `binds`, `ensures`",
+                        "parameters are out of order: their order must be `requires`, `maintains`, `captures`, `binds`, `ensures`",
                     ));
                 }
             }
@@ -104,14 +104,18 @@ impl Parse for Spec {
                         maintains.push(Condition { expr, cfg });
                     }
                 }
-                SpecArg::Clones { keyword, bindings } => {
-                    if !clones.is_empty() {
+                SpecArg::Captures { keyword, expr } => {
+                    if !captures.is_empty() {
                         return Err(syn::Error::new(
                             keyword.span(),
-                            "at most one `clones` parameter is allowed; to clone multiple values, use a list: `clones: [expr1, expr2, ...]`",
+                            "at most one `captures` parameter is allowed; to capture multiple values, use a list: `captures: [expr1, expr2, ...]`",
                         ));
                     }
-                    clones.extend(bindings);
+                    if let Expr::Array(array) = expr {
+                        captures.extend(interpret_array_as_captures(array)?);
+                    } else {
+                        captures.push(interpret_expr_as_capture(expr)?);
+                    }
                 }
                 SpecArg::Binds { keyword, pattern } => {
                     if binds_pattern.is_some() {
@@ -140,7 +144,7 @@ impl Parse for Spec {
         Ok(Spec {
             requires,
             maintains,
-            clones,
+            captures,
             ensures,
         })
     }
@@ -150,7 +154,7 @@ impl Parse for Spec {
 enum ArgOrder {
     Requires,
     Maintains,
-    Clones,
+    Captures,
     Binds,
     Ensures,
 }
@@ -172,9 +176,9 @@ enum SpecArg {
         cfg: Option<Meta>,
         expr: Expr,
     },
-    Clones {
-        keyword: kw::clones,
-        bindings: Vec<CloneBinding>,
+    Captures {
+        keyword: kw::captures,
+        expr: Expr,
     },
     Binds {
         keyword: kw::binds,
@@ -187,7 +191,7 @@ impl SpecArg {
         match self {
             SpecArg::Requires { .. } => ArgOrder::Requires,
             SpecArg::Maintains { .. } => ArgOrder::Maintains,
-            SpecArg::Clones { .. } => ArgOrder::Clones,
+            SpecArg::Captures { .. } => ArgOrder::Captures,
             SpecArg::Binds { .. } => ArgOrder::Binds,
             SpecArg::Ensures { .. } => ArgOrder::Ensures,
         }
@@ -198,7 +202,7 @@ impl SpecArg {
             SpecArg::Requires { keyword, .. } => keyword.span,
             SpecArg::Ensures { keyword, .. } => keyword.span,
             SpecArg::Maintains { keyword, .. } => keyword.span,
-            SpecArg::Clones { keyword, .. } => keyword.span,
+            SpecArg::Captures { keyword, .. } => keyword.span,
             SpecArg::Binds { keyword, .. } => keyword.span,
         }
     }
@@ -210,29 +214,21 @@ impl Parse for SpecArg {
         let cfg = parse_cfg_attribute(&attrs)?;
 
         let lookahead = input.lookahead1();
-        if lookahead.peek(kw::clones) {
+        if lookahead.peek(kw::captures) {
             if cfg.is_some() {
                 return Err(syn::Error::new(
                     attrs[0].span(),
-                    "`cfg` attribute is not supported on `clones`",
+                    "`cfg` attribute is not supported on `captures`",
                 ));
             }
 
-            // Parse `clones: <bindings>`
-            let keyword = input.parse::<kw::clones>()?;
+            // Parse `captures: <captures>`
+            let keyword = input.parse::<kw::captures>()?;
             input.parse::<Token![:]>()?;
-
-            // Parse an expression and interpret as binding(s)
-            let expr: Expr = input.parse()?;
-
-            let bindings = match expr {
-                // Array: interpret as list of bindings
-                Expr::Array(array) => interpret_array_as_clone_bindings(array)?,
-                // Single expression: interpret as single binding
-                _ => vec![interpret_expr_as_clone_binding(expr)?],
-            };
-
-            Ok(SpecArg::Clones { keyword, bindings })
+            Ok(SpecArg::Captures {
+                keyword,
+                expr: input.parse()?,
+            })
         } else if lookahead.peek(kw::binds) {
             if cfg.is_some() {
                 return Err(syn::Error::new(
@@ -294,21 +290,21 @@ impl Parse for SpecArg {
     }
 }
 
-/// Try to interpret an Expr::Array as a list of CloneBindings
-fn interpret_array_as_clone_bindings(array: syn::ExprArray) -> Result<Vec<CloneBinding>> {
+/// Try to interpret an Expr::Array as a list of Captures
+fn interpret_array_as_captures(array: syn::ExprArray) -> Result<Vec<Capture>> {
     let mut bindings = Vec::new();
 
     for elem in array.elems {
-        // Try to interpret each element as a binding
+        // Try to interpret each element as a capture
         // If any fails, propagate that error immediately
-        bindings.push(interpret_expr_as_clone_binding(elem)?);
+        bindings.push(interpret_expr_as_capture(elem)?);
     }
 
     Ok(bindings)
 }
 
-/// Try to interpret an Expr as a single CloneBinding
-fn interpret_expr_as_clone_binding(expr: Expr) -> Result<CloneBinding> {
+/// Try to interpret an Expr as a single Capture
+fn interpret_expr_as_capture(expr: Expr) -> Result<Capture> {
     match expr {
         // Simple identifier: count -> old_count
         Expr::Path(ref path)
@@ -319,7 +315,7 @@ fn interpret_expr_as_clone_binding(expr: Expr) -> Result<CloneBinding> {
         {
             let ident = &path.path.segments[0].ident;
             let alias = Ident::new(&format!("old_{}", ident), ident.span());
-            Ok(CloneBinding { expr, alias })
+            Ok(Capture { expr, alias })
         }
         // Cast expression: value as old_value
         Expr::Cast(cast) => {
@@ -330,7 +326,7 @@ fn interpret_expr_as_clone_binding(expr: Expr) -> Result<CloneBinding> {
                     && type_path.qself.is_none()
                 {
                     let alias = type_path.path.segments[0].ident.clone();
-                    return Ok(CloneBinding {
+                    return Ok(Capture {
                         expr: *cast.expr,
                         alias,
                     });
@@ -408,7 +404,7 @@ fn parse_cfg_attribute(attrs: &[Attribute]) -> Result<Option<Meta>> {
 mod kw {
     syn::custom_keyword!(requires);
     syn::custom_keyword!(maintains);
-    syn::custom_keyword!(clones);
+    syn::custom_keyword!(captures);
     syn::custom_keyword!(binds);
     syn::custom_keyword!(ensures);
 }
@@ -448,29 +444,29 @@ pub fn instrument_fn_body(
             }
         }));
 
-    // --- Generate Combined Body and Clone Statement ---
-    // Capture clones and execute body in a single tuple assignment
-    // This ensures cloned values aren't accessible to the body itself
+    // --- Generate Combined Body and Capture Statement ---
+    // Capture values and execute body in a single tuple assignment
+    // This ensures captured values aren't accessible to the body itself
 
-    // Chain clone aliases with output binding
+    // Chain capture aliases with output binding
     let aliases = spec
-        .clones
+        .captures
         .iter()
         .map(|cb| &cb.alias)
         .chain(std::iter::once(&binding_ident));
 
+    // Chain capture expressions with body expression
+    let capture_exprs = spec.captures.iter().map(|cb| {
+        let expr = &cb.expr;
+        quote! { #expr }
+    });
+
     // Chain underscore types with return type for tuple type annotation
     let types = spec
-        .clones
+        .captures
         .iter()
         .map(|_| quote! { _ })
         .chain(std::iter::once(quote! { #return_type }));
-
-    // Chain clone expressions with body expression
-    let clone_exprs = spec.clones.iter().map(|cb| {
-        let expr = &cb.expr;
-        quote! { (#expr).clone() }
-    });
 
     let body_expr = if is_async {
         quote! { async #original_body.await }
@@ -478,10 +474,10 @@ pub fn instrument_fn_body(
         quote! { #original_body }
     };
 
-    let exprs = clone_exprs.chain(std::iter::once(body_expr));
+    let exprs = capture_exprs.chain(std::iter::once(body_expr));
 
     // Build tuple assignment with type annotation on the tuple
-    let body_and_clones = quote! {
+    let body_and_captures = quote! {
         let (#(#aliases),*): (#(#types),*) = (#(#exprs),*);
     };
 
@@ -522,7 +518,7 @@ pub fn instrument_fn_body(
     Ok(parse_quote! {
         {
             #(#preconditions)*
-            #body_and_clones
+            #body_and_captures
             #(#postconditions)*
             #binding_ident
         }

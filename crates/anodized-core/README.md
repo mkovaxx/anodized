@@ -29,7 +29,9 @@ The `#[spec]` attribute's parameters follow a specific grammar, which is formall
 ```ebnf
 params = [ requires_params ]
        , [ maintains_params ]
-       (* not a typo: at most one `binds` *)
+       (* not a typo: at most one `captures:` *)
+       , [ captures_param ]
+       (* not a typo: at most one `binds:` *)
        , [ binds_param ]
        , [ ensures_params ];
 
@@ -39,11 +41,16 @@ ensures_params   = { ensures_param };
 
 requires_param  = [ cfg_attr ] , `requires:` , conditions, `,`;
 maintains_param = [ cfg_attr ] , `maintains:` , conditions, `,`;
+captures_param  = `captures:` , captures, `,`;
 binds_param     = `binds:` , pattern, `,`;
 ensures_param   = [ cfg_attr ] , `ensures:` , post_conds, `,`;
 
 conditions = expr | condition_list;
 condition_list = `[` , expr , { `,` , expr } , [ `,` ] , `]`;
+
+captures = capture_expr | capture_list;
+capture_list = `[` , capture_expr , { `,` , capture_expr } , [ `,` ] , `]`;
+capture_expr = expr | (expr , `as` , ident);
 
 post_conds = post_cond_expr | post_cond_list;
 post_cond_list = `[` , post_cond_expr , { `,` , post_cond_expr } , [ `,` ] , `]`;
@@ -72,6 +79,7 @@ Given an original function like this:
 #[spec(
     requires: <PRECONDITION>,
     maintains: <INVARIANT>,
+    captures: <CAPTURE_EXPR> as <ALIAS>,
     ensures: <PATTERN> => <POSTCONDITION>,
 )]
 fn my_function(<ARGUMENTS>) -> <RETURN_TYPE> {
@@ -87,12 +95,15 @@ fn my_function(<ARGUMENTS>) -> <RETURN_TYPE> {
     assert!(<PRECONDITION>, "Precondition failed: <PRECONDITION>");
     assert!(<INVARIANT>, "Pre-invariant failed: <INVARIANT>");
 
-    // 2. The original function body is executed
-    let __anodized_output = {
+    // 2. Values are captured and the original function body is executed
+    // Note: captures and body execution happen in a single tuple assignment
+    // to ensure captured values aren't accessible to the function body
+    let (<ALIAS>, __anodized_output): (_, <RETURN_TYPE>) = (<CAPTURE_EXPR>, {
         <BODY>
-    };
+    });
 
     // 3. Invariants and postconditions are checked
+    // The captured value is available to postconditions
     assert!(<INVARIANT>, "Post-invariant failed: <INVARIANT>");
     // Postcondition is checked with the return value bound by a pattern
     {
@@ -105,4 +116,6 @@ fn my_function(<ARGUMENTS>) -> <RETURN_TYPE> {
 }
 ```
 
-This transformation happens hygienically, meaning the `__anodized_output` variable will not conflict with any existing variables in your code. Any `#[cfg]` attributes on conditions are respected, and the corresponding `assert!` will be wrapped in an `if cfg!(...)` block, ensuring that expensive checks can be conditionally compiled. In release builds, this entire instrumentation is disabled, resulting in zero performance overhead.
+Note that the `__anodized_output` will be in scope for the postconditions, but referring to it is not recommended.
+
+Any `#[cfg]` attributes on conditions are respected, and the corresponding `assert!` will be wrapped in an `if cfg!(...)` block, ensuring that expensive checks can be conditionally compiled. In release builds, this entire instrumentation is disabled, resulting in zero performance overhead.

@@ -14,7 +14,7 @@ Anodized is a pragmatic suite of tools that helps improve the correctness of you
 
 Specifications serve as the foundation for a larger **ecosystem of correctness tools**. Anodized aims to connect many disparate approaches, including fuzz testing, formal verification, and more, into a unified user experience.
 
-***
+---
 
 ## Quick Start
 
@@ -137,33 +137,33 @@ fn perform_complex_operation(input: i32) -> Result<i32, String> { todo!() }
 
 This gives you fine-grained control over the performance impact of your specifications, allowing you to write the conditions thoroughly without affecting release build performance.
 
-### `clones`: Capture Entry-Time Values
+### `captures`: Capture Entry-Time Values
 
-Sometimes postconditions need to compare the function's final state with its initial state. The `clones` parameter lets you capture values at function entry for use in postconditions.
+Sometimes postconditions need to compare the function's final state with its initial state. The `captures` parameter lets you capture values at function entry for use in postconditions.
 
 ```rust, no_run
 use anodized::spec;
 
 #[spec(
-    clones: [
-        // Simple identifier: shorthand for `count as old_count`
-        *count as old_count,
-        // Complex expression: requires explicit alias
-        vec.len() as orig_len,
+    captures: [
+        // Copy types: captured directly
+        items.len() as orig_len,
+        // Non-Copy types: use .clone() explicitly
+        items.clone() as orig_items,
     ],
     ensures: [
-        *count == old_count + 1,
-        vec.len() == orig_len + 1,
+        items.len() == orig_len + 1,
+        items[0] == orig_items[0],
     ],
 )]
-fn add_item<T>(vec: &mut Vec<T>, count: &mut usize, item: T) { todo!() }
+fn add_item<T: Clone + Eq>(items: &mut Vec<T>, item: T) { todo!() }
 ```
 
-- **Simple identifiers** get an automatic `old_` prefix, i.e. `count` becomes `old_count`.
+- **Simple identifiers** get an automatic `old_` prefix, i.e. `x` becomes `old_x`.
 - **Complex expressions** require an explicit alias using `as`, i.e. `self.items.len() as orig_len`.
-- Clone bindings are captured **after** preconditions are checked but **before** the function body executes.
-- The cloned values are **only** available to postconditions, not to preconditions or the function body itself.
-- Values are cloned using Rust's `Clone` trait, so the types must implement `Clone`.
+- **No automatic cloning**: Each captured expression is **moved**. For a `Copy` type, a copy is made implicitly. For a non-`Copy` type, you must explicitly use `.clone()`, `.to_owned()`, or another appropriate method.
+- Capturing happens **after** preconditions are checked but **before** the function body executes.
+- The captured values are **only** available to postconditions, not to preconditions or the function body itself.
 
 ### `binds`: Bind the Return Value
 
@@ -194,7 +194,7 @@ use anodized::spec;
 fn increment(old_value: i32) -> i32 { todo!() }
 ```
 
- **2. Explicit Binding**: Write the postcondition with an explicit binding using `pattern => expression` syntax. This has the highest precedence and affects only that single condition.
+**2. Explicit Binding**: Write the postcondition with an explicit binding using `pattern => expression` syntax. This has the highest precedence and affects only that single condition.
 
 ```rust, no_run
 use anodized::spec;
@@ -256,9 +256,8 @@ use anodized::spec;
 
 #[spec(
     requires: *balance >= amount,
-    clones: [
-        *balance as initial_balance,
-    ],
+    maintains: *balance >= 0,
+    captures: *balance as initial_balance,
     binds: (new_balance, receipt_amount),
     ensures: [
         new_balance == initial_balance - amount,
