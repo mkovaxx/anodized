@@ -161,8 +161,8 @@ fn add_item<T: Clone + Eq>(items: &mut Vec<T>, item: T) { todo!() }
 
 - **Simple identifiers** get an automatic `old_` prefix, i.e. `x` becomes `old_x`.
 - **Complex expressions** require an explicit alias using `as`, i.e. `self.items.len() as orig_len`.
-- **No automatic cloning**: Values are captured as-is. For `Copy` types this is automatic, but for other types you must explicitly use `.clone()`, `.to_owned()`, or other appropriate methods.
-- Captures happen **after** preconditions are checked but **before** the function body executes.
+- **No automatic cloning**: Each captured expression is **moved**. For a `Copy` type, a copy is made implicitly. For a non-`Copy` type, you must explicitly use `.clone()`, `.to_owned()`, or another appropriate method.
+- Capturing happens **after** preconditions are checked but **before** the function body executes.
 - The captured values are **only** available to postconditions, not to preconditions or the function body itself.
 
 ### `binds`: Bind the Return Value
