@@ -4,7 +4,7 @@ use anodized::spec;
     binds: result,
     ensures: [
         result > output,
-        |val| val % 2 == 0,
+        val => val % 2 == 0,
     ],
 )]
 fn calculate_even_result(output: i32) -> i32 {
@@ -34,7 +34,7 @@ fn calculate_odd_result(output: i32) -> i32 {
 }
 
 #[test]
-#[should_panic(expected = "Postcondition failed: | result | result % 2 == 0")]
+#[should_panic(expected = "Postcondition failed: result => result % 2 == 0")]
 fn test_rename_panics_if_not_even() {
     calculate_odd_result(4); // Returns 5, violating the postcondition.
 }

@@ -1,4 +1,4 @@
-use crate::{CloneBinding, Condition, ConditionClosure, Spec};
+use crate::{CloneBinding, Condition, PostCondition, Spec};
 use quote::ToTokens;
 use syn::{
     Block,
@@ -9,15 +9,6 @@ impl Parse for Condition {
     fn parse(input: ParseStream) -> Result<Self> {
         Ok(Condition {
             expr: input.parse()?,
-            cfg: None,
-        })
-    }
-}
-
-impl Parse for ConditionClosure {
-    fn parse(input: ParseStream) -> Result<Self> {
-        Ok(ConditionClosure {
-            closure: input.parse()?,
             cfg: None,
         })
     }
@@ -67,7 +58,7 @@ pub fn assert_spec_eq(left: &Spec, right: &Spec) {
         left_ensures,
         right_ensures,
         "ensures",
-        &assert_condition_closure_eq,
+        &assert_postcondition_eq,
     );
 }
 
@@ -115,26 +106,31 @@ fn assert_condition_eq(left: &Condition, right: &Condition, msg_prefix: &str) {
     );
 }
 
-fn assert_condition_closure_eq(
-    left: &ConditionClosure,
-    right: &ConditionClosure,
-    msg_prefix: &str,
-) {
+fn assert_postcondition_eq(left: &PostCondition, right: &PostCondition, msg_prefix: &str) {
     // Destructure to ensure we handle all fields
-    let ConditionClosure {
-        closure: left_closure,
+    let PostCondition {
+        pattern: left_pattern,
+        expr: left_expr,
         cfg: left_cfg,
     } = left;
 
-    let ConditionClosure {
-        closure: right_closure,
+    let PostCondition {
+        pattern: right_pattern,
+        expr: right_expr,
         cfg: right_cfg,
     } = right;
 
     assert_eq!(
-        left_closure.to_token_stream().to_string(),
-        right_closure.to_token_stream().to_string(),
-        "{}`closure` does not match",
+        left_pattern.to_token_stream().to_string(),
+        right_pattern.to_token_stream().to_string(),
+        "{}`pattern` does not match",
+        msg_prefix
+    );
+
+    assert_eq!(
+        left_expr.to_token_stream().to_string(),
+        right_expr.to_token_stream().to_string(),
+        "{}`expr` does not match",
         msg_prefix
     );
 
