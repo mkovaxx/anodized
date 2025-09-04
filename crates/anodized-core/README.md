@@ -71,7 +71,7 @@ cfg_attr = `#[cfg(` , settings , `)]`;
 
 ## Runtime Checks
 
-The `#[spec]` macro transforms the function body to inject assertions as `assert!` statements, which are active in all builds by default. This process, known as instrumentation, follows a clear pattern.
+The `#[spec]` macro transforms the function body by injecting runtime checks as `assert!` statements, which are active in all builds by default. This process, known as instrumentation, follows a clear pattern.
 
 Given an original function like this:
 
