@@ -141,9 +141,9 @@ The `#[cfg]` attribute follows standard Rust semantics: when the configuration p
 
 **Common Patterns:**
 
-- `#[cfg(debug_assertions)]` - Check only in debug builds (like `debug_assert!`)
-- `#[cfg(test)]` - Check only during testing
-- No `#[cfg]` - Always check (like `assert!`)
+- `#[cfg(debug_assertions)]`: Check only in debug builds (like `debug_assert!`).
+- `#[cfg(test)]`: Check only during testing.
+- No `#[cfg]`: Always check (like `assert!`).
 
 ### `captures`: Capture Entry-Time Values
 
