@@ -135,11 +135,11 @@ use anodized::spec;
 fn perform_complex_operation(input: i32) -> Result<i32, String> { todo!() }
 ```
 
-**Important:** The `#[cfg]` attribute follows standard Rust semantics: when the configuration predicate is false, the runtime check for the condition is completely omitted. Without a `#[cfg]` attribute, the condition behaves exactly like `assert!`, always checked at runtime.
+The `#[cfg]` attribute follows standard Rust semantics: when the configuration predicate is false, the runtime check for the condition is completely omitted. Without a `#[cfg]` attribute, the condition behaves exactly like `assert!`, always checked at runtime.
 
-Anodized guarantees that each condition remains syntactically valid and type-correct regardless of its `#[cfg]` settings. This prevents conditions from becoming invalid between different build configurations, and keeps the entire spec always visible to analysis tools.
+**Important:** Anodized guarantees that each condition remains syntactically valid and type-correct regardless of its `#[cfg]` settings. This prevents conditions from becoming invalid between different build configurations, and keeps the entire spec always visible to analysis tools.
 
-**Common patterns:**
+**Common Patterns:**
 
 - `#[cfg(debug_assertions)]` - Check only in debug builds (like `debug_assert!`)
 - `#[cfg(test)]` - Check only during testing
