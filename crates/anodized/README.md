@@ -68,19 +68,21 @@ By default, runtime spec-checking is always active (just like Rust's `assert!` m
 
 **Important:** Even when a condition's runtime check is disabled via a `#[cfg]` build setting, the compiler still validates that condition at compile time for syntax errors, unknown identifiers, type mismatches, etc.
 
-## The Vision: An Ecosystem for Correctness
+## The Vision: Bridge the Present and the Future
 
-Anodized is more than just a macro for runtime assertions; it's the foundation for a future suite of interoperable correctness tools. The `#[spec]` annotations provide a **single, unified language** that other tools can use to understand your code's intent.
+The Rust ecosystem has a multitude of excellent verification tools ([Aeneas](https://github.com/AeneasVerif/aeneas), [Creusot](https://github.com/xldenis/creusot), [Kani](https://github.com/model-checking/kani), [MIRAI](https://github.com/facebookexperimental/MIRAI), [Prusti](https://www.pm.inf.ethz.ch/research/prusti.html), [Verus](https://github.com/verus-lang/verus), and [`contracts`](https://crates.io/crates/contracts) to name just a few), and the Rust Team is building [native contract support](https://github.com/rust-lang/rust/issues/128044). Each tool has its own annotation syntax, creating a learning curve and lock-in that makes it costly to switch between tools or migrate when standards emerge.
 
-The long-term vision includes developing a suite of `anodized-*` tools, such as:
+Anodized explores a complementary approach: **a common frontend** built for today's Rust, with an eye on the future. We focus on improving compatibility and portability across existing tools, instead of adding new capabilities.
 
-- `anodized-docs`: Render specifications as part of the generated documentation, making intended behavior clear to users.
+We aim to provide more than just runtime checks. We're building:
 
-- `anodized-fuzz`: Generate fuzz tests that choose valid inputs based on preconditions, making fuzzing effortless and efficient.
+- **Macro backends** that expand `#[spec]` into annotations of other systems, letting you switch without code changes.
 
-- `anodized-verify`: Prove formally that specifications are upheld both by implementations and at call sites, providing mathematical guarantees of correctness.
+- **Migration tools** to help move between spec annotation formats as the ecosystem evolves.
 
-Anodized aims to support a wide spectrum of correctness tools, enabling you to choose the best combination for each project. From simple runtime checks to full formal proofs, leveraging the exact same specification annotations.
+- **Tool bridges** such as spec-aware fuzzing and plugging spec-annotated code into verification tools.
+
+Anodized aims to help leverage today's tools and prepare for tomorrow's standards.
 
 ## `#[spec]`: Specifications
 
