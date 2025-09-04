@@ -76,7 +76,7 @@ Anodized explores a complementary approach: **a common frontend** built for toda
 
 We aim to provide more than just runtime checks. We're building:
 
-- **Macro backends** that expand `#[spec]` into annotations of other systems, letting you switch between them without code changes.
+- **Macro backends** that expand `#[spec]` into annotations of other systems, letting you switch without code changes.
 
 - **Migration tools** (`cargo anodized import/export`) to move between spec formats as the ecosystem evolves.
 
