@@ -78,9 +78,9 @@ We aim to provide more than just runtime checks. We're building:
 
 - **Macro backends** that expand `#[spec]` into annotations of other systems, letting you switch without code changes.
 
-- **Migration tools** (`cargo anodized import/export`) to move between spec formats as the ecosystem evolves.
+- **Migration tools** to help move between spec formats as the ecosystem evolves.
 
-- **Tool bridges** like `anodized-fuzz` for spec-aware fuzzing and `anodized-verify` to connect verification tools.
+- **Tool bridges** such as spec-aware fuzzing and plugging spec-annotated code into verification tools.
 
 Anodized focuses on making specifications accessible and portable, providing a practical path from today's diverse tools to tomorrow's unified standards.
 
