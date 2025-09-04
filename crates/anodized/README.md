@@ -10,9 +10,9 @@
 
 > Harden your Rust with **specifications**.
 
-Anodized is a pragmatic suite of tools that helps improve the correctness of your Rust code. Its central idea is **specification** annotations that are deeply integrated with your code, instead of isolated in comments or funky string literals.
+Anodized is a pragmatic tool that helps improve the correctness of your Rust code. Its central idea is **specification** annotations that are deeply integrated with your code, instead of isolated in comments or funky string literals.
 
-Specifications are a common ground across the ecosystem of Rust correctness tools. Anodized lets you write specs once and use them with multiple verification approaches, from runtime checks to fuzz testing to formal verification, all through a single unified syntax.
+Specifications are a common ground across the ecosystem of Rust correctness tools. Anodized provides a single unified syntax for writing specs, with runtime checks available today and integration with other verification approaches like fuzz testing and formal verification on the roadmap.
 
 ---
 
