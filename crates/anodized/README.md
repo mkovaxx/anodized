@@ -70,9 +70,9 @@ By default, runtime spec-checking is always active (just like Rust's `assert!` m
 
 ## The Vision: Bridge the Present and the Future
 
-The Rust ecosystem has a multitude of excellent verification tools ([Aeneas](https://github.com/AeneasVerif/aeneas), [Creusot](https://github.com/xldenis/creusot), [Kani](https://github.com/model-checking/kani), [MIRAI](https://github.com/facebookexperimental/MIRAI), [Prusti](https://www.pm.inf.ethz.ch/research/prusti.html), [Verus](https://github.com/verus-lang/verus), and [`contracts`](https://crates.io/crates/contracts) to name just a few), and the Rust Team is building [native contract support](https://github.com/rust-lang/rust/issues/128044).
+The Rust ecosystem has a multitude of excellent verification tools ([Aeneas](https://github.com/AeneasVerif/aeneas), [Creusot](https://github.com/xldenis/creusot), [Kani](https://github.com/model-checking/kani), [MIRAI](https://github.com/facebookexperimental/MIRAI), [Prusti](https://www.pm.inf.ethz.ch/research/prusti.html), [Verus](https://github.com/verus-lang/verus), and [`contracts`](https://crates.io/crates/contracts) to name just a few), and the Rust Team is building [native contract support](https://github.com/rust-lang/rust/issues/128044). Each tool has its own annotation syntax, creating a learning curve and lock-in that makes it costly to switch between tools or migrate when standards emerge.
 
-Anodized explores a complementary approach: **a common frontend** built for today's Rust, with an eye on the future.
+Anodized explores a complementary approach: **a common frontend** built for today's Rust, with an eye on the future. Rather than adding yet another verification engine, we focus on compatibility and portability across existing tools.
 
 We aim to provide more than just runtime checks. We're building:
 
