@@ -51,20 +51,22 @@ fn main() {
     // This call satisfies the spec and runs fine.
     println!("25 out of 100 = {}%", calculate_percentage(25.0, 100.0));
 
-    // This call violates the precondition and will panic in debug builds.
+    // This call violates the precondition and will panic.
     println!("10 out of 0 = {}%", calculate_percentage(10.0, 0.0));
 }
 ```
 
 **3. Run or test your code as usual.**
 
-In a **debug build** (`cargo run` or `cargo test`), your code is automatically instrumented to check the specifications. A spec violation will cause a panic with a descriptive error message:
+Your code is automatically instrumented to check the specifications at runtime. A spec violation will cause a panic with a descriptive error message:
 
 ```text
 thread 'main' panicked at 'Precondition failed: whole > 0', src/main.rs:17:5
 ```
 
-In a **release build** (`cargo run --release`), _runtime_ spec-checking is disabled, resulting in **zero performance cost** to your production code. Note that the compiler still checks specifications for errors such as bad syntax, unknown identifiers, type mismatches, etc.
+By default, runtime spec-checking is always active (just like Rust's `assert!` macro). For performance-sensitive code, you can use `#[cfg]` attributes to control when checks run (see the [#[cfg] section](#cfg-configure-runtime-checks) below).
+
+**Important:** Even when a condition's runtime check is disabled via a `#[cfg]` build setting, the compiler still validates that condition at compile time for syntax errors, unknown identifiers, type mismatches, etc.
 
 ## The Vision: An Ecosystem for Correctness
 
@@ -116,7 +118,7 @@ fn push_checked<T>(vec: &mut Vec<T>, value: T) { todo!() }
 
 ### `#[cfg]`: Configure Runtime Checks
 
-You can use the standard `#[cfg]` attribute to conditionally enable or disable the _runtime checks_ for any condition. This is ideal for expensive checks that you only want to run during testing or in debug builds.
+By default, each condition is checked at runtime, just like Rust's `assert!` macro: it's always active in both debug and release builds. You can use the standard `#[cfg]` attribute to select build configurations under which the runtime check is active.
 
 ```rust, no_run
 use anodized::spec;
@@ -126,16 +128,22 @@ use anodized::spec;
     #[cfg(test)]
     requires: input > 0,
 
-    // Runtime checks only when debug assertions are enabled.
+    // Runtime checks only in debug builds (like debug_assert!)
     #[cfg(debug_assertions)]
     ensures: ref output => output.is_ok(),
 )]
 fn perform_complex_operation(input: i32) -> Result<i32, String> { todo!() }
 ```
 
-**Important:** Anodized guarantees that all your specifications are syntactically valid and type-correct, regardless of the `#[cfg]` attribute. The attribute only controls whether a check is performed at _runtime_. This ensures that e.g. a specification valid in `test` builds can't become invalid in `release` builds, and it allows other tools in the ecosystem (like static analyzers) to always see the full specification.
+The `#[cfg]` attribute follows standard Rust semantics: when the configuration predicate is false, the runtime check for the condition is completely omitted. Without a `#[cfg]` attribute, the condition behaves exactly like `assert!`, always checked at runtime.
 
-This gives you fine-grained control over the performance impact of your specifications, allowing you to write the conditions thoroughly without affecting release build performance.
+**Important:** Anodized guarantees that each condition remains syntactically valid and type-correct regardless of its `#[cfg]` settings. This prevents conditions from becoming invalid between different build configurations, and keeps the entire spec always visible to analysis tools.
+
+**Common Patterns:**
+
+- `#[cfg(debug_assertions)]`: Check only in debug builds (like `debug_assert!`).
+- `#[cfg(test)]`: Check only during testing.
+- No `#[cfg]`: Always check (like `assert!`).
 
 ### `captures`: Capture Entry-Time Values
 
