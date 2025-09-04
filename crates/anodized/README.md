@@ -118,7 +118,7 @@ fn push_checked<T>(vec: &mut Vec<T>, value: T) { todo!() }
 
 ### `#[cfg]`: Configure Runtime Checks
 
-By default, all specifications are checked at runtime, just like Rust's `assert!` macro: they're always active in both debug and release builds. You can use the standard `#[cfg]` attribute to control when runtime checks occur, making them conditional based on your build configuration.
+By default, each condition is checked at runtime, just like Rust's `assert!` macro: it's always active in both debug and release builds. You can use the standard `#[cfg]` attribute to select build configurations under which the runtime check is active.
 
 ```rust, no_run
 use anodized::spec;
@@ -135,9 +135,9 @@ use anodized::spec;
 fn perform_complex_operation(input: i32) -> Result<i32, String> { todo!() }
 ```
 
-**Important:** The `#[cfg]` attribute follows standard Rust semantics: when the configuration predicate is false, the runtime check is completely omitted. Without a `#[cfg]` attribute, conditions behave exactly like `assert!`, always checked at runtime.
+**Important:** The `#[cfg]` attribute follows standard Rust semantics: when the configuration predicate is false, the runtime check for the condition is completely omitted. Without a `#[cfg]` attribute, the condition behaves exactly like `assert!`, always checked at runtime.
 
-Anodized guarantees that all conditions remain syntactically valid and type-correct regardless of their `#[cfg]` settings. This keeps conditions always visible to analysis tools and prevents them from becoming invalid between different build configurations.
+Anodized guarantees that each condition remains syntactically valid and type-correct regardless of its `#[cfg]` settings. This prevents conditions from becoming invalid between different build configurations, and keeps the entire spec always visible to analysis tools.
 
 **Common patterns:**
 
