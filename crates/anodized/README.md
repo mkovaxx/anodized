@@ -137,7 +137,7 @@ fn perform_complex_operation(input: i32) -> Result<i32, String> { todo!() }
 
 **Important:** The `#[cfg]` attribute follows standard Rust semantics: when the configuration predicate is false, the runtime check is completely omitted. Without a `#[cfg]` attribute, conditions behave exactly like `assert!`, always checked at runtime.
 
-Anodized guarantees that all specifications remain syntactically valid and type-correct regardless of configuration. This keeps specifications always visible to analysis tools and prevents them from becoming invalid between different build configurations.
+Anodized guarantees that all conditions remain syntactically valid and type-correct regardless of their `#[cfg]` settings. This keeps conditions always visible to analysis tools and prevents them from becoming invalid between different build configurations.
 
 **Common patterns:**
 
