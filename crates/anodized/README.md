@@ -64,7 +64,9 @@ Your code is automatically instrumented to check the specifications at runtime. 
 thread 'main' panicked at 'Precondition failed: whole > 0', src/main.rs:17:5
 ```
 
-By default, runtime spec-checking is always active (just like Rust's `assert!` macro). The compiler also validates all specifications at compile time for syntax errors, unknown identifiers, type mismatches, etc. For performance-sensitive code, you can use `#[cfg]` attributes to control when checks run (see the [#[cfg] section](#cfg-configure-runtime-checks) below).
+By default, runtime spec-checking is always active (just like Rust's `assert!` macro). For performance-sensitive code, you can use `#[cfg]` attributes to control when checks run (see the [#[cfg] section](#cfg-configure-runtime-checks) below).
+
+**Important:** Even when a condition's runtime check is disabled via a `#[cfg]` build setting, the compiler still validates that condition at compile time for syntax errors, unknown identifiers, type mismatches, etc.
 
 ## The Vision: An Ecosystem for Correctness
 
