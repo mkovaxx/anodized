@@ -70,7 +70,7 @@ By default, runtime spec-checking is always active (just like Rust's `assert!` m
 
 ## The Vision: Bridge the Present and the Future
 
-The Rust ecosystem has a multitude of excellent verification tools ([Kani](https://github.com/model-checking/kani), [Prusti](https://www.pm.inf.ethz.ch/research/prusti.html), [Creusot](https://github.com/xldenis/creusot), [MIRAI](https://github.com/facebookexperimental/MIRAI), [`contracts`](https://crates.io/crates/contracts)), and the Rust Team is building [native contract support](https://github.com/rust-lang/rust/issues/128044).
+The Rust ecosystem has a multitude of excellent verification tools ([Aeneas](https://github.com/AeneasVerif/aeneas), [Creusot](https://github.com/xldenis/creusot), [Kani](https://github.com/model-checking/kani), [MIRAI](https://github.com/facebookexperimental/MIRAI), [Prusti](https://www.pm.inf.ethz.ch/research/prusti.html), [Verus](https://github.com/verus-lang/verus), and [`contracts`](https://crates.io/crates/contracts) to name just a few), and the Rust Team is building [native contract support](https://github.com/rust-lang/rust/issues/128044).
 
 Anodized explores a complementary approach: **a common frontend** built for today's Rust, with an eye on the future.
 
