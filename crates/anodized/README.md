@@ -70,34 +70,19 @@ By default, runtime spec-checking is always active (just like Rust's `assert!` m
 
 ## The Vision: Bridge the Present and the Future
 
-The Rust ecosystem already has excellent verification tools: [Kani](https://github.com/model-checking/kani) for bounded model checking, [Prusti](https://www.pm.inf.ethz.ch/research/prusti.html) for permission-based verification, [Creusot](https://github.com/xldenis/creusot) for SMT-based proofs, [MIRAI](https://github.com/facebookexperimental/MIRAI) for abstract interpretation, and the [`contracts`](https://crates.io/crates/contracts) crate for runtime checking. Meanwhile, the Rust language team is [working toward](https://github.com/rust-lang/rust/issues/128044) native contract support that will provide a standard specification language.
+The Rust ecosystem has a multitude of excellent verification tools, such as ([Kani](https://github.com/model-checking/kani), [Prusti](https://www.pm.inf.ethz.ch/research/prusti.html), [Creusot](https://github.com/xldenis/creusot), [MIRAI](https://github.com/facebookexperimental/MIRAI), [`contracts`](https://crates.io/crates/contracts)), and the Rust team is building [native contract support](https://github.com/rust-lang/rust/issues/128044).
 
-Anodized explores a complementary approach: **a common frontend for specifications** built for stable Rust today, while keeping an eye on the future.
+Anodized explores a complementary approach: **a common frontend** built for today's Rust, with an eye on the future.
 
-### Near-Term Goals
+We aim to provide more than just runtime checks. We're building:
 
-Beyond runtime checking, Anodized aims to explore:
+- **Macro backends** that expand `#[spec]` into annotations of other systems, letting you switch verification backends without changing code.
 
-- **Macro adapters** that expand `#[spec]`s into annotations of other existing tools, allowing projects to switch between systems without changing their code.
-- **Migration tools** (`cargo anodized import/export`) to help projects move between different specification syntaxes.
+- **Migration tools** (`cargo anodized import/export`) to move between specification formats as the ecosystem evolves.
 
-### Long-Term Direction
+- **Tool bridges** like `anodized-fuzz` for specification-aware fuzzing and `anodized-verify` to connect with existing verification tools.
 
-As native contracts mature in Rust, Anodized aims to:
-
-- **Provide migration paths** from today's library-based specifications to tomorrow's language-level contracts.
-- **Lower barriers to entry** with approachable syntax and clear error messages for developers new to specifications.
-- **Serve as a testbed** for ergonomics and real-world use cases.
-
-Planned extensions include:
-
-- `anodized-docs`: Render specifications in generated documentation.
-- `anodized-fuzz`: Generate specification-aware fuzz tests.
-- `anodized-verify`: Bridge to verification backends like Kani or Prusti.
-
-### Building Together
-
-The path to pervasive correctness in Rust requires many complementary approaches. Anodized focuses on making specifications more accessible and portable, while learning from the deep expertise embedded in existing verification tools. We welcome collaboration and feedback to explore these ideas together.
+Anodized focuses on making specifications accessible and portable, providing a practical path from today's diverse tools to tomorrow's unified standards.
 
 ## `#[spec]`: Specifications
 
