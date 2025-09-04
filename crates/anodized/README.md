@@ -82,7 +82,7 @@ We aim to provide more than just runtime checks. We're building:
 
 - **Tool bridges** such as spec-aware fuzzing and plugging spec-annotated code into verification tools.
 
-Anodized focuses on making specifications accessible and portable, providing a practical path from today's diverse tools to tomorrow's unified standards.
+Anodized focuses on making specifications accessible and portable, finding a path from today's diverse tools to tomorrow's unified standards.
 
 ## `#[spec]`: Specifications
 
