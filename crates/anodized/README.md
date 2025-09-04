@@ -78,7 +78,7 @@ We aim to provide more than just runtime checks. We're building:
 
 - **Macro backends** that expand `#[spec]` into annotations of other systems, letting you switch without code changes.
 
-- **Migration tools** to help move between spec formats as the ecosystem evolves.
+- **Migration tools** to help move between spec annotation formats as the ecosystem evolves.
 
 - **Tool bridges** such as spec-aware fuzzing and plugging spec-annotated code into verification tools.
 
