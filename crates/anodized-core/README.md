@@ -71,7 +71,7 @@ cfg_attr = `#[cfg(` , settings , `)]`;
 
 ## Runtime Checks
 
-When runtime checks are enabled (by default, in debug builds), the `#[spec]` macro transforms the function body to inject assertions. This process, known as instrumentation, follows a clear pattern.
+The `#[spec]` macro transforms the function body to inject assertions as `assert!` statements, which are active in all builds by default. This process, known as instrumentation, follows a clear pattern.
 
 Given an original function like this:
 
@@ -118,4 +118,4 @@ fn my_function(<ARGUMENTS>) -> <RETURN_TYPE> {
 
 Note that the `__anodized_output` will be in scope for the postconditions, but referring to it is not recommended.
 
-Any `#[cfg]` attributes on conditions are respected, and the corresponding `assert!` will be wrapped in an `if cfg!(...)` block, ensuring that expensive checks can be conditionally compiled. In release builds, this entire instrumentation is disabled, resulting in zero performance overhead.
+When a condition has a `#[cfg(...)]` attribute, the corresponding `assert!` is wrapped in an `if cfg!(...)` block. This follows standard Rust `#[cfg]` semantics—the check only runs when the configuration predicate is true. Without a `#[cfg]` attribute, the `assert!` behaves exactly like a plain `assert!` in your code—always active unless you compile with optimizations that specifically remove assertions.
