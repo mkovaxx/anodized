@@ -39,8 +39,8 @@ use anodized::spec;
         whole > 0.0,
     ],
     ensures: [
-        output >= 0.0,
-        output <= 100.0,
+        *output >= 0.0,
+        *output <= 100.0,
     ],
 )]
 fn calculate_percentage(part: f64, whole: f64) -> f64 {
@@ -132,7 +132,7 @@ use anodized::spec;
 
     // Runtime checks only in debug builds (like debug_assert!)
     #[cfg(debug_assertions)]
-    ensures: ref output => output.is_ok(),
+    ensures: output.is_ok(),
 )]
 fn perform_complex_operation(input: i32) -> Result<i32, String> { todo!() }
 ```
@@ -183,12 +183,12 @@ In **postconditions** (`ensures`), you can refer to the function's return value 
 use anodized::spec;
 
 #[spec(
-    ensures: output > 0,
+    ensures: *output > 0,
 )]
 fn get_positive_value() -> i32 { todo!() }
 ```
 
-**Note** that a postcondition always binds the return value. When you write a postcondition as a "naked" expression, that is shorthand for using the default binding, i.e. `output => <expression>`. In error messages, a postcondition is always displayed with its explicit binding to make it clear (e.g. `output => output > 0`).
+**Note** that a postcondition always binds the return value. When you write a postcondition as a "naked" expression, that is shorthand for a closure with the default binding, i.e. `|output| <expression>`. The closure always receives the return value as a reference. In error messages, a postcondition is always displayed as a closure to make it clear (e.g. `| output | *output > 0`).
 
 If the name `output` collides with an existing identifier, you can choose a different name for it in two ways:
 
@@ -199,7 +199,7 @@ use anodized::spec;
 
 #[spec(
     binds: new_value,
-    ensures: new_value > old_value,
+    ensures: *new_value > old_value,
 )]
 fn increment(old_value: i32) -> i32 { todo!() }
 ```
@@ -214,7 +214,7 @@ use anodized::spec;
         // This postcondition uses the default binding.
         output.is_ascii(),
         // This postcondition binds the output as `c`.
-        c => c.is_digit(16),
+        |c| c.is_digit(16),
     ],
 )]
 fn create_data() -> char { todo!() }
@@ -231,9 +231,9 @@ use anodized::spec;
     binds: result,
     ensures: [
         // This postcondition uses the spec-wide binding: `result`.
-        result > output,
+        *result > output,
         // This postcondition uses an explicit binding: `val`.
-        val => val % 2 == 0,
+        |val| *val % 2 == 0,
     ],
 )]
 fn calculate_even_result(output: i32) -> i32 { todo!() }
@@ -253,7 +253,7 @@ use anodized::spec;
     ensures: [
         a <= b,
         // They can also reference the arguments.
-        (a, b) == pair || (b, a) == pair,
+        (*a, *b) == pair || (*b, *a) == pair,
     ],
 )]
 fn sort_pair(pair: (i32, i32)) -> (i32, i32) { todo!() }
@@ -270,9 +270,9 @@ use anodized::spec;
     captures: *balance as initial_balance,
     binds: (new_balance, receipt_amount),
     ensures: [
-        new_balance == initial_balance - amount,
-        receipt_amount == amount,
-        *balance == new_balance,
+        *new_balance == initial_balance - amount,
+        *receipt_amount == amount,
+        *balance == *new_balance,
     ],
 )]
 fn withdraw(balance: &mut u64, amount: u64) -> (u64, u64) { todo!() }
