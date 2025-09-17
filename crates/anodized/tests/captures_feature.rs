@@ -3,7 +3,7 @@ use anodized::spec;
 // Test simple identifier capturing with auto-generated alias
 #[spec(
     captures: count,
-    ensures: old_count <= output,
+    ensures: old_count <= *output,
 )]
 fn increment_counter(count: u32) -> u32 {
     count + 1
@@ -120,15 +120,16 @@ fn test_captures_with_preconditions() {
 #[should_panic(expected = "Postcondition failed")]
 fn test_capture_postcondition_failure() {
     #[spec(
-        captures: value as old_value,
-        ensures: value == old_value + 10,
+        captures: *value as old_value,
+        ensures: *value == old_value + 10,
     )]
-    fn bad_increment(value: i32) -> i32 {
+    fn bad_increment(value: &mut i32) {
         // Wrong! Should add 10
-        value + 5
+        *value += 5
     }
 
-    bad_increment(5);
+    let mut val = 5;
+    bad_increment(&mut val);
 }
 
 #[test]

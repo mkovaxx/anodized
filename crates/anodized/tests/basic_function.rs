@@ -2,7 +2,7 @@ use anodized::spec;
 
 #[spec(
     requires: divisor != 0,
-    ensures: output < dividend,
+    ensures: *output < dividend,
 )]
 fn checked_divide(dividend: i32, divisor: i32) -> i32 {
     dividend / divisor

@@ -480,8 +480,27 @@ pub fn instrument_fn_body(
             }
         })
         .chain(spec.ensures.iter().map(|postcondition| {
-            let closure = &postcondition.closure;
-            let closure_str = closure.to_token_stream().to_string();
+            // Clone the closure and add type annotation to its parameter.
+            let mut closure = postcondition.closure.clone();
+            let closure_str = postcondition.closure.to_token_stream().to_string();
+
+            // Add type annotation: convert |param| to |param: &ReturnType|.
+            if let Some(first_input) = closure.inputs.first_mut() {
+                // Wrap the pattern with a type annotation
+                let pattern = first_input.clone();
+                *first_input = syn::Pat::Type(syn::PatType {
+                    attrs: vec![],
+                    pat: Box::new(pattern),
+                    colon_token: Default::default(),
+                    ty: Box::new(syn::Type::Reference(syn::TypeReference {
+                        and_token: Default::default(),
+                        lifetime: None,
+                        mutability: None,
+                        elem: Box::new(return_type.clone()),
+                    })),
+                });
+            }
+
             let assert = quote! {
                 assert!((#closure)(&#binding_ident), "Postcondition failed: {}", #closure_str);
             };
