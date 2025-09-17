@@ -334,14 +334,28 @@ fn interpret_expr_as_capture(expr: Expr) -> Result<Capture> {
     }
 }
 
-fn interpret_expr_as_postcondition(expr: Expr, default_pattern: Pat) -> syn::ExprClosure {
+fn interpret_expr_as_postcondition(expr: Expr, default_binding: Pat) -> syn::ExprClosure {
     match expr {
-        // Already a closure - use as-is
+        // Already a closure, use as-is.
         Expr::Closure(closure) => closure,
-        // Naked expression - wrap in a closure with default binding
-        expr => {
-            parse_quote! { |#default_pattern| #expr }
-        }
+        // Naked expression, wrap in a closure with default binding.
+        expr => syn::ExprClosure {
+            attrs: vec![],
+            lifetimes: None,
+            constness: None,
+            movability: None,
+            asyncness: None,
+            capture: None,
+            or1_token: Default::default(),
+            inputs: {
+                let mut inputs = syn::punctuated::Punctuated::new();
+                inputs.push(syn::Pat::from(default_binding));
+                inputs
+            },
+            or2_token: Default::default(),
+            output: syn::ReturnType::Default,
+            body: Box::new(expr),
+        },
     }
 }
 
@@ -466,17 +480,10 @@ pub fn instrument_fn_body(
             }
         })
         .chain(spec.ensures.iter().map(|postcondition| {
-            let pattern = &postcondition.pattern;
-            let expr = &postcondition.expr;
-            // Format error message with explicit binding syntax
-            let pattern_str = pattern.to_token_stream().to_string();
-            let expr_str = expr.to_token_stream().to_string();
-            let error_msg = format!("{} => {}", pattern_str, expr_str);
+            let closure = &postcondition.closure;
+            let closure_str = closure.to_token_stream().to_string();
             let assert = quote! {
-                {
-                    let #pattern = #binding_ident;
-                    assert!(#expr, "Postcondition failed: {}", #error_msg);
-                }
+                assert!((#closure)(&#binding_ident), "Postcondition failed: {}", #closure_str);
             };
             if let Some(cfg) = &postcondition.cfg {
                 quote! { if cfg!(#cfg) { #assert } }
