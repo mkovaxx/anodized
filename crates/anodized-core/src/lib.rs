@@ -40,8 +40,8 @@ pub struct Condition {
 /// A postcondition represented by a closure that takes the return value as a reference.
 #[derive(Debug)]
 pub struct PostCondition {
-    /// The closure that validates the postcondition, e.g. `|output| output > 0`.
-    /// The closure always receives the return value as a reference.
+    /// The closure that validates the postcondition, taking the function's
+    /// return value by reference, e.g. `|output| *output > 0`.
     pub closure: syn::ExprClosure,
     /// **Static analyzers can safely ignore this field.**
     ///
@@ -347,11 +347,7 @@ fn interpret_expr_as_postcondition(expr: Expr, default_binding: Pat) -> syn::Exp
             asyncness: None,
             capture: None,
             or1_token: Default::default(),
-            inputs: {
-                let mut inputs = syn::punctuated::Punctuated::new();
-                inputs.push(syn::Pat::from(default_binding));
-                inputs
-            },
+            inputs: syn::punctuated::Punctuated::from_iter([default_binding]),
             or2_token: Default::default(),
             output: syn::ReturnType::Default,
             body: Box::new(expr),
