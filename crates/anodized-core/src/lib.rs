@@ -343,16 +343,17 @@ fn interpret_expr_as_postcondition(expr: Expr, default_binding: Pat) -> Result<s
     match expr {
         // Already a closure, validate it has exactly one argument.
         Expr::Closure(closure) => {
-            if closure.inputs.len() != 1 {
-                return Err(syn::Error::new(
-                    closure.or1_token.span,
+            if closure.inputs.len() == 1 {
+                Ok(closure)
+            } else {
+                Err(syn::Error::new_spanned(
+                    closure.or1_token,
                     format!(
                         "postcondition closure must have exactly one argument, found {}",
                         closure.inputs.len()
                     ),
-                ));
+                ))
             }
-            Ok(closure)
         }
         // Naked expression, wrap in a closure with default binding.
         expr => Ok(syn::ExprClosure {
