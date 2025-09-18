@@ -188,9 +188,9 @@ use anodized::spec;
 fn get_positive_value() -> i32 { todo!() }
 ```
 
-**Note** that a postcondition always binds the return value. When you write a postcondition as a "naked" expression, that is shorthand for a closure with the default binding, i.e. `|output| <expression>`. The closure always receives the return value as a reference. In error messages, a postcondition is always displayed as a closure to make it clear (e.g. `| output | *output > 0`).
+**Note** that a postcondition is a closure that takes the function's return value by reference. When you write a postcondition as a "naked" expression `<EXPR>`, that is shorthand for `|<PATTERN>| <EXPR>`, where `<PATTERN>` is the spec-wide default binding. In error messages, a postcondition is always displayed as a closure to make it clear (e.g. `| output | *output > 0`).
 
-If the name `output` collides with an existing identifier, you can choose a different name for it in two ways:
+The default binding is `output`. If that collides with an existing identifier, you can choose a different name for it in two ways:
 
 **1. Spec-Wide Binding**: Use the `binds` parameter to set a new name for the return value across all postconditions in the specification. It must be placed immediately before any `ensures` conditions.
 
@@ -204,7 +204,7 @@ use anodized::spec;
 fn increment(old_value: i32) -> i32 { todo!() }
 ```
 
-**2. Explicit Binding**: Write the postcondition with an explicit binding using `pattern => expression` syntax. This has the highest precedence and affects only that single condition.
+**2. Explicit Binding**: Write the postcondition with an explicit binding, i.e. as a closure `|<PATTERN>| <EXPR>`. This has the highest precedence and affects only that single condition.
 
 ```rust, no_run
 use anodized::spec;
