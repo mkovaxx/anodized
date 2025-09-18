@@ -83,7 +83,7 @@ fn test_parse_array_of_conditions() {
         ],
         ensures: [
             output != x,
-            output.is_some(),
+            |output| output.is_some(),
         ],
     };
 
@@ -131,7 +131,7 @@ fn test_parse_multiple_clauses_of_same_flavor() {
         requires: x > 0 || x < -10,
         requires: y.is_ascii(),
         ensures: output < x,
-        ensures: output.len() >= y.len(),
+        ensures: |output| output.len() >= y.len(),
     };
 
     let expected = Spec {
