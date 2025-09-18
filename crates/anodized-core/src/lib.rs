@@ -131,7 +131,10 @@ impl Parse for Spec {
                     if let Expr::Array(conditions) = expr {
                         for expr in conditions.elems {
                             ensures.push(PostCondition {
-                                closure: interpret_expr_as_postcondition(expr, default_pattern.clone())?,
+                                closure: interpret_expr_as_postcondition(
+                                    expr,
+                                    default_pattern.clone(),
+                                )?,
                                 cfg: cfg.clone(),
                             });
                         }
