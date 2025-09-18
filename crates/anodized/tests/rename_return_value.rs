@@ -3,8 +3,8 @@ use anodized::spec;
 #[spec(
     binds: result,
     ensures: [
-        result > output,
-        val => val % 2 == 0,
+        *result > output,
+        |val| *val % 2 == 0,
     ],
 )]
 fn calculate_even_result(output: i32) -> i32 {
@@ -23,7 +23,7 @@ fn test_rename_success() {
 
 #[spec(
     binds: result,
-    ensures: result % 2 == 0,
+    ensures: *result % 2 == 0,
 )]
 fn calculate_odd_result(output: i32) -> i32 {
     if output % 2 == 0 {
@@ -34,7 +34,7 @@ fn calculate_odd_result(output: i32) -> i32 {
 }
 
 #[test]
-#[should_panic(expected = "Postcondition failed: result => result % 2 == 0")]
+#[should_panic(expected = "Postcondition failed: | result | * result % 2 == 0")]
 fn test_rename_panics_if_not_even() {
     // Returns 5, violating the postcondition.
     calculate_odd_result(4);

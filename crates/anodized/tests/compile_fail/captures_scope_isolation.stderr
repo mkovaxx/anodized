@@ -1,0 +1,23 @@
+error[E0425]: cannot find value `old_x` in this scope
+  --> tests/compile_fail/captures_scope_isolation.rs:20:13
+   |
+20 |     let a = old_x;
+   |             ^^^^^ not found in this scope
+
+error[E0425]: cannot find value `old_y` in this scope
+  --> tests/compile_fail/captures_scope_isolation.rs:22:13
+   |
+22 |     let b = old_y;
+   |             ^^^^^ not found in this scope
+
+error[E0425]: cannot find value `old_x` in this scope
+  --> tests/compile_fail/captures_scope_isolation.rs:29:9
+   |
+29 |         old_x > 0,
+   |         ^^^^^ not found in this scope
+
+error[E0425]: cannot find value `old_x` in this scope
+  --> tests/compile_fail/captures_scope_isolation.rs:42:9
+   |
+42 |         old_x > 0,
+   |         ^^^^^ not found in this scope

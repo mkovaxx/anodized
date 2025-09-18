@@ -1,0 +1,11 @@
+error: postcondition closure must have exactly one argument, found 2
+ --> tests/compile_fail/closure_validation.rs:5:14
+  |
+5 |     ensures: |x, y| x > 0,
+  |              ^
+
+error: postcondition closure must have exactly one argument, found 0
+  --> tests/compile_fail/closure_validation.rs:13:14
+   |
+13 |     ensures: || true,
+   |              ^

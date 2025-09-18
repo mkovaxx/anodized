@@ -9,20 +9,24 @@ use anodized::spec;
         y as old_y,
     ],
     ensures: [
-        old_x == 5,  // OK: aliases are available in ensures
-        old_y == 10, // OK: aliases are available in ensures
+        // OK: aliases are available in ensures.
+        old_x == 5,
+        // OK: aliases are available in ensures.
+        old_y == 10,
     ],
 )]
 fn test_captures_not_in_body(x: i32, y: i32) -> i32 {
-    // Capture aliases should not be accessible in function body
-    let a = old_x; // Should be an error: `old_x` must not be in scope.
-    let b = old_y; // Should be an error: `old_y` must not be in scope.
+    // Should be an error: `old_x` must not be in scope.
+    let a = old_x;
+    // Should be an error: `old_y` must not be in scope.
+    let b = old_y;
     x + y
 }
 
 #[spec(
     requires: [
-        old_x > 0, // Should be an error: `old_x` must not be in scope.
+        // Should be an error: `old_x` must not be in scope.
+        old_x > 0,
     ],
     captures: [
         x as old_x,
@@ -34,7 +38,8 @@ fn test_captures_not_in_requires(x: i32) {
 
 #[spec(
     maintains: [
-        old_x > 0, // Should be an error: `old_x` must not be in scope.
+        // Should be an error: `old_x` must not be in scope.
+        old_x > 0,
     ],
     captures: [
         x as old_x,

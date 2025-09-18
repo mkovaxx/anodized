@@ -37,13 +37,12 @@ pub struct Condition {
     pub cfg: Option<Meta>,
 }
 
-/// A postcondition represented by a binding pattern and a `bool`-valued expression.
+/// A postcondition represented by a closure that takes the return value as a reference.
 #[derive(Debug)]
 pub struct PostCondition {
-    /// The pattern to bind the return value, e.g. `output`, `ref output`, `(a, b)`.
-    pub pattern: Pat,
-    /// The `bool`-valued expression.
-    pub expr: Expr,
+    /// The closure that validates the postcondition, taking the function's
+    /// return value by reference, e.g. `|output| *output > 0`.
+    pub closure: syn::ExprClosure,
     /// **Static analyzers can safely ignore this field.**
     ///
     /// Build configuration filter to decide whether to add runtime checks.
@@ -126,15 +125,23 @@ impl Parse for Spec {
                     }
                     binds_pattern = Some(pattern);
                 }
-                SpecArg::Ensures { cfg, postconds, .. } => {
+                SpecArg::Ensures { cfg, expr, .. } => {
                     let default_pattern = binds_pattern.clone().unwrap_or(parse_quote! { output });
 
-                    // Convert PostConditionExpr directly to PostCondition
-                    for pc in postconds {
+                    if let Expr::Array(conditions) = expr {
+                        for expr in conditions.elems {
+                            ensures.push(PostCondition {
+                                closure: interpret_expr_as_postcondition(
+                                    expr,
+                                    default_pattern.clone(),
+                                )?,
+                                cfg: cfg.clone(),
+                            });
+                        }
+                    } else {
                         ensures.push(PostCondition {
-                            pattern: pc.pattern.unwrap_or(default_pattern.clone()),
-                            expr: pc.expr,
-                            cfg: cfg.clone(),
+                            closure: interpret_expr_as_postcondition(expr, default_pattern)?,
+                            cfg,
                         });
                     }
                 }
@@ -169,7 +176,7 @@ enum SpecArg {
     Ensures {
         keyword: kw::ensures,
         cfg: Option<Meta>,
-        postconds: Vec<PostConditionExpr>,
+        expr: Expr,
     },
     Maintains {
         keyword: kw::maintains,
@@ -266,23 +273,10 @@ impl Parse for SpecArg {
             // Parse `ensures: <conditions>`
             let keyword = input.parse::<kw::ensures>()?;
             input.parse::<Token![:]>()?;
-
-            // Parse either a single postcondition or an array
-            let postconds = if input.peek(syn::token::Bracket) {
-                // Parse array using Punctuated
-                let content;
-                syn::bracketed!(content in input);
-                let punctuated = content.parse_terminated(PostConditionExpr::parse, Token![,])?;
-                punctuated.into_iter().collect()
-            } else {
-                // Single postcondition
-                vec![input.parse::<PostConditionExpr>()?]
-            };
-
             Ok(SpecArg::Ensures {
                 keyword,
                 cfg,
-                postconds,
+                expr: input.parse()?,
             })
         } else {
             Err(lookahead.error())
@@ -345,33 +339,36 @@ fn interpret_expr_as_capture(expr: Expr) -> Result<Capture> {
     }
 }
 
-/// Internal type to represent a postcondition as either:
-/// - A postcondition with an explicit binding, i.e. pattern => expression
-/// - A "naked" postcondition, i.e. an expression with implicit binding
-struct PostConditionExpr {
-    pattern: Option<Pat>,
-    expr: Expr,
-}
-
-impl Parse for PostConditionExpr {
-    fn parse(input: ParseStream) -> Result<Self> {
-        let fork = input.fork();
-
-        // Try to parse as explicit binding (pattern => expr)
-        if Pat::parse_single(&fork).is_ok() && fork.peek(Token![=>]) {
-            let pattern = Pat::parse_single(input)?;
-            input.parse::<Token![=>]>()?;
-            Ok(PostConditionExpr {
-                pattern: Some(pattern),
-                expr: input.parse()?,
-            })
-        } else {
-            // It's a naked expression
-            Ok(PostConditionExpr {
-                pattern: None,
-                expr: input.parse()?,
-            })
+fn interpret_expr_as_postcondition(expr: Expr, default_binding: Pat) -> Result<syn::ExprClosure> {
+    match expr {
+        // Already a closure, validate it has exactly one argument.
+        Expr::Closure(closure) => {
+            if closure.inputs.len() == 1 {
+                Ok(closure)
+            } else {
+                Err(syn::Error::new_spanned(
+                    closure.or1_token,
+                    format!(
+                        "postcondition closure must have exactly one argument, found {}",
+                        closure.inputs.len()
+                    ),
+                ))
+            }
         }
+        // Naked expression, wrap in a closure with default binding.
+        expr => Ok(syn::ExprClosure {
+            attrs: vec![],
+            lifetimes: None,
+            constness: None,
+            movability: None,
+            asyncness: None,
+            capture: None,
+            or1_token: Default::default(),
+            inputs: syn::punctuated::Punctuated::from_iter([default_binding]),
+            or2_token: Default::default(),
+            output: syn::ReturnType::Default,
+            body: Box::new(expr),
+        }),
     }
 }
 
@@ -496,17 +493,14 @@ pub fn instrument_fn_body(
             }
         })
         .chain(spec.ensures.iter().map(|postcondition| {
-            let pattern = &postcondition.pattern;
-            let expr = &postcondition.expr;
-            // Format error message with explicit binding syntax
-            let pattern_str = pattern.to_token_stream().to_string();
-            let expr_str = expr.to_token_stream().to_string();
-            let error_msg = format!("{} => {}", pattern_str, expr_str);
+            let closure = annotate_postcondition_closure_argument(
+                postcondition.closure.clone(),
+                return_type.clone(),
+            );
+            let closure_str = postcondition.closure.to_token_stream().to_string();
+
             let assert = quote! {
-                {
-                    let #pattern = #binding_ident;
-                    assert!(#expr, "Postcondition failed: {}", #error_msg);
-                }
+                assert!((#closure)(&#binding_ident), "Postcondition failed: {}", #closure_str);
             };
             if let Some(cfg) = &postcondition.cfg {
                 quote! { if cfg!(#cfg) { #assert } }
@@ -523,6 +517,29 @@ pub fn instrument_fn_body(
             #binding_ident
         }
     })
+}
+
+fn annotate_postcondition_closure_argument(
+    mut closure: syn::ExprClosure,
+    return_type: syn::Type,
+) -> syn::ExprClosure {
+    // Add type annotation: convert |param| to |param: &ReturnType|.
+    if let Some(first_input) = closure.inputs.first_mut() {
+        // Wrap the pattern with a type annotation
+        let pattern = first_input.clone();
+        *first_input = syn::Pat::Type(syn::PatType {
+            attrs: vec![],
+            pat: Box::new(pattern),
+            colon_token: Default::default(),
+            ty: Box::new(syn::Type::Reference(syn::TypeReference {
+                and_token: Default::default(),
+                lifetime: None,
+                mutability: None,
+                elem: Box::new(return_type),
+            })),
+        });
+    }
+    closure
 }
 
 #[cfg(test)]

@@ -109,28 +109,19 @@ fn assert_condition_eq(left: &Condition, right: &Condition, msg_prefix: &str) {
 fn assert_postcondition_eq(left: &PostCondition, right: &PostCondition, msg_prefix: &str) {
     // Destructure to ensure we handle all fields
     let PostCondition {
-        pattern: left_pattern,
-        expr: left_expr,
+        closure: left_closure,
         cfg: left_cfg,
     } = left;
 
     let PostCondition {
-        pattern: right_pattern,
-        expr: right_expr,
+        closure: right_closure,
         cfg: right_cfg,
     } = right;
 
     assert_eq!(
-        left_pattern.to_token_stream().to_string(),
-        right_pattern.to_token_stream().to_string(),
-        "{}`pattern` does not match",
-        msg_prefix
-    );
-
-    assert_eq!(
-        left_expr.to_token_stream().to_string(),
-        right_expr.to_token_stream().to_string(),
-        "{}`expr` does not match",
+        left_closure.to_token_stream().to_string(),
+        right_closure.to_token_stream().to_string(),
+        "{}`closure` does not match",
         msg_prefix
     );
 
