@@ -129,13 +129,15 @@ impl Parse for Spec {
                     let default_pattern = binds_pattern.clone().unwrap_or(parse_quote! { output });
 
                     if let Expr::Array(conditions) = expr {
-                        ensures.extend(conditions.elems.into_iter().map(|expr| PostCondition {
-                            closure: interpret_expr_as_postcondition(expr, default_pattern.clone()),
-                            cfg: cfg.clone(),
-                        }));
+                        for expr in conditions.elems {
+                            ensures.push(PostCondition {
+                                closure: interpret_expr_as_postcondition(expr, default_pattern.clone())?,
+                                cfg: cfg.clone(),
+                            });
+                        }
                     } else {
                         ensures.push(PostCondition {
-                            closure: interpret_expr_as_postcondition(expr, default_pattern),
+                            closure: interpret_expr_as_postcondition(expr, default_pattern)?,
                             cfg,
                         });
                     }
@@ -334,12 +336,23 @@ fn interpret_expr_as_capture(expr: Expr) -> Result<Capture> {
     }
 }
 
-fn interpret_expr_as_postcondition(expr: Expr, default_binding: Pat) -> syn::ExprClosure {
+fn interpret_expr_as_postcondition(expr: Expr, default_binding: Pat) -> Result<syn::ExprClosure> {
     match expr {
-        // Already a closure, use as-is.
-        Expr::Closure(closure) => closure,
+        // Already a closure, validate it has exactly one argument.
+        Expr::Closure(closure) => {
+            if closure.inputs.len() != 1 {
+                return Err(syn::Error::new(
+                    closure.or1_token.span,
+                    format!(
+                        "postcondition closure must have exactly one argument, found {}",
+                        closure.inputs.len()
+                    ),
+                ));
+            }
+            Ok(closure)
+        }
         // Naked expression, wrap in a closure with default binding.
-        expr => syn::ExprClosure {
+        expr => Ok(syn::ExprClosure {
             attrs: vec![],
             lifetimes: None,
             constness: None,
@@ -351,7 +364,7 @@ fn interpret_expr_as_postcondition(expr: Expr, default_binding: Pat) -> syn::Exp
             or2_token: Default::default(),
             output: syn::ReturnType::Default,
             body: Box::new(expr),
-        },
+        }),
     }
 }
 
