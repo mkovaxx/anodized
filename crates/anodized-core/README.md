@@ -105,7 +105,10 @@ fn my_function(<ARGUMENTS>) -> <RETURN_TYPE> {
     // The captured value is available to postconditions
     assert!(<INVARIANT>, "Post-invariant failed: <INVARIANT>");
     // Postcondition is checked by invoking the closure with a reference to the return value
-    assert!((|<PATTERN>: &<RETURN_TYPE>| <POSTCONDITION>)(&__anodized_output), "Postcondition failed: | <PATTERN> | <POSTCONDITION>");
+    assert!(
+        (|<PATTERN>: &<RETURN_TYPE>| <POSTCONDITION>)(&__anodized_output),
+        "Postcondition failed: | <PATTERN> | <POSTCONDITION>",
+    );
 
     // 4. The result is returned
     __anodized_output
