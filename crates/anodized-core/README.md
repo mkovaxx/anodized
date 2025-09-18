@@ -55,7 +55,6 @@ capture_expr = expr | (expr , `as` , ident);
 post_conds = post_cond_expr | post_cond_list;
 post_cond_list = `[` , post_cond_expr , { `,` , post_cond_expr } , [ `,` ] , `]`;
 post_cond_expr = expr | closure_expr;
-closure_expr = `|` , pattern , `|` , expr;
 
 cfg_attr = `#[cfg(` , settings , `)]`;
 ```
@@ -65,9 +64,8 @@ cfg_attr = `#[cfg(` , settings , `)]`;
 - The last `,` is optional.
 - The `params` rule defines a sequence of optional parameter groups that must appear in the specified order.
 - `expr` refers to a Rust [`expression`](https://doc.rust-lang.org/reference/expressions.html); type checking will fail if it does not evaluate to `bool`.
-- For `post_cond_expr`: when using a naked `expr`, it is internally converted to a closure with the default binding receiving a reference to the return value.
-- `closure_expr` is an explicit closure with a `pattern` parameter that receives the return value as a reference, and `expr` is evaluated with that binding in scope. Type checking will fail if the expression does not evaluate to `bool`.
-- `pattern` refers to any valid Rust [`pattern`](https://doc.rust-lang.org/reference/patterns.html); type checking will fail if its type does not match the function's return value.
+- `closure_expr` is an explicit closure that receives the return value as a reference. Type checking will fail if the closure does not evaluate to `bool`.
+- `pattern` refers to an irrefutable Rust [`pattern`](https://doc.rust-lang.org/reference/patterns.html); type checking will fail if its type does not match the function's return value.
 - `settings` is the content of the [`cfg`](https://doc.rust-lang.org/reference/conditional-compilation.html) attribute (e.g. `test`, `debug_assertions`).
 
 ## Runtime Checks
