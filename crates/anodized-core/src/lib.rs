@@ -419,13 +419,13 @@ pub fn instrument_fn_body(
     let binding_ident = Ident::new("__anodized_output", Span::mixed_site());
 
     // --- Generate Precondition Checks ---
-    let guard_assert = |assert_tokens: TokenStream2, cfg: Option<&Meta>| {
+    let guard_assert = |assert_stmt: TokenStream2, cfg: Option<&Meta>| {
         if disable_runtime_checks {
-            quote! { if false { #assert_tokens } }
+            quote! { if false { #assert_stmt } }
         } else if let Some(cfg) = cfg {
-            quote! { if cfg!(#cfg) { #assert_tokens } }
+            quote! { if cfg!(#cfg) { #assert_stmt } }
         } else {
-            assert_tokens
+            assert_stmt
         }
     };
 
