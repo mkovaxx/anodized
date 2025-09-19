@@ -14,8 +14,6 @@ license.workspace = true
 proc-macro = true
 
 [features]
-default = ["backend-default"]
-backend-default = []
 backend-no-checks = []
 
 [dependencies]

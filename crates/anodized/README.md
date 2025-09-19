@@ -64,6 +64,15 @@ Your code is automatically instrumented to check the specifications at runtime. 
 thread 'main' panicked at 'Precondition failed: whole > 0', src/main.rs:17:5
 ```
 
+## Backends
+
+Anodized offers multiple backends that control how `#[spec]` annotations expand:
+
+- **default (implicit)** – When no backend feature is enabled, Anodized injects runtime `assert!` checks for every `requires`, `maintains`, and `ensures` clause. A failing condition panics with a descriptive message, just like the examples above.
+- **`backend-no-checks`** – Generates the same instrumentation but guards each `assert!` inside `if false { ... }`. This keeps the code syntax- and type-checked while letting the compiler optimize the runtime checks away. Enable it with `anodized = { version = "0.2.1", features = ["backend-no-checks"] }`.
+
+Future backends (nightly contracts, ecosystem adapters, etc.) will use the same feature-based mechanism.
+
 By default, runtime spec-checking is always active (just like Rust's `assert!` macro). For performance-sensitive code, you can use `#[cfg]` attributes to control when checks run (see the [#[cfg] section](#cfg-configure-runtime-checks) below).
 
 **Important:** Even when a condition's runtime check is disabled via a `#[cfg]` build setting, the compiler still validates that condition at compile time for syntax errors, unknown identifiers, type mismatches, etc.
