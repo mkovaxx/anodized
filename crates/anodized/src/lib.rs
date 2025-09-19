@@ -8,6 +8,31 @@ use syn::{Item, ItemFn, parse_macro_input};
 
 use anodized_core::{Spec, instrument_fn_body};
 
+#[derive(Copy, Clone, Debug, Eq, PartialEq)]
+enum Backend {
+    Default,
+    NoChecks,
+}
+
+const _: () = {
+    let count: u32 =
+        cfg!(feature = "backend-default") as u32 + cfg!(feature = "backend-no-checks") as u32;
+    if count == 0 {
+        panic!(
+            "anodized: enable at least one backend feature (e.g. `backend-default` or `backend-no-checks`)"
+        );
+    }
+    if count > 1 {
+        panic!("anodized: backend features are mutually exclusive");
+    }
+};
+
+const BACKEND: Backend = if cfg!(feature = "backend-no-checks") {
+    Backend::NoChecks
+} else {
+    Backend::Default
+};
+
 /// The main procedural macro for defining specifications on functions.
 ///
 /// This macro parses spec annotations and injects `assert!` statements
@@ -43,7 +68,14 @@ fn handle_fn(args: TokenStream, mut func: ItemFn) -> TokenStream {
     };
 
     // Generate the new, instrumented function body.
-    let new_body = match instrument_fn_body(&spec, &func.block, is_async, &return_type) {
+    let disable_runtime_checks = matches!(BACKEND, Backend::NoChecks);
+    let new_body = match instrument_fn_body(
+        &spec,
+        &func.block,
+        is_async,
+        &return_type,
+        disable_runtime_checks,
+    ) {
         Ok(body) => body,
         Err(e) => return e.to_compile_error().into(),
     };

@@ -3,6 +3,7 @@
 #![doc = include_str!("../README.md")]
 
 use proc_macro2::Span;
+use proc_macro2::TokenStream as TokenStream2;
 use quote::{ToTokens, quote};
 use syn::{
     Attribute, Block, Expr, Ident, Meta, Pat, Token,
@@ -412,11 +413,22 @@ pub fn instrument_fn_body(
     original_body: &Block,
     is_async: bool,
     return_type: &syn::Type,
+    disable_runtime_checks: bool,
 ) -> Result<Block> {
     // The identifier for the return value binding. It's hygienic to prevent collisions.
     let binding_ident = Ident::new("__anodized_output", Span::mixed_site());
 
     // --- Generate Precondition Checks ---
+    let guard_assert = |assert_tokens: TokenStream2, cfg: Option<&Meta>| {
+        if disable_runtime_checks {
+            quote! { if false { #assert_tokens } }
+        } else if let Some(cfg) = cfg {
+            quote! { if cfg!(#cfg) { #assert_tokens } }
+        } else {
+            assert_tokens
+        }
+    };
+
     let preconditions = spec
         .requires
         .iter()
@@ -424,21 +436,13 @@ pub fn instrument_fn_body(
             let expr = &condition.expr;
             let expr_str = expr.to_token_stream().to_string();
             let assert = quote! { assert!(#expr, "Precondition failed: {}", #expr_str); };
-            if let Some(cfg) = &condition.cfg {
-                quote! { if cfg!(#cfg) { #assert } }
-            } else {
-                assert
-            }
+            guard_assert(assert, condition.cfg.as_ref())
         })
         .chain(spec.maintains.iter().map(|condition| {
             let expr = &condition.expr;
             let expr_str = expr.to_token_stream().to_string();
             let assert = quote! { assert!(#expr, "Pre-invariant failed: {}", #expr_str); };
-            if let Some(cfg) = &condition.cfg {
-                quote! { if cfg!(#cfg) { #assert } }
-            } else {
-                assert
-            }
+            guard_assert(assert, condition.cfg.as_ref())
         }));
 
     // --- Generate Combined Body and Capture Statement ---
@@ -486,11 +490,7 @@ pub fn instrument_fn_body(
             let expr = &condition.expr;
             let expr_str = expr.to_token_stream().to_string();
             let assert = quote! { assert!(#expr, "Post-invariant failed: {}", #expr_str); };
-            if let Some(cfg) = &condition.cfg {
-                quote! { if cfg!(#cfg) { #assert } }
-            } else {
-                assert
-            }
+            guard_assert(assert, condition.cfg.as_ref())
         })
         .chain(spec.ensures.iter().map(|postcondition| {
             let closure = annotate_postcondition_closure_argument(
@@ -502,11 +502,7 @@ pub fn instrument_fn_body(
             let assert = quote! {
                 assert!((#closure)(&#binding_ident), "Postcondition failed: {}", #closure_str);
             };
-            if let Some(cfg) = &postcondition.cfg {
-                quote! { if cfg!(#cfg) { #assert } }
-            } else {
-                assert
-            }
+            guard_assert(assert, postcondition.cfg.as_ref())
         }));
 
     Ok(parse_quote! {
