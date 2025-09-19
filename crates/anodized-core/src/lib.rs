@@ -415,8 +415,8 @@ pub fn instrument_fn_body(
     return_type: &syn::Type,
     disable_runtime_checks: bool,
 ) -> Result<Block> {
-    // The identifier for the return value binding. It's hygienic to prevent collisions.
-    let binding_ident = Ident::new("__anodized_output", Span::mixed_site());
+    // The identifier for the return value binding.
+    let output_ident = Ident::new("__anodized_output", Span::mixed_site());
 
     // --- Generate Precondition Checks ---
     let guard_assert = |assert_stmt: TokenStream2, cfg: Option<&Meta>| {
@@ -454,7 +454,7 @@ pub fn instrument_fn_body(
         .captures
         .iter()
         .map(|cb| &cb.alias)
-        .chain(std::iter::once(&binding_ident));
+        .chain(std::iter::once(&output_ident));
 
     // Chain capture expressions with body expression
     let capture_exprs = spec.captures.iter().map(|cb| {
@@ -500,7 +500,7 @@ pub fn instrument_fn_body(
             let closure_str = postcondition.closure.to_token_stream().to_string();
 
             let assert = quote! {
-                assert!((#closure)(&#binding_ident), "Postcondition failed: {}", #closure_str);
+                assert!((#closure)(&#output_ident), "Postcondition failed: {}", #closure_str);
             };
             guard_assert(assert, postcondition.cfg.as_ref())
         }));
@@ -510,7 +510,7 @@ pub fn instrument_fn_body(
             #(#preconditions)*
             #body_and_captures
             #(#postconditions)*
-            #binding_ident
+            #output_ident
         }
     })
 }
