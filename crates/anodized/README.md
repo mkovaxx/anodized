@@ -118,6 +118,24 @@ use anodized::spec;
 fn push_checked<T>(vec: &mut Vec<T>, value: T) { todo!() }
 ```
 
+### Backends
+
+Anodized offers multiple backends that control how `#[spec]` annotations expand:
+
+- **default (implicit)**: When no backend feature is selected, Anodized injects runtime `assert!` checks for every `requires`, `maintains`, and `ensures` clause. A failing condition panics with a descriptive message, just like the examples above.
+- **`backend-no-checks`**: Generates the same instrumentation but guards each `assert!` inside `if false { ... }`. This keeps the `#[spec]` syntax- and type-checked while letting the compiler optimize the runtime checks away.
+
+The backend setting goes in your `Cargo.toml`, for example:
+
+```toml
+anodized = {
+  version = # version
+  features = ["backend-no-checks"]
+}
+```
+
+Future backends (nightly contracts, ecosystem adapters, etc.) will use the same feature-based mechanism.
+
 ### `#[cfg]`: Configure Runtime Checks
 
 By default, each condition is checked at runtime, just like Rust's `assert!` macro: it's always active in both debug and release builds. You can use the standard `#[cfg]` attribute to select build configurations under which the runtime check is active.
