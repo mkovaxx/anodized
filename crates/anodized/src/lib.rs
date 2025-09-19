@@ -15,13 +15,7 @@ enum Backend {
 }
 
 const _: () = {
-    let count: u32 =
-        cfg!(feature = "backend-default") as u32 + cfg!(feature = "backend-no-checks") as u32;
-    if count == 0 {
-        panic!(
-            "anodized: enable at least one backend feature (e.g. `backend-default` or `backend-no-checks`)"
-        );
-    }
+    let count: u32 = cfg!(feature = "backend-no-checks") as u32;
     if count > 1 {
         panic!("anodized: backend features are mutually exclusive");
     }
