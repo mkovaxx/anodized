@@ -4,24 +4,27 @@
 
 use proc_macro::TokenStream;
 use quote::ToTokens;
-use syn::{Item, ItemFn, parse_macro_input};
+use syn::{Item, parse_macro_input};
 
-use anodized_core::{Spec, instrument_fn_body};
-
-#[derive(Copy, Clone, Debug, Eq, PartialEq)]
-enum Backend {
-    Default,
-    NoChecks,
-}
+use anodized_core::{
+    Spec,
+    backend::{Backend, handle_fn},
+};
 
 const _: () = {
-    let count: u32 = cfg!(feature = "backend-no-checks") as u32;
+    let count: u32 = cfg!(feature = "backend-no-checks") as u32
+        + cfg!(feature = "backend-nightly-contracts") as u32;
     if count > 1 {
         panic!("anodized: backend features are mutually exclusive");
     }
 };
 
-const BACKEND: Backend = if cfg!(feature = "backend-no-checks") {
+#[cfg(all(feature = "backend-nightly-contracts", not(nightly)))]
+compile_error!("the `backend-nightly-contracts` feature requires a nightly Rust toolchain");
+
+const BACKEND: Backend = if cfg!(feature = "backend-nightly-contracts") {
+    Backend::NightlyContracts
+} else if cfg!(feature = "backend-no-checks") {
     Backend::NoChecks
 } else {
     Backend::Default
@@ -36,49 +39,27 @@ pub fn spec(args: TokenStream, input: TokenStream) -> TokenStream {
     // Parse the item to which the attribute is attached.
     let item = parse_macro_input!(input as Item);
 
-    match item {
-        Item::Fn(func) => handle_fn(args, func),
-        item => {
-            let item_type = item_to_string(&item);
+    let result = match item {
+        Item::Fn(func) => {
+            let spec = parse_macro_input!(args as Spec);
+            handle_fn(BACKEND, spec, func)
+        }
+        unsupported_item => {
+            let item_type = item_to_string(&unsupported_item);
             let msg = format!(
                 r#"The `#[spec]` attribute doesn't yet support this item: `{}`.
 If this is a problem for your use case, please open a feature
 request at https://github.com/mkovaxx/anodized/issues/new"#,
                 item_type
             );
-            syn::Error::new_spanned(item, msg).to_compile_error().into()
+            Err(syn::Error::new_spanned(unsupported_item, msg))
         }
+    };
+
+    match result {
+        Ok(item) => item.into_token_stream().into(),
+        Err(e) => e.to_compile_error().into(),
     }
-}
-
-fn handle_fn(args: TokenStream, mut func: ItemFn) -> TokenStream {
-    let spec = parse_macro_input!(args as Spec);
-    let is_async = func.sig.asyncness.is_some();
-
-    // Extract the return type from the function signature
-    let return_type = match &func.sig.output {
-        syn::ReturnType::Default => syn::parse_quote!(()),
-        syn::ReturnType::Type(_, ty) => ty.as_ref().clone(),
-    };
-
-    // Generate the new, instrumented function body.
-    let disable_runtime_checks = matches!(BACKEND, Backend::NoChecks);
-    let new_body = match instrument_fn_body(
-        &spec,
-        &func.block,
-        is_async,
-        &return_type,
-        disable_runtime_checks,
-    ) {
-        Ok(body) => body,
-        Err(e) => return e.to_compile_error().into(),
-    };
-
-    // Replace the old function body with the new one.
-    *func.block = new_body;
-
-    // Return the modified function.
-    func.into_token_stream().into()
 }
 
 fn item_to_string(item: &Item) -> &str {
