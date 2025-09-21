@@ -1,4 +1,5 @@
 pub mod anodized;
+pub mod nightly_contracts;
 
 use syn::ItemFn;
 
@@ -35,6 +36,6 @@ pub fn handle_fn(backend: Backend, spec: Spec, mut func: ItemFn) -> syn::Result<
 
     match backend {
         Backend::Default | Backend::NoChecks => Ok(func),
-        Backend::NightlyContracts => todo!(),
+        Backend::NightlyContracts => nightly_contracts::instrument_fn(&spec, func),
     }
 }
