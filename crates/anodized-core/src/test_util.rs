@@ -1,9 +1,6 @@
 use crate::{Capture, Condition, PostCondition, Spec};
 use quote::ToTokens;
-use syn::{
-    Attribute, Block, ItemFn,
-    parse::{Parse, ParseStream, Result},
-};
+use syn::parse::{Parse, ParseStream, Result};
 
 impl Parse for Condition {
     fn parse(input: ParseStream) -> Result<Self> {
@@ -14,13 +11,7 @@ impl Parse for Condition {
     }
 }
 
-pub fn assert_block_eq(left: &Block, right: &Block) {
-    let left_str = left.to_token_stream().to_string();
-    let right_str = right.to_token_stream().to_string();
-    assert_eq!(left_str, right_str);
-}
-
-pub fn assert_fn_eq(left: &ItemFn, right: &ItemFn) {
+pub fn assert_tokens_eq(left: &impl ToTokens, right: &impl ToTokens) {
     let left_str = left.to_token_stream().to_string();
     let right_str = right.to_token_stream().to_string();
     assert_eq!(left_str, right_str);
@@ -83,19 +74,6 @@ where
         let msg_prefix = format!("`{}` items at index {}, ", item_name, i);
         assert_item_eq(left_item, right_item, &msg_prefix);
     }
-}
-
-pub fn assert_attrs_eq(left: &[Attribute], right: &[Attribute]) {
-    assert_slice_eq(left, right, "attribute", &assert_attr_eq);
-}
-
-pub fn assert_attr_eq(left: &Attribute, right: &Attribute, msg_prefix: &str) {
-    assert_eq!(
-        left.to_token_stream().to_string(),
-        right.to_token_stream().to_string(),
-        "{}tokens do not match",
-        msg_prefix
-    );
 }
 
 fn assert_condition_eq(left: &Condition, right: &Condition, msg_prefix: &str) {
