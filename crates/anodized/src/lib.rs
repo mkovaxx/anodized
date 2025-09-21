@@ -19,7 +19,8 @@ const _: () = {
     }
 };
 
-#[cfg(all(feature = "backend-nightly-contracts", not(nightly)))]
+#[rustversion::not(nightly)]
+#[cfg(feature = "backend-nightly-contracts")]
 compile_error!("the `backend-nightly-contracts` feature requires a nightly Rust toolchain");
 
 const BACKEND: Backend = if cfg!(feature = "backend-nightly-contracts") {
