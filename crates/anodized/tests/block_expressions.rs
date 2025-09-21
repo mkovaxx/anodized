@@ -1,6 +1,5 @@
 use anodized::spec;
 
-#[cfg(not(feature = "backend-native-contracts"))]
 #[spec(
     requires: {
         // Just a longer way of writing `true` :)
@@ -18,26 +17,6 @@ use anodized::spec;
     ensures: {
         let length = vec.len();
         length > old_len
-    },
-)]
-fn function_with_blocks(vec: &mut Vec<i32>) {
-    vec.push(42);
-}
-
-#[cfg(feature = "backend-native-contracts")]
-#[spec(
-    requires: {
-        // Just a longer way of writing `true` :)
-        let x = 5;
-        x > 0
-    },
-    maintains: {
-        let length = vec.len();
-        length < 100
-    },
-    ensures: {
-        let length = vec.len();
-        length > 0
     },
 )]
 fn function_with_blocks(vec: &mut Vec<i32>) {

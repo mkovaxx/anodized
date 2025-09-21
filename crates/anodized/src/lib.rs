@@ -12,20 +12,13 @@ use anodized_core::{
 };
 
 const _: () = {
-    let count: u32 = cfg!(feature = "backend-no-checks") as u32
-        + cfg!(feature = "backend-native-contracts") as u32;
+    let count: u32 = cfg!(feature = "backend-no-checks") as u32;
     if count > 1 {
         panic!("anodized: backend features are mutually exclusive");
     }
 };
 
-#[rustversion::not(nightly)]
-#[cfg(feature = "backend-native-contracts")]
-compile_error!("the `backend-native-contracts` feature requires a nightly Rust toolchain");
-
-const BACKEND: Backend = if cfg!(feature = "backend-native-contracts") {
-    Backend::NativeContracts
-} else if cfg!(feature = "backend-no-checks") {
+const BACKEND: Backend = if cfg!(feature = "backend-no-checks") {
     Backend::NoChecks
 } else {
     Backend::Default
