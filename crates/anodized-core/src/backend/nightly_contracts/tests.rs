@@ -59,29 +59,15 @@ fn maintains_emits_requires_and_ensures_attributes() {
 #[test]
 fn ensures_from_expression_uses_generated_closure() {
     let spec: Spec = parse_quote! {
-        ensures: CONDITION,
+        binds: PATTERN_1,
+        ensures: CONDITION_1,
+        ensures: |PATTERN_2| CONDITION_2,
     };
     let func: ItemFn = parse_quote! { fn demo() {} };
 
     let expected: ItemFn = parse_quote! {
-        #[contracts::ensures(|output| CONDITION)]
-        #func
-    };
-
-    let observed = instrument_fn(&spec, func).unwrap();
-
-    assert_tokens_eq(&observed, &expected);
-}
-
-#[test]
-fn ensures_with_custom_closure_is_preserved() {
-    let spec: Spec = parse_quote! {
-        ensures: |result| result.is_ok(),
-    };
-    let func: ItemFn = parse_quote! { fn demo() {} };
-
-    let expected: ItemFn = parse_quote! {
-        #[contracts::ensures(|result| result.is_ok())]
+        #[contracts::ensures(|PATTERN_1| CONDITION_1)]
+        #[contracts::ensures(|PATTERN_2| CONDITION_2)]
         #func
     };
 
