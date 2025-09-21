@@ -29,6 +29,7 @@ fn test_job_start_success() {
     job.start();
 }
 
+#[cfg(not(feature = "backend-no-checks"))]
 #[test]
 #[should_panic(expected = "Precondition failed: matches! (self.state, State::Idle)")]
 fn test_job_start_panics_if_not_idle() {

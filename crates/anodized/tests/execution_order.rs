@@ -22,6 +22,7 @@ fn instrumented_function(log: &mut Vec<&'static str>) {
     log.push("body");
 }
 
+#[cfg(not(feature = "backend-no-checks"))]
 #[test]
 fn test_execution_order() {
     let mut log = Vec::new();
