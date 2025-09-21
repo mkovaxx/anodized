@@ -1,6 +1,6 @@
 use anodized::spec;
 
-#[cfg(not(feature = "backend-nightly-contracts"))]
+#[cfg(not(feature = "backend-native-contracts"))]
 #[spec(
     requires: {
         // Just a longer way of writing `true` :)
@@ -24,7 +24,7 @@ fn function_with_blocks(vec: &mut Vec<i32>) {
     vec.push(42);
 }
 
-#[cfg(feature = "backend-nightly-contracts")]
+#[cfg(feature = "backend-native-contracts")]
 #[spec(
     requires: {
         // Just a longer way of writing `true` :)

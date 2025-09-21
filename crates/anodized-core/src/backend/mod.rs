@@ -1,5 +1,5 @@
 pub mod anodized;
-pub mod nightly_contracts;
+pub mod native_contracts;
 
 use syn::ItemFn;
 
@@ -7,9 +7,12 @@ use crate::Spec;
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub enum Backend {
+    /// Anodized instrumentation with runtime checks.
     Default,
+    /// Anodized instrumentation with no runtime checks.
     NoChecks,
-    NightlyContracts,
+    /// Experimental Rust-native contracts, see https://github.com/rust-lang/rust/issues/128044.
+    NativeContracts,
 }
 
 pub fn handle_fn(backend: Backend, spec: Spec, mut func: ItemFn) -> syn::Result<ItemFn> {
@@ -36,6 +39,6 @@ pub fn handle_fn(backend: Backend, spec: Spec, mut func: ItemFn) -> syn::Result<
 
     match backend {
         Backend::Default | Backend::NoChecks => Ok(func),
-        Backend::NightlyContracts => nightly_contracts::instrument_fn(&spec, func),
+        Backend::NativeContracts => native_contracts::instrument_fn(&spec, func),
     }
 }

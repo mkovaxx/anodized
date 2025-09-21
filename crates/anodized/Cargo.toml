@@ -15,7 +15,7 @@ proc-macro = true
 
 [features]
 backend-no-checks = []
-backend-nightly-contracts = []
+backend-native-contracts = []
 
 [dependencies]
 anodized-core.workspace = true
