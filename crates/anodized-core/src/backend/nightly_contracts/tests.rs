@@ -11,7 +11,7 @@ fn requires_clause_emits_contracts_attribute() {
     let func: ItemFn = parse_quote! { fn demo() {} };
 
     let expected: ItemFn = parse_quote! {
-        #[contracts::requires(CONDITION)]
+        #[core::contracts::requires(CONDITION)]
         #func
     };
 
@@ -29,7 +29,7 @@ fn requires_with_cfg_emits_cfg_attr_contracts_attribute() {
     let func: ItemFn = parse_quote! { fn demo() {} };
 
     let expected: ItemFn = parse_quote! {
-        #[cfg_attr(SETTING, contracts::requires(CONDITION))]
+        #[cfg_attr(SETTING, core::contracts::requires(CONDITION))]
         #func
     };
 
@@ -46,8 +46,8 @@ fn maintains_emits_requires_and_ensures_attributes() {
     let func: ItemFn = parse_quote! { fn demo() {} };
 
     let expected: ItemFn = parse_quote! {
-        #[contracts::requires(CONDITION)]
-        #[contracts::ensures(|_| CONDITION)]
+        #[core::contracts::requires(CONDITION)]
+        #[core::contracts::ensures(|_| CONDITION)]
         #func
     };
 
@@ -66,8 +66,8 @@ fn ensures_from_expression_uses_generated_closure() {
     let func: ItemFn = parse_quote! { fn demo() {} };
 
     let expected: ItemFn = parse_quote! {
-        #[contracts::ensures(|PATTERN_1| CONDITION_1)]
-        #[contracts::ensures(|PATTERN_2| CONDITION_2)]
+        #[core::contracts::ensures(|PATTERN_1| CONDITION_1)]
+        #[core::contracts::ensures(|PATTERN_2| CONDITION_2)]
         #func
     };
 
@@ -87,7 +87,7 @@ fn existing_attributes_are_preserved_after_contracts_attributes() {
     };
 
     let expected: ItemFn = parse_quote! {
-        #[contracts::requires(CONDITION)]
+        #[core::contracts::requires(CONDITION)]
         #func
     };
 

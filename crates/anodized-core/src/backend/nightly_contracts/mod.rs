@@ -20,9 +20,9 @@ pub fn instrument_fn(spec: &Spec, mut func: ItemFn) -> Result<ItemFn> {
         let expr = &condition.expr;
 
         let attr = if let Some(cfg) = &condition.cfg {
-            parse_quote! { #[cfg_attr(#cfg, contracts::requires(#expr))] }
+            parse_quote! { #[cfg_attr(#cfg, core::contracts::requires(#expr))] }
         } else {
-            parse_quote! { #[contracts::requires(#expr)] }
+            parse_quote! { #[core::contracts::requires(#expr)] }
         };
 
         attrs.push(attr);
@@ -32,17 +32,17 @@ pub fn instrument_fn(spec: &Spec, mut func: ItemFn) -> Result<ItemFn> {
         let expr = &condition.expr;
 
         let requires_attr = if let Some(cfg) = &condition.cfg {
-            parse_quote! { #[cfg_attr(#cfg, contracts::requires(#expr))] }
+            parse_quote! { #[cfg_attr(#cfg, core::contracts::requires(#expr))] }
         } else {
-            parse_quote! { #[contracts::requires(#expr)] }
+            parse_quote! { #[core::contracts::requires(#expr)] }
         };
         attrs.push(requires_attr);
 
         let ensures_closure: Expr = parse_quote! { |_| #expr };
         let ensures_attr = if let Some(cfg) = &condition.cfg {
-            parse_quote! { #[cfg_attr(#cfg, contracts::ensures(#ensures_closure))] }
+            parse_quote! { #[cfg_attr(#cfg, core::contracts::ensures(#ensures_closure))] }
         } else {
-            parse_quote! { #[contracts::ensures(#ensures_closure)] }
+            parse_quote! { #[core::contracts::ensures(#ensures_closure)] }
         };
         attrs.push(ensures_attr);
     }
@@ -51,9 +51,9 @@ pub fn instrument_fn(spec: &Spec, mut func: ItemFn) -> Result<ItemFn> {
         let closure: ExprClosure = postcondition.closure.clone();
 
         let attr = if let Some(cfg) = &postcondition.cfg {
-            parse_quote! { #[cfg_attr(#cfg, contracts::ensures(#closure))] }
+            parse_quote! { #[cfg_attr(#cfg, core::contracts::ensures(#closure))] }
         } else {
-            parse_quote! { #[contracts::ensures(#closure)] }
+            parse_quote! { #[core::contracts::ensures(#closure)] }
         };
         attrs.push(attr);
     }
