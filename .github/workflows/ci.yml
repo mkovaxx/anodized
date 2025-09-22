@@ -11,18 +11,18 @@ env:
 
 jobs:
   test:
-    name: Run tests with feature `${{ matrix.backend }}`
+    name: Run tests for backend `${{ matrix.backend }}`
     runs-on: ubuntu-latest
     strategy:
       matrix:
         include:
-          - backend: default
+          - backend: <default>
             toolchain: "+stable"
             feature: ""
-          - backend: backend-no-checks
+          - backend: no-checks
             toolchain: "+stable"
             feature: backend-no-checks
-          - backend: backend-native-contracts
+          - backend: native-contracts
             toolchain: "+nightly"
             feature: backend-native-contracts
     steps:
