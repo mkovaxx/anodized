@@ -1,9 +1,6 @@
 use crate::{Capture, Condition, PostCondition, Spec};
 use quote::ToTokens;
-use syn::{
-    Block,
-    parse::{Parse, ParseStream, Result},
-};
+use syn::parse::{Parse, ParseStream, Result};
 
 impl Parse for Condition {
     fn parse(input: ParseStream) -> Result<Self> {
@@ -14,7 +11,7 @@ impl Parse for Condition {
     }
 }
 
-pub fn assert_block_eq(left: &Block, right: &Block) {
+pub fn assert_tokens_eq(left: &impl ToTokens, right: &impl ToTokens) {
     let left_str = left.to_token_stream().to_string();
     let right_str = right.to_token_stream().to_string();
     assert_eq!(left_str, right_str);

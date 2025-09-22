@@ -1,5 +1,6 @@
 use anodized::spec;
 
+#[allow(dead_code)]
 struct Validator {
     valid: bool,
 }
@@ -17,6 +18,7 @@ impl Validator {
     }
 }
 
+#[cfg(not(feature = "backend-no-checks"))]
 #[test]
 #[should_panic(expected = "Post-invariant failed: self.is_valid()")]
 fn test_violates_post_invariant() {
@@ -25,6 +27,7 @@ fn test_violates_post_invariant() {
     v.set_validity(false);
 }
 
+#[cfg(not(feature = "backend-no-checks"))]
 #[test]
 #[should_panic(expected = "Pre-invariant failed: self.is_valid()")]
 fn test_violates_pre_invariant() {

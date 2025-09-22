@@ -1,4 +1,4 @@
-use crate::test_util::assert_block_eq;
+use crate::test_util::assert_tokens_eq;
 
 use super::*;
 use syn::{Block, Type, parse_quote};
@@ -33,7 +33,7 @@ fn test_instrument_simple_requires() {
     };
 
     let observed = instrument_fn_body(&spec, &body, is_async, &ret_type, false).unwrap();
-    assert_block_eq(&observed, &expected);
+    assert_tokens_eq(&observed, &expected);
 }
 
 #[test]
@@ -56,7 +56,7 @@ fn test_instrument_requires_disable_runtime_checks() {
     };
 
     let observed = instrument_fn_body(&spec, &body, is_async, &ret_type, true).unwrap();
-    assert_block_eq(&observed, &expected);
+    assert_tokens_eq(&observed, &expected);
 }
 
 #[test]
@@ -78,7 +78,7 @@ fn test_instrument_simple_maintains() {
     };
 
     let observed = instrument_fn_body(&spec, &body, is_async, &ret_type, false).unwrap();
-    assert_block_eq(&observed, &expected);
+    assert_tokens_eq(&observed, &expected);
 }
 
 #[test]
@@ -99,7 +99,7 @@ fn test_instrument_simple_ensures() {
     };
 
     let observed = instrument_fn_body(&spec, &body, is_async, &ret_type, false).unwrap();
-    assert_block_eq(&observed, &expected);
+    assert_tokens_eq(&observed, &expected);
 }
 
 #[test]
@@ -123,7 +123,7 @@ fn test_instrument_simple_requires_and_maintains() {
     };
 
     let observed = instrument_fn_body(&spec, &body, is_async, &ret_type, false).unwrap();
-    assert_block_eq(&observed, &expected);
+    assert_tokens_eq(&observed, &expected);
 }
 
 #[test]
@@ -146,7 +146,7 @@ fn test_instrument_simple_requires_and_ensures() {
     };
 
     let observed = instrument_fn_body(&spec, &body, is_async, &ret_type, false).unwrap();
-    assert_block_eq(&observed, &expected);
+    assert_tokens_eq(&observed, &expected);
 }
 
 #[test]
@@ -170,7 +170,7 @@ fn test_instrument_simple_maintains_and_ensures() {
     };
 
     let observed = instrument_fn_body(&spec, &body, is_async, &ret_type, false).unwrap();
-    assert_block_eq(&observed, &expected);
+    assert_tokens_eq(&observed, &expected);
 }
 
 #[test]
@@ -196,7 +196,7 @@ fn test_instrument_simple_requires_maintains_and_ensures() {
     };
 
     let observed = instrument_fn_body(&spec, &body, is_async, &ret_type, false).unwrap();
-    assert_block_eq(&observed, &expected);
+    assert_tokens_eq(&observed, &expected);
 }
 
 #[test]
@@ -222,7 +222,7 @@ fn test_instrument_simple_async_requires_maintains_and_ensures() {
     };
 
     let observed = instrument_fn_body(&spec, &body, is_async, &ret_type, false).unwrap();
-    assert_block_eq(&observed, &expected);
+    assert_tokens_eq(&observed, &expected);
 }
 
 #[test]
@@ -252,7 +252,7 @@ fn test_instrument_multiple_conditions_in_clauses() {
     };
 
     let observed = instrument_fn_body(&spec, &body, is_async, &ret_type, false).unwrap();
-    assert_block_eq(&observed, &expected);
+    assert_tokens_eq(&observed, &expected);
 }
 
 #[test]
@@ -274,7 +274,7 @@ fn test_instrument_with_binds_parameter() {
     };
 
     let observed = instrument_fn_body(&spec, &body, is_async, &ret_type, false).unwrap();
-    assert_block_eq(&observed, &expected);
+    assert_tokens_eq(&observed, &expected);
 }
 
 #[test]
@@ -303,7 +303,7 @@ fn test_instrument_ensures_with_mixed_conditions() {
     };
 
     let observed = instrument_fn_body(&spec, &body, is_async, &ret_type, false).unwrap();
-    assert_block_eq(&observed, &expected);
+    assert_tokens_eq(&observed, &expected);
 }
 
 #[test]
@@ -340,7 +340,7 @@ fn test_instrument_with_cfg_attributes() {
     };
 
     let observed = instrument_fn_body(&spec, &body, is_async, &ret_type, false).unwrap();
-    assert_block_eq(&observed, &expected);
+    assert_tokens_eq(&observed, &expected);
 }
 
 #[test]
@@ -377,7 +377,7 @@ fn test_instrument_with_cfg_on_single_and_list_conditions() {
     };
 
     let observed = instrument_fn_body(&spec, &body, is_async, &ret_type, false).unwrap();
-    assert_block_eq(&observed, &expected);
+    assert_tokens_eq(&observed, &expected);
 }
 
 #[test]
@@ -429,7 +429,7 @@ fn test_instrument_with_complex_mixed_conditions() {
     };
 
     let observed = instrument_fn_body(&spec, &body, is_async, &ret_type, false).unwrap();
-    assert_block_eq(&observed, &expected);
+    assert_tokens_eq(&observed, &expected);
 }
 
 #[test]
@@ -460,5 +460,5 @@ fn test_instrument_with_captures() {
     };
 
     let observed = instrument_fn_body(&spec, &body, is_async, &ret_type, false).unwrap();
-    assert_block_eq(&observed, &expected);
+    assert_tokens_eq(&observed, &expected);
 }

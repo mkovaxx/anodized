@@ -30,6 +30,7 @@ fn test_get_element_success() {
     buffer.get_element(1);
 }
 
+#[cfg(not(feature = "backend-no-checks"))]
 #[test]
 #[should_panic(expected = "Precondition failed: ! self.locked")]
 fn test_get_element_panics_when_locked() {
@@ -41,6 +42,7 @@ fn test_get_element_panics_when_locked() {
     buffer.get_element(1);
 }
 
+#[cfg(not(feature = "backend-no-checks"))]
 #[test]
 #[should_panic(expected = "Precondition failed: index < self.items.len()")]
 fn test_get_element_panics_on_out_of_bounds() {

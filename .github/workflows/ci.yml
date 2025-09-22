@@ -2,17 +2,24 @@ name: CI
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ["main"]
   pull_request:
-    branches: [ "main" ]
+    branches: ["main"]
 
 env:
   CARGO_TERM_COLOR: always
 
 jobs:
   test:
-    name: Run Tests
+    name: Run tests with feature `${{ matrix.backend }}`
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - backend: default
+            cargo-args: ""
+          - backend: backend-no-checks
+            cargo-args: "--features backend-no-checks"
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -20,5 +27,5 @@ jobs:
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
 
-      - name: Run tests
-        run: cargo test
+      - name: Cargo test feature `${{ matrix.backend }}`
+        run: cargo test --no-fail-fast ${{ matrix.cargo-args }}
