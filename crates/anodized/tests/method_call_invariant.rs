@@ -1,5 +1,6 @@
 use anodized::spec;
 
+#[allow(dead_code)]
 struct Validator {
     valid: bool,
 }
