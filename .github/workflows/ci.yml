@@ -20,6 +20,8 @@ jobs:
             cargo-args: ""
           - backend: backend-no-checks
             cargo-args: "--features backend-no-checks"
+          - backend: backend-native-contracts
+            cargo-args: "--features backend-native-contracts"
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
