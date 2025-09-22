@@ -1,3 +1,5 @@
+#![cfg_attr(feature = "backend-native-contracts", feature(contracts))]
+
 use anodized::spec;
 
 #[spec(
