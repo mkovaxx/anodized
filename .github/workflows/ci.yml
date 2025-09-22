@@ -16,7 +16,7 @@ jobs:
     strategy:
       matrix:
         include:
-          - backend: <default>
+          - backend: default
             toolchain: "+stable"
             feature: ""
           - backend: no-checks
