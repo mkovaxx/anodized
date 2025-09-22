@@ -1,5 +1,5 @@
 #[cfg(test)]
-mod test_instrument_fn;
+mod test;
 
 use crate::Spec;
 
