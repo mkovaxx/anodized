@@ -17,11 +17,14 @@ jobs:
       matrix:
         include:
           - backend: default
-            cargo-args: ""
+            toolchain: "+stable"
+            feature: ""
           - backend: backend-no-checks
-            cargo-args: "--features backend-no-checks"
+            toolchain: "+stable"
+            feature: backend-no-checks
           - backend: backend-native-contracts
-            cargo-args: "--features backend-native-contracts"
+            toolchain: "+nightly"
+            feature: backend-native-contracts
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -29,5 +32,8 @@ jobs:
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
 
-      - name: Cargo test feature `${{ matrix.backend }}`
-        run: cargo test --no-fail-fast ${{ matrix.cargo-args }}
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@nightly
+
+      - name: Cargo test backend `${{ matrix.backend }}`
+        run: cargo ${{ matrix.toolchain }} test --no-fail-fast --features "${{ matrix.feature }}"
