@@ -24,7 +24,7 @@ impl Job {
 }
 
 #[test]
-fn test_job_start_success() {
+fn job_start_success() {
     let mut job = Job { state: State::Idle };
     job.start();
 }
@@ -32,7 +32,7 @@ fn test_job_start_success() {
 #[cfg(not(feature = "backend-no-checks"))]
 #[test]
 #[should_panic(expected = "Precondition failed: matches! (self.state, State::Idle)")]
-fn test_job_start_panics_if_not_idle() {
+fn job_start_panics_if_not_idle() {
     let mut job = Job {
         state: State::Running,
     };

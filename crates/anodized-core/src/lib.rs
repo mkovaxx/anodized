@@ -4,6 +4,9 @@
 
 pub mod backend;
 
+#[cfg(test)]
+mod tests;
+
 use proc_macro2::Span;
 use syn::{
     Attribute, Expr, Ident, Meta, Pat, Token,
@@ -406,9 +409,3 @@ mod kw {
     syn::custom_keyword!(binds);
     syn::custom_keyword!(ensures);
 }
-
-#[cfg(test)]
-mod test_parse_spec;
-
-#[cfg(test)]
-mod test_util;

@@ -77,13 +77,13 @@ impl Container {
 }
 
 #[test]
-fn test_simple_capture_with_auto_alias() {
+fn simple_capture_with_auto_alias() {
     assert_eq!(increment_counter(5), 6);
     assert_eq!(increment_counter(0), 1);
 }
 
 #[test]
-fn test_capture_with_explicit_alias() {
+fn capture_with_explicit_alias() {
     let mut container = Container::new();
     container.value = 10;
     container.add_to_value(5);
@@ -91,7 +91,7 @@ fn test_capture_with_explicit_alias() {
 }
 
 #[test]
-fn test_multiple_captures() {
+fn multiple_captures() {
     let mut container = Container::new();
 
     // Add items up to capacity
@@ -108,7 +108,7 @@ fn test_multiple_captures() {
 }
 
 #[test]
-fn test_captures_with_preconditions() {
+fn captures_with_preconditions() {
     let mut container = Container::new();
     container.counter = 50;
 
@@ -119,7 +119,7 @@ fn test_captures_with_preconditions() {
 #[cfg(not(feature = "backend-no-checks"))]
 #[test]
 #[should_panic(expected = "Postcondition failed")]
-fn test_capture_postcondition_failure() {
+fn capture_postcondition_failure() {
     #[spec(
         captures: *value as old_value,
         ensures: *value == old_value + 10,
@@ -136,7 +136,7 @@ fn test_capture_postcondition_failure() {
 #[cfg(not(feature = "backend-no-checks"))]
 #[test]
 #[should_panic(expected = "Precondition failed")]
-fn test_precondition_runs_before_captures() {
+fn precondition_runs_before_captures() {
     struct TestStruct {
         counter: u32,
     }
@@ -158,7 +158,7 @@ fn test_precondition_runs_before_captures() {
 }
 
 #[test]
-fn test_explicit_clone_for_non_copy_types() {
+fn explicit_clone_for_non_copy_types() {
     let mut container = Container::new();
     container.items.push("first".to_string());
     container.items.push("second".to_string());

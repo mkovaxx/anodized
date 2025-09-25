@@ -1,4 +1,4 @@
-use crate::test_util::assert_tokens_eq;
+use crate::tests::util::assert_tokens_eq;
 
 use super::*;
 use syn::{Block, Type, parse_quote};
@@ -16,7 +16,7 @@ fn make_return_type() -> Type {
 }
 
 #[test]
-fn test_instrument_simple_requires() {
+fn simple_requires() {
     let spec: Spec = parse_quote! {
         requires: CONDITION_1,
     };
@@ -37,7 +37,7 @@ fn test_instrument_simple_requires() {
 }
 
 #[test]
-fn test_instrument_requires_disable_runtime_checks() {
+fn requires_disable_runtime_checks() {
     let spec: Spec = parse_quote! {
         requires: CONDITION_1,
     };
@@ -60,7 +60,7 @@ fn test_instrument_requires_disable_runtime_checks() {
 }
 
 #[test]
-fn test_instrument_simple_maintains() {
+fn simple_maintains() {
     let spec: Spec = parse_quote! {
         maintains: CONDITION_1,
     };
@@ -82,7 +82,7 @@ fn test_instrument_simple_maintains() {
 }
 
 #[test]
-fn test_instrument_simple_ensures() {
+fn simple_ensures() {
     let spec: Spec = parse_quote! {
         ensures: CONDITION_1,
     };
@@ -103,7 +103,7 @@ fn test_instrument_simple_ensures() {
 }
 
 #[test]
-fn test_instrument_simple_requires_and_maintains() {
+fn simple_requires_and_maintains() {
     let spec: Spec = parse_quote! {
         requires: CONDITION_1,
         maintains: CONDITION_2,
@@ -127,7 +127,7 @@ fn test_instrument_simple_requires_and_maintains() {
 }
 
 #[test]
-fn test_instrument_simple_requires_and_ensures() {
+fn simple_requires_and_ensures() {
     let spec: Spec = parse_quote! {
         requires: CONDITION_1,
         ensures: CONDITION_2,
@@ -150,7 +150,7 @@ fn test_instrument_simple_requires_and_ensures() {
 }
 
 #[test]
-fn test_instrument_simple_maintains_and_ensures() {
+fn simple_maintains_and_ensures() {
     let spec: Spec = parse_quote! {
         maintains: CONDITION_1,
         ensures: CONDITION_2,
@@ -174,7 +174,7 @@ fn test_instrument_simple_maintains_and_ensures() {
 }
 
 #[test]
-fn test_instrument_simple_requires_maintains_and_ensures() {
+fn simple_requires_maintains_and_ensures() {
     let spec: Spec = parse_quote! {
         requires: CONDITION_1,
         maintains: CONDITION_2,
@@ -200,7 +200,7 @@ fn test_instrument_simple_requires_maintains_and_ensures() {
 }
 
 #[test]
-fn test_instrument_simple_async_requires_maintains_and_ensures() {
+fn simple_async_requires_maintains_and_ensures() {
     let spec: Spec = parse_quote! {
         requires: CONDITION_1,
         maintains: CONDITION_2,
@@ -226,7 +226,7 @@ fn test_instrument_simple_async_requires_maintains_and_ensures() {
 }
 
 #[test]
-fn test_instrument_multiple_conditions_in_clauses() {
+fn multiple_conditions_in_clauses() {
     let spec: Spec = parse_quote! {
         requires: [CONDITION_1, CONDITION_2],
         maintains: [CONDITION_3, CONDITION_4],
@@ -256,7 +256,7 @@ fn test_instrument_multiple_conditions_in_clauses() {
 }
 
 #[test]
-fn test_instrument_with_binds_parameter() {
+fn binds_parameter() {
     let spec: Spec = parse_quote! {
         binds: OUTPUT_PATTERN,
         ensures: CONDITION_1,
@@ -278,7 +278,7 @@ fn test_instrument_with_binds_parameter() {
 }
 
 #[test]
-fn test_instrument_ensures_with_mixed_conditions() {
+fn ensures_with_mixed_conditions() {
     let spec: Spec = parse_quote! {
         ensures: [
             CONDITION_1,
@@ -307,7 +307,7 @@ fn test_instrument_ensures_with_mixed_conditions() {
 }
 
 #[test]
-fn test_instrument_with_cfg_attributes() {
+fn cfg_attributes() {
     let spec: Spec = parse_quote! {
         #[cfg(SETTING_1)]
         requires: CONDITION_1,
@@ -344,7 +344,7 @@ fn test_instrument_with_cfg_attributes() {
 }
 
 #[test]
-fn test_instrument_with_cfg_on_single_and_list_conditions() {
+fn cfg_on_single_and_list_conditions() {
     let spec: Spec = parse_quote! {
         #[cfg(SETTING_1)]
         requires: CONDITION_1,
@@ -381,7 +381,7 @@ fn test_instrument_with_cfg_on_single_and_list_conditions() {
 }
 
 #[test]
-fn test_instrument_with_complex_mixed_conditions() {
+fn complex_mixed_conditions() {
     let spec: Spec = parse_quote! {
         requires: CONDITION_1,
         #[cfg(SETTING_1)]
@@ -433,7 +433,7 @@ fn test_instrument_with_complex_mixed_conditions() {
 }
 
 #[test]
-fn test_instrument_with_captures() {
+fn captures() {
     let spec: Spec = parse_quote! {
         requires: CONDITION_1,
         captures: [

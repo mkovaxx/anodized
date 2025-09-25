@@ -15,7 +15,7 @@ impl Counter {
 }
 
 #[test]
-fn test_increment_success() {
+fn increment_success() {
     let mut c = Counter {
         count: 5,
         capacity: 10,
@@ -26,7 +26,7 @@ fn test_increment_success() {
 #[cfg(not(feature = "backend-no-checks"))]
 #[test]
 #[should_panic(expected = "Post-invariant failed: self.count <= self.capacity")]
-fn test_increment_violates_invariant() {
+fn increment_violates_invariant() {
     let mut c = Counter {
         count: 10,
         capacity: 10,
@@ -37,7 +37,7 @@ fn test_increment_violates_invariant() {
 #[cfg(not(feature = "backend-no-checks"))]
 #[test]
 #[should_panic(expected = "Pre-invariant failed: self.count <= self.capacity")]
-fn test_increment_violates_pre_invariant() {
+fn increment_violates_pre_invariant() {
     let mut c = Counter {
         count: 11,
         capacity: 10, // count > capacity, violates pre-invariant

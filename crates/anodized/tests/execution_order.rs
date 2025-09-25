@@ -25,7 +25,7 @@ fn func(log: &mut Vec<&'static str>) {
 
 #[cfg(not(feature = "backend-no-checks"))]
 #[test]
-fn test_execution_order() {
+fn execution_order() {
     let mut log = Vec::new();
     func(&mut log);
 
@@ -73,7 +73,7 @@ async fn async_func(log: &mut Vec<&'static str>) {
 
 #[cfg(not(feature = "backend-no-checks"))]
 #[test]
-fn test_async_execution_order() {
+fn async_execution_order() {
     let mut log = Vec::new();
     pollster::block_on(async_func(&mut log));
 
