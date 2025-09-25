@@ -256,7 +256,7 @@ fn multiple_conditions_in_clauses() {
 }
 
 #[test]
-fn with_binds_parameter() {
+fn binds_parameter() {
     let spec: Spec = parse_quote! {
         binds: OUTPUT_PATTERN,
         ensures: CONDITION_1,
@@ -307,7 +307,7 @@ fn ensures_with_mixed_conditions() {
 }
 
 #[test]
-fn with_cfg_attributes() {
+fn cfg_attributes() {
     let spec: Spec = parse_quote! {
         #[cfg(SETTING_1)]
         requires: CONDITION_1,
@@ -344,7 +344,7 @@ fn with_cfg_attributes() {
 }
 
 #[test]
-fn with_cfg_on_single_and_list_conditions() {
+fn cfg_on_single_and_list_conditions() {
     let spec: Spec = parse_quote! {
         #[cfg(SETTING_1)]
         requires: CONDITION_1,
@@ -381,7 +381,7 @@ fn with_cfg_on_single_and_list_conditions() {
 }
 
 #[test]
-fn with_complex_mixed_conditions() {
+fn complex_mixed_conditions() {
     let spec: Spec = parse_quote! {
         requires: CONDITION_1,
         #[cfg(SETTING_1)]
@@ -433,7 +433,7 @@ fn with_complex_mixed_conditions() {
 }
 
 #[test]
-fn with_captures() {
+fn captures() {
     let spec: Spec = parse_quote! {
         requires: CONDITION_1,
         captures: [
