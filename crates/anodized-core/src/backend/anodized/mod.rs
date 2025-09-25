@@ -70,9 +70,9 @@ pub fn instrument_fn_body(
         .chain(std::iter::once(quote! { #return_type }));
 
     let body_expr = if is_async {
-        quote! { async #original_body.await }
+        quote! { (async || #original_body)().await }
     } else {
-        quote! { #original_body }
+        quote! { (|| #original_body)() }
     };
 
     let exprs = capture_exprs.chain(std::iter::once(body_expr));
