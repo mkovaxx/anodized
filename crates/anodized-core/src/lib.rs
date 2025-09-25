@@ -409,6 +409,3 @@ mod kw {
     syn::custom_keyword!(binds);
     syn::custom_keyword!(ensures);
 }
-
-#[cfg(test)]
-mod test_parse_spec;

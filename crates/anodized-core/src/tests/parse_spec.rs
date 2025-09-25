@@ -1,6 +1,6 @@
 use crate::tests::util::assert_spec_eq;
 
-use super::*;
+use crate::*;
 use syn::parse_quote;
 
 #[test]
