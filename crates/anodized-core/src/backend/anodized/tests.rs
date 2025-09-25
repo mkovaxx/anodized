@@ -1,4 +1,4 @@
-use crate::util::assert_tokens_eq;
+use crate::tests::util::assert_tokens_eq;
 
 use super::*;
 use syn::{Block, Type, parse_quote};
