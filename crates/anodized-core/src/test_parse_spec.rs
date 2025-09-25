@@ -4,7 +4,7 @@ use super::*;
 use syn::parse_quote;
 
 #[test]
-fn test_parse_simple_spec() {
+fn parse_simple_spec() {
     let spec: Spec = parse_quote! {
         requires: is_valid(x),
         ensures: output > x,
@@ -24,7 +24,7 @@ fn test_parse_simple_spec() {
 }
 
 #[test]
-fn test_parse_all_clauses() {
+fn parse_all_clauses() {
     let spec: Spec = parse_quote! {
         requires: x > 0 && x.is_power_of_two(),
         maintains: self.is_valid(),
@@ -47,7 +47,7 @@ fn test_parse_all_clauses() {
 
 #[test]
 #[should_panic(expected = "parameters are out of order")]
-fn test_parse_out_of_order() {
+fn parse_out_of_order() {
     let _: Spec = parse_quote! {
         ensures: output == x,
         requires: x > 0 && !is_zero(x),
@@ -56,7 +56,7 @@ fn test_parse_out_of_order() {
 
 #[test]
 #[should_panic(expected = "multiple `binds` parameters are not allowed")]
-fn test_parse_multiple_binds() {
+fn parse_multiple_binds() {
     let _: Spec = parse_quote! {
         binds: y,
         binds: z,
@@ -67,7 +67,7 @@ fn test_parse_multiple_binds() {
 #[should_panic(
     expected = "at most one `captures` parameter is allowed; to capture multiple values, use a list"
 )]
-fn test_parse_multiple_captures() {
+fn parse_multiple_captures() {
     let _: Spec = parse_quote! {
         captures: value,
         captures: count as old_count,
@@ -75,7 +75,7 @@ fn test_parse_multiple_captures() {
 }
 
 #[test]
-fn test_parse_array_of_conditions() {
+fn parse_array_of_conditions() {
     let spec: Spec = parse_quote! {
         requires: [
             x >= 0,
@@ -107,7 +107,7 @@ fn test_parse_array_of_conditions() {
 }
 
 #[test]
-fn test_parse_ensures_with_explicit_closure() {
+fn parse_ensures_with_explicit_closure() {
     let spec: Spec = parse_quote! {
         ensures: |result| result.is_ok() || result.unwrap_err().kind() == ErrorKind::NotFound,
     };
@@ -126,7 +126,7 @@ fn test_parse_ensures_with_explicit_closure() {
 }
 
 #[test]
-fn test_parse_multiple_clauses_of_same_flavor() {
+fn parse_multiple_clauses_of_same_flavor() {
     let spec: Spec = parse_quote! {
         requires: x > 0 || x < -10,
         requires: y.is_ascii(),
@@ -157,7 +157,7 @@ fn test_parse_multiple_clauses_of_same_flavor() {
 }
 
 #[test]
-fn test_parse_mixed_single_and_array_clauses() {
+fn parse_mixed_single_and_array_clauses() {
     let spec: Spec = parse_quote! {
         requires: x == 0,
         requires: [
@@ -199,17 +199,17 @@ fn test_parse_mixed_single_and_array_clauses() {
 }
 
 #[test]
-fn test_parse_cfg_attributes() {
+fn parse_cfg_attributes() {
     let spec: Spec = parse_quote! {
         #[cfg(test)]
-        requires: x > 0 && is_test_mode(),
+        requires: x > 0 && is_mode(),
         #[cfg(not(debug_assertions))]
         ensures: output < x,
     };
 
     let expected = Spec {
         requires: vec![Condition {
-            expr: parse_quote! { x > 0 && is_test_mode() },
+            expr: parse_quote! { x > 0 && is_mode() },
             cfg: Some(parse_quote! { test }),
         }],
         maintains: vec![],
@@ -225,7 +225,7 @@ fn test_parse_cfg_attributes() {
 
 #[test]
 #[should_panic(expected = "unsupported attribute; only `cfg` is allowed")]
-fn test_parse_non_cfg_attribute() {
+fn parse_non_cfg_attribute() {
     let _: Spec = parse_quote! {
         #[allow(dead_code)]
         requires: x > 0,
@@ -234,7 +234,7 @@ fn test_parse_non_cfg_attribute() {
 
 #[test]
 #[should_panic(expected = "multiple `cfg` attributes are not supported")]
-fn test_parse_multiple_cfg_attributes() {
+fn parse_multiple_cfg_attributes() {
     let _: Spec = parse_quote! {
         #[cfg(test)]
         #[cfg(debug_assertions)]
@@ -244,7 +244,7 @@ fn test_parse_multiple_cfg_attributes() {
 
 #[test]
 #[should_panic(expected = "`cfg` attribute is not supported on `binds`")]
-fn test_parse_cfg_on_binds() {
+fn parse_cfg_on_binds() {
     let _: Spec = parse_quote! {
         #[cfg(test)]
         binds: y,
@@ -252,7 +252,7 @@ fn test_parse_cfg_on_binds() {
 }
 
 #[test]
-fn test_parse_macro_in_condition() {
+fn parse_macro_in_condition() {
     let spec: Spec = parse_quote! {
         requires: matches!(self.state, State::Idle),
         maintains: matches!(self.state, State::Idle | State::Running | State::Finished),
@@ -275,7 +275,7 @@ fn test_parse_macro_in_condition() {
 }
 
 #[test]
-fn test_parse_binds_pattern() {
+fn parse_binds_pattern() {
     let spec: Spec = parse_quote! {
         binds: (a, b),
         ensures: [
@@ -304,7 +304,7 @@ fn test_parse_binds_pattern() {
 }
 
 #[test]
-fn test_parse_multiple_conditions() {
+fn parse_multiple_conditions() {
     let spec: Spec = parse_quote! {
         requires: [
             self.initialized,
@@ -329,7 +329,7 @@ fn test_parse_multiple_conditions() {
 }
 
 #[test]
-fn test_parse_rename_return_value() {
+fn parse_rename_return_value() {
     let spec: Spec = parse_quote! {
         binds: result,
         ensures: [
@@ -358,7 +358,7 @@ fn test_parse_rename_return_value() {
 }
 
 #[test]
-fn test_parse_captures_simple_identifier() {
+fn parse_captures_simple_identifier() {
     let spec: Spec = parse_quote! {
         captures: count,
         ensures: output == old_count + 1,
@@ -381,7 +381,7 @@ fn test_parse_captures_simple_identifier() {
 }
 
 #[test]
-fn test_parse_captures_identifier_with_alias() {
+fn parse_captures_identifier_with_alias() {
     let spec: Spec = parse_quote! {
         captures: value as prev_value,
         ensures: output > prev_value,
@@ -404,7 +404,7 @@ fn test_parse_captures_identifier_with_alias() {
 }
 
 #[test]
-fn test_parse_captures_array() {
+fn parse_captures_array() {
     let spec: Spec = parse_quote! {
         captures: [
             count,
@@ -455,7 +455,7 @@ fn test_parse_captures_array() {
 }
 
 #[test]
-fn test_parse_captures_with_all_clauses() {
+fn parse_captures_with_all_clauses() {
     let spec: Spec = parse_quote! {
         requires: x > 0,
         maintains: self.is_valid(),
@@ -482,7 +482,7 @@ fn test_parse_captures_with_all_clauses() {
 
 #[test]
 #[should_panic(expected = "parameters are out of order")]
-fn test_parse_captures_out_of_order() {
+fn parse_captures_out_of_order() {
     let _: Spec = parse_quote! {
         captures: value,
         maintains: self.is_valid(),
@@ -490,7 +490,7 @@ fn test_parse_captures_out_of_order() {
 }
 
 #[test]
-fn test_parse_captures_array_expression() {
+fn parse_captures_array_expression() {
     let spec: Spec = parse_quote! {
         captures: [a, b, c] as slice,
         ensures: slice.len() == 3,
@@ -514,7 +514,7 @@ fn test_parse_captures_array_expression() {
 
 #[test]
 #[should_panic(expected = "complex expressions require an explicit alias using `as`")]
-fn test_parse_captures_complex_expr_without_alias() {
+fn parse_captures_complex_expr_without_alias() {
     let _: Spec = parse_quote! {
         captures: self.items.len(),
         ensures: output > 0,
@@ -523,7 +523,7 @@ fn test_parse_captures_complex_expr_without_alias() {
 
 #[test]
 #[should_panic(expected = "complex expressions require an explicit alias using `as`")]
-fn test_parse_captures_method_call_without_alias() {
+fn parse_captures_method_call_without_alias() {
     let _: Spec = parse_quote! {
         captures: foo.bar(),
         ensures: output > 0,
@@ -532,7 +532,7 @@ fn test_parse_captures_method_call_without_alias() {
 
 #[test]
 #[should_panic(expected = "complex expressions require an explicit alias using `as`")]
-fn test_parse_captures_binary_expr_without_alias() {
+fn parse_captures_binary_expr_without_alias() {
     let _: Spec = parse_quote! {
         captures: a + b,
         ensures: output > 0,
@@ -541,7 +541,7 @@ fn test_parse_captures_binary_expr_without_alias() {
 
 #[test]
 #[should_panic(expected = "complex expressions require an explicit alias using `as`")]
-fn test_parse_captures_array_with_complex_expr_no_alias() {
+fn parse_captures_array_with_complex_expr_no_alias() {
     let _: Spec = parse_quote! {
         captures: [
             count,
@@ -554,7 +554,7 @@ fn test_parse_captures_array_with_complex_expr_no_alias() {
 
 #[test]
 #[should_panic(expected = "`cfg` attribute is not supported on `captures`")]
-fn test_parse_cfg_on_captures() {
+fn parse_cfg_on_captures() {
     let _: Spec = parse_quote! {
         #[cfg(test)]
         captures: value as old_value,
@@ -563,7 +563,7 @@ fn test_parse_cfg_on_captures() {
 }
 
 #[test]
-fn test_parse_captures_edge_case_cast_expr() {
+fn parse_captures_edge_case_cast_expr() {
     let spec: Spec = parse_quote! {
         captures: r as u8 as old_red,
     };
@@ -582,7 +582,7 @@ fn test_parse_captures_edge_case_cast_expr() {
 }
 
 #[test]
-fn test_parse_captures_edge_case_array_of_cast_exprs() {
+fn parse_captures_edge_case_array_of_cast_exprs() {
     let spec: Spec = parse_quote! {
         captures: [
             r as u8,
@@ -611,7 +611,7 @@ fn test_parse_captures_edge_case_array_of_cast_exprs() {
 }
 
 #[test]
-fn test_parse_captures_edge_case_list_of_cast_exprs() {
+fn parse_captures_edge_case_list_of_cast_exprs() {
     let spec: Spec = parse_quote! {
         captures: [
             r as u8 as old_red,
