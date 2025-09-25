@@ -15,7 +15,7 @@ use anodized::spec;
         old_y == 10,
     ],
 )]
-fn test_captures_not_in_body(x: i32, y: i32) -> i32 {
+fn captures_not_in_body(x: i32, y: i32) -> i32 {
     // Should be an error: `old_x` must not be in scope.
     let a = old_x;
     // Should be an error: `old_y` must not be in scope.
@@ -32,7 +32,7 @@ fn test_captures_not_in_body(x: i32, y: i32) -> i32 {
         x as old_x,
     ],
 )]
-fn test_captures_not_in_requires(x: i32) {
+fn captures_not_in_requires(x: i32) {
     // Function body
 }
 
@@ -45,7 +45,7 @@ fn test_captures_not_in_requires(x: i32) {
         x as old_x,
     ],
 )]
-fn test_captures_not_in_maintains(x: i32) {
+fn captures_not_in_maintains(x: i32) {
     // Function body
 }
 

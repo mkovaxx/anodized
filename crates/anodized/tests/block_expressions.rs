@@ -24,7 +24,7 @@ fn function_with_blocks(vec: &mut Vec<i32>) {
 }
 
 #[test]
-fn test_block_expressions() {
+fn block_expressions() {
     let mut vec = vec![1, 2, 3];
     function_with_blocks(&mut vec);
 }

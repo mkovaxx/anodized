@@ -9,7 +9,7 @@ async fn half_async(x: f32) -> f32 {
 }
 
 #[test]
-fn test_async_function_compiles() {
+fn async_function_compiles() {
     let future = half_async(5.0);
 
     fn is_future<T: core::future::Future>(_: &T) {}
