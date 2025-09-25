@@ -32,7 +32,7 @@ fn test_execution_order() {
     // Verify the exact execution order
     assert_eq!(
         log,
-        vec![
+        [
             "requires1",
             "requires2",
             "maintains1",
@@ -79,7 +79,7 @@ fn test_async_execution_order() {
 
     assert_eq!(
         log,
-        vec![
+        [
             "requires1",
             "requires2",
             "maintains1",
