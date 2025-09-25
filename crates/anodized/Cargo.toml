@@ -23,4 +23,5 @@ quote.workspace = true
 syn.workspace = true
 
 [dev-dependencies]
+pollster = "0.4"
 trybuild = "1.0"
