@@ -33,6 +33,8 @@ impl Backend {
         is_async: bool,
         return_type: &syn::Type,
     ) -> Result<Block> {
+        let build_check = self.build_check;
+
         // The identifier for the return value binding.
         let output_ident = Ident::new("__anodized_output", Span::mixed_site());
 
@@ -51,15 +53,13 @@ impl Backend {
             .requires
             .iter()
             .map(|condition| {
-                let expr = &condition.expr;
-                let expr_str = expr.to_token_stream().to_string();
-                let assert = quote! { assert!(#expr, "Precondition failed: {}", #expr_str); };
+                let expr = condition.expr.to_token_stream();
+                let assert = build_check(&expr, "Precondition failed: {}", &expr);
                 guard_assert(assert, condition.cfg.as_ref())
             })
             .chain(spec.maintains.iter().map(|condition| {
-                let expr = &condition.expr;
-                let expr_str = expr.to_token_stream().to_string();
-                let assert = quote! { assert!(#expr, "Pre-invariant failed: {}", #expr_str); };
+                let expr = condition.expr.to_token_stream();
+                let assert = build_check(&expr, "Pre-invariant failed: {}", &expr);
                 guard_assert(assert, condition.cfg.as_ref())
             }));
 
@@ -105,9 +105,8 @@ impl Backend {
             .maintains
             .iter()
             .map(|condition| {
-                let expr = &condition.expr;
-                let expr_str = expr.to_token_stream().to_string();
-                let assert = quote! { assert!(#expr, "Post-invariant failed: {}", #expr_str); };
+                let expr = condition.expr.to_token_stream();
+                let assert = build_check(&expr, "Post-invariant failed: {}", &expr);
                 guard_assert(assert, condition.cfg.as_ref())
             })
             .chain(spec.ensures.iter().map(|postcondition| {
@@ -115,11 +114,13 @@ impl Backend {
                     postcondition.closure.clone(),
                     return_type.clone(),
                 );
-                let closure_str = postcondition.closure.to_token_stream().to_string();
 
-                let assert = quote! {
-                    assert!((#closure)(&#output_ident), "Postcondition failed: {}", #closure_str);
-                };
+                let expr = quote! { (#closure)(&#output_ident) };
+                let assert = build_check(
+                    &expr,
+                    "Postcondition failed: {}",
+                    &postcondition.closure.to_token_stream(),
+                );
                 guard_assert(assert, postcondition.cfg.as_ref())
             }));
 
