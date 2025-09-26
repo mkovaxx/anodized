@@ -7,7 +7,7 @@ use proc_macro2::{Span, TokenStream as TokenStream2};
 use quote::{ToTokens, quote};
 use syn::{Block, Ident, ItemFn, Meta, parse::Result, parse_quote};
 
-pub fn handle_fn(backend: Backend, spec: Spec, mut func: ItemFn) -> syn::Result<ItemFn> {
+pub fn instrument_fn(backend: Backend, spec: Spec, mut func: ItemFn) -> syn::Result<ItemFn> {
     let is_async = func.sig.asyncness.is_some();
 
     // Extract the return type from the function signature
