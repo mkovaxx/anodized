@@ -10,7 +10,7 @@ use syn::{
 use crate::{Capture, Condition, PostCondition, Spec};
 
 #[cfg(test)]
-mod parse_spec;
+mod tests;
 
 impl Parse for Spec {
     fn parse(input: ParseStream) -> Result<Self> {
