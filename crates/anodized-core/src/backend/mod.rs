@@ -1,9 +1,16 @@
 pub mod function;
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
-pub enum Backend {
-    /// Anodized instrumentation with runtime checks.
-    Default,
-    /// Anodized instrumentation with no runtime checks.
-    NoChecks,
+pub struct Backend {
+    pub disable_runtime_checks: bool,
+}
+
+impl Backend {
+    pub const DEFAULT: Backend = Backend {
+        disable_runtime_checks: false,
+    };
+
+    pub const NO_CHECKS: Backend = Backend {
+        disable_runtime_checks: true,
+    };
 }

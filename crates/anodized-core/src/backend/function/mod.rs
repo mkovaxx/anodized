@@ -17,7 +17,7 @@ pub fn instrument_fn(backend: Backend, spec: Spec, mut func: ItemFn) -> syn::Res
     };
 
     // Generate the new, instrumented function body.
-    let disable_runtime_checks = backend != Backend::Default;
+    let disable_runtime_checks = backend.disable_runtime_checks;
     let new_body = instrument_fn_body(
         &spec,
         &func.block,
@@ -29,9 +29,7 @@ pub fn instrument_fn(backend: Backend, spec: Spec, mut func: ItemFn) -> syn::Res
     // Replace the old function body with the new one.
     *func.block = new_body;
 
-    match backend {
-        Backend::Default | Backend::NoChecks => Ok(func),
-    }
+    Ok(func)
 }
 
 /// Takes the spec and the original body and returns a new instrumented function body.

@@ -19,9 +19,9 @@ const _: () = {
 };
 
 const BACKEND: Backend = if cfg!(feature = "backend-no-checks") {
-    Backend::NoChecks
+    Backend::NO_CHECKS
 } else {
-    Backend::Default
+    Backend::DEFAULT
 };
 
 /// The main procedural macro for defining specifications on functions.
