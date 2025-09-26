@@ -8,7 +8,7 @@ use syn::{Item, parse_macro_input};
 
 use anodized_core::{
     Spec,
-    backend::{Backend, handle_fn},
+    backend::{Backend, function::handle_fn},
 };
 
 const _: () = {
