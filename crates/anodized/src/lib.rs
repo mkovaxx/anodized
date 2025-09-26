@@ -8,7 +8,7 @@ use syn::{Item, parse_macro_input};
 
 use anodized_core::{
     Spec,
-    backend::{Backend, handle_fn},
+    backend::{Backend, function::instrument_fn},
 };
 
 const _: () = {
@@ -36,7 +36,7 @@ pub fn spec(args: TokenStream, input: TokenStream) -> TokenStream {
     let result = match item {
         Item::Fn(func) => {
             let spec = parse_macro_input!(args as Spec);
-            handle_fn(BACKEND, spec, func)
+            instrument_fn(BACKEND, spec, func)
         }
         unsupported_item => {
             let item_type = item_to_string(&unsupported_item);
