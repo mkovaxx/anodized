@@ -35,7 +35,7 @@ pub fn handle_fn(backend: Backend, spec: Spec, mut func: ItemFn) -> syn::Result<
 }
 
 /// Takes the spec and the original body and returns a new instrumented function body.
-pub fn instrument_fn_body(
+fn instrument_fn_body(
     spec: &Spec,
     original_body: &Block,
     is_async: bool,
