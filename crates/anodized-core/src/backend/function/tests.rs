@@ -64,6 +64,31 @@ fn requires_disable_runtime_checks() {
 }
 
 #[test]
+fn requires_no_panic_backend() {
+    let spec: Spec = parse_quote! {
+        requires: CONDITION_1,
+    };
+    let body = make_fn_body();
+    let ret_type = make_return_type();
+    let is_async = false;
+
+    let expected: Block = parse_quote! {
+        {
+            if !(CONDITION_1) {
+                eprintln!("Precondition failed: {}", "CONDITION_1");
+            }
+            let (__anodized_output): (#ret_type) = ((|| #body)());
+            __anodized_output
+        }
+    };
+
+    let observed = Backend::NO_PANIC
+        .instrument_fn_body(&spec, &body, is_async, &ret_type)
+        .unwrap();
+    assert_tokens_eq(&observed, &expected);
+}
+
+#[test]
 fn simple_maintains() {
     let spec: Spec = parse_quote! {
         maintains: CONDITION_1,

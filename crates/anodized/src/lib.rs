@@ -9,7 +9,8 @@ use syn::{Item, parse_macro_input};
 use anodized_core::{Spec, backend::Backend};
 
 const _: () = {
-    let count: u32 = cfg!(feature = "backend-no-checks") as u32;
+    let count: u32 =
+        cfg!(feature = "backend-no-checks") as u32 + cfg!(feature = "backend-no-panic") as u32;
     if count > 1 {
         panic!("anodized: backend features are mutually exclusive");
     }
@@ -17,6 +18,8 @@ const _: () = {
 
 const BACKEND: Backend = if cfg!(feature = "backend-no-checks") {
     Backend::NO_CHECKS
+} else if cfg!(feature = "backend-no-panic") {
+    Backend::NO_PANIC
 } else {
     Backend::DEFAULT
 };

@@ -18,9 +18,23 @@ impl Backend {
         disable_runtime_checks: true,
         build_check: build_assert,
     };
+
+    pub const NO_PANIC: Backend = Backend {
+        disable_runtime_checks: false,
+        build_check: build_eprint,
+    };
 }
 
 fn build_assert(expr: &TokenStream, message: &str, repr: &TokenStream) -> TokenStream {
     let repr_str = repr.to_string();
     quote! { assert!(#expr, #message, #repr_str); }
+}
+
+fn build_eprint(expr: &TokenStream, message: &str, repr: &TokenStream) -> TokenStream {
+    let repr_str = repr.to_string();
+    quote! {
+        if !(#expr) {
+            eprintln!(#message, #repr_str);
+        }
+    }
 }
