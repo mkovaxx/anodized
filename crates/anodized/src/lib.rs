@@ -6,10 +6,7 @@ use proc_macro::TokenStream;
 use quote::ToTokens;
 use syn::{Item, parse_macro_input};
 
-use anodized_core::{
-    Spec,
-    backend::{Backend, function::instrument_fn},
-};
+use anodized_core::{Spec, backend::Backend};
 
 const _: () = {
     let count: u32 = cfg!(feature = "backend-no-checks") as u32;
@@ -36,7 +33,7 @@ pub fn spec(args: TokenStream, input: TokenStream) -> TokenStream {
     let result = match item {
         Item::Fn(func) => {
             let spec = parse_macro_input!(args as Spec);
-            instrument_fn(BACKEND, spec, func)
+            BACKEND.instrument_fn(spec, func)
         }
         unsupported_item => {
             let item_type = item_to_string(&unsupported_item);
