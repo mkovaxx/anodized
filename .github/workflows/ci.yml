@@ -11,15 +11,15 @@ env:
 
 jobs:
   test:
-    name: Run tests with feature `${{ matrix.backend }}`
+    name: Run tests for backend `${{ matrix.backend }}`
     runs-on: ubuntu-latest
     strategy:
       matrix:
         include:
           - backend: default
-            cargo-args: ""
-          - backend: backend-no-checks
-            cargo-args: "--features backend-no-checks"
+            features: ""
+          - backend: no-checks
+            features: "backend-no-checks"
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -27,5 +27,5 @@ jobs:
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
 
-      - name: Cargo test feature `${{ matrix.backend }}`
-        run: cargo test --no-fail-fast ${{ matrix.cargo-args }}
+      - name: Cargo test backend `${{ matrix.backend }}`
+        run: cargo test --no-fail-fast --features "${{ matrix.features }}"
