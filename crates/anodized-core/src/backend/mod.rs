@@ -1,4 +1,4 @@
-pub mod anodized;
+pub mod function;
 
 use syn::ItemFn;
 
@@ -23,7 +23,7 @@ pub fn handle_fn(backend: Backend, spec: Spec, mut func: ItemFn) -> syn::Result<
 
     // Generate the new, instrumented function body.
     let disable_runtime_checks = backend != Backend::Default;
-    let new_body = anodized::instrument_fn_body(
+    let new_body = function::instrument_fn_body(
         &spec,
         &func.block,
         is_async,
