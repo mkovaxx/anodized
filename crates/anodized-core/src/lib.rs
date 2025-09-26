@@ -8,7 +8,7 @@ pub mod backend;
 pub mod frontend;
 
 #[cfg(test)]
-mod tests;
+mod test_util;
 
 /// A spec specifies the intended behavior of a function or method.
 #[derive(Debug)]

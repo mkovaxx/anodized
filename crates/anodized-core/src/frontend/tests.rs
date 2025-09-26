@@ -1,4 +1,4 @@
-use crate::tests::util::assert_spec_eq;
+use crate::test_util::assert_spec_eq;
 
 use crate::*;
 use syn::parse_quote;
