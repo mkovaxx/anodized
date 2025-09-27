@@ -23,7 +23,7 @@ fn increment_success() {
     c.increment();
 }
 
-#[cfg(not(feature = "backend-no-checks"))]
+#[cfg(not(any(feature = "backend-no-checks", feature = "backend-no-panic")))]
 #[test]
 #[should_panic(expected = "Post-invariant failed: self.count <= self.capacity")]
 fn increment_violates_invariant() {
@@ -34,7 +34,7 @@ fn increment_violates_invariant() {
     c.increment(); // This will make count 11, violating the invariant on exit.
 }
 
-#[cfg(not(feature = "backend-no-checks"))]
+#[cfg(not(any(feature = "backend-no-checks", feature = "backend-no-panic")))]
 #[test]
 #[should_panic(expected = "Pre-invariant failed: self.count <= self.capacity")]
 fn increment_violates_pre_invariant() {
