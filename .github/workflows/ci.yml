@@ -29,5 +29,8 @@ jobs:
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
 
-      - name: Cargo test backend `${{ matrix.backend }}`
-        run: cargo test --no-fail-fast --features "${{ matrix.features }}"
+      - name: Unit test anodized-core
+        run: cargo test -p anodized-core --lib --no-fail-fast
+
+      - name: Integration test anodized with backend `${{ matrix.backend }}`
+        run: cargo test -p anodized --tests --no-fail-fast --features "${{ matrix.features }}"
