@@ -10,8 +10,21 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  test:
-    name: Run tests for backend `${{ matrix.backend }}`
+  test-anodized-core:
+    name: Test anodized-core
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Unit test anodized-core
+        run: cargo test -p anodized-core --lib --no-fail-fast
+
+  test-anodized:
+    name: Test anodized with backend `${{ matrix.backend }}`
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -28,9 +41,6 @@ jobs:
 
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
-
-      - name: Unit test anodized-core
-        run: cargo test -p anodized-core --lib --no-fail-fast
 
       - name: Integration test anodized with backend `${{ matrix.backend }}`
         run: cargo test -p anodized --tests --no-fail-fast --features "${{ matrix.features }}"
