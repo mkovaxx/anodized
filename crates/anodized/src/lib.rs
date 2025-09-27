@@ -6,22 +6,22 @@ use proc_macro::TokenStream;
 use quote::ToTokens;
 use syn::{Item, parse_macro_input};
 
-use anodized_core::{
-    Spec,
-    backend::{Backend, function::instrument_fn},
-};
+use anodized_core::{Spec, backend::Backend};
 
 const _: () = {
-    let count: u32 = cfg!(feature = "backend-no-checks") as u32;
+    let count: u32 =
+        cfg!(feature = "backend-no-checks") as u32 + cfg!(feature = "backend-no-panic") as u32;
     if count > 1 {
         panic!("anodized: backend features are mutually exclusive");
     }
 };
 
 const BACKEND: Backend = if cfg!(feature = "backend-no-checks") {
-    Backend::NoChecks
+    Backend::NO_CHECKS
+} else if cfg!(feature = "backend-no-panic") {
+    Backend::NO_PANIC
 } else {
-    Backend::Default
+    Backend::DEFAULT
 };
 
 /// The main procedural macro for defining specifications on functions.
@@ -36,7 +36,7 @@ pub fn spec(args: TokenStream, input: TokenStream) -> TokenStream {
     let result = match item {
         Item::Fn(func) => {
             let spec = parse_macro_input!(args as Spec);
-            instrument_fn(BACKEND, spec, func)
+            BACKEND.instrument_fn(spec, func)
         }
         unsupported_item => {
             let item_type = item_to_string(&unsupported_item);

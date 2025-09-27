@@ -15,6 +15,7 @@ proc-macro = true
 
 [features]
 backend-no-checks = []
+backend-no-panic = []
 
 [dependencies]
 anodized-core.workspace = true
