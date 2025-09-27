@@ -2,7 +2,6 @@ use proc_macro2::TokenStream;
 use quote::quote;
 pub mod function;
 
-#[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub struct Backend {
     pub disable_runtime_checks: bool,
     pub build_check: fn(&TokenStream, &str, &TokenStream) -> TokenStream,
