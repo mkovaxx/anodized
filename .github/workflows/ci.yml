@@ -20,6 +20,8 @@ jobs:
             features: ""
           - backend: no-checks
             features: "backend-no-checks"
+          - backend: no-panic
+            features: "backend-no-panic"
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
