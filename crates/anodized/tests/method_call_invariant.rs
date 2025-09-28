@@ -18,7 +18,7 @@ impl Validator {
     }
 }
 
-#[cfg(not(feature = "backend-no-checks"))]
+#[cfg(feature = "backend-check-and-panic")]
 #[test]
 #[should_panic(expected = "Post-invariant failed: self.is_valid()")]
 fn violates_post_invariant() {
@@ -27,7 +27,7 @@ fn violates_post_invariant() {
     v.set_validity(false);
 }
 
-#[cfg(not(feature = "backend-no-checks"))]
+#[cfg(feature = "backend-check-and-panic")]
 #[test]
 #[should_panic(expected = "Pre-invariant failed: self.is_valid()")]
 fn violates_pre_invariant() {
