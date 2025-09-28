@@ -116,7 +116,7 @@ fn captures_with_preconditions() {
     assert_eq!(container.counter, 51);
 }
 
-#[cfg(not(any(feature = "backend-no-checks", feature = "backend-no-panic")))]
+#[cfg(feature = "check-and-panic")]
 #[test]
 #[should_panic(expected = "Postcondition failed")]
 fn capture_postcondition_failure() {
@@ -133,7 +133,7 @@ fn capture_postcondition_failure() {
     bad_increment(&mut val);
 }
 
-#[cfg(not(any(feature = "backend-no-checks", feature = "backend-no-panic")))]
+#[cfg(feature = "check-and-panic")]
 #[test]
 #[should_panic(expected = "Precondition failed")]
 fn precondition_runs_before_captures() {

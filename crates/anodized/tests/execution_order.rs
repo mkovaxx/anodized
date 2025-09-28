@@ -23,7 +23,7 @@ fn func(log: &mut Vec<&'static str>) {
     return;
 }
 
-#[cfg(not(feature = "backend-no-checks"))]
+#[cfg(not(feature = "no-check"))]
 #[test]
 fn execution_order() {
     let mut log = Vec::new();
@@ -71,7 +71,7 @@ async fn async_func(log: &mut Vec<&'static str>) {
     return;
 }
 
-#[cfg(not(feature = "backend-no-checks"))]
+#[cfg(not(feature = "no-check"))]
 #[test]
 fn async_execution_order() {
     let mut log = Vec::new();

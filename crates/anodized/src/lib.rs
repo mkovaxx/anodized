@@ -10,8 +10,8 @@ use anodized_core::{Spec, backend::Backend};
 
 const _: () = {
     let count: u32 = cfg!(feature = "check-and-panic") as u32
-        + cfg!(feature = "backend-no-checks") as u32
-        + cfg!(feature = "backend-no-panic") as u32;
+        + cfg!(feature = "check-and-print") as u32
+        + cfg!(feature = "no-check") as u32;
     if count > 1 {
         panic!("anodized: backend features are mutually exclusive");
     }
@@ -19,13 +19,13 @@ const _: () = {
 
 const BACKEND: Backend = if cfg!(feature = "check-and-panic") {
     Backend::CHECK_AND_PANIC
-} else if cfg!(feature = "backend-no-checks") {
-    Backend::NO_CHECK
-} else if cfg!(feature = "backend-no-panic") {
+} else if cfg!(feature = "check-and-print") {
     Backend::CHECK_AND_PRINT
+} else if cfg!(feature = "no-check") {
+    Backend::NO_CHECK
 } else {
     panic!(
-        "anodized: you must select a feature from `check-and-panic`, `check-and-print`, `no-check`"
+        "anodized: you must select a backend feature from `check-and-panic`, `check-and-print`, or `no-check`"
     )
 };
 

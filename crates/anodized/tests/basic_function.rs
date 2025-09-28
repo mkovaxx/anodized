@@ -13,7 +13,7 @@ fn divide_success() {
     checked_divide(10, 2);
 }
 
-#[cfg(not(any(feature = "backend-no-checks", feature = "backend-no-panic")))]
+#[cfg(feature = "check-and-panic")]
 #[test]
 #[should_panic(expected = "Precondition failed: divisor != 0")]
 fn divide_by_zero_panics() {

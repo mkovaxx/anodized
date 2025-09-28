@@ -23,7 +23,7 @@ fn increment_success() {
     c.increment();
 }
 
-#[cfg(not(any(feature = "backend-no-checks", feature = "backend-no-panic")))]
+#[cfg(feature = "check-and-panic")]
 #[test]
 #[should_panic(expected = "Post-invariant failed: self.count <= self.capacity")]
 fn increment_violates_invariant() {
@@ -31,16 +31,18 @@ fn increment_violates_invariant() {
         count: 10,
         capacity: 10,
     };
-    c.increment(); // This will make count 11, violating the invariant on exit.
+    // This will make count 11, violating the invariant on exit.
+    c.increment();
 }
 
-#[cfg(not(any(feature = "backend-no-checks", feature = "backend-no-panic")))]
+#[cfg(feature = "check-and-panic")]
 #[test]
 #[should_panic(expected = "Pre-invariant failed: self.count <= self.capacity")]
 fn increment_violates_pre_invariant() {
     let mut c = Counter {
         count: 11,
-        capacity: 10, // count > capacity, violates pre-invariant
+        // count > capacity, violates pre-invariant
+        capacity: 10,
     };
     c.increment();
 }

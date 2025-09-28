@@ -33,7 +33,7 @@ fn calculate_odd_result(output: i32) -> i32 {
     }
 }
 
-#[cfg(not(any(feature = "backend-no-checks", feature = "backend-no-panic")))]
+#[cfg(feature = "check-and-panic")]
 #[test]
 #[should_panic(expected = "Postcondition failed: | result | * result % 2 == 0")]
 fn rename_panics_if_not_even() {
