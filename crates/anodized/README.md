@@ -122,16 +122,16 @@ fn push_checked<T>(vec: &mut Vec<T>, value: T) { todo!() }
 
 Anodized offers multiple backends that control how `#[spec]` annotations expand:
 
-- **default (implicit)**: When no backend feature is selected, Anodized injects runtime `assert!` checks for every `requires`, `maintains`, and `ensures` clause. A failing condition panics with a descriptive message, just like the examples above.
-- **`check-and-print`**: Keeps the runtime checks but reports violations with `eprintln!` so execution can continue (useful for experiments or logging).
-- **`no-check`**: Generates the same instrumentation but guards each `assert!` inside `if false { ... }`. This keeps the `#[spec]` syntax- and type-checked while letting the compiler optimize the runtime checks away.
+- **`check-and-panic`**: Inject an `assert!` check for each `requires`, `maintains`, and `ensures` clause. A failing condition panics with a descriptive message, just like the examples above.
+- **`check-and-print`**: Reports violations with `eprintln!` so execution can continue (useful for experiments or logging).
+- **`no-check`**: Disable checks altogether. Each check is surrounded with an `if false { ... }`, which keeps the `#[spec]` syntax- and type-checked while letting the compiler optimize the runtime checks away.
 
 The backend setting goes in your `Cargo.toml`, for example:
 
 ```toml
 anodized = {
   version = # version
-  features = ["backend-no-check"]
+  features = ["backend-check-and-print"]
 }
 ```
 
