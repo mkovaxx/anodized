@@ -25,7 +25,10 @@ const BACKEND: Backend = if cfg!(feature = "backend-check-and-panic") {
     Backend::NO_CHECK
 } else {
     panic!(
-        "anodized: you must select a backend feature from `check-and-panic`, `check-and-print`, or `no-check`"
+        r#"anodized: a backend feature must be enabled:
+`backend-check-and-panic`
+`backend-check-and-print`
+`backend-no-check`"#
     )
 };
 
