@@ -23,7 +23,7 @@ fn increment_success() {
     c.increment();
 }
 
-#[cfg(feature = "check-and-panic")]
+#[cfg(feature = "backend-check-and-panic")]
 #[test]
 #[should_panic(expected = "Post-invariant failed: self.count <= self.capacity")]
 fn increment_violates_invariant() {
@@ -35,7 +35,7 @@ fn increment_violates_invariant() {
     c.increment();
 }
 
-#[cfg(feature = "check-and-panic")]
+#[cfg(feature = "backend-check-and-panic")]
 #[test]
 #[should_panic(expected = "Pre-invariant failed: self.count <= self.capacity")]
 fn increment_violates_pre_invariant() {

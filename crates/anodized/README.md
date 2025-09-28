@@ -131,7 +131,7 @@ The backend setting goes in your `Cargo.toml`, for example:
 ```toml
 anodized = {
   version = # version
-  features = ["no-check"]
+  features = ["backend-no-check"]
 }
 ```
 

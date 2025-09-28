@@ -29,12 +29,9 @@ jobs:
     strategy:
       matrix:
         include:
-          - backend: default
-            features: ""
-          - backend: no-checks
-            features: "backend-no-checks"
-          - backend: no-panic
-            features: "backend-no-panic"
+          - backend: check-and-panic
+          - backend: check-and-print
+          - backend: no-check
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -43,4 +40,4 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
 
       - name: Integration test anodized with backend `${{ matrix.backend }}`
-        run: cargo test -p anodized --tests --no-fail-fast --features "${{ matrix.features }}"
+        run: cargo test -p anodized --tests --no-fail-fast --features "backend-${{ matrix.features }}"

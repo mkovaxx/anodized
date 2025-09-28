@@ -12,7 +12,7 @@ fn sort_pair(pair: (i32, i32)) -> (i32, i32) {
     (b, a)
 }
 
-#[cfg(feature = "check-and-panic")]
+#[cfg(feature = "backend-check-and-panic")]
 #[test]
 #[should_panic(expected = "Postcondition failed: | (a, b) | a <= b")]
 fn sort_fail_postcondition() {
