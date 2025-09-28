@@ -9,19 +9,24 @@ use syn::{Item, parse_macro_input};
 use anodized_core::{Spec, backend::Backend};
 
 const _: () = {
-    let count: u32 =
-        cfg!(feature = "backend-no-checks") as u32 + cfg!(feature = "backend-no-panic") as u32;
+    let count: u32 = cfg!(feature = "check-and-panic") as u32
+        + cfg!(feature = "backend-no-checks") as u32
+        + cfg!(feature = "backend-no-panic") as u32;
     if count > 1 {
         panic!("anodized: backend features are mutually exclusive");
     }
 };
 
-const BACKEND: Backend = if cfg!(feature = "backend-no-checks") {
-    Backend::NO_CHECKS
+const BACKEND: Backend = if cfg!(feature = "check-and-panic") {
+    Backend::CHECK_AND_PANIC
+} else if cfg!(feature = "backend-no-checks") {
+    Backend::NO_CHECK
 } else if cfg!(feature = "backend-no-panic") {
-    Backend::NO_PANIC
+    Backend::CHECK_AND_PRINT
 } else {
-    Backend::DEFAULT
+    panic!(
+        "anodized: you must select a feature from `check-and-panic`, `check-and-print`, `no-check`"
+    )
 };
 
 /// The main procedural macro for defining specifications on functions.

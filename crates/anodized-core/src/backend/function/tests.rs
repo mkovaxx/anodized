@@ -32,7 +32,7 @@ fn simple_requires() {
         }
     };
 
-    let observed = Backend::DEFAULT
+    let observed = Backend::CHECK_AND_PANIC
         .instrument_fn_body(&spec, &body, is_async, &ret_type)
         .unwrap();
     assert_tokens_eq(&observed, &expected);
@@ -57,7 +57,7 @@ fn requires_disable_runtime_checks() {
         }
     };
 
-    let observed = Backend::NO_CHECKS
+    let observed = Backend::NO_CHECK
         .instrument_fn_body(&spec, &body, is_async, &ret_type)
         .unwrap();
     assert_tokens_eq(&observed, &expected);
@@ -82,7 +82,7 @@ fn requires_no_panic_backend() {
         }
     };
 
-    let observed = Backend::NO_PANIC
+    let observed = Backend::CHECK_AND_PRINT
         .instrument_fn_body(&spec, &body, is_async, &ret_type)
         .unwrap();
     assert_tokens_eq(&observed, &expected);
@@ -106,7 +106,7 @@ fn simple_maintains() {
         }
     };
 
-    let observed = Backend::DEFAULT
+    let observed = Backend::CHECK_AND_PANIC
         .instrument_fn_body(&spec, &body, is_async, &ret_type)
         .unwrap();
     assert_tokens_eq(&observed, &expected);
@@ -129,7 +129,7 @@ fn simple_ensures() {
         }
     };
 
-    let observed = Backend::DEFAULT
+    let observed = Backend::CHECK_AND_PANIC
         .instrument_fn_body(&spec, &body, is_async, &ret_type)
         .unwrap();
     assert_tokens_eq(&observed, &expected);
@@ -155,7 +155,7 @@ fn simple_requires_and_maintains() {
         }
     };
 
-    let observed = Backend::DEFAULT
+    let observed = Backend::CHECK_AND_PANIC
         .instrument_fn_body(&spec, &body, is_async, &ret_type)
         .unwrap();
     assert_tokens_eq(&observed, &expected);
@@ -180,7 +180,7 @@ fn simple_requires_and_ensures() {
         }
     };
 
-    let observed = Backend::DEFAULT
+    let observed = Backend::CHECK_AND_PANIC
         .instrument_fn_body(&spec, &body, is_async, &ret_type)
         .unwrap();
     assert_tokens_eq(&observed, &expected);
@@ -206,7 +206,7 @@ fn simple_maintains_and_ensures() {
         }
     };
 
-    let observed = Backend::DEFAULT
+    let observed = Backend::CHECK_AND_PANIC
         .instrument_fn_body(&spec, &body, is_async, &ret_type)
         .unwrap();
     assert_tokens_eq(&observed, &expected);
@@ -234,7 +234,7 @@ fn simple_requires_maintains_and_ensures() {
         }
     };
 
-    let observed = Backend::DEFAULT
+    let observed = Backend::CHECK_AND_PANIC
         .instrument_fn_body(&spec, &body, is_async, &ret_type)
         .unwrap();
     assert_tokens_eq(&observed, &expected);
@@ -262,7 +262,7 @@ fn simple_async_requires_maintains_and_ensures() {
         }
     };
 
-    let observed = Backend::DEFAULT
+    let observed = Backend::CHECK_AND_PANIC
         .instrument_fn_body(&spec, &body, is_async, &ret_type)
         .unwrap();
     assert_tokens_eq(&observed, &expected);
@@ -294,7 +294,7 @@ fn multiple_conditions_in_clauses() {
         }
     };
 
-    let observed = Backend::DEFAULT
+    let observed = Backend::CHECK_AND_PANIC
         .instrument_fn_body(&spec, &body, is_async, &ret_type)
         .unwrap();
     assert_tokens_eq(&observed, &expected);
@@ -318,7 +318,7 @@ fn binds_parameter() {
         }
     };
 
-    let observed = Backend::DEFAULT
+    let observed = Backend::CHECK_AND_PANIC
         .instrument_fn_body(&spec, &body, is_async, &ret_type)
         .unwrap();
     assert_tokens_eq(&observed, &expected);
@@ -349,7 +349,7 @@ fn ensures_with_mixed_conditions() {
         }
     };
 
-    let observed = Backend::DEFAULT
+    let observed = Backend::CHECK_AND_PANIC
         .instrument_fn_body(&spec, &body, is_async, &ret_type)
         .unwrap();
     assert_tokens_eq(&observed, &expected);
@@ -388,7 +388,7 @@ fn cfg_attributes() {
         }
     };
 
-    let observed = Backend::DEFAULT
+    let observed = Backend::CHECK_AND_PANIC
         .instrument_fn_body(&spec, &body, is_async, &ret_type)
         .unwrap();
     assert_tokens_eq(&observed, &expected);
@@ -427,7 +427,7 @@ fn cfg_on_single_and_list_conditions() {
         }
     };
 
-    let observed = Backend::DEFAULT
+    let observed = Backend::CHECK_AND_PANIC
         .instrument_fn_body(&spec, &body, is_async, &ret_type)
         .unwrap();
     assert_tokens_eq(&observed, &expected);
@@ -481,7 +481,7 @@ fn complex_mixed_conditions() {
         }
     };
 
-    let observed = Backend::DEFAULT
+    let observed = Backend::CHECK_AND_PANIC
         .instrument_fn_body(&spec, &body, is_async, &ret_type)
         .unwrap();
     assert_tokens_eq(&observed, &expected);
@@ -514,7 +514,7 @@ fn captures() {
         }
     };
 
-    let observed = Backend::DEFAULT
+    let observed = Backend::CHECK_AND_PANIC
         .instrument_fn_body(&spec, &body, is_async, &ret_type)
         .unwrap();
     assert_tokens_eq(&observed, &expected);

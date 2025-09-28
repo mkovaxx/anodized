@@ -8,19 +8,19 @@ pub struct Backend {
 }
 
 impl Backend {
-    pub const DEFAULT: Backend = Backend {
+    pub const CHECK_AND_PANIC: Backend = Backend {
         disable_runtime_checks: false,
         build_check: build_assert,
     };
 
-    pub const NO_CHECKS: Backend = Backend {
-        disable_runtime_checks: true,
-        build_check: build_assert,
-    };
-
-    pub const NO_PANIC: Backend = Backend {
+    pub const CHECK_AND_PRINT: Backend = Backend {
         disable_runtime_checks: false,
         build_check: build_eprint,
+    };
+
+    pub const NO_CHECK: Backend = Backend {
+        disable_runtime_checks: true,
+        build_check: build_assert,
     };
 }
 
