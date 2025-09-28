@@ -39,7 +39,7 @@ impl Backend {
         let output_ident = Ident::new("__anodized_output", Span::mixed_site());
 
         // --- Generate Precondition Checks ---
-        let guard_assert = |assert_stmt: TokenStream2, cfg: Option<&Meta>| {
+        let guard_check = |assert_stmt: TokenStream2, cfg: Option<&Meta>| {
             if self.disable_runtime_checks {
                 quote! { if false { #assert_stmt } }
             } else if let Some(cfg) = cfg {
@@ -49,18 +49,18 @@ impl Backend {
             }
         };
 
-        let preconditions = spec
+        let precondition_checks = spec
             .requires
             .iter()
             .map(|condition| {
                 let expr = condition.expr.to_token_stream();
-                let assert = build_check(&expr, "Precondition failed: {}", &expr);
-                guard_assert(assert, condition.cfg.as_ref())
+                let check = build_check(&expr, "Precondition failed: {}", &expr);
+                guard_check(check, condition.cfg.as_ref())
             })
             .chain(spec.maintains.iter().map(|condition| {
                 let expr = condition.expr.to_token_stream();
-                let assert = build_check(&expr, "Pre-invariant failed: {}", &expr);
-                guard_assert(assert, condition.cfg.as_ref())
+                let check = build_check(&expr, "Pre-invariant failed: {}", &expr);
+                guard_check(check, condition.cfg.as_ref())
             }));
 
         // --- Generate Combined Body and Capture Statement ---
@@ -101,13 +101,13 @@ impl Backend {
         };
 
         // --- Generate Postcondition Checks ---
-        let postconditions = spec
+        let postcondition_checks = spec
             .maintains
             .iter()
             .map(|condition| {
                 let expr = condition.expr.to_token_stream();
-                let assert = build_check(&expr, "Post-invariant failed: {}", &expr);
-                guard_assert(assert, condition.cfg.as_ref())
+                let check = build_check(&expr, "Post-invariant failed: {}", &expr);
+                guard_check(check, condition.cfg.as_ref())
             })
             .chain(spec.ensures.iter().map(|postcondition| {
                 let closure = annotate_postcondition_closure_argument(
@@ -116,19 +116,19 @@ impl Backend {
                 );
 
                 let expr = quote! { (#closure)(&#output_ident) };
-                let assert = build_check(
+                let check = build_check(
                     &expr,
                     "Postcondition failed: {}",
                     &postcondition.closure.to_token_stream(),
                 );
-                guard_assert(assert, postcondition.cfg.as_ref())
+                guard_check(check, postcondition.cfg.as_ref())
             }));
 
         Ok(parse_quote! {
             {
-                #(#preconditions)*
+                #(#precondition_checks)*
                 #body_and_captures
-                #(#postconditions)*
+                #(#postcondition_checks)*
                 #output_ident
             }
         })
