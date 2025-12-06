@@ -4,8 +4,8 @@
 
 use syn::{Expr, Ident, Meta};
 
-pub mod backend;
-pub mod frontend;
+pub mod annotate;
+pub mod instrument;
 
 #[cfg(test)]
 mod test_util;

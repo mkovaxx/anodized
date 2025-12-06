@@ -6,7 +6,7 @@ use proc_macro::TokenStream;
 use quote::ToTokens;
 use syn::{Item, parse_macro_input};
 
-use anodized_core::{Spec, backend::Backend};
+use anodized_core::{Spec, instrument::Backend};
 
 const _: () = {
     let count: u32 = cfg!(feature = "runtime-check-and-panic") as u32
@@ -25,10 +25,10 @@ const BACKEND: Backend = if cfg!(feature = "runtime-check-and-panic") {
     Backend::NO_CHECK
 } else {
     panic!(
-        r#"anodized: a backend feature must be enabled:
-`backend-check-and-panic`
-`backend-check-and-print`
-`backend-no-check`"#
+        r#"anodized: a runtime feature must be selected:
+`runtime-check-and-panic`
+`runtime-check-and-print`
+`runtime-no-check`"#
     )
 };
 
