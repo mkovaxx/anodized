@@ -13,7 +13,7 @@ const _: () = {
         + cfg!(feature = "runtime-check-and-print") as u32
         + cfg!(feature = "runtime-no-check") as u32;
     if count > 1 {
-        panic!("anodized: backend features are mutually exclusive");
+        panic!("anodized: runtime features are mutually exclusive");
     }
 };
 
