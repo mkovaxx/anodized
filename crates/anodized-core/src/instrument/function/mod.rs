@@ -1,7 +1,7 @@
 #[cfg(test)]
 mod tests;
 
-use crate::{Spec, backend::Backend};
+use crate::{Spec, instrument::Backend};
 
 use proc_macro2::Span;
 use quote::{ToTokens, quote};

@@ -64,7 +64,7 @@ fn requires_disable_runtime_checks() {
 }
 
 #[test]
-fn requires_no_panic_backend() {
+fn requires_no_panic_runtime() {
     let spec: Spec = parse_quote! {
         requires: CONDITION_1,
     };

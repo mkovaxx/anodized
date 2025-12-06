@@ -14,9 +14,9 @@ license.workspace = true
 proc-macro = true
 
 [features]
-backend-check-and-panic = []
-backend-check-and-print = []
-backend-no-check = []
+runtime-check-and-panic = []
+runtime-check-and-print = []
+runtime-no-check = []
 
 [dependencies]
 anodized-core.workspace = true

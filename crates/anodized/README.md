@@ -76,8 +76,6 @@ Anodized explores a complementary approach: **a common frontend** built for toda
 
 We aim to provide more than just runtime checks. We're building:
 
-- **Macro backends** that expand `#[spec]` into annotations of other systems, letting you switch without code changes.
-
 - **Migration tools** to help move between spec annotation formats as the ecosystem evolves.
 
 - **Tool bridges** such as spec-aware fuzzing and plugging spec-annotated code into verification tools.
@@ -118,24 +116,24 @@ use anodized::spec;
 fn push_checked<T>(vec: &mut Vec<T>, value: T) { todo!() }
 ```
 
-### Backends
+### Runtime Behaviors
 
-Anodized offers multiple backends that control how `#[spec]` annotations expand:
+Anodized offers multiple runtime behaviors that control how `#[spec]` annotations expand to runtime checks:
 
 - **`check-and-panic`**: Inject an `assert!` check for each `requires`, `maintains`, and `ensures` clause. A failing condition panics with a descriptive message, just like the examples above.
 - **`check-and-print`**: Reports violations with `eprintln!` so execution can continue. Useful for experiments, logging, etc.
 - **`no-check`**: Disable checks altogether. Each check is surrounded with an `if false { ... }`, which lets the compiler optimize the checks away, while keeping the `#[spec]` syntax- and type-checked.
 
-The backend setting goes in your `Cargo.toml`, for example:
+The runtime setting goes in your `Cargo.toml`, for example:
 
 ```toml
 anodized = {
   version = # version
-  features = ["backend-check-and-print"]
+  features = ["runtime-check-and-print"]
 }
 ```
 
-Future backends (nightly contracts, ecosystem adapters, etc.) will use the same feature-based mechanism.
+Future runtime behaviors (log, trace, breakpoint, etc.) will use the same feature-based mechanism.
 
 ### `#[cfg]`: Configure Runtime Checks
 
@@ -149,7 +147,7 @@ use anodized::spec;
     #[cfg(test)]
     requires: input > 0,
 
-    // Runtime checks only in debug builds (like debug_assert!)
+    // Runtime checks only in debug builds (like `debug_assert!`)
     #[cfg(debug_assertions)]
     ensures: output.is_ok(),
 )]

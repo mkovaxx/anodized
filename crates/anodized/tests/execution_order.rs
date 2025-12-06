@@ -23,7 +23,7 @@ fn func(log: &mut Vec<&'static str>) {
     return;
 }
 
-#[cfg(not(feature = "backend-no-check"))]
+#[cfg(not(feature = "runtime-no-check"))]
 #[test]
 fn execution_order() {
     let mut log = Vec::new();
@@ -71,7 +71,7 @@ fn func_all_conditions_fail(log: &mut Vec<&'static str>) {
     return;
 }
 
-#[cfg(feature = "backend-check-and-print")]
+#[cfg(feature = "runtime-check-and-print")]
 #[test]
 fn execution_order_print_only() {
     let mut log = Vec::new();
@@ -119,7 +119,7 @@ async fn async_func(log: &mut Vec<&'static str>) {
     return;
 }
 
-#[cfg(not(feature = "backend-no-check"))]
+#[cfg(not(feature = "runtime-no-check"))]
 #[test]
 fn async_execution_order() {
     let mut log = Vec::new();

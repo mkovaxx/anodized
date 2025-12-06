@@ -30,7 +30,7 @@ fn get_element_success() {
     buffer.get_element(1);
 }
 
-#[cfg(feature = "backend-check-and-panic")]
+#[cfg(feature = "runtime-check-and-panic")]
 #[test]
 #[should_panic(expected = "Precondition failed: ! self.locked")]
 fn get_element_panics_when_locked() {
@@ -42,7 +42,7 @@ fn get_element_panics_when_locked() {
     buffer.get_element(1);
 }
 
-#[cfg(feature = "backend-check-and-panic")]
+#[cfg(feature = "runtime-check-and-panic")]
 #[test]
 #[should_panic(expected = "Precondition failed: index < self.items.len()")]
 fn get_element_panics_on_out_of_bounds() {
