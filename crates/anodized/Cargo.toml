@@ -14,7 +14,6 @@ license.workspace = true
 proc-macro = true
 
 [features]
-#default = ["runtime-check-and-panic"]
 runtime-check-and-panic = []
 runtime-check-and-print = []
 runtime-no-check = []
