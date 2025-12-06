@@ -9,19 +9,19 @@ use syn::{Item, parse_macro_input};
 use anodized_core::{Spec, backend::Backend};
 
 const _: () = {
-    let count: u32 = cfg!(feature = "backend-check-and-panic") as u32
-        + cfg!(feature = "backend-check-and-print") as u32
-        + cfg!(feature = "backend-no-check") as u32;
+    let count: u32 = cfg!(feature = "runtime-check-and-panic") as u32
+        + cfg!(feature = "runtime-check-and-print") as u32
+        + cfg!(feature = "runtime-no-check") as u32;
     if count > 1 {
         panic!("anodized: backend features are mutually exclusive");
     }
 };
 
-const BACKEND: Backend = if cfg!(feature = "backend-check-and-panic") {
+const BACKEND: Backend = if cfg!(feature = "runtime-check-and-panic") {
     Backend::CHECK_AND_PANIC
-} else if cfg!(feature = "backend-check-and-print") {
+} else if cfg!(feature = "runtime-check-and-print") {
     Backend::CHECK_AND_PRINT
-} else if cfg!(feature = "backend-no-check") {
+} else if cfg!(feature = "runtime-no-check") {
     Backend::NO_CHECK
 } else {
     panic!(

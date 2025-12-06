@@ -24,14 +24,14 @@ jobs:
         run: cargo test -p anodized-core --lib --no-fail-fast
 
   test-anodized:
-    name: Test anodized with backend `${{ matrix.backend }}`
+    name: Test anodized with runtime behavior `${{ matrix.runtime }}`
     runs-on: ubuntu-latest
     strategy:
       matrix:
         include:
-          - backend: check-and-panic
-          - backend: check-and-print
-          - backend: no-check
+          - runtime: check-and-panic
+          - runtime: check-and-print
+          - runtime: no-check
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -39,5 +39,5 @@ jobs:
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
 
-      - name: Integration test anodized with backend `${{ matrix.backend }}`
-        run: cargo test -p anodized --tests --no-fail-fast --features "backend-${{ matrix.backend }}"
+      - name: Integration test anodized with runtime behavior `${{ matrix.runtime }}`
+        run: cargo test -p anodized --tests --no-fail-fast --features "runtime-${{ matrix.runtime }}"

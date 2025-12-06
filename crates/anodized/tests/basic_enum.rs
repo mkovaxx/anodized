@@ -29,7 +29,7 @@ fn job_start_success() {
     job.start();
 }
 
-#[cfg(feature = "backend-check-and-panic")]
+#[cfg(feature = "runtime-check-and-panic")]
 #[test]
 #[should_panic(expected = "Precondition failed: matches! (self.state, State::Idle)")]
 fn job_start_panics_if_not_idle() {
