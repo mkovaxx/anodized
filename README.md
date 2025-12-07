@@ -69,13 +69,13 @@ Anodized aims to become a common layer across runtime checking, fuzzing, and ver
 
 **`#[spec]` Support**
 
-| Syntactic Item         | Status      | Notes                                     |
-| ---------------------- | ----------- | ----------------------------------------- |
-| stand-alone `fn`       | Available   | Apply `#[spec]` directly on functions.    |
-| `fn` in `impl`         | Available   | Works on inherent and trait-impl methods. |
-| `trait`                | In Progress | Enforces all `impl`s to conform.          |
-| `struct`, `enum`       | Planned     | Data invariants.                          |
-| `while`, `loop`, `for` | Planned     | Loop invariants.                          |
+| Program Element        | Status      | Notes                                |
+| ---------------------- | ----------- | ------------------------------------ |
+| plain `fn`             | Available   | Pre- and postconditions, invariants. |
+| `fn` inside an `impl`  | Available   | Pre- and postconditions, invariants. |
+| `trait` and its `fn`s  | In Progress | Enforces all `impl`s to conform.     |
+| `struct`, `enum`       | Planned     | Data invariants.                     |
+| `while`, `loop`, `for` | Planned     | Loop invariants.                     |
 
 ## Quick Start
 
