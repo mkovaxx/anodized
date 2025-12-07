@@ -8,83 +8,72 @@
 
 # Anodized Annotations
 
-> Harden your Rust with **specifications**.
+Anodized is a system that helps **enforce complex specifications** that are beyond Rust's built-in static analysis. In contrast to other systems, Anodized works on **stable Rust** and **does not alter** the language or the toolchain in any way. Going beyond that, Anodized makes it easy for advanced static analysis tools to achieve the same goals: to deeply integrate with Rust without duplicating parts of the language or the toolchain.
 
-Anodized is a specification layer for Rust. It lets you describe what your code requires and guarantees using one `#[spec]` annotation that the compiler keeps well-formed, well-typed, and scoped to real identifiers, covering functions today, with traits, types, and control-flow constructs on the roadmap. It helps enforce complex specifications beyond Rust's built-in static analysis while running on stable Rust without changing the language or toolchain. Anodized also makes it easier for advanced static analysis tools to integrate deeply with Rust without duplicating compiler or language machinery, turning `#[spec]` into a portable bridge. It instruments annotated code with runtime checks automatically and is designed to plug into verification tools tomorrow.
+## The `spec` Macro
 
-Built for developers and tool authors who already think about verification, Anodized answers two questions up front:
+- **unified and ergonomic**: express preconditions, postconditions, and invariants as ordinary Rust expressions.
+- **integrated with the code**: specs are parsed and type-checked on every build, even when runtime checks are disabled.
+- **ready for automation**: lightweight runtime instrumentation today, static analysis and tool bridges on the roadmap.
 
-- **How is Anodized different?** It is a common, stable annotation format that sits alongside the rich Rust verification ecosystem instead of replacing it.
-- **What can it do for me?** It keeps specifications close to the code, enforces them at runtime, and preserves them in a portable form for static analysis and future tooling.
+**Anodized `spec` vs Comments, Assertions, and Types**
 
-## What Is Anodized?
-
-Anodized helps you document properties of your code with precision and confidence:
-
-- One annotation, `#[spec]`, to state preconditions, postconditions, and invariants as ordinary Rust expressions.
-- Integrated with the compiler: specs are parsed and type-checked on every build, even when runtime checks are disabled.
-- Ready for automation: runtime instrumentation today, static analysis and tool bridges on the roadmap.
-
-**Specs vs. comments, assertions, and types**
-
-|                         | Comments | Assertions | Types | Anodized `spec` |
-| ----------------------- | -------- | ---------- | ----- | --------------- |
-| Integrated with the code? | No | Yes | Yes | Yes |
-| Centralized and grokkable? | No | No | Partial (type-level) | Yes |
-| Write arbitrary properties? | Yes | Yes | Limited to the type system | Yes |
-| Comes with a formal grammar? | No | Yes (Rust) | Yes | Yes (spec grammar) |
-| Works with stable Rust? | Yes | Yes | Yes | Yes |
-| Automated runtime checks? | No | Yes | No* | Yes |
-| Support static analysis? | No | Limited | Yes | Yes |
-
-\*The type system enforces constraints at compile time; it does not emit runtime checks.
+|                | Comments | Assertions | Types | Anodized `spec` |
+| -------------- | -------- | ---------- | ----- | --------------- |
+| Validation     | No       | Yes        | Yes   | Yes             |
+| Centralized    | No       | No         | Yes   | Yes             |
+| Expressivity   | Highest  | High       | Low   | High            |
+| Formal Grammar | No       | Yes        | Yes   | Yes             |
 
 ## How Is Anodized Different?
 
-Rust already has excellent verification, refinement-type, and model-checking tools (Flux, Verus, Prusti, Kani, Aeneas, Creusot, `contracts`, and more). Their main shortcomings for everyday adoption are:
+Rust already has excellent verification, refinement-type, and model-checking tools (Flux, Verus, Prusti, Kani, Aeneas, Creusot, and more).
 
-- They often extend Rust in non-trivial ways, which makes them harder to learn and combine.
-- Many rely on nightly or custom toolchains instead of stable Rust.
-- Interoperability is limited; annotations are tied to a single tool.
+Their main shortcomings for everyday adoption are:
 
-Anodized takes a complementary path: it is a **common annotation frontend** built for stable Rust. You write specs once, get runtime checking immediately, and keep them portable for fuzzers, static analyzers, and formal verifiers.
+- They are hard to learn and use because they change the language or the toolchain in non-trivial ways.
+- It is impossible to combine them into a larger system because their changes are largely incompatible.
+- Keeping the modified parts in sync with upstream Rust is a lot of effort that slows down development.
+
+Anodized aims to complement instead of compete with those. It aims to solve a problem that are beyond the scope of those systems. It intends to create a common frontend in stable Rust, that can integrate with those existing systems. You write specs once, get runtime checks out of the box, and gain compatibility for fuzzers, static analyzers, and other tools.
 
 **Where Anodized sits among existing tools**
 
-| Tool | Stable Rust? | Annotation style | Runtime checks? | Primary focus |
-| ---- | ------------ | ---------------- | --------------- | ------------- |
-| Anodized | Yes (proc-macro) | Unified `#[spec]` using Rust expressions | Yes (feature-selectable) | Common frontend + interoperability |
-| `contracts` | Yes | Separate pre/post/invariant attributes | Yes (panic or omit) | Runtime Design by Contract |
-| Flux | Custom toolchain/nightly | Refinement types | No | Static verification |
-| Verus | Custom frontend | Specification + proof language | No | Deductive verification |
-| Prusti | Custom compiler plugin (nightly) | Pre/post attributes, pure functions | No | Static verification |
-| Kani | Custom compiler/CBMC | Harnesses and assumptions | No | Model checking |
-| Aeneas | Custom frontend | Specs compiled to Why3 | No | Static verification |
-| Creusot | Custom frontend/nightly | Why3-backed annotations | No | Static verification |
+| Tool        | Flavor  | Runtime | Focus            |
+| ----------- | ------- | ------- | ---------------- |
+| Anodized    | Stable  | Yes     | Interoperability |
+| `contracts` | Stable  | Yes     | Runtime Checks   |
+| Flux        | Nightly | No      | Refinement Types |
+| Verus       | Custom  | No      | Static Analysis  |
+| Prusti      | Nightly | No      | Static Analysis  |
+| Kani        | Custom  | No      | Static Analysis  |
+| Aeneas      | Custom  | No      | Static Analysis  |
+| Creusot     | Custom  | No      | Static Analysis  |
 
 ## Roadmap
 
-Anodized is evolving into a portability layer across runtime checking, fuzzing, and verification tools.
+Anodized is evolving into a portability layer across runtime checking, fuzzing, and verification.
 
-**Runtime behaviors**
+**Runtime Behaviors**
 
-| Behavior | Status | Description |
-| -------- | ------ | ----------- |
-| `check-and-panic` | Available | Assert-like panics on violations. |
-| `check-and-print` | Available | Print violations and continue execution. |
-| `no-check` | Available | Omit checks but keep specs parsed and type-checked. |
-| `check-and-log` | Planned | Emit violations through logging. |
-| `check-and-trace` | Planned | Emit structured trace events. |
-| `check-and-trap` (breakpoint) | Planned | Break into a debugger on violation. |
+| Behavior          | Status    | Description                                         |
+| ----------------- | --------- | --------------------------------------------------- |
+| `check-and-panic` | Available | Assert-like panics on violations.                   |
+| `check-and-print` | Available | Print violations and continue execution.            |
+| `no-check`        | Available | Omit checks but keep specs parsed and type-checked. |
+| `check-and-log`   | Planned   | Emit violations through logging.                    |
+| `check-and-trace` | Planned   | Emit structured trace events.                       |
+| `check-and-trap`  | Planned   | Break into a debugger on violation.                 |
 
-**What `#[spec]` can annotate**
+**`#[spec]` Support**
 
-| Rust item | Status | Notes |
-| --------- | ------ | ----- |
-| Stand-alone `fn` | Available | Apply `#[spec]` directly on functions. |
-| `impl` methods | Available | Works on inherent and trait-impl methods. |
-| `struct` / `enum` | Planned | Data invariants. |
-| `trait` methods | Planned | Trait-level specs and implementations. |
+| Syntactic Item         | Status      | Notes                                     |
+| ---------------------- | ----------- | ----------------------------------------- |
+| stand-alone `fn`       | Available   | Apply `#[spec]` directly on functions.    |
+| `fn` in `impl`         | Available   | Works on inherent and trait-impl methods. |
+| `trait`                | In Progress | Enforces all `impl`s to conform.          |
+| `struct`, `enum`       | Planned     | Data invariants.                          |
+| `while`, `loop`, `for` | Planned     | Loop invariants.                          |
 
 ## Quick Start
 
