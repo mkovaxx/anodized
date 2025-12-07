@@ -10,7 +10,7 @@
 
 Anodized is a system that helps **enforce complex specifications** that are beyond Rust's built-in static analysis. In contrast to other systems, Anodized works on **stable Rust** and **does not alter** the language or the toolchain in any way. Going beyond that, Anodized makes it easy for advanced static analysis tools to achieve the same goals: to deeply integrate with Rust without duplicating parts of the language or the toolchain.
 
-## The `spec` Macro
+## Anodized's Workhorse: The `spec` Macro
 
 - **expressive**: Write preconditions, postconditions, and invariants as ordinary Rust expressions.
 - **validated**: Parsed and validated on every build, even with runtime checks disabled.
@@ -25,34 +25,34 @@ Anodized is a system that helps **enforce complex specifications** that are beyo
 | Centralized  | No       | No         | Yes   | Yes             |
 | Tool-Ready   | No       | No         | No    | Yes             |
 
-## How Is Anodized Different?
+## Anodized in the Rust Correctness Ecosystem
 
-Rust already has many excellent verification, refinement-type, and model-checking tools (Aeneas, Creusot, Flux, Kani, Prusti, Verus, and more).
+Rust already has many excellent correctness tools (Aeneas, Creusot, Flux, Kani, Prusti, Verus, and more).
 
-Despite differences in their internals, they share the following shortcomings for everyday adoption:
+They all share the following shortcomings for everyday adoption:
 
 - They are hard to learn and use because they change the language or the toolchain in non-trivial ways.
 - It is impossible to combine them into a larger system because their changes are largely incompatible.
 - Keeping the modified parts in sync with upstream Rust is a lot of effort that slows down development.
 
-Anodized aims to complement instead of compete with them. It aims to solve a problem that are beyond the scope of those systems: to create a common frontend in stable Rust that makes integration easy for other systems. The user writes specs once, gets runtime checks out of the box, and gains compatibility with multiple fuzzers, static analyzers, and other tools.
+Anodized aims to solve those problems and help other systems become more valuable. Developers of correctness systems can focus on the analysis itself and avoid duplicating the effort of getting Rust code with `spec` annotations. Users can write their `spec` annotations once, and get a range of capabilities including runtime checks, fuzzing, static analysis, and so on.
 
-**Where Anodized sits among existing tools**
+**How Anodized's Goals Are Different**
 
-| Tool        | Flavor  | Runtime | Focus            |
-| ----------- | ------- | ------- | ---------------- |
-| Anodized    | Stable  | Yes     | Interoperability |
-| `contracts` | Stable  | Yes     | Runtime Checks   |
-| Flux        | Nightly | No      | Refinement Types |
-| Verus       | Custom  | No      | Static Analysis  |
-| Prusti      | Nightly | No      | Static Analysis  |
-| Kani        | Custom  | No      | Static Analysis  |
-| Aeneas      | Custom  | No      | Static Analysis  |
-| Creusot     | Custom  | No      | Static Analysis  |
+| System      | Rust Flavor | Static | Runtime | Focus            |
+| ----------- | ----------- | ------ | ------- | ---------------- |
+| Anodized    | Stable      | Yes    | Yes     | Interoperability |
+| Aeneas      | Custom      | Yes    | No      | Static Analysis  |
+| `contracts` | Stable      | No     | Yes     | Runtime Checks   |
+| Creusot     | Custom      | Yes    | No      | Static Analysis  |
+| Flux        | Nightly     | Yes    | No      | Refinement Types |
+| Kani        | Custom      | Yes    | No      | Static Analysis  |
+| Prusti      | Nightly     | Yes    | No      | Static Analysis  |
+| Verus       | Custom      | Yes    | No      | Static Analysis  |
 
 ## Roadmap
 
-Anodized is evolving into a portability layer across runtime checking, fuzzing, and verification.
+Anodized aims to become a common layer across runtime checking, fuzzing, and verification.
 
 **Runtime Behaviors**
 
