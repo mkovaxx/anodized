@@ -12,30 +12,30 @@ Anodized is a system that helps **enforce complex specifications** that are beyo
 
 ## The `spec` Macro
 
-- **unified and ergonomic**: express preconditions, postconditions, and invariants as ordinary Rust expressions.
-- **integrated with the code**: specs are parsed and type-checked on every build, even when runtime checks are disabled.
-- **ready for automation**: lightweight runtime instrumentation today, static analysis and tool bridges on the roadmap.
+- **expressive**: Write preconditions, postconditions, and invariants as ordinary Rust expressions.
+- **validated**: Parsed and validated on every build, even with runtime checks disabled.
+- **automated**: Runtime checks out of the box, fuzzer and static analysis bridges on the roadmap.
 
 **Anodized `spec` vs Comments, Assertions, and Types**
 
-|                | Comments | Assertions | Types | Anodized `spec` |
-| -------------- | -------- | ---------- | ----- | --------------- |
-| Validation     | No       | Yes        | Yes   | Yes             |
-| Centralized    | No       | No         | Yes   | Yes             |
-| Expressivity   | Highest  | High       | Low   | High            |
-| Formal Grammar | No       | Yes        | Yes   | Yes             |
+|              | Comments | Assertions | Types | Anodized `spec` |
+| ------------ | -------- | ---------- | ----- | --------------- |
+| Expressivity | Highest  | High       | Low   | High            |
+| Validated    | No       | Yes        | Yes   | Yes             |
+| Centralized  | No       | No         | Yes   | Yes             |
+| Tool-Ready   | No       | No         | No    | Yes             |
 
 ## How Is Anodized Different?
 
-Rust already has excellent verification, refinement-type, and model-checking tools (Flux, Verus, Prusti, Kani, Aeneas, Creusot, and more).
+Rust already has many excellent verification, refinement-type, and model-checking tools (Aeneas, Creusot, Flux, Kani, Prusti, Verus, and more).
 
-Their main shortcomings for everyday adoption are:
+Despite differences in their internals, they share the following shortcomings for everyday adoption:
 
 - They are hard to learn and use because they change the language or the toolchain in non-trivial ways.
 - It is impossible to combine them into a larger system because their changes are largely incompatible.
 - Keeping the modified parts in sync with upstream Rust is a lot of effort that slows down development.
 
-Anodized aims to complement instead of compete with those. It aims to solve a problem that are beyond the scope of those systems. It intends to create a common frontend in stable Rust, that can integrate with those existing systems. You write specs once, get runtime checks out of the box, and gain compatibility for fuzzers, static analyzers, and other tools.
+Anodized aims to complement instead of compete with them. It aims to solve a problem that are beyond the scope of those systems: to create a common frontend in stable Rust that makes integration easy for other systems. The user writes specs once, gets runtime checks out of the box, and gains compatibility with multiple fuzzers, static analyzers, and other tools.
 
 **Where Anodized sits among existing tools**
 
