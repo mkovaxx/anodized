@@ -58,14 +58,14 @@ Anodized aims to become a common layer across runtime checking, fuzzing, and ver
 
 **Runtime Behaviors**
 
-| Behavior          | Status    | Description                                         |
-| ----------------- | --------- | --------------------------------------------------- |
-| `check-and-panic` | Available | Assert-like panics on violations.                   |
-| `check-and-print` | Available | Print violations and continue execution.            |
-| `no-check`        | Available | Omit checks but keep specs parsed and type-checked. |
-| `check-and-log`   | Planned   | Emit violations through logging.                    |
-| `check-and-trace` | Planned   | Emit structured trace events.                       |
-| `check-and-trap`  | Planned   | Break into a debugger on violation.                 |
+| Behavior          | Status    | An `spec` violation... |
+| ----------------- | --------- | ---------------------- |
+| `check-and-panic` | Available | panics                 |
+| `check-and-print` | Available | prints an error        |
+| `no-check`        | Available | has no runtime effect  |
+| `check-and-log`   | Planned   | writes to a log        |
+| `check-and-trace` | Planned   | emits a trace event    |
+| `check-and-trap`  | Planned   | breaks into a debugger |
 
 **`#[spec]` Support**
 
