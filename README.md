@@ -10,7 +10,9 @@
 
 Anodized is a system that helps **enforce complex specifications** that are beyond Rust's built-in static analysis. In contrast to other systems, Anodized works on **stable Rust** and **does not alter** the language or the toolchain in any way. Going beyond that, Anodized makes it easy for advanced static analysis tools to achieve the same goals: to deeply integrate with Rust without duplicating parts of the language or the toolchain.
 
-## Anodized's Workhorse: The `spec` Macro
+## Anodized's Workhorse: The `spec` Annotation
+
+TODO: Add a GIF of editing a `spec` in Zed, and getting completions, compiler errors, and refactoring help.
 
 - **expressive**: Write preconditions, postconditions, and invariants as ordinary Rust expressions.
 - **validated**: Parsed and validated on every build, even with runtime checks disabled.
