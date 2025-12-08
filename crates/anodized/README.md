@@ -6,15 +6,76 @@
 
 <img width="100" alt="Anodized Logo" src="https://raw.githubusercontent.com/mkovaxx/anodized/main/assets/logo.svg">
 
-# Anodized
+# Anodized Annotations
 
-> Harden your Rust with **specifications**.
+Anodized is a system that helps **enforce complex specifications** that are beyond Rust's built-in static analysis. In contrast to other systems, Anodized works on **stable Rust** and **does not alter** the language or the toolchain in any way. Going beyond that, Anodized makes it easy for advanced static analysis tools to achieve the same goals: to deeply integrate with Rust without duplicating parts of the language or the toolchain.
 
-Anodized is a pragmatic tool that helps improve the correctness of your Rust code. Its central idea is **specification** annotations that are deeply integrated with your code, instead of isolated in comments or funky string literals.
+## Anodized's Workhorse: The `spec` Annotation
 
-Specifications are a common ground across the ecosystem of Rust correctness tools. Anodized provides an ergonomic and expressive syntax for writing specs. Runtime checks are available today, and broader integration with tools like fuzzers and formal verifiers is on the roadmap.
+TODO: Add a GIF of editing a `spec` in Zed, and getting completions, compiler errors, and refactoring help.
 
----
+- **expressive**: Write preconditions, postconditions, and invariants as ordinary Rust expressions.
+- **validated**: Parsed and validated on every build, even with runtime checks disabled.
+- **automated**: Runtime checks out of the box, fuzzer and static analysis bridges on the roadmap.
+
+**Anodized `spec` vs Comments, Assertions, and Types**
+
+|              | Comments | Assertions | Types | Anodized `spec` |
+| ------------ | -------- | ---------- | ----- | --------------- |
+| Expressivity | Highest  | High       | Low   | High            |
+| Validated    | No       | Yes        | Yes   | Yes             |
+| Centralized  | No       | No         | Yes   | Yes             |
+| Tool-Ready   | No       | No         | No    | Yes             |
+
+## Anodized in the Rust Correctness Ecosystem
+
+Rust already has many excellent correctness tools (Aeneas, Creusot, Flux, Kani, Prusti, Verus, and more).
+
+They all share the following shortcomings for everyday adoption:
+
+- They are hard to learn and use because they change the language or the toolchain in non-trivial ways.
+- It is impossible to combine them into a larger system because their changes are largely incompatible.
+- Keeping the modified parts in sync with upstream Rust is a lot of effort that slows down development.
+
+Anodized aims to solve those problems and help other systems become more valuable. Developers of correctness systems can focus on the analysis itself and avoid duplicating the effort of getting Rust code with `spec` annotations. Users can write their `spec` annotations once, and get a range of capabilities including runtime checks, fuzzing, static analysis, and so on.
+
+**How Anodized's Goals Are Different**
+
+| System      | Rust Flavor | Static | Runtime | Focus            |
+| ----------- | ----------- | ------ | ------- | ---------------- |
+| Anodized    | Stable      | Yes    | Yes     | Interoperability |
+| Aeneas      | Custom      | Yes    | No      | Static Analysis  |
+| `contracts` | Stable      | No     | Yes     | Runtime Checks   |
+| Creusot     | Custom      | Yes    | No      | Static Analysis  |
+| Flux        | Nightly     | Yes    | No      | Refinement Types |
+| Kani        | Custom      | Yes    | No      | Static Analysis  |
+| Prusti      | Nightly     | Yes    | No      | Static Analysis  |
+| Verus       | Custom      | Yes    | No      | Static Analysis  |
+
+## Roadmap
+
+Anodized aims to become a common layer across runtime checking, fuzzing, and verification.
+
+**Runtime Behaviors**
+
+| Behavior          | Status    | An `spec` violation... |
+| ----------------- | --------- | ---------------------- |
+| `check-and-panic` | Available | panics                 |
+| `check-and-print` | Available | prints an error        |
+| `no-check`        | Available | has no runtime effect  |
+| `check-and-log`   | Planned   | writes to a log        |
+| `check-and-trace` | Planned   | emits a trace event    |
+| `check-and-trap`  | Planned   | breaks into a debugger |
+
+**`#[spec]` Support**
+
+| Program Element        | Status      | Notes                                |
+| ---------------------- | ----------- | ------------------------------------ |
+| plain `fn`             | Available   | Pre- and postconditions, invariants. |
+| `fn` inside an `impl`  | Available   | Pre- and postconditions, invariants. |
+| `trait` and its `fn`s  | In Progress | Enforces all `impl`s to conform.     |
+| `struct`, `enum`       | Planned     | Data invariants.                     |
+| `while`, `loop`, `for` | Planned     | Loop invariants.                     |
 
 ## Quick Start
 
@@ -67,20 +128,6 @@ thread 'main' panicked at 'Precondition failed: whole > 0', src/main.rs:17:5
 By default, runtime spec-checking is always active (just like Rust's `assert!` macro). For performance-sensitive code, you can use `#[cfg]` attributes to control when checks run (see the [#[cfg] section](#cfg-configure-runtime-checks) below).
 
 **Important:** Even when a condition's runtime check is disabled via a `#[cfg]` build setting, the compiler still validates that condition at compile time for syntax errors, unknown identifiers, type mismatches, etc.
-
-## The Vision: Bridge the Present and the Future
-
-The Rust ecosystem has a multitude of excellent verification tools ([Aeneas](https://github.com/AeneasVerif/aeneas), [Creusot](https://github.com/xldenis/creusot), [Kani](https://github.com/model-checking/kani), [MIRAI](https://github.com/facebookexperimental/MIRAI), [Prusti](https://www.pm.inf.ethz.ch/research/prusti.html), [Verus](https://github.com/verus-lang/verus), and [`contracts`](https://crates.io/crates/contracts) to name just a few), and the Rust Team is building [native contract support](https://github.com/rust-lang/rust/issues/128044). Each tool has its own annotation syntax, creating a learning curve and lock-in that makes it costly to switch between tools or migrate when standards emerge.
-
-Anodized explores a complementary approach: **a common frontend** built for today's Rust, with an eye on the future. We focus on improving compatibility and portability across existing tools, instead of adding new capabilities.
-
-We aim to provide more than just runtime checks. We're building:
-
-- **Migration tools** to help move between spec annotation formats as the ecosystem evolves.
-
-- **Tool bridges** such as spec-aware fuzzing and plugging spec-annotated code into verification tools.
-
-Anodized aims to help leverage today's tools and prepare for tomorrow's standards.
 
 ## `#[spec]`: Specifications
 
