@@ -8,9 +8,9 @@
 
 # Anodized Annotations
 
-Anodized is a system that helps **enforce complex specifications** that are beyond Rust's built-in static analysis. In contrast to other systems, Anodized works on **stable Rust** and **does not alter** the language or the toolchain in any way. Going beyond that, Anodized makes it easy for advanced static analysis tools to achieve the same goals: to deeply integrate with Rust without duplicating parts of the language or the toolchain.
+Anodized is a system that helps **enforce complex specifications** beyond Rust's built-in static analysis capabilities. In contrast to other systems, Anodized works on **stable Rust** and **does not alter the language or the toolchain** in any way. Going beyond that, Anodized **makes it easy for static analysis tools** to deeply integrate with Rust without duplicating parts of the language or the toolchain.
 
-## Anodized's Workhorse: The `spec` Annotation
+## The `spec` Annotation: Anodized's Workhorse
 
 TODO: Add a GIF of editing a `spec` in Zed, and getting completions, compiler errors, and refactoring help.
 
@@ -37,7 +37,7 @@ They all share the following shortcomings for everyday adoption:
 - It is impossible to combine them into a larger system because their changes are largely incompatible.
 - Keeping the modified parts in sync with upstream Rust is a lot of effort that slows down development.
 
-Anodized aims to solve those problems and help other systems become more valuable. Developers of correctness systems can focus on the analysis itself and avoid duplicating the effort of getting Rust code with `spec` annotations. Users can write their `spec` annotations once, and get a range of capabilities including runtime checks, fuzzing, static analysis, and so on.
+Anodized aims to solve these problems and help other systems become easier to adopt and more valuable. Developers of correctness systems can focus on the analysis itself and avoid duplicating the effort of defining and processing specifications. Users can write their specifications once, and get a range of capabilities including runtime checks, fuzzing, static analysis, and so on.
 
 **How Anodized's Goals Are Different**
 
