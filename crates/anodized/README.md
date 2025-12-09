@@ -118,7 +118,7 @@ use anodized::spec;
     ],
 )]
 fn calculate_percentage(part: f64, whole: f64) -> f64 {
-    todo!()
+    100.0 * part / whole
 }
 
 fn main() {
