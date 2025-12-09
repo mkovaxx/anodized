@@ -58,6 +58,16 @@ Anodized aims to solve these problems and help other systems become easier to ma
 
 Anodized aims to become a common layer across runtime checks, fuzzing, and verification.
 
+**`#[spec]` Support**
+
+| Program Element        | Status      | Notes                                |
+| ---------------------- | ----------- | ------------------------------------ |
+| plain `fn`             | Available   | Pre- and postconditions, invariants. |
+| `fn` inside an `impl`  | Available   | Pre- and postconditions, invariants. |
+| `trait` and its `fn`s  | In Progress | Enforces all `impl`s to conform.     |
+| `struct`, `enum`       | Planned     | Data invariants.                     |
+| `while`, `loop`, `for` | Planned     | Loop invariants.                     |
+
 **Runtime Behaviors**
 
 | Behavior          | Status    | A `spec` violation...  |
@@ -69,15 +79,16 @@ Anodized aims to become a common layer across runtime checks, fuzzing, and verif
 | `check-and-trace` | Planned   | emits a trace event    |
 | `check-and-trap`  | Planned   | breaks into a debugger |
 
-**`#[spec]` Support**
+**Analyzer Integrations**
 
-| Program Element        | Status      | Notes                                |
-| ---------------------- | ----------- | ------------------------------------ |
-| plain `fn`             | Available   | Pre- and postconditions, invariants. |
-| `fn` inside an `impl`  | Available   | Pre- and postconditions, invariants. |
-| `trait` and its `fn`s  | In Progress | Enforces all `impl`s to conform.     |
-| `struct`, `enum`       | Planned     | Data invariants.                     |
-| `while`, `loop`, `for` | Planned     | Loop invariants.                     |
+| System  | Status  | Notes                 |
+| ------- | ------- | --------------------- |
+| Aeneas  | Planned | Integrate with Charon |
+| Creusot | Planned |                       |
+| Flux    | Planned |                       |
+| Kani    | Planned |                       |
+| Prusti  | Planned |                       |
+| Verus   | Planned | Emit VIR              |
 
 ## Quick Start
 
