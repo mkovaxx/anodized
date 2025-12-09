@@ -14,7 +14,7 @@ Anodized is a system that helps **enforce complex specifications** beyond Rust's
 
 ## The `spec` Annotation: Anodized's Workhorse
 
-![editor integration demo]([./assets](https://raw.githubusercontent.com/mkovaxx/anodized/revamp-readme/assets/anodized-editor-integration.gif)
+![editor integration demo](https://raw.githubusercontent.com/mkovaxx/anodized/revamp-readme/assets/anodized-editor-integration.gif)
 
 - **expressive**: Write preconditions, postconditions, and invariants as ordinary Rust expressions.
 - **validated**: Parsed and validated on every build, even with runtime checks disabled.
