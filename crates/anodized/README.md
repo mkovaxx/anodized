@@ -8,7 +8,9 @@
 
 # Anodized Annotations
 
-Anodized is a system that helps **enforce complex specifications** beyond Rust's built-in static analysis capabilities. In contrast to other systems, Anodized works on **stable Rust** and **does not alter the language or the toolchain** in any way. Going beyond that, Anodized **makes it easy for static analysis tools** to deeply integrate with Rust without duplicating parts of the language or the toolchain.
+> Harden your Rust with **specifications**.
+
+Anodized is a system that helps **enforce complex specifications** beyond Rust's built-in static analysis capabilities. In contrast to other systems, Anodized **works on stable Rust** and **does not alter the language or the toolchain** in any way. Going beyond that, Anodized **makes it easy for static analysis tools** to deeply integrate with Rust without duplicating parts of the language or the toolchain.
 
 ## The `spec` Annotation: Anodized's Workhorse
 
@@ -16,49 +18,49 @@ TODO: Add a GIF of editing a `spec` in Zed, and getting completions, compiler er
 
 - **expressive**: Write preconditions, postconditions, and invariants as ordinary Rust expressions.
 - **validated**: Parsed and validated on every build, even with runtime checks disabled.
-- **automated**: Runtime checks out of the box, fuzzer and static analysis bridges on the roadmap.
+- **automated**: Runtime checks out of the box, with fuzzing and static analysis on the roadmap.
 
-**Anodized `spec` vs Comments, Assertions, and Types**
+**Anodized `spec` Annotations vs Comments, Assertions, and Types**
 
-|              | Comments | Assertions | Types | Anodized `spec` |
-| ------------ | -------- | ---------- | ----- | --------------- |
-| Expressivity | Highest  | High       | Low   | High            |
-| Validated    | No       | Yes        | Yes   | Yes             |
-| Centralized  | No       | No         | Yes   | Yes             |
-| Tool-Ready   | No       | No         | No    | Yes             |
+|              | Anodized | Comments | Assertions | Types |
+| ------------ | -------- | -------- | ---------- | ----- |
+| Expressivity | High     | Highest  | High       | Low   |
+| Validated    | Yes      | No       | Yes        | Yes   |
+| Centralized  | Yes      | No       | No         | Yes   |
+| Tool-Ready   | Yes      | No       | No         | No    |
 
-## Anodized in the Rust Correctness Ecosystem
+## Anodized in the Rust Verification Ecosystem
 
-Rust already has many excellent correctness tools (Aeneas, Creusot, Flux, Kani, Prusti, Verus, and more).
+Anodized is to verification what `serde` is to serialization.
 
-They all share the following shortcomings for everyday adoption:
+Rust has many excellent verification tools (Aeneas, Creusot, Flux, Kani, Prusti, Verus, and more), but they all share a few shortcomings that that stand in the way of widespread adoption:
 
-- They are hard to learn and use because they change the language or the toolchain in non-trivial ways.
-- It is impossible to combine them into a larger system because their changes are largely incompatible.
-- Keeping the modified parts in sync with upstream Rust is a lot of effort that slows down development.
+- They change Rust (the language or the toolchain) in non-trivial ways, making them more effort to maintain and use.
+- Keeping the modified components in sync with upstream Rust is a lot of effort that slows down development.
+- They are largely incompatible with one another due to the different changes they each make to Rust.
 
-Anodized aims to solve these problems and help other systems become easier to adopt and more valuable. Developers of correctness systems can focus on the analysis itself and avoid duplicating the effort of defining and processing specifications. Users can write their specifications once, and get a range of capabilities including runtime checks, fuzzing, static analysis, and so on.
+Anodized aims to solve these problems and help other systems become easier to maintain and use. Developers of verification systems can focus on the analysis itself and avoid duplicating the effort of defining and processing specifications. Users can write their specifications once, and gain access to a wide range of capabilities including runtime checks, fuzzing, static analysis, and more.
 
 **How Anodized's Goals Are Different**
 
-| System      | Rust Flavor | Static | Runtime | Focus            |
-| ----------- | ----------- | ------ | ------- | ---------------- |
-| Anodized    | Stable      | Yes    | Yes     | Interoperability |
-| Aeneas      | Custom      | Yes    | No      | Static Analysis  |
-| `contracts` | Stable      | No     | Yes     | Runtime Checks   |
-| Creusot     | Custom      | Yes    | No      | Static Analysis  |
-| Flux        | Nightly     | Yes    | No      | Refinement Types |
-| Kani        | Custom      | Yes    | No      | Static Analysis  |
-| Prusti      | Nightly     | Yes    | No      | Static Analysis  |
-| Verus       | Custom      | Yes    | No      | Static Analysis  |
+| System      | Language | Toolchain | Static | Runtime | API | Focus            |
+| ----------- | -------- | --------- | ------ | ------- | --- | ---------------- |
+| Anodized    | Standard | Stable    | Yes    | Yes     | Yes | Interoperability |
+| Aeneas      | Modified | Custom    | Yes    | No      | Yes | Static Analysis  |
+| `contracts` | Modified | Stable    | No     | Yes     | No  | Runtime Checks   |
+| Creusot     | Modified | Custom    | Yes    | No      | No  | Static Analysis  |
+| Flux        | Modified | Nightly   | Yes    | No      | No  | Refinement Types |
+| Kani        | Modified | Custom    | Yes    | No      | No  | Static Analysis  |
+| Prusti      | Modified | Nightly   | Yes    | No      | No  | Static Analysis  |
+| Verus       | Modified | Custom    | Yes    | No      | No  | Static Analysis  |
 
 ## Roadmap
 
-Anodized aims to become a common layer across runtime checking, fuzzing, and verification.
+Anodized aims to become a common layer across runtime checks, fuzzing, and verification.
 
 **Runtime Behaviors**
 
-| Behavior          | Status    | An `spec` violation... |
+| Behavior          | Status    | A `spec` violation...  |
 | ----------------- | --------- | ---------------------- |
 | `check-and-panic` | Available | panics                 |
 | `check-and-print` | Available | prints an error        |
