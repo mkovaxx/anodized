@@ -33,13 +33,15 @@ Anodized is a system that helps **enforce complex specifications** beyond Rust's
 
 Anodized is to verification what `serde` is to serialization.
 
-Rust has many excellent verification tools (Aeneas, Creusot, Flux, Kani, Prusti, Verus, and more), but they all share a few shortcomings that stand in the way of widespread adoption:
+The Rust Core Team is building [native contract support](https://github.com/rust-lang/rust/issues/128044) into the language. We hope that learnings from Anodized will help their work, and we plan to offer a migration tool so that Anodized users can switch to Rust-native contracts as soon as they're ready.
+
+Rust has many excellent verification tools (Aeneas, Creusot, Flux, Kani, Prusti, Verus, and more), but they all suffer from the following issues that stand in the way of widespread adoption:
 
 - They change Rust (the language or the toolchain) in non-trivial ways, making them more effort to maintain and use.
 - Keeping the modified components in sync with upstream Rust is a lot of effort that slows down development.
 - They are largely incompatible with one another due to the different changes they each make to Rust.
 
-Anodized aims to solve these problems and help other systems become easier to maintain and use. Developers of verification systems can focus on the analysis itself and avoid duplicating the effort of defining and processing specifications. Users can write their specifications once, and gain access to a wide range of capabilities including runtime checks, fuzzing, static analysis, and more.
+Anodized aims to help other systems become easier to maintain and use by solving those problems. Developers of verification systems can focus on the analysis itself and avoid duplicating the effort of defining and processing specifications. Users can write their specifications once, and gain access to a wide range of capabilities including runtime checks, fuzzing, static analysis, and more.
 
 **How Anodized's Goals Are Different**
 
@@ -400,10 +402,6 @@ Older crates like `libhoare` (a compiler plugin from before procedural macros we
 **Inspiration from Other Languages**
 
 Anodized is also inspired by languages where contracts are a first-class feature, not just a library. Languages like [Whiley](https://whiley.org), [Eiffel](https://eiffel.org), and [Ada/SPARK](https://adacore.com/about-spark) demonstrate the power of deeply integrating formal specifications into the syntax, type system, and toolchain. The Anodized ecosystem begins with one library, but shares the great ambition of those languages: to bring a similar level of integration and ergonomic feel to Rust.
-
-**Towards First-Class Contracts for Rust**
-
-There have been official discussions and RFCs within the Rust project itself about adding native support for contracts to the language. Anodized is designed to be a practical, library-based solution that can be used **today**, while also serving as a testbed for ideas that could inform future language-level features.
 
 ## License
 
