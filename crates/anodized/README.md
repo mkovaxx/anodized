@@ -33,7 +33,7 @@ Anodized is a system that helps **enforce complex specifications** beyond Rust's
 
 Anodized is to verification what `serde` is to serialization.
 
-The Rust Core Team is building [native contract support](https://github.com/rust-lang/rust/issues/128044) into the language. We hope that learnings from Anodized will help their work, and we plan to offer a migration tool so that Anodized users can switch to Rust-native contracts as soon as they're ready.
+The Rust Team is building [native contract support](https://github.com/rust-lang/rust/issues/128044) into the language. We hope that learnings from Anodized will help their work, and we plan to offer a migration tool so that Anodized users can switch to Rust-native contracts as soon as they're ready.
 
 Rust has many excellent verification tools (Aeneas, Creusot, Flux, Kani, Prusti, Verus, and more), but they all suffer from the following issues that stand in the way of widespread adoption:
 
