@@ -2,7 +2,7 @@
 
 # Anodized Core
 
-This crate provides the core data structures and logic for the [Anodized](https://github.com/mkovaxx/anodized) ecosystem.
+This crate provides the core data structures and logic for the [Anodized](https://github.com/mkovaxx/anodized) specification system.
 
 ## Who Is This For?
 
