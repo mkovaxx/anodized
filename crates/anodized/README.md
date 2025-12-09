@@ -33,7 +33,7 @@ TODO: Add a GIF of editing a `spec` in Zed, and getting completions, compiler er
 
 Anodized is to verification what `serde` is to serialization.
 
-Rust has many excellent verification tools (Aeneas, Creusot, Flux, Kani, Prusti, Verus, and more), but they all share a few shortcomings that that stand in the way of widespread adoption:
+Rust has many excellent verification tools (Aeneas, Creusot, Flux, Kani, Prusti, Verus, and more), but they all share a few shortcomings that stand in the way of widespread adoption:
 
 - They change Rust (the language or the toolchain) in non-trivial ways, making them more effort to maintain and use.
 - Keeping the modified components in sync with upstream Rust is a lot of effort that slows down development.
