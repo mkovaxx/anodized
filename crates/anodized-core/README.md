@@ -103,7 +103,7 @@ fn my_function(<ARGUMENTS>) -> <RETURN_TYPE> {
     );
 
     // 3. Invariants and postconditions are checked
-    // The captured values are available to postconditions
+    // Note: Captured values are available to postconditions
     check!(<INVARIANT>, "Post-invariant failed: <INVARIANT>");
     // Postcondition is checked by invoking the closure with a reference to the return value
     check!(
