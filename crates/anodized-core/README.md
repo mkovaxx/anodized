@@ -116,6 +116,6 @@ fn my_function(<ARGUMENTS>) -> <RETURN_TYPE> {
 }
 ```
 
-Note that the `__anodized_output` will be in scope for the postconditions, but referring to it is not recommended.
+Note that the `__anodized_output` will be in scope for the postconditions, but referring to it is strongly discouraged.
 
 When a condition has a `#[cfg(...)]` attribute, the corresponding `check!` is wrapped in an `if cfg!(...)` block. This follows standard Rust `#[cfg]` semantics: the check only runs when the configuration predicate is true. Without a `#[cfg]` attribute, the `check!` behaves according to the `runtime-*` feature setting.
