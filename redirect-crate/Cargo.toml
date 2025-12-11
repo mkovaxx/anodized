@@ -1,7 +1,7 @@
 [package]
 name = "anodize"
 version = "0.0.0"
-description = "Redirect a typo of `anodized`"
+description = "Redirect typos to `anodized`"
 readme = "README.md"
 license = "MIT OR Apache-2.0"
 repository = "https://github.com/mkovaxx/anodized"
