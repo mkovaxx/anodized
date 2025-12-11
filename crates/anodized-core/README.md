@@ -16,7 +16,9 @@ This crate is the interoperability layer for tools connected to the [Anodized](h
 
 - **If you're looking for blockchain smart contracts...**
 
-  _"These are not the **contracts** you're looking for."_ 🤖 But don't leave yet! While Anodized is about Design by Contract (not blockchain), it can still help make your smart contracts more robust through formal specifications.
+  > _"These are not the **contracts** you're looking for."_ 🤖  
+  
+  But don't leave yet! While Anodized is about Design by Contract (not blockchain), it can still help make your smart contracts more robust through formal specifications.
 
 ---
 
