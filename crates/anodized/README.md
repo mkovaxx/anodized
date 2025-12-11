@@ -92,13 +92,13 @@ Anodized aims to become a common layer across runtime checks, fuzzing, and verif
 | Prusti  | Planned |                       |
 | Verus   | Planned | Emit VIR              |
 
-## Quick Start
+## Quickstart
 
 **1. Add Anodized to your project.**
 
 ```toml
 [dependencies]
-anodized = "0.2.1"
+anodized = "0.3.0"
 ```
 
 **2. Add specifications to your functions.**
