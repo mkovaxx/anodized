@@ -1,4 +1,4 @@
-⚠️ **This exists to redirect typos.** ⚠️
+⚠️ **This page is here to redirect typos.** ⚠️
 
 The crate you probably want is [`anodized`](https://crates.io/crates/anodized).
 
