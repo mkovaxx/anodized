@@ -118,4 +118,4 @@ fn my_function(<ARGUMENTS>) -> <RETURN_TYPE> {
 }
 ```
 
-When a condition has a `#[cfg(...)]` attribute, the corresponding `check!` is wrapped in an `if cfg!(...)` block. This follows standard Rust `#[cfg]` semantics: the check only runs when the configuration predicate is true. Without a `#[cfg]` attribute, the `check!` behaves according to the `runtime-*` feature setting.
+When a condition has a `#[cfg(...)]` attribute, the corresponding `check!` is wrapped in an `if cfg!(...)` block. This follows standard Rust `#[cfg]` semantics: the check only runs when the configuration predicate is true. The behavior of the `check!` itself is controlled by the global `runtime-*` feature setting.
