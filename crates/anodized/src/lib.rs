@@ -1,5 +1,3 @@
-//! Pragmatic specification annotations for Rust.
-//!
 #![doc = include_str!("../README.md")]
 
 use proc_macro::TokenStream;
