@@ -2,7 +2,7 @@
 
 # Anodized Core
 
-This crate provides the core data structures and logic for the [Anodized](https://github.com/mkovaxx/anodized) specification system.
+This crate is the interoperability layer for tools connected to the [Anodized](https://github.com/mkovaxx/anodized) specification system.
 
 ## Who Is This For?
 
@@ -17,8 +17,6 @@ This crate provides the core data structures and logic for the [Anodized](https:
 - **If you're looking for blockchain smart contracts...**
 
   _"These are not the **contracts** you're looking for."_ 🤖 But don't leave yet! While Anodized is about Design by Contract (not blockchain), it can still help make your smart contracts more robust through formal specifications.
-
-This crate provides interoperability for tools connected to the Anodized specification system.
 
 ---
 
@@ -105,7 +103,7 @@ fn my_function(<ARGUMENTS>) -> <RETURN_TYPE> {
     );
 
     // 3. Invariants and postconditions are checked
-    // The captured value is available to postconditions
+    // The captured values are available to postconditions
     check!(<INVARIANT>, "Post-invariant failed: <INVARIANT>");
     // Postcondition is checked by invoking the closure with a reference to the return value
     check!(
