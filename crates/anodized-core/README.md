@@ -2,7 +2,7 @@
 
 # Anodized Core
 
-This crate provides the core data structures and logic for the [Anodized](https://github.com/mkovaxx/anodized) specification system.
+This crate is the interoperability layer for tools connected to the [Anodized](https://github.com/mkovaxx/anodized) specification system.
 
 ## Who Is This For?
 
@@ -16,9 +16,9 @@ This crate provides the core data structures and logic for the [Anodized](https:
 
 - **If you're looking for blockchain smart contracts...**
 
-  _"These are not the **contracts** you're looking for."_ 🤖 But don't leave yet! While Anodized is about Design by Contract (not blockchain), it can still help make your smart contracts more robust through formal specifications.
-
-This crate is the foundational layer that enables interoperability between different tools in the Anodized correctness ecosystem.
+  > _"These are not the **contracts** you're looking for."_ 🤖  
+  
+  But don't leave yet! While Anodized is about Design by Contract (not blockchain), it can still help make your smart contracts more robust through formal specifications.
 
 ---
 
@@ -70,7 +70,7 @@ cfg_attr = `#[cfg(` , settings , `)]`;
 
 ## Runtime Checks
 
-The `#[spec]` macro transforms the function body by injecting runtime checks as `assert!` statements, which are active in all builds by default. This process, known as instrumentation, follows a clear pattern.
+The `#[spec]` macro transforms the function body by injecting runtime checks whose behavior is controlled by `runtime-*` feature settings. This process, known as instrumentation, follows a clear pattern.
 
 Given an original function like this:
 
@@ -91,21 +91,26 @@ The macro rewrites the body to be conceptually equivalent to the following:
 ```rust,ignore
 fn my_function(<ARGUMENTS>) -> <RETURN_TYPE> {
     // 1. Preconditions and invariants are checked
-    assert!(<PRECONDITION>, "Precondition failed: <PRECONDITION>");
-    assert!(<INVARIANT>, "Pre-invariant failed: <INVARIANT>");
+    check!(<PRECONDITION>, "Precondition failed: <PRECONDITION>");
+    check!(<INVARIANT>, "Pre-invariant failed: <INVARIANT>");
 
     // 2. Values are captured and the original function body is executed
-    // Note: captures and body execution happen in a single tuple assignment
-    // to ensure captured values aren't accessible to the function body
-    let (<ALIAS>, __anodized_output): (_, <RETURN_TYPE>) = (<CAPTURE_EXPR>, {
-        <BODY>
-    });
+    // Note 1: captures and body execution happen in a single tuple assignment
+    //         to ensure captured values aren't accessible to the function body
+    // Note 2: the body is evaluated in a closure, so returns inside the body
+    //         do not bypass postcondition checks
+    let (<ALIAS>, __anodized_output): (_, <RETURN_TYPE>) = (
+        <CAPTURE_EXPR>,
+        (|| { <BODY> })(),
+    );
 
     // 3. Invariants and postconditions are checked
-    // The captured value is available to postconditions
-    assert!(<INVARIANT>, "Post-invariant failed: <INVARIANT>");
+    // Note 1: Captured values are in scope for postconditions
+    // Note 2: `__anodized_output` is also in scope for postconditions,
+    //         but referring to it is strongly discouraged
+    check!(<INVARIANT>, "Post-invariant failed: <INVARIANT>");
     // Postcondition is checked by invoking the closure with a reference to the return value
-    assert!(
+    check!(
         (|<PATTERN>: &<RETURN_TYPE>| <POSTCONDITION>)(&__anodized_output),
         "Postcondition failed: | <PATTERN> | <POSTCONDITION>",
     );
@@ -115,6 +120,4 @@ fn my_function(<ARGUMENTS>) -> <RETURN_TYPE> {
 }
 ```
 
-Note that the `__anodized_output` will be in scope for the postconditions, but referring to it is not recommended.
-
-When a condition has a `#[cfg(...)]` attribute, the corresponding `assert!` is wrapped in an `if cfg!(...)` block. This follows standard Rust `#[cfg]` semantics: the check only runs when the configuration predicate is true. Without a `#[cfg]` attribute, the `assert!` behaves exactly like a plain `assert!` in your code: always active.
+When a condition has a `#[cfg(...)]` attribute, the corresponding `check!` is wrapped in an `if cfg!(...)` block. This follows standard Rust `#[cfg]` semantics: the check only runs when the configuration predicate is true. The behavior of the `check!` itself is controlled by the global `runtime-*` feature setting.

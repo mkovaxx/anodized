@@ -1,5 +1,3 @@
-//! Core interoperability for the Anodized correctness ecosystem.
-//!
 #![doc = include_str!("../README.md")]
 
 use syn::{Expr, Ident, Meta};

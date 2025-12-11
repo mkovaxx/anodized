@@ -1,6 +1,6 @@
 [package]
 name = "anodized-core"
-description = "Core interoperability for the Anodized correctness ecosystem"
+description = "Core interoperability for the Anodized specification system"
 
 version.workspace = true
 edition.workspace = true

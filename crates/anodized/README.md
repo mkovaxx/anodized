@@ -8,7 +8,7 @@
 
 > Harden your Rust with **specifications**.
 
-# Anodized Annotations
+# Anodized
 
 Anodized is a system that helps **enforce complex specifications** beyond Rust's built-in static analysis capabilities. In contrast to other systems, Anodized **works on stable Rust** and **does not alter the language or the toolchain** in any way. Going beyond that, Anodized **makes it easy for static analysis tools** to deeply integrate with Rust without duplicating parts of the language or the toolchain.
 
@@ -92,13 +92,13 @@ Anodized aims to become a common layer across runtime checks, fuzzing, and verif
 | Prusti  | Planned |                       |
 | Verus   | Planned | Emit VIR              |
 
-## Quick Start
+## Quickstart
 
 **1. Add Anodized to your project.**
 
 ```toml
 [dependencies]
-anodized = "0.2.1"
+anodized = "0.3.0"
 ```
 
 **2. Add specifications to your functions.**
