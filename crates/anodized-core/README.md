@@ -103,7 +103,9 @@ fn my_function(<ARGUMENTS>) -> <RETURN_TYPE> {
     );
 
     // 3. Invariants and postconditions are checked
-    // Note: Captured values are available to postconditions
+    // Note 1: Captured values are in scope for postconditions
+    // Note 2: `__anodized_output` is also in scope for postconditions,
+    //         but referring to it is strongly discouraged
     check!(<INVARIANT>, "Post-invariant failed: <INVARIANT>");
     // Postcondition is checked by invoking the closure with a reference to the return value
     check!(
@@ -115,7 +117,5 @@ fn my_function(<ARGUMENTS>) -> <RETURN_TYPE> {
     __anodized_output
 }
 ```
-
-Note that `__anodized_output` will be in scope for postconditions, but referring to it is strongly discouraged.
 
 When a condition has a `#[cfg(...)]` attribute, the corresponding `check!` is wrapped in an `if cfg!(...)` block. This follows standard Rust `#[cfg]` semantics: the check only runs when the configuration predicate is true. Without a `#[cfg]` attribute, the `check!` behaves according to the `runtime-*` feature setting.
