@@ -7,7 +7,7 @@ use syn::{
     spanned::Spanned,
 };
 
-use crate::{Capture, Condition, PostCondition, Spec};
+use crate::{Capture, PostCondition, PreCondition, Spec};
 
 #[cfg(test)]
 mod tests;
@@ -17,8 +17,8 @@ impl Parse for Spec {
         let args = Punctuated::<SpecArg, Token![,]>::parse_terminated(input)?;
 
         let mut last_arg_order: Option<ArgOrder> = None;
-        let mut requires: Vec<Condition> = vec![];
-        let mut maintains: Vec<Condition> = vec![];
+        let mut requires: Vec<PreCondition> = vec![];
+        let mut maintains: Vec<PreCondition> = vec![];
         let mut captures: Vec<Capture> = vec![];
         let mut binds_pattern: Option<Pat> = None;
         let mut ensures: Vec<PostCondition> = vec![];
@@ -38,22 +38,32 @@ impl Parse for Spec {
             match arg {
                 SpecArg::Requires { cfg, expr, .. } => {
                     if let Expr::Array(conditions) = expr {
-                        requires.extend(conditions.elems.into_iter().map(|expr| Condition {
-                            expr,
-                            cfg: cfg.clone(),
-                        }));
+                        for expr in conditions.elems {
+                            requires.push(PreCondition {
+                                closure: interpret_expr_as_precondition(expr)?,
+                                cfg: cfg.clone(),
+                            });
+                        }
                     } else {
-                        requires.push(Condition { expr, cfg });
+                        requires.push(PreCondition {
+                            closure: interpret_expr_as_precondition(expr)?,
+                            cfg,
+                        });
                     }
                 }
                 SpecArg::Maintains { cfg, expr, .. } => {
                     if let Expr::Array(conditions) = expr {
-                        maintains.extend(conditions.elems.into_iter().map(|expr| Condition {
-                            expr,
-                            cfg: cfg.clone(),
-                        }));
+                        for expr in conditions.elems {
+                            maintains.push(PreCondition {
+                                closure: interpret_expr_as_precondition(expr)?,
+                                cfg: cfg.clone(),
+                            });
+                        }
                     } else {
-                        maintains.push(Condition { expr, cfg });
+                        maintains.push(PreCondition {
+                            closure: interpret_expr_as_precondition(expr)?,
+                            cfg,
+                        });
                     }
                 }
                 SpecArg::Captures { keyword, expr } => {
@@ -292,6 +302,44 @@ fn interpret_expr_as_capture(expr: Expr) -> Result<Capture> {
     }
 }
 
+/// Interpret expression as a zero-parameter closure, wrapping if necessary.
+/// Used for preconditions which don't need access to the return value.
+fn interpret_expr_as_precondition(expr: Expr) -> Result<syn::ExprClosure> {
+    match expr {
+        // Already a closure, validate it has no arguments.
+        Expr::Closure(closure) => {
+            if closure.inputs.is_empty() {
+                Ok(closure)
+            } else {
+                Err(syn::Error::new_spanned(
+                    closure.or1_token,
+                    format!(
+                        "precondition closure must have no arguments, found {}",
+                        closure.inputs.len()
+                    ),
+                ))
+            }
+        }
+        // Naked expression, wrap in an argumentless closure.
+        expr => Ok(syn::ExprClosure {
+            attrs: vec![],
+            lifetimes: None,
+            constness: None,
+            movability: None,
+            asyncness: None,
+            capture: None,
+            or1_token: Default::default(),
+            inputs: syn::punctuated::Punctuated::new(),
+            or2_token: Default::default(),
+            output: syn::ReturnType::Default,
+            body: Box::new(expr),
+        }),
+    }
+}
+
+/// Interpret expression as a closure with a single argument (eg the list of
+/// aliases and function result), wrapping if necessary.  
+/// Used for postconditions which take the return value as an argument.
 fn interpret_expr_as_postcondition(expr: Expr, default_binding: Pat) -> Result<syn::ExprClosure> {
     match expr {
         // Already a closure, validate it has exactly one argument.

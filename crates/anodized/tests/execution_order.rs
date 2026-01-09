@@ -1,9 +1,18 @@
 use anodized::spec;
 
+/// This function should never return false, but the should work
 #[spec(
     requires: [
-        log.push("requires1") == (),
-        log.push("requires2") == (),
+        return log.push("requires1") == (),
+        {
+            // Functions that use the "return" keyword and early exit should work
+            if log.len() == 1 {
+                return log.push("requires2") == ();
+            }
+            else {
+                return false
+            }
+        }
     ],
     maintains: [
         log.push("maintains1") == (),
