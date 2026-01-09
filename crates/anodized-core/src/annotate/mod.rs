@@ -7,7 +7,7 @@ use syn::{
     spanned::Spanned,
 };
 
-use crate::{Capture, Condition, PostCondition, Spec};
+use crate::{Capture, PostCondition, PreCondition, Spec};
 
 #[cfg(test)]
 mod tests;
@@ -17,8 +17,8 @@ impl Parse for Spec {
         let args = Punctuated::<SpecArg, Token![,]>::parse_terminated(input)?;
 
         let mut last_arg_order: Option<ArgOrder> = None;
-        let mut requires: Vec<Condition> = vec![];
-        let mut maintains: Vec<Condition> = vec![];
+        let mut requires: Vec<PreCondition> = vec![];
+        let mut maintains: Vec<PreCondition> = vec![];
         let mut captures: Vec<Capture> = vec![];
         let mut binds_pattern: Option<Pat> = None;
         let mut ensures: Vec<PostCondition> = vec![];
@@ -38,22 +38,22 @@ impl Parse for Spec {
             match arg {
                 SpecArg::Requires { cfg, expr, .. } => {
                     if let Expr::Array(conditions) = expr {
-                        requires.extend(conditions.elems.into_iter().map(|expr| Condition {
+                        requires.extend(conditions.elems.into_iter().map(|expr| PreCondition {
                             expr,
                             cfg: cfg.clone(),
                         }));
                     } else {
-                        requires.push(Condition { expr, cfg });
+                        requires.push(PreCondition { expr, cfg });
                     }
                 }
                 SpecArg::Maintains { cfg, expr, .. } => {
                     if let Expr::Array(conditions) = expr {
-                        maintains.extend(conditions.elems.into_iter().map(|expr| Condition {
+                        maintains.extend(conditions.elems.into_iter().map(|expr| PreCondition {
                             expr,
                             cfg: cfg.clone(),
                         }));
                     } else {
-                        maintains.push(Condition { expr, cfg });
+                        maintains.push(PreCondition { expr, cfg });
                     }
                 }
                 SpecArg::Captures { keyword, expr } => {

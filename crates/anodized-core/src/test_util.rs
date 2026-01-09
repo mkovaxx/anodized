@@ -1,10 +1,10 @@
-use crate::{Capture, Condition, PostCondition, Spec};
+use crate::{Capture, PostCondition, PreCondition, Spec};
 use quote::ToTokens;
 use syn::parse::{Parse, ParseStream, Result};
 
-impl Parse for Condition {
+impl Parse for PreCondition {
     fn parse(input: ParseStream) -> Result<Self> {
-        Ok(Condition {
+        Ok(PreCondition {
             expr: input.parse()?,
             cfg: None,
         })
@@ -76,14 +76,14 @@ where
     }
 }
 
-fn assert_condition_eq(left: &Condition, right: &Condition, msg_prefix: &str) {
+fn assert_condition_eq(left: &PreCondition, right: &PreCondition, msg_prefix: &str) {
     // Destructure to ensure we handle all fields
-    let Condition {
+    let PreCondition {
         expr: left_expr,
         cfg: left_cfg,
     } = left;
 
-    let Condition {
+    let PreCondition {
         expr: right_expr,
         cfg: right_cfg,
     } = right;
