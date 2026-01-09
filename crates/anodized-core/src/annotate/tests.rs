@@ -208,7 +208,7 @@ fn cfg_attributes() {
     };
 
     let expected = Spec {
-        requires: vec![Condition {
+        requires: vec![PreCondition {
             expr: parse_quote! { x > 0 && is_mode() },
             cfg: Some(parse_quote! { test }),
         }],
