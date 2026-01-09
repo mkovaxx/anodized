@@ -2,7 +2,7 @@
 
 use proc_macro::TokenStream;
 use quote::ToTokens;
-use syn::{Item, parse_macro_input};
+use syn::{Item, TraitItem, parse_macro_input};
 
 use anodized_core::{Spec, instrument::Backend};
 
@@ -42,8 +42,40 @@ pub fn spec(args: TokenStream, input: TokenStream) -> TokenStream {
     let result = match item {
         Item::Fn(func) => {
             let spec = parse_macro_input!(args as Spec);
-            BACKEND.instrument_fn(spec, func)
-        }
+            BACKEND.instrument_fn(spec, func).map(|tokens| tokens.into_token_stream())
+        },
+        Item::Trait(the_trait) => {
+            //Currently we don't support any markup for traits themselves - only the
+            // items within the trait
+            let _spec = parse_macro_input!(args as Spec);
+
+            for item in &the_trait.items {
+                match item {
+                    TraitItem::Fn(func) => {
+                        let mut replacement_func = func.clone();
+                        let mut spec = None;
+                        let mut other_attrs = Vec::new();
+                        for attr in &func.attrs {
+                            if attr.path().is_ident("spec") {
+                                match attr.parse_args::<Spec>() {
+                                    Ok(parsed) => {
+                                        spec = Some(parsed)
+                                    },
+                                    Err(e) => return e.to_compile_error().into()
+                                }
+                            } else {
+                                other_attrs.push(attr.clone());
+                            }
+                        }
+                        replacement_func.attrs = other_attrs;
+println!("GOAT func={replacement_func:?}");
+println!("GOAT spec={spec:?}");
+                    },
+                    _ => {}
+                }
+            }
+            Ok(the_trait).map(|tokens| tokens.into_token_stream())
+        },
         unsupported_item => {
             let item_type = item_to_string(&unsupported_item);
             let msg = format!(
@@ -57,7 +89,7 @@ request at https://github.com/mkovaxx/anodized/issues/new"#,
     };
 
     match result {
-        Ok(item) => item.into_token_stream().into(),
+        Ok(item) => item.into(),
         Err(e) => e.to_compile_error().into(),
     }
 }
