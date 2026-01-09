@@ -1,0 +1,5 @@
+{
+    "rust-analyzer.runnables.extraArgs": [
+        "-F anodized/runtime-check-and-panic"
+    ]
+}
