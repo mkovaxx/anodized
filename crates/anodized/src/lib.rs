@@ -49,13 +49,15 @@ pub fn spec(args: TokenStream, input: TokenStream) -> TokenStream {
             // items within the trait
             let _spec = parse_macro_input!(args as Spec);
 
-            for item in &the_trait.items {
+            let mut replacement_trait = the_trait.clone();
+
+            //Deal with spec macro markup on items within the trait
+            for item in replacement_trait.items.iter_mut() {
                 match item {
                     TraitItem::Fn(func) => {
-                        let mut replacement_func = func.clone();
                         let mut spec = None;
                         let mut other_attrs = Vec::new();
-                        for attr in &func.attrs {
+                        for attr in core::mem::take(&mut func.attrs) {
                             if attr.path().is_ident("spec") {
                                 match attr.parse_args::<Spec>() {
                                     Ok(parsed) => {
@@ -64,17 +66,17 @@ pub fn spec(args: TokenStream, input: TokenStream) -> TokenStream {
                                     Err(e) => return e.to_compile_error().into()
                                 }
                             } else {
-                                other_attrs.push(attr.clone());
+                                other_attrs.push(attr);
                             }
                         }
-                        replacement_func.attrs = other_attrs;
-println!("GOAT func={replacement_func:?}");
+                        func.attrs = other_attrs;
+println!("GOAT func={func:?}");
 println!("GOAT spec={spec:?}");
                     },
                     _ => {}
                 }
             }
-            Ok(the_trait).map(|tokens| tokens.into_token_stream())
+            Ok(replacement_trait).map(|tokens| tokens.into_token_stream())
         },
         unsupported_item => {
             let item_type = item_to_string(&unsupported_item);
