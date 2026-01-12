@@ -37,6 +37,7 @@ impl TestTrait for TestStruct {
             *output > self.0
         },
     )]
+    #[inline(never)]
     fn do_something(&self, x: u32) -> u32 {
         x * self.0
     }

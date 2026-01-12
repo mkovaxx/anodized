@@ -1,6 +1,6 @@
 use proc_macro::TokenStream;
 use quote::quote;
-use syn::{FnArg, ImplItem, ItemFn, Pat, TraitItem, parse_quote};
+use syn::{Attribute, FnArg, ImplItem, ItemFn, Pat, TraitItem, parse_quote};
 use crate::BACKEND;
 
 use anodized_core::Spec;
@@ -23,20 +23,12 @@ pub fn instrument_trait(
     for item in the_trait.items.into_iter() {
         match item {
             TraitItem::Fn(mut func) => {
-                let mut spec = None;
-                let mut other_attrs = Vec::new();
-                for attr in core::mem::take(&mut func.attrs) {
-                    if attr.path().is_ident("spec") {
-                        match attr.parse_args::<Spec>() {
-                            Ok(parsed) => {
-                                spec = Some(parsed);
-                            }
-                            Err(e) => return Err(e),
-                        }
-                    } else {
-                        other_attrs.push(attr);
-                    }
-                }
+                let (spec, other_attrs) = parse_spec_attrs(func.attrs, true)?;
+
+                //ISSUE: We have no way of knowing which attributes are "externally facing", i.e. they are meant
+                // for the interface and therefore belong on the wrapper with the un-mangled name, and which ones
+                // are "internally facing", and are meant for the mangled implementation.  Right now we put all
+                // attribs on both functions, but that's certainly not going to work in every situation
                 func.attrs = other_attrs.clone();
 
                 let original_ident = func.sig.ident.clone();
@@ -44,6 +36,7 @@ pub fn instrument_trait(
 
                 let mut mangled_fn = func.clone();
                 mangled_fn.sig.ident = mangled_ident.clone();
+                mangled_fn.attrs.push(parse_quote!(#[doc(hidden)]));
 
                 let call_args = build_call_args(&func.sig.inputs)?;
                 let mut wrapper_block: syn::Block = parse_quote!({
@@ -104,6 +97,12 @@ pub fn instrument_impl(
                     func.sig.ident = mangle_ident(&original_ident);
                 }
 
+                //Add a default `#[inline]` attribute unless one is already there.
+                //The caller can supress this with `#[inline(never)]`
+                if !has_inline_attr(&func.attrs) {
+                    func.attrs.push(parse_quote!(#[inline]));
+                }
+
                 new_items.push(ImplItem::Fn(func));
             }
             other => new_items.push(other),
@@ -161,4 +160,37 @@ fn mangle_ident(original_ident: &syn::Ident) -> syn::Ident {
         &format!("__anodized_{original_ident}"),
         original_ident.span(),
     )
+}
+
+/// Checks to see if any `#[inline]` (with or without arg) exists in the function's attribs
+fn has_inline_attr(attrs: &[syn::Attribute]) -> bool {
+    attrs.iter().any(|attr| attr.path().is_ident("inline"))
+}
+
+/// Parses out the `[spec]` attrib from a function's attribute list
+fn parse_spec_attrs(
+    attrs: Vec<Attribute>,
+    remove: bool,
+) -> syn::Result<(Option<Spec>, Vec<Attribute>)> {
+    let mut spec: Option<Spec> = None;
+    let mut other_attrs = Vec::new();
+
+    for attr in attrs {
+        if attr.path().is_ident("spec") {
+            if spec.is_some() {
+                return Err(syn::Error::new_spanned(
+                    attr,
+                    "multiple `#[spec]` attributes on a single method are not supported",
+                ));
+            }
+            spec = Some(attr.parse_args::<Spec>()?);
+            if !remove {
+                other_attrs.push(attr);
+            }
+        } else {
+            other_attrs.push(attr);
+        }
+    }
+
+    Ok((spec, other_attrs))
 }
