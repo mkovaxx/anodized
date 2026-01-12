@@ -36,6 +36,7 @@ pub fn instrument_trait(
 
                 let mut mangled_fn = func.clone();
                 mangled_fn.sig.ident = mangled_ident.clone();
+                mangled_fn.attrs.retain(|attr| !attr.path().is_ident("doc"));
                 mangled_fn.attrs.push(parse_quote!(#[doc(hidden)]));
 
                 let call_args = build_call_args(&func.sig.inputs)?;

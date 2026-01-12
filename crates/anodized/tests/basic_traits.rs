@@ -4,9 +4,11 @@ use anodized::spec;
 #[spec]
 pub trait TestTrait {
 
+    /// Returns a current value
     fn current(&self) -> u32;
 
-    #[spec(
+    /// Does something
+    #[spec{
         requires: {
             x > 0
         },
@@ -16,7 +18,7 @@ pub trait TestTrait {
         ensures: {
             *output > old_val
         },
-    )]
+    }]
     fn do_something(&self, x: u32) -> u32 {
         x * 2
     }
@@ -29,14 +31,14 @@ impl TestTrait for TestStruct {
     fn current(&self) -> u32 {
         self.0
     }
-    #[spec(
+    #[spec{
         maintains: {
             self.0 == 3
         },
         ensures: {
             *output > self.0
         },
-    )]
+    }]
     #[inline(never)]
     fn do_something(&self, x: u32) -> u32 {
         x * self.0
