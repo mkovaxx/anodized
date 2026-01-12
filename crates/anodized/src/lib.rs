@@ -45,7 +45,17 @@ pub fn spec(args: TokenStream, input: TokenStream) -> TokenStream {
             BACKEND.instrument_fn(spec, func).map(|tokens| tokens.into_token_stream())
         },
         Item::Trait(the_trait) => {
-            //Currently we don't support any markup for traits themselves - only the
+            // Mangling a function involves the following:
+            //
+            // 1. Rename the function following the pattern: `fn add` would be mangled to `fn __anodized_add`
+            // 2. Make a new function with a with the original name that has a default impl; the default impl will
+            //  perform all runtime validation, and call through to the mangled function.
+            //
+            // Every function in a trait gets mangled, regardless of whether or not it has a [spec] decorator or not.
+            //  This is because the impl has no way of knowing if there is a spec or not on the trait item.
+
+
+            //Currently we don't support any spec arguments for traits themselves - only for the
             // items within the trait
             let _spec = parse_macro_input!(args as Spec);
 
