@@ -22,17 +22,12 @@ pub trait TestTrait {
 
 struct TestStruct;
 
+#[spec]
 impl TestTrait for TestStruct {
-    // fn current(&self) -> u32 {
-    //     0
-    // }
-    fn __anodized_current(&self) -> u32 {
+    fn current(&self) -> u32 {
         0
     }
-    // fn do_something(&self, x: u32) -> u32 {
-    //     x * 2
-    // }
-    fn __anodized_do_something(&self, x: u32) -> u32 {
+    fn do_something(&self, x: u32) -> u32 {
         x * 2
     }
 }

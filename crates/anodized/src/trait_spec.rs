@@ -1,7 +1,6 @@
 use proc_macro::TokenStream;
-use proc_macro2::Span;
 use quote::quote;
-use syn::{FnArg, ItemFn, Pat, TraitItem, parse_quote};
+use syn::{FnArg, ImplItem, ItemFn, Pat, TraitItem, parse_quote};
 use crate::BACKEND;
 
 use anodized_core::Spec;
@@ -41,10 +40,7 @@ pub fn instrument_trait(
                 func.attrs = other_attrs.clone();
 
                 let original_ident = func.sig.ident.clone();
-                let mangled_ident = syn::Ident::new(
-                    &format!("__anodized_{original_ident}"),
-                    Span::mixed_site(),
-                );
+                let mangled_ident = mangle_ident(&original_ident);
 
                 let mut mangled_fn = func.clone();
                 mangled_fn.sig.ident = mangled_ident.clone();
@@ -78,6 +74,44 @@ pub fn instrument_trait(
     }
     the_trait.items = new_trait_items;
     Ok(the_trait)
+}
+
+/// Expand impl items by mangling methods for trait impls.
+///
+/// The `#[spec]` on the impl itself is accepted for symmetry with other items,
+/// but currently has no effect beyond validation.
+pub fn instrument_impl(
+    args: TokenStream,
+    mut the_impl: syn::ItemImpl,
+) -> syn::Result<syn::ItemImpl> {
+    // Currently we don't support any spec arguments for impl blocks themselves.
+    let _spec: Spec = syn::parse(args)?;
+
+    if the_impl.trait_.is_none() {
+        return Err(syn::Error::new_spanned(
+            &the_impl.self_ty,
+            "anodized only supports specs on trait impl blocks",
+        ));
+    }
+
+    let mut new_items = Vec::with_capacity(the_impl.items.len());
+
+    for item in the_impl.items.into_iter() {
+        match item {
+            ImplItem::Fn(mut func) => {
+                let original_ident = func.sig.ident.clone();
+                if !original_ident.to_string().starts_with("__anodized_") {
+                    func.sig.ident = mangle_ident(&original_ident);
+                }
+
+                new_items.push(ImplItem::Fn(func));
+            }
+            other => new_items.push(other),
+        }
+    }
+
+    the_impl.items = new_items;
+    Ok(the_impl)
 }
 
 /// Build argument tokens for calling the mangled trait method from the wrapper.
@@ -118,4 +152,13 @@ fn build_call_args(
         }
     }
     Ok(args)
+}
+
+/// Prefix an identifier with `__anodized_`, preserving the original span.
+/// Used when generating mangled method names in trait and impl expansion.
+fn mangle_ident(original_ident: &syn::Ident) -> syn::Ident {
+    syn::Ident::new(
+        &format!("__anodized_{original_ident}"),
+        original_ident.span(),
+    )
 }

@@ -49,6 +49,10 @@ pub fn spec(args: TokenStream, input: TokenStream) -> TokenStream {
             trait_spec::instrument_trait(args, the_trait)
                 .map(|tokens| tokens.into_token_stream())
         },
+        Item::Impl(the_impl) => {
+            trait_spec::instrument_impl(args, the_impl)
+                .map(|tokens| tokens.into_token_stream())
+        },
         unsupported_item => {
             let item_type = item_to_string(&unsupported_item);
             let msg = format!(
