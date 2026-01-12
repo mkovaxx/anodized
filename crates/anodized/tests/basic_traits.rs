@@ -8,16 +8,13 @@ pub trait TestTrait {
 
     #[spec(
         requires: {
-            // Just a longer way of writing `true` :)
-            let x = 5;
             x > 0
         },
         captures: {
             self.current()
         } as old_val,
         ensures: {
-            let new_val = self.current();
-            new_val > old_val
+            *output > old_val
         },
     )]
     fn do_something(&self, x: u32) -> u32;
@@ -26,7 +23,16 @@ pub trait TestTrait {
 struct TestStruct;
 
 impl TestTrait for TestStruct {
-    fn do_something(&self, x: u32) -> u32 {
+    // fn current(&self) -> u32 {
+    //     0
+    // }
+    fn __anodized_current(&self) -> u32 {
+        0
+    }
+    // fn do_something(&self, x: u32) -> u32 {
+    //     x * 2
+    // }
+    fn __anodized_do_something(&self, x: u32) -> u32 {
         x * 2
     }
 }
