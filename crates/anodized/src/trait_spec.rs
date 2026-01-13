@@ -74,7 +74,7 @@ pub fn instrument_trait(
 ///
 /// The `#[spec]` on the impl itself is accepted for symmetry with other items,
 /// but currently has no effect beyond validation.
-pub fn instrument_trait_impl(
+pub fn instrument_impl(
     args: TokenStream,
     mut the_impl: syn::ItemImpl,
 ) -> syn::Result<syn::ItemImpl> {
