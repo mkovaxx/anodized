@@ -16,7 +16,13 @@ pub fn instrument_trait(
     mut the_trait: syn::ItemTrait
 ) -> syn::Result<syn::ItemTrait> {
     // Currently we don't support any spec arguments for traits themselves.
-    let _spec: Spec = syn::parse(args)?;
+    let spec: Spec = syn::parse(args.clone())?;
+    if !spec.is_empty() {
+        return Err(syn::Error::new_spanned::<proc_macro2::TokenStream, &str>(
+            args.into(),
+            "unsupported spec element on trait.  Maybe it should go on an item within the trait",
+        ));
+    }
 
     let mut new_trait_items = Vec::with_capacity(the_trait.items.len() * 2);
 
@@ -78,8 +84,13 @@ pub fn instrument_impl(
     args: TokenStream,
     mut the_impl: syn::ItemImpl,
 ) -> syn::Result<syn::ItemImpl> {
-    // Currently we don't support any spec arguments for impl blocks themselves.
-    let _spec: Spec = syn::parse(args)?;
+    let spec: Spec = syn::parse(args.clone())?;
+    if !spec.is_empty() {
+        return Err(syn::Error::new_spanned::<proc_macro2::TokenStream, &str>(
+            args.into(),
+            "unsupported spec element on impl block.  Maybe it should go on an item within the block",
+        ));
+    }
 
     if the_impl.trait_.is_none() {
         return Err(syn::Error::new_spanned(

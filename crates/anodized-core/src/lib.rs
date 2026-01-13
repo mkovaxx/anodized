@@ -21,6 +21,13 @@ pub struct Spec {
     pub ensures: Vec<PostCondition>,
 }
 
+impl Spec {
+    /// Returns `true` if the spec contract is empty (specifies nothing), otherwise returns `false`
+    pub fn is_empty(&self) -> bool {
+        self.requires.is_empty() && self.maintains.is_empty() && self.ensures.is_empty() && self.captures.is_empty()
+    }
+}
+
 /// A condition represented by a `bool`-valued expression.
 #[derive(Debug)]
 pub struct Condition {
