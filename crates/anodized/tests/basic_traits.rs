@@ -8,17 +8,11 @@ pub trait TestTrait {
     fn current(&self) -> u32;
 
     /// Does something
-    #[spec{
-        requires: {
-            x > 0
-        },
-        captures: {
-            self.current()
-        } as old_val,
-        ensures: {
-            *output > old_val
-        },
-    }]
+    #[spec(
+        requires: x > 0,
+        captures: self.current() as old_val,
+        ensures: *output > old_val,
+    )]
     fn do_something(&self, x: u32) -> u32 {
         x * 2
     }
@@ -31,14 +25,10 @@ impl TestTrait for TestStruct {
     fn current(&self) -> u32 {
         self.0
     }
-    #[spec{
-        maintains: {
-            self.0 == 3
-        },
-        ensures: {
-            *output > self.0
-        },
-    }]
+    #[spec(
+        maintains: self.0 == 3,
+        ensures: *output > self.0,
+    )]
     #[inline(never)]
     fn do_something(&self, x: u32) -> u32 {
         x * self.0

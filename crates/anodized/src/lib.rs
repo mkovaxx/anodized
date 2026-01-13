@@ -16,7 +16,7 @@ const _: () = {
     }
 };
 
-pub(crate) const BACKEND: Backend = if cfg!(feature = "runtime-check-and-panic") {
+const BACKEND: Backend = if cfg!(feature = "runtime-check-and-panic") {
     Backend::CHECK_AND_PANIC
 } else if cfg!(feature = "runtime-check-and-print") {
     Backend::CHECK_AND_PRINT
@@ -49,7 +49,7 @@ pub fn spec(args: TokenStream, input: TokenStream) -> TokenStream {
             trait_spec::instrument_trait(args, the_trait)
                 .map(|tokens| tokens.into_token_stream())
         },
-        Item::Impl(the_impl) => {
+        Item::Impl(the_impl) if the_impl.trait_.is_some() => {
             trait_spec::instrument_impl(args, the_impl)
                 .map(|tokens| tokens.into_token_stream())
         },
