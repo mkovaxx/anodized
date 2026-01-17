@@ -105,14 +105,21 @@ pub fn instrument_impl(
             ImplItem::Fn(mut func) => {
 
                 let (spec, mut func_attrs) = parse_spec_attr(func.attrs)?;
-                if let Some((spec, spec_attr)) = spec {
-                    if !spec.requires.is_empty() || !spec.maintains.is_empty() || !spec.ensures.is_empty() {
-                        return Err(syn::Error::new_spanned(
-                            spec_attr,
-                            "trait impl method specs may not contain `requires`, `maintains`, nor `ensures`",
-                        ));
-                    }
-                    func_attrs.push(spec_attr);
+                if let Some((_, spec_attr)) = spec {
+                    return Err(syn::Error::new_spanned(
+                        spec_attr,
+                        "trait impl methods may not have spec attributes.  Implementations must respect the contract of the trait interface.  Please file an issue on github if you need implementation-specific validation",
+                    ));
+
+                    // QUESTION: Do we want to allow a spec, so long as it doesn't contain `requires`, `maintains`, nor `ensures`?
+                    //
+                    // if !spec.requires.is_empty() || !spec.maintains.is_empty() || !spec.ensures.is_empty() {
+                    //     return Err(syn::Error::new_spanned(
+                    //         spec_attr,
+                    //         "trait impl method specs may not contain `requires`, `maintains`, nor `ensures`",
+                    //     ));
+                    // }
+                    // func_attrs.push(spec_attr);
                 }
 
                 let original_ident = func.sig.ident.clone();

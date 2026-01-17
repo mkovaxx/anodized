@@ -25,11 +25,12 @@ impl TestTrait for TestStruct {
     fn current(&self) -> u32 {
         self.0
     }
-    #[spec{
-        //gOAT, spec is allowed, but it must not have a `requires`, `maintains`, nor `ensures` directive
-        // maintains: self.0 == 3,
-        // ensures: *output > self.0,
-    }]
+    //GOAT, specs are no longer allowed on trait impls
+    // #[spec{
+    //     //gOAT, spec is allowed, but it must not have a `requires`, `maintains`, nor `ensures` directive
+    //     // maintains: self.0 == 3,
+    //     // ensures: *output > self.0,
+    // }]
     #[inline(never)]
     fn do_something(&self, x: u32) -> u32 {
         x * self.0
