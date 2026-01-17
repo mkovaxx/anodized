@@ -5,7 +5,6 @@ use quote::ToTokens;
 use syn::{Item, parse_macro_input};
 
 use anodized_core::{Spec, instrument::Backend};
-mod trait_spec;
 
 const _: () = {
     let count: u32 = cfg!(feature = "runtime-check-and-panic") as u32
@@ -46,11 +45,13 @@ pub fn spec(args: TokenStream, input: TokenStream) -> TokenStream {
             BACKEND.instrument_fn(spec, func).map(|tokens| tokens.into_token_stream())
         },
         Item::Trait(the_trait) => {
-            trait_spec::instrument_trait(args, the_trait)
+            let spec = parse_macro_input!(args as Spec);
+            BACKEND.instrument_trait(spec, the_trait)
                 .map(|tokens| tokens.into_token_stream())
         },
         Item::Impl(the_impl) if the_impl.trait_.is_some() => {
-            trait_spec::instrument_impl(args, the_impl)
+            let spec = parse_macro_input!(args as Spec);
+            BACKEND.instrument_impl(spec, the_impl)
                 .map(|tokens| tokens.into_token_stream())
         },
         unsupported_item => {

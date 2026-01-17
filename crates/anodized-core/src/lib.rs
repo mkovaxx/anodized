@@ -1,6 +1,7 @@
 #![doc = include_str!("../README.md")]
 
 use syn::{Expr, Ident, Meta};
+use proc_macro2::Span;
 
 pub mod annotate;
 pub mod instrument;
@@ -19,12 +20,18 @@ pub struct Spec {
     pub captures: Vec<Capture>,
     /// Postconditions: conditions that must hold when the function returns.
     pub ensures: Vec<PostCondition>,
+    /// The span in the source code, from which this spec was parsed
+    span: Span,
 }
 
 impl Spec {
     /// Returns `true` if the spec contract is empty (specifies nothing), otherwise returns `false`
     pub fn is_empty(&self) -> bool {
         self.requires.is_empty() && self.maintains.is_empty() && self.ensures.is_empty() && self.captures.is_empty()
+    }
+    /// Call to construct an error from the whole spec
+    pub fn spec_err(&self, message: &str) -> syn::Error {
+        syn::Error::new::<&str>(self.span, message)
     }
 }
 
