@@ -29,7 +29,7 @@ pub fn instrument_trait(
     for item in the_trait.items.into_iter() {
         match item {
             TraitItem::Fn(mut func) => {
-                let (spec, other_attrs) = parse_spec_attrs(func.attrs, true)?;
+                let (spec, other_attrs) = parse_spec_attr(func.attrs)?;
 
                 //ISSUE: We have no way of knowing which attributes are "externally facing", i.e. they are meant
                 // for the interface and therefore belong on the wrapper with the un-mangled name, and which ones
@@ -50,7 +50,7 @@ pub fn instrument_trait(
                     Self::#mangled_ident(#(#call_args),*)
                 });
 
-                if let Some(spec) = spec {
+                if let Some((spec, _spec_attr)) = spec {
                     let wrapper_item = ItemFn {
                         attrs: Vec::new(),
                         vis: syn::Visibility::Inherited,
@@ -76,10 +76,9 @@ pub fn instrument_trait(
     Ok(the_trait)
 }
 
-/// Expand impl items by mangling methods for trait impls.
+/// Expand impl items by mangling methods for trait impls
 ///
-/// The `#[spec]` on the impl itself is accepted for symmetry with other items,
-/// but currently has no effect beyond validation.
+/// `#[spec]` attributes on the impl items themselves may not have `requires`, `maintains`, nor `ensures` directives.
 pub fn instrument_impl(
     args: TokenStream,
     mut the_impl: syn::ItemImpl,
@@ -104,6 +103,18 @@ pub fn instrument_impl(
     for item in the_impl.items.into_iter() {
         match item {
             ImplItem::Fn(mut func) => {
+
+                let (spec, mut func_attrs) = parse_spec_attr(func.attrs)?;
+                if let Some((spec, spec_attr)) = spec {
+                    if !spec.requires.is_empty() || !spec.maintains.is_empty() || !spec.ensures.is_empty() {
+                        return Err(syn::Error::new_spanned(
+                            spec_attr,
+                            "trait impl method specs may not contain `requires`, `maintains`, nor `ensures`",
+                        ));
+                    }
+                    func_attrs.push(spec_attr);
+                }
+
                 let original_ident = func.sig.ident.clone();
                 if !original_ident.to_string().starts_with("__anodized_") {
                     func.sig.ident = mangle_ident(&original_ident);
@@ -111,10 +122,11 @@ pub fn instrument_impl(
 
                 //Add a default `#[inline]` attribute unless one is already there.
                 //The caller can supress this with `#[inline(never)]`
-                if !has_inline_attr(&func.attrs) {
-                    func.attrs.push(parse_quote!(#[inline]));
+                if !has_inline_attr(&func_attrs) {
+                    func_attrs.push(parse_quote!(#[inline]));
                 }
 
+                func.attrs = func_attrs;
                 new_items.push(ImplItem::Fn(func));
             }
             other => new_items.push(other),
@@ -180,11 +192,12 @@ fn has_inline_attr(attrs: &[syn::Attribute]) -> bool {
 }
 
 /// Parses out the `[spec]` attrib from a function's attribute list
-fn parse_spec_attrs(
-    attrs: Vec<Attribute>,
-    remove: bool,
-) -> syn::Result<(Option<Spec>, Vec<Attribute>)> {
-    let mut spec: Option<Spec> = None;
+///
+/// Returns the parsed spec, the spec [Attribute] and the remaining attributes
+fn parse_spec_attr(
+    attrs: Vec<Attribute>
+) -> syn::Result<(Option<(Spec, Attribute)>, Vec<Attribute>)> {
+    let mut spec = None;
     let mut other_attrs = Vec::new();
 
     for attr in attrs {
@@ -195,10 +208,7 @@ fn parse_spec_attrs(
                     "multiple `#[spec]` attributes on a single method are not supported",
                 ));
             }
-            spec = Some(attr.parse_args::<Spec>()?);
-            if !remove {
-                other_attrs.push(attr);
-            }
+            spec = Some((attr.parse_args::<Spec>()?, attr));
         } else {
             other_attrs.push(attr);
         }
