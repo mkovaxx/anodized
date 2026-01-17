@@ -3,6 +3,8 @@ use quote::quote;
 use syn::Meta;
 pub mod function;
 
+pub mod trait_spec;
+
 pub struct Backend {
     pub build_check: fn(Option<&Meta>, &TokenStream, &str, &TokenStream) -> TokenStream,
 }

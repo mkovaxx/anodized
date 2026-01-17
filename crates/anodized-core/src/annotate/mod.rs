@@ -106,6 +106,7 @@ impl Parse for Spec {
             maintains,
             captures,
             ensures,
+            span: input.span(),
         })
     }
 }

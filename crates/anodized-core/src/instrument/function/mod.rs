@@ -8,7 +8,7 @@ use quote::{ToTokens, quote};
 use syn::{Block, Ident, ItemFn, parse::Result, parse_quote};
 
 impl Backend {
-    pub fn instrument_fn(self, spec: Spec, mut func: ItemFn) -> syn::Result<ItemFn> {
+    pub fn instrument_fn(&self, spec: Spec, mut func: ItemFn) -> syn::Result<ItemFn> {
         let is_async = func.sig.asyncness.is_some();
 
         // Extract the return type from the function signature
@@ -27,7 +27,7 @@ impl Backend {
     }
 
     fn instrument_fn_body(
-        self,
+        &self,
         spec: &Spec,
         original_body: &Block,
         is_async: bool,
