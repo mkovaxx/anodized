@@ -1,8 +1,8 @@
 use crate::test_util::assert_spec_eq;
 
 use super::*;
-use syn::parse_quote;
 use proc_macro2::Span;
+use syn::parse_quote;
 
 #[test]
 fn simple_spec() {

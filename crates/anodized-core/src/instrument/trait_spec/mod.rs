@@ -13,7 +13,7 @@ impl Backend {
     pub fn instrument_trait(
         &self,
         spec: Spec,
-        mut the_trait: syn::ItemTrait
+        mut the_trait: syn::ItemTrait,
     ) -> syn::Result<syn::ItemTrait> {
         // Currently we don't support any spec arguments for traits themselves.
         if !spec.is_empty() {
@@ -75,7 +75,7 @@ impl Backend {
     /// Expand impl items by mangling methods for trait impls
     ///
     /// `#[spec]` attributes on the impl items themselves may not have `requires`, `maintains`, nor `ensures` directives.
-    pub fn instrument_impl(
+    pub fn instrument_trait_impl(
         &self,
         spec: Spec,
         mut the_impl: syn::ItemImpl,
@@ -96,7 +96,6 @@ impl Backend {
         for item in the_impl.items.into_iter() {
             match item {
                 ImplItem::Fn(mut func) => {
-
                     let (spec, mut func_attrs) = parse_spec_attr(func.attrs)?;
                     if let Some((_, spec_attr)) = spec {
                         return Err(syn::Error::new_spanned(
@@ -196,7 +195,7 @@ fn has_inline_attr(attrs: &[syn::Attribute]) -> bool {
 ///
 /// Returns the parsed spec, the spec [Attribute] and the remaining attributes
 fn parse_spec_attr(
-    attrs: Vec<Attribute>
+    attrs: Vec<Attribute>,
 ) -> syn::Result<(Option<(Spec, Attribute)>, Vec<Attribute>)> {
     let mut spec = None;
     let mut other_attrs = Vec::new();

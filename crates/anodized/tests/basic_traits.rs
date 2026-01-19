@@ -1,9 +1,7 @@
-
 use anodized::spec;
 
 #[spec]
 pub trait TestTrait {
-
     /// Returns a current value
     fn current(&self) -> u32;
 

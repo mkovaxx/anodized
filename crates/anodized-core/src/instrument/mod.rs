@@ -1,8 +1,8 @@
 use proc_macro2::TokenStream;
 use quote::quote;
 use syn::Meta;
-pub mod function;
 
+pub mod function;
 pub mod trait_spec;
 
 pub struct Backend {

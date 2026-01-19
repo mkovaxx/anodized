@@ -42,18 +42,22 @@ pub fn spec(args: TokenStream, input: TokenStream) -> TokenStream {
     let result = match item {
         Item::Fn(func) => {
             let spec = parse_macro_input!(args as Spec);
-            BACKEND.instrument_fn(spec, func).map(|tokens| tokens.into_token_stream())
-        },
+            BACKEND
+                .instrument_fn(spec, func)
+                .map(|tokens| tokens.into_token_stream())
+        }
         Item::Trait(the_trait) => {
             let spec = parse_macro_input!(args as Spec);
-            BACKEND.instrument_trait(spec, the_trait)
+            BACKEND
+                .instrument_trait(spec, the_trait)
                 .map(|tokens| tokens.into_token_stream())
-        },
+        }
         Item::Impl(the_impl) if the_impl.trait_.is_some() => {
             let spec = parse_macro_input!(args as Spec);
-            BACKEND.instrument_impl(spec, the_impl)
+            BACKEND
+                .instrument_trait_impl(spec, the_impl)
                 .map(|tokens| tokens.into_token_stream())
-        },
+        }
         unsupported_item => {
             let item_type = item_to_string(&unsupported_item);
             let msg = format!(
