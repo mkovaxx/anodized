@@ -39,22 +39,23 @@ requires_params  = { requires_param };
 maintains_params = { maintains_param };
 ensures_params   = { ensures_param };
 
-requires_param  = [ cfg_attr ] , `requires:` , conditions, `,`;
-maintains_param = [ cfg_attr ] , `maintains:` , conditions, `,`;
+requires_param  = [ cfg_attr ] , `requires:` , pre_conditions, `,`;
+maintains_param = [ cfg_attr ] , `maintains:` , pre_conditions, `,`;
 captures_param  = `captures:` , captures, `,`;
 binds_param     = `binds:` , pattern, `,`;
-ensures_param   = [ cfg_attr ] , `ensures:` , post_conds, `,`;
+ensures_param   = [ cfg_attr ] , `ensures:` , post_conditions, `,`;
 
-conditions = expr | condition_list;
-condition_list = `[` , expr , { `,` , expr } , [ `,` ] , `]`;
+pre_conditions = pre_condition_expr | pre_condition_list;
+pre_condition_list = `[` , pre_condition_expr , { `,` , pre_condition_expr } , [ `,` ] , `]`;
+pre_condition_expr = expr | pre_closure_expr;
 
 captures = capture_expr | capture_list;
 capture_list = `[` , capture_expr , { `,` , capture_expr } , [ `,` ] , `]`;
 capture_expr = expr | (expr , `as` , ident);
 
-post_conds = post_cond_expr | post_cond_list;
-post_cond_list = `[` , post_cond_expr , { `,` , post_cond_expr } , [ `,` ] , `]`;
-post_cond_expr = expr | closure_expr;
+post_conditions = post_condition_expr | post_condition_list;
+post_condition_list = `[` , post_condition_expr , { `,` , post_condition_expr } , [ `,` ] , `]`;
+post_condition_expr = expr | post_closure_expr;
 
 cfg_attr = `#[cfg(` , settings , `)]`;
 ```
@@ -64,7 +65,8 @@ cfg_attr = `#[cfg(` , settings , `)]`;
 - The last `,` is optional.
 - The `params` rule defines a sequence of optional parameter groups that must appear in the specified order.
 - `expr` is a Rust [`expression`](https://doc.rust-lang.org/reference/expressions.html); type checking will fail if it does not evaluate to `bool`.
-- `closure_expr` is a Rust [`closure`](https://doc.rust-lang.org/reference/expressions/closure-expr.html) that receives the function's return value as a reference; type checking will fail if it does not evaluate to `bool`.
+- `pre_closure_expr` is a Rust [`closure`](https://doc.rust-lang.org/reference/expressions/closure-expr.html) that receives no inputs and returns `bool`; type checking will fail if it does not evaluate to `bool` and does not take no arguments.
+- `post_closure_expr` is a Rust [`closure`](https://doc.rust-lang.org/reference/expressions/closure-expr.html) that receives the function's return value as a reference; type checking will fail if it does not evaluate to `bool`.
 - `pattern` is an irrefutable Rust [`pattern`](https://doc.rust-lang.org/reference/patterns.html); type checking will fail if its type does not match the function's return value.
 - `settings` is the content of the [`cfg`](https://doc.rust-lang.org/reference/conditional-compilation.html) attribute (e.g. `test`, `debug_assertions`).
 
@@ -91,8 +93,8 @@ The macro rewrites the body to be conceptually equivalent to the following:
 ```rust,ignore
 fn my_function(<ARGUMENTS>) -> <RETURN_TYPE> {
     // 1. Preconditions and invariants are checked
-    check!(<PRECONDITION>, "Precondition failed: <PRECONDITION>");
-    check!(<INVARIANT>, "Pre-invariant failed: <INVARIANT>");
+    check!((| | <PRECONDITION>)(), "Precondition failed: <PRECONDITION>");
+    check!((| | <INVARIANT>)(), "Pre-invariant failed: <INVARIANT>");
 
     // 2. Values are captured and the original function body is executed
     // Note 1: captures and body execution happen in a single tuple assignment
@@ -108,7 +110,7 @@ fn my_function(<ARGUMENTS>) -> <RETURN_TYPE> {
     // Note 1: Captured values are in scope for postconditions
     // Note 2: `__anodized_output` is also in scope for postconditions,
     //         but referring to it is strongly discouraged
-    check!(<INVARIANT>, "Post-invariant failed: <INVARIANT>");
+    check!((| | <INVARIANT>)(), "Post-invariant failed: <INVARIANT>");
     // Postcondition is checked by invoking the closure with a reference to the return value
     check!(
         (|<PATTERN>: &<RETURN_TYPE>| <POSTCONDITION>)(&__anodized_output),
