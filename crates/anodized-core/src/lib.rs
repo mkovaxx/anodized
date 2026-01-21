@@ -25,7 +25,7 @@ pub struct Spec {
 #[derive(Debug)]
 pub struct PreCondition {
     /// The closure that validates the precondition,
-    /// takes no, e.g. `|| input.is_valid()`.
+    /// takes no input, e.g. `|| input.is_valid()`.
     pub closure: syn::ExprClosure,
     /// **Static analyzers can safely ignore this field.**
     ///

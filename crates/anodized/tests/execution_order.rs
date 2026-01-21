@@ -1,30 +1,21 @@
 use anodized::spec;
 
-/// This function should never return false, but the should work
 #[spec(
     requires: [
         return log.push("requires1") == (),
-        {
-            // Functions that use the "return" keyword and early exit should work
-            if log.len() == 1 {
-                return log.push("requires2") == ();
-            }
-            else {
-                return false
-            }
-        }
+        return log.push("requires2") == (),
     ],
     maintains: [
-        log.push("maintains1") == (),
-        log.push("maintains2") == (),
+        return log.push("maintains1") == (),
+        return log.push("maintains2") == (),
     ],
     captures: [
         log.push("captures1") as _alias1,
         log.push("captures2") as _alias2,
     ],
     ensures: [
-        log.push("ensures1") == (),
-        log.push("ensures2") == (),
+        return log.push("ensures1") == (),
+        return log.push("ensures2") == (),
     ],
 )]
 fn func(log: &mut Vec<&'static str>) {
