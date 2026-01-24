@@ -1,5 +1,5 @@
 #[cfg(test)]
-mod tests;
+mod test;
 
 use crate::{Spec, instrument::Backend};
 
