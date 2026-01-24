@@ -13,9 +13,9 @@ mod test_util;
 #[derive(Debug)]
 pub struct Spec {
     /// Preconditions: conditions that must hold when the function is called.
-    pub requires: Vec<Condition>,
+    pub requires: Vec<PreCondition>,
     /// Invariants: conditions that must hold both when the function is called and when it returns.
-    pub maintains: Vec<Condition>,
+    pub maintains: Vec<PreCondition>,
     /// Captures: expressions to snapshot at function entry for use in postconditions.
     pub captures: Vec<Capture>,
     /// Postconditions: conditions that must hold when the function returns.
@@ -38,11 +38,12 @@ impl Spec {
     }
 }
 
-/// A condition represented by a `bool`-valued expression.
+/// A precondition represented by a `bool`-valued expression.
 #[derive(Debug)]
-pub struct Condition {
-    /// The `bool`-valued expression.
-    pub expr: Expr,
+pub struct PreCondition {
+    /// The closure that validates the precondition,
+    /// takes no input, e.g. `|| input.is_valid()`.
+    pub closure: syn::ExprClosure,
     /// **Static analyzers can safely ignore this field.**
     ///
     /// Build configuration filter to decide whether to add runtime checks.

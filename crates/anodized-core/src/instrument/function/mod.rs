@@ -43,21 +43,25 @@ impl Backend {
             .requires
             .iter()
             .map(|condition| {
-                let expr = condition.expr.to_token_stream();
+                let closure = condition.closure.to_token_stream();
+                let expr = quote! { (#closure)() };
+                let repr = condition.closure.body.to_token_stream();
                 build_check(
                     condition.cfg.as_ref(),
                     &expr,
                     "Precondition failed: {}",
-                    &expr,
+                    &repr,
                 )
             })
             .chain(spec.maintains.iter().map(|condition| {
-                let expr = condition.expr.to_token_stream();
+                let closure = condition.closure.to_token_stream();
+                let expr = quote! { (#closure)() };
+                let repr = condition.closure.body.to_token_stream();
                 build_check(
                     condition.cfg.as_ref(),
                     &expr,
                     "Pre-invariant failed: {}",
-                    &expr,
+                    &repr,
                 )
             }));
 
@@ -103,12 +107,14 @@ impl Backend {
             .maintains
             .iter()
             .map(|condition| {
-                let expr = condition.expr.to_token_stream();
+                let closure = condition.closure.to_token_stream();
+                let expr = quote! { (#closure)() };
+                let repr = condition.closure.body.to_token_stream();
                 build_check(
                     condition.cfg.as_ref(),
                     &expr,
                     "Post-invariant failed: {}",
-                    &expr,
+                    &repr,
                 )
             })
             .chain(spec.ensures.iter().map(|postcondition| {

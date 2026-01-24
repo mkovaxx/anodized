@@ -2,20 +2,20 @@ use anodized::spec;
 
 #[spec(
     requires: [
-        log.push("requires1") == (),
-        log.push("requires2") == (),
+        return log.push("requires1") == (),
+        return log.push("requires2") == (),
     ],
     maintains: [
-        log.push("maintains1") == (),
-        log.push("maintains2") == (),
+        return log.push("maintains1") == (),
+        return log.push("maintains2") == (),
     ],
     captures: [
         log.push("captures1") as _alias1,
         log.push("captures2") as _alias2,
     ],
     ensures: [
-        log.push("ensures1") == (),
-        log.push("ensures2") == (),
+        return log.push("ensures1") == (),
+        return log.push("ensures2") == (),
     ],
 )]
 fn func(log: &mut Vec<&'static str>) {

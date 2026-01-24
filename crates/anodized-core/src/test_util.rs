@@ -1,15 +1,5 @@
-use crate::{Capture, Condition, PostCondition, Spec};
+use crate::{Capture, PostCondition, PreCondition, Spec};
 use quote::ToTokens;
-use syn::parse::{Parse, ParseStream, Result};
-
-impl Parse for Condition {
-    fn parse(input: ParseStream) -> Result<Self> {
-        Ok(Condition {
-            expr: input.parse()?,
-            cfg: None,
-        })
-    }
-}
 
 pub fn assert_tokens_eq(left: &impl ToTokens, right: &impl ToTokens) {
     let left_str = left.to_token_stream().to_string();
@@ -39,13 +29,13 @@ pub fn assert_spec_eq(left: &Spec, right: &Spec) {
         left_requires,
         right_requires,
         "requires",
-        &assert_condition_eq,
+        &assert_precondition_eq,
     );
     assert_slice_eq(
         left_maintains,
         right_maintains,
         "maintains",
-        &assert_condition_eq,
+        &assert_precondition_eq,
     );
     assert_slice_eq(
         left_captures,
@@ -78,15 +68,15 @@ where
     }
 }
 
-fn assert_condition_eq(left: &Condition, right: &Condition, msg_prefix: &str) {
+fn assert_precondition_eq(left: &PreCondition, right: &PreCondition, msg_prefix: &str) {
     // Destructure to ensure we handle all fields
-    let Condition {
-        expr: left_expr,
+    let PreCondition {
+        closure: left_expr,
         cfg: left_cfg,
     } = left;
 
-    let Condition {
-        expr: right_expr,
+    let PreCondition {
+        closure: right_expr,
         cfg: right_cfg,
     } = right;
 
