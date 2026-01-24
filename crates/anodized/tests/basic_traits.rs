@@ -23,12 +23,7 @@ impl TestTrait for TestStruct {
     fn current(&self) -> u32 {
         self.0
     }
-    //GOAT, specs are no longer allowed on trait impls
-    // #[spec{
-    //     //gOAT, spec is allowed, but it must not have a `requires`, `maintains`, nor `ensures` directive
-    //     // maintains: self.0 == 3,
-    //     // ensures: *output > self.0,
-    // }]
+
     #[inline(never)]
     fn do_something(&self, x: u32) -> u32 {
         x * self.0
@@ -46,11 +41,11 @@ impl TestTrait for TestStructConst {
 
 #[test]
 fn basic_trait_test() {
-    // Tests an impl of a trait with a spec, where there is a spec on both the implementation and on the trait interface
+    // Tests an impl of a trait with a spec
     let test = TestStruct(3);
     assert_eq!(test.do_something(500), 1500);
 
-    // Tests a default method implementation coming from a trait
+    // Tests the default method implementation coming from the trait
     let test = TestStructConst;
     assert_eq!(test.do_something(500), 1000);
 }
