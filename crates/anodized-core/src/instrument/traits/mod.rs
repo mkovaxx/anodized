@@ -116,11 +116,8 @@ request at https://github.com/mkovaxx/anodized/issues/new"#,
                         ));
                     }
 
-                    let original_ident = func.sig.ident.clone();
-                    // TODO: remove this check
-                    if !original_ident.to_string().starts_with("__anodized_") {
-                        func.sig.ident = mangle_ident(&original_ident);
-                    }
+                    let original_ident = func.sig.ident;
+                    func.sig.ident = mangle_ident(&original_ident);
 
                     // Add a default `#[inline]` attribute unless one is already there.
                     // The caller can supress this with `#[inline(never)]`
