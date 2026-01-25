@@ -104,16 +104,11 @@ impl Backend {
         let mut new_items = Vec::with_capacity(the_impl.items.len());
 
         for item in the_impl.items.into_iter() {
-            match item {
+            let new_item = match item {
                 ImplItem::Fn(mut func) => {
                     let (spec, mut func_attrs) = find_spec_attr(func.attrs)?;
-                    if let Some(spec_attr) = spec {
-                        return Err(syn::Error::new_spanned(
-                            spec_attr,
-                            r#"The #[spec] attribute doesn't support items inside a trait impl.
-If this is a problem for your use case, please open a feature
-request at https://github.com/mkovaxx/anodized/issues/new"#,
-                        ));
+                    if let Some(ref spec_attr) = spec {
+                        return Err(make_item_error(&spec_attr, "trait impl fn"));
                     }
 
                     let original_ident = func.sig.ident;
@@ -126,10 +121,37 @@ request at https://github.com/mkovaxx/anodized/issues/new"#,
                     }
 
                     func.attrs = func_attrs;
-                    new_items.push(ImplItem::Fn(func));
+                    ImplItem::Fn(func)
                 }
-                other => new_items.push(other),
-            }
+                ImplItem::Const(mut const_item) => {
+                    let (spec, attrs) = find_spec_attr(const_item.attrs)?;
+                    if let Some(ref spec_attr) = spec {
+                        return Err(make_item_error(&spec_attr, "trait impl const"));
+                    }
+                    const_item.attrs = attrs;
+                    ImplItem::Const(const_item)
+                }
+                ImplItem::Type(mut type_item) => {
+                    let (spec, attrs) = find_spec_attr(type_item.attrs)?;
+                    if let Some(ref spec_attr) = spec {
+                        return Err(make_item_error(&spec_attr, "trait impl type"));
+                    }
+                    type_item.attrs = attrs;
+                    ImplItem::Type(type_item)
+                }
+                ImplItem::Macro(mut macro_item) => {
+                    let (spec, attrs) = find_spec_attr(macro_item.attrs)?;
+                    if let Some(ref spec_attr) = spec {
+                        return Err(make_item_error(&spec_attr, "trait impl macro"));
+                    }
+                    macro_item.attrs = attrs;
+                    ImplItem::Macro(macro_item)
+                }
+                ImplItem::Verbatim(token_stream) => ImplItem::Verbatim(token_stream),
+                _ => unimplemented!(),
+            };
+
+            new_items.push(new_item);
         }
 
         the_impl.items = new_items;
