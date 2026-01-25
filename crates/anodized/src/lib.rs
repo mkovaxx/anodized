@@ -30,10 +30,10 @@ const BACKEND: Backend = if cfg!(feature = "runtime-check-and-panic") {
     )
 };
 
-/// The main procedural macro for defining specifications on functions.
+/// The procedural macro for defining specifications on items.
 ///
 /// This macro parses spec annotations and injects `assert!` statements
-/// into the function body to perform runtime checks.
+/// into the emitted code to perform runtime checks.
 #[proc_macro_attribute]
 pub fn spec(args: TokenStream, input: TokenStream) -> TokenStream {
     // Parse the item to which the attribute is attached.
@@ -85,7 +85,7 @@ pub fn spec(args: TokenStream, input: TokenStream) -> TokenStream {
 
 fn make_item_error(item: &syn::Item, item_type: &str) -> syn::Error {
     let msg = format!(
-        r#"The `#[spec]` attribute doesn't yet support this item: `{}`.
+        r#"The #[spec] attribute doesn't yet support this item: {}.
 If this is a problem for your use case, please open a feature
 request at https://github.com/mkovaxx/anodized/issues/new"#,
         item_type
