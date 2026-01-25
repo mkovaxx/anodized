@@ -1,9 +1,9 @@
 use quote::quote;
-use syn::{Attribute, FnArg, ImplItem, ItemFn, Pat, TraitItem, parse_quote};
+use syn::{FnArg, ImplItem, ItemFn, Pat, TraitItem, parse_quote};
 
 use crate::{
     Spec,
-    instrument::{Backend, make_item_error},
+    instrument::{Backend, find_spec_attr, make_item_error},
 };
 
 impl Backend {
@@ -30,7 +30,7 @@ impl Backend {
         for item in the_trait.items.into_iter() {
             match item {
                 TraitItem::Fn(mut func) => {
-                    let (spec_attr, other_attrs) = parse_spec_attr(func.attrs)?;
+                    let (spec_attr, other_attrs) = find_spec_attr(func.attrs)?;
 
                     // NOTE: We have no way of knowing which attributes are
                     //   "external" - meant for the interface and belong on the wrapper,
@@ -106,7 +106,7 @@ impl Backend {
         for item in the_impl.items.into_iter() {
             match item {
                 ImplItem::Fn(mut func) => {
-                    let (spec, mut func_attrs) = parse_spec_attr(func.attrs)?;
+                    let (spec, mut func_attrs) = find_spec_attr(func.attrs)?;
                     if let Some(spec_attr) = spec {
                         return Err(syn::Error::new_spanned(
                             spec_attr,
@@ -192,28 +192,4 @@ fn mangle_ident(original_ident: &syn::Ident) -> syn::Ident {
 /// Checks to see if any `#[inline]` (with or without arg) exists in the function's attribs.
 fn has_inline_attr(attrs: &[syn::Attribute]) -> bool {
     attrs.iter().any(|attr| attr.path().is_ident("inline"))
-}
-
-/// Parses out the `[spec]` attrib from a function's attribute list.
-///
-/// Returns the spec [Attribute], and the remaining attributes.
-fn parse_spec_attr(attrs: Vec<Attribute>) -> syn::Result<(Option<Attribute>, Vec<Attribute>)> {
-    let mut spec_attr = None;
-    let mut other_attrs = Vec::new();
-
-    for attr in attrs {
-        if attr.path().is_ident("spec") {
-            if spec_attr.is_some() {
-                return Err(syn::Error::new_spanned(
-                    attr,
-                    "multiple `#[spec]` attributes on a single method are not supported",
-                ));
-            }
-            spec_attr = Some(attr);
-        } else {
-            other_attrs.push(attr);
-        }
-    }
-
-    Ok((spec_attr, other_attrs))
 }
