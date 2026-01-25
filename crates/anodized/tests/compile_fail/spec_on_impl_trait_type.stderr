@@ -1,7 +1,7 @@
-error: The #[spec] attribute doesn't yet support this item: trait impl fn.
+error: The #[spec] attribute doesn't yet support this item: trait impl type.
        If this is a problem for your use case, please open a feature
        request at https://github.com/mkovaxx/anodized/issues/new
-  --> tests/compile_fail/spec_inside_trait_impl.rs:12:5
+  --> tests/compile_fail/spec_on_impl_trait_type.rs:12:5
    |
 12 |     #[spec]
    |     ^^^^^^^
