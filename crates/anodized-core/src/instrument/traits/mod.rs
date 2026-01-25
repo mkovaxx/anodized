@@ -72,7 +72,34 @@ impl Backend {
                     new_trait_items.push(TraitItem::Fn(mangled_fn));
                     new_trait_items.push(TraitItem::Fn(wrapper_fn));
                 }
-                other => new_trait_items.push(other),
+                TraitItem::Const(mut const_item) => {
+                    let (spec, attrs) = find_spec_attr(const_item.attrs)?;
+                    if let Some(ref spec_attr) = spec {
+                        return Err(make_item_error(&spec_attr, "trait const"));
+                    }
+                    const_item.attrs = attrs;
+                    new_trait_items.push(TraitItem::Const(const_item));
+                }
+                TraitItem::Type(mut type_item) => {
+                    let (spec, attrs) = find_spec_attr(type_item.attrs)?;
+                    if let Some(ref spec_attr) = spec {
+                        return Err(make_item_error(&spec_attr, "trait type"));
+                    }
+                    type_item.attrs = attrs;
+                    new_trait_items.push(TraitItem::Type(type_item));
+                }
+                TraitItem::Macro(mut macro_item) => {
+                    let (spec, attrs) = find_spec_attr(macro_item.attrs)?;
+                    if let Some(ref spec_attr) = spec {
+                        return Err(make_item_error(&spec_attr, "trait macro"));
+                    }
+                    macro_item.attrs = attrs;
+                    new_trait_items.push(TraitItem::Macro(macro_item));
+                }
+                TraitItem::Verbatim(token_stream) => {
+                    new_trait_items.push(TraitItem::Verbatim(token_stream));
+                }
+                _ => unimplemented!(),
             }
         }
         the_trait.items = new_trait_items;
