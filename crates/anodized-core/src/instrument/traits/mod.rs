@@ -1,7 +1,10 @@
 use quote::quote;
 use syn::{Attribute, FnArg, ImplItem, ItemFn, Pat, TraitItem, parse_quote};
 
-use crate::{Spec, instrument::Backend};
+use crate::{
+    Spec,
+    instrument::{Backend, make_item_error},
+};
 
 impl Backend {
     /// Expand trait items by mangling each method and adding a wrapper default impl.
@@ -84,16 +87,17 @@ impl Backend {
         spec: Spec,
         mut the_impl: syn::ItemImpl,
     ) -> syn::Result<syn::ItemImpl> {
+        let Some((trait_bang, ref _trait_path, _trait_for)) = the_impl.trait_ else {
+            return Err(make_item_error(&the_impl, "inherent impl"));
+        };
+
+        if trait_bang.is_some() {
+            return Err(make_item_error(&the_impl, "negative trait impl"));
+        }
+
         if !spec.is_empty() {
             return Err(spec.spec_err(
                 "Unsupported spec element on trait impl. Try placing it on an item inside the impl",
-            ));
-        }
-
-        if the_impl.trait_.is_none() {
-            return Err(syn::Error::new_spanned(
-                &the_impl.self_ty,
-                "anodized only supports specs on trait impl blocks",
             ));
         }
 

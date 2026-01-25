@@ -1,5 +1,5 @@
 use proc_macro2::TokenStream;
-use quote::quote;
+use quote::{ToTokens, quote};
 use syn::Meta;
 
 pub mod fns;
@@ -21,6 +21,16 @@ impl Backend {
     pub const NO_CHECK: Backend = Backend {
         build_check: build_inert,
     };
+}
+
+pub fn make_item_error<T: ToTokens>(tokens: &T, item_descr: &str) -> syn::Error {
+    let msg = format!(
+        r#"The #[spec] attribute doesn't yet support this item: {}.
+If this is a problem for your use case, please open a feature
+request at https://github.com/mkovaxx/anodized/issues/new"#,
+        item_descr
+    );
+    syn::Error::new_spanned(tokens, msg)
 }
 
 fn build_assert(

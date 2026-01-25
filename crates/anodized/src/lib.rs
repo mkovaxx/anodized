@@ -4,7 +4,10 @@ use proc_macro::TokenStream;
 use quote::ToTokens;
 use syn::{Item, parse_macro_input};
 
-use anodized_core::{Spec, instrument::Backend};
+use anodized_core::{
+    Spec,
+    instrument::{Backend, make_item_error},
+};
 
 const _: () = {
     let count: u32 = cfg!(feature = "runtime-check-and-panic") as u32
@@ -81,14 +84,4 @@ pub fn spec(args: TokenStream, input: TokenStream) -> TokenStream {
         Ok(item) => item.into(),
         Err(e) => e.to_compile_error().into(),
     }
-}
-
-fn make_item_error(item: &syn::Item, item_type: &str) -> syn::Error {
-    let msg = format!(
-        r#"The #[spec] attribute doesn't yet support this item: {}.
-If this is a problem for your use case, please open a feature
-request at https://github.com/mkovaxx/anodized/issues/new"#,
-        item_type
-    );
-    syn::Error::new_spanned(item, msg)
 }
