@@ -23,6 +23,7 @@ impl Backend {
     };
 }
 
+/// Make an error message to say that some item is unsupported.
 pub fn make_item_error<T: ToTokens>(tokens: &T, item_descr: &str) -> syn::Error {
     let msg = format!(
         r#"The #[spec] attribute doesn't yet support this item: {}.
