@@ -5,13 +5,21 @@ pub trait TestTrait {
     /// Returns a current value
     fn current(&self) -> u32;
 
-    /// Does something
+    /// Has no default
     #[spec(
         requires: x > 0,
         captures: self.current() as old_val,
         ensures: *output > old_val,
     )]
-    fn do_something(&self, x: u32) -> u32 {
+    fn add_to(&self, x: u32) -> u32;
+
+    /// Has a default
+    #[spec(
+        requires: x > 0,
+        captures: self.current() as old_val,
+        ensures: *output > old_val,
+    )]
+    fn mul_by(&self, x: u32) -> u32 {
         x * 2
     }
 }
@@ -24,8 +32,12 @@ impl TestTrait for TestStruct {
         self.0
     }
 
+    fn add_to(&self, x: u32) -> u32 {
+        x + self.current()
+    }
+
     #[inline(never)]
-    fn do_something(&self, x: u32) -> u32 {
+    fn mul_by(&self, x: u32) -> u32 {
         x * self.0
     }
 }
@@ -37,15 +49,21 @@ impl TestTrait for TestStructConst {
     fn current(&self) -> u32 {
         0
     }
+
+    fn add_to(&self, x: u32) -> u32 {
+        x + self.current()
+    }
 }
 
 #[test]
-fn basic_trait_test() {
+fn should_succeed() {
     // Tests an impl of a trait with a spec
     let test = TestStruct(3);
-    assert_eq!(test.do_something(500), 1500);
+    assert_eq!(test.add_to(500), 503);
+    assert_eq!(test.mul_by(500), 1500);
 
     // Tests the default method implementation coming from the trait
     let test = TestStructConst;
-    assert_eq!(test.do_something(500), 1000);
+    assert_eq!(test.add_to(500), 500);
+    assert_eq!(test.mul_by(500), 1000);
 }
