@@ -137,6 +137,13 @@ impl Backend {
                     }
 
                     let original_ident = func.sig.ident;
+                    if original_ident.to_string().starts_with("__anodized_") {
+                        return Err(syn::Error::new_spanned(
+                            &original_ident,
+                            r#"An item with the `__anodized_` prefix is internal. Do not implement it directly.
+Instead, ensure that both the trait and the impl fn have a `#[spec]` annotation."#,
+                        ));
+                    }
                     func.sig.ident = mangle_ident(&original_ident);
 
                     // Add a default `#[inline]` attribute unless one is already there.
