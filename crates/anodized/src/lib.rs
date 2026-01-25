@@ -33,10 +33,10 @@ const BACKEND: Backend = if cfg!(feature = "runtime-check-and-panic") {
     )
 };
 
-/// The procedural macro for defining specifications on items.
+/// Attaches a specification to a fn, or enables specs inside a trait and its impls.
 ///
-/// This macro parses spec annotations and injects `assert!` statements
-/// into the emitted code to perform runtime checks.
+/// This macro parses spec elements and transforms the item's code to provide
+/// compile-time syntax validation, and depending on settings, runtime checks.
 #[proc_macro_attribute]
 pub fn spec(args: TokenStream, input: TokenStream) -> TokenStream {
     // Parse the item to which the attribute is attached.
