@@ -96,9 +96,7 @@ impl Backend {
         }
 
         if !spec.is_empty() {
-            return Err(spec.spec_err(
-                "Unsupported spec element on trait impl. Try placing it on an item inside the impl",
-            ));
+            return Err(spec.spec_err("Unsupported spec element on trait impl."));
         }
 
         let mut new_items = Vec::with_capacity(the_impl.items.len());
