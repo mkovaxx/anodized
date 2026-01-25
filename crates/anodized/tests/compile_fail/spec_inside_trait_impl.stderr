@@ -1,0 +1,7 @@
+error: The #[spec] attribute doesn't support items inside a trait impl.
+       If this is a problem for your use case, please open a feature
+       request at https://github.com/mkovaxx/anodized/issues/new
+  --> tests/compile_fail/spec_inside_trait_impl.rs:12:5
+   |
+12 |     #[spec]
+   |     ^^^^^^^
