@@ -7,7 +7,7 @@ impl Backend {
     /// Expand trait items by mangling each method and adding a wrapper default impl.
     ///
     /// Mangling a function involves the following:
-    /// 1. Rename the function following the pattern: `fn add` -> `fn __anodized_add`
+    /// 1. Rename the function following the pattern: `fn add` -> `fn __anodized_add`.
     /// 2. Make a new function with the original name that has a default impl; the
     ///    default impl performs runtime validation and calls the mangled function.
     pub fn instrument_trait(
@@ -17,7 +17,9 @@ impl Backend {
     ) -> syn::Result<syn::ItemTrait> {
         // Currently we don't support any spec arguments for traits themselves.
         if !spec.is_empty() {
-            return Err(spec.spec_err("unsupported spec element on trait.  Maybe it should go on an item within the trait"));
+            return Err(spec.spec_err(
+                "Unsupported spec element on trait. Try placing it on an item inside the trait",
+            ));
         }
 
         let mut new_trait_items = Vec::with_capacity(the_trait.items.len() * 2);
@@ -25,12 +27,13 @@ impl Backend {
         for item in the_trait.items.into_iter() {
             match item {
                 TraitItem::Fn(mut func) => {
-                    let (spec, other_attrs) = parse_spec_attr(func.attrs)?;
+                    let (spec_attr, other_attrs) = parse_spec_attr(func.attrs)?;
 
-                    //ISSUE: We have no way of knowing which attributes are "externally facing", i.e. they are meant
-                    // for the interface and therefore belong on the wrapper with the un-mangled name, and which ones
-                    // are "internally facing", and are meant for the mangled implementation.  Right now we put all
-                    // attribs on both functions, but that's certainly not going to work in every situation
+                    // NOTE: We have no way of knowing which attributes are
+                    //   "external" - meant for the interface and belong on the wrapper,
+                    //   "internal" - meant for the mangled implementation.
+                    //   Right now we put all attribs on both functions, but that's certainly
+                    //   not going to work in every situation.
                     func.attrs = other_attrs.clone();
 
                     let original_ident = func.sig.ident.clone();
@@ -46,7 +49,8 @@ impl Backend {
                         Self::#mangled_ident(#(#call_args),*)
                     });
 
-                    if let Some((spec, _spec_attr)) = spec {
+                    if let Some(spec_attr) = spec_attr {
+                        let spec = spec_attr.parse_args()?;
                         let wrapper_item = ItemFn {
                             attrs: Vec::new(),
                             vis: syn::Visibility::Inherited,
@@ -74,14 +78,16 @@ impl Backend {
 
     /// Expand impl items by mangling methods for trait impls
     ///
-    /// `#[spec]` attributes on the impl items themselves may not have `requires`, `maintains`, nor `ensures` directives.
+    /// `#[spec]` attributes on the impl items themselves are not allowed.
     pub fn instrument_trait_impl(
         &self,
         spec: Spec,
         mut the_impl: syn::ItemImpl,
     ) -> syn::Result<syn::ItemImpl> {
         if !spec.is_empty() {
-            return Err(spec.spec_err("unsupported spec element on impl block.  Maybe it should go on an item within the block"));
+            return Err(spec.spec_err(
+                "Unsupported spec element on trait impl. Try placing it on an item inside the impl",
+            ));
         }
 
         if the_impl.trait_.is_none() {
@@ -97,30 +103,23 @@ impl Backend {
             match item {
                 ImplItem::Fn(mut func) => {
                     let (spec, mut func_attrs) = parse_spec_attr(func.attrs)?;
-                    if let Some((_, spec_attr)) = spec {
+                    if let Some(spec_attr) = spec {
                         return Err(syn::Error::new_spanned(
                             spec_attr,
-                            "trait impl methods may not have spec attributes.  Implementations must respect the contract of the trait interface.  Please file an issue on github if you need implementation-specific validation",
+                            r#"The #[spec] attribute doesn't support items inside a trait impl.
+If this is a problem for your use case, please open a feature
+request at https://github.com/mkovaxx/anodized/issues/new"#,
                         ));
-
-                        // QUESTION: Do we want to allow a spec, so long as it doesn't contain `requires`, `maintains`, nor `ensures`?
-                        //
-                        // if !spec.requires.is_empty() || !spec.maintains.is_empty() || !spec.ensures.is_empty() {
-                        //     return Err(syn::Error::new_spanned(
-                        //         spec_attr,
-                        //         "trait impl method specs may not contain `requires`, `maintains`, nor `ensures`",
-                        //     ));
-                        // }
-                        // func_attrs.push(spec_attr);
                     }
 
                     let original_ident = func.sig.ident.clone();
+                    // TODO: remove this check
                     if !original_ident.to_string().starts_with("__anodized_") {
                         func.sig.ident = mangle_ident(&original_ident);
                     }
 
-                    //Add a default `#[inline]` attribute unless one is already there.
-                    //The caller can supress this with `#[inline(never)]`
+                    // Add a default `#[inline]` attribute unless one is already there.
+                    // The caller can supress this with `#[inline(never)]`
                     if !has_inline_attr(&func_attrs) {
                         func_attrs.push(parse_quote!(#[inline]));
                     }
@@ -186,33 +185,31 @@ fn mangle_ident(original_ident: &syn::Ident) -> syn::Ident {
     )
 }
 
-/// Checks to see if any `#[inline]` (with or without arg) exists in the function's attribs
+/// Checks to see if any `#[inline]` (with or without arg) exists in the function's attribs.
 fn has_inline_attr(attrs: &[syn::Attribute]) -> bool {
     attrs.iter().any(|attr| attr.path().is_ident("inline"))
 }
 
-/// Parses out the `[spec]` attrib from a function's attribute list
+/// Parses out the `[spec]` attrib from a function's attribute list.
 ///
-/// Returns the parsed spec, the spec [Attribute] and the remaining attributes
-fn parse_spec_attr(
-    attrs: Vec<Attribute>,
-) -> syn::Result<(Option<(Spec, Attribute)>, Vec<Attribute>)> {
-    let mut spec = None;
+/// Returns the spec [Attribute], and the remaining attributes.
+fn parse_spec_attr(attrs: Vec<Attribute>) -> syn::Result<(Option<Attribute>, Vec<Attribute>)> {
+    let mut spec_attr = None;
     let mut other_attrs = Vec::new();
 
     for attr in attrs {
         if attr.path().is_ident("spec") {
-            if spec.is_some() {
+            if spec_attr.is_some() {
                 return Err(syn::Error::new_spanned(
                     attr,
                     "multiple `#[spec]` attributes on a single method are not supported",
                 ));
             }
-            spec = Some((attr.parse_args::<Spec>()?, attr));
+            spec_attr = Some(attr);
         } else {
             other_attrs.push(attr);
         }
     }
 
-    Ok((spec, other_attrs))
+    Ok((spec_attr, other_attrs))
 }
