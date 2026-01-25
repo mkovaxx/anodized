@@ -2,7 +2,7 @@
 
 use proc_macro::TokenStream;
 use quote::ToTokens;
-use syn::{Item, parse_macro_input};
+use syn::{Item, TraitItemFn, parse_macro_input};
 
 use anodized_core::{
     Spec,
@@ -76,7 +76,17 @@ pub fn spec(args: TokenStream, input: TokenStream) -> TokenStream {
         Item::Type(_) => Err(make_item_error(&item, "type")),
         Item::Union(_) => Err(make_item_error(&item, "union")),
         Item::Use(_) => Err(make_item_error(&item, "use")),
-        Item::Verbatim(_) => Err(make_item_error(&item, "<verbatim>")),
+        Item::Verbatim(ref tokens) => {
+            // Try to parse as a trait fn
+            if let Ok(trait_fn) = syn::parse2::<TraitItemFn>(tokens.clone()) {
+                Err(syn::Error::new_spanned(
+                    &trait_fn,
+                    r#"The enclosing trait must have a `#[spec]` annotation."#,
+                ))
+            } else {
+                Err(make_item_error(&item, "<unexpected>"))
+            }
+        }
         _ => Err(make_item_error(&item, "<unknown>")),
     };
 
