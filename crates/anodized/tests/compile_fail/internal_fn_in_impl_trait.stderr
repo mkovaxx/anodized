@@ -1,0 +1,6 @@
+error: An item with the `__anodized_` prefix is internal. Do not implement it directly.
+       Instead, ensure that both the trait and the impl fn have a `#[spec]` annotation.
+  --> tests/compile_fail/internal_fn_in_impl_trait.rs:11:8
+   |
+11 |     fn __anodized_f(&self) {}
+   |        ^^^^^^^^^^^^

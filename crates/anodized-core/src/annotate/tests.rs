@@ -1,6 +1,7 @@
 use crate::test_util::assert_spec_eq;
 
 use super::*;
+use proc_macro2::Span;
 use syn::parse_quote;
 
 #[test]
@@ -21,6 +22,7 @@ fn simple_spec() {
             closure: parse_quote! { |output| output > x },
             cfg: None,
         }],
+        span: Span::call_site(),
     };
 
     assert_spec_eq(&spec, &expected);
@@ -49,6 +51,7 @@ fn all_clauses() {
             closure: parse_quote! { |z| z >= x },
             cfg: None,
         }],
+        span: Span::call_site(),
     };
 
     assert_spec_eq(&spec, &expected);
@@ -119,6 +122,7 @@ fn array_of_conditions() {
                 cfg: None,
             },
         ],
+        span: Span::call_site(),
     };
 
     assert_spec_eq(&spec, &expected);
@@ -138,6 +142,7 @@ fn ensures_with_explicit_closure() {
             closure: parse_quote! { |result| result.is_ok() || result.unwrap_err().kind() == ErrorKind::NotFound },
             cfg: None,
         }],
+        span: Span::call_site(),
     };
 
     assert_spec_eq(&spec, &expected);
@@ -175,6 +180,7 @@ fn multiple_clauses_of_same_flavor() {
                 cfg: None,
             },
         ],
+        span: Span::call_site(),
     };
 
     assert_spec_eq(&spec, &expected);
@@ -226,6 +232,7 @@ fn mixed_single_and_array_clauses() {
                 cfg: None,
             },
         ],
+        span: Span::call_site(),
     };
 
     assert_spec_eq(&spec, &expected);
@@ -251,6 +258,7 @@ fn cfg_attributes() {
             closure: parse_quote! { |output| output < x },
             cfg: Some(parse_quote! { not(debug_assertions) }),
         }],
+        span: Span::call_site(),
     };
 
     assert_spec_eq(&spec, &expected);
@@ -306,6 +314,7 @@ fn macro_in_condition() {
             closure: parse_quote! { |output| matches!(self.state, State::Running) },
             cfg: None,
         }],
+        span: Span::call_site(),
     };
 
     assert_spec_eq(&spec, &expected);
@@ -335,6 +344,7 @@ fn binds_pattern() {
                 cfg: None,
             },
         ],
+        span: Span::call_site(),
     };
 
     assert_spec_eq(&spec, &expected);
@@ -372,6 +382,7 @@ fn multiple_conditions() {
         }],
         captures: vec![],
         ensures: vec![],
+        span: Span::call_site(),
     };
 
     assert_spec_eq(&spec, &expected);
@@ -401,6 +412,7 @@ fn rename_return_value() {
                 cfg: None,
             },
         ],
+        span: Span::call_site(),
     };
 
     assert_spec_eq(&spec, &expected);
@@ -424,6 +436,7 @@ fn captures_simple_identifier() {
             closure: parse_quote! { |output| output == old_count + 1 },
             cfg: None,
         }],
+        span: Span::call_site(),
     };
 
     assert_spec_eq(&spec, &expected);
@@ -447,6 +460,7 @@ fn captures_identifier_with_alias() {
             closure: parse_quote! { |output| output > prev_value },
             cfg: None,
         }],
+        span: Span::call_site(),
     };
 
     assert_spec_eq(&spec, &expected);
@@ -498,6 +512,7 @@ fn captures_array() {
                 cfg: None,
             },
         ],
+        span: Span::call_site(),
     };
 
     assert_spec_eq(&spec, &expected);
@@ -530,6 +545,7 @@ fn captures_with_all_clauses() {
             closure: parse_quote! { |result| result > old_val },
             cfg: None,
         }],
+        span: Span::call_site(),
     };
 
     assert_spec_eq(&spec, &expected);
@@ -562,6 +578,7 @@ fn captures_array_expression() {
             closure: parse_quote! { |output| slice.len() == 3 },
             cfg: None,
         }],
+        span: Span::call_site(),
     };
 
     assert_spec_eq(&spec, &expected);
@@ -631,6 +648,7 @@ fn captures_edge_case_cast_expr() {
             alias: parse_quote! { old_red },
         }],
         ensures: vec![],
+        span: Span::call_site(),
     };
 
     assert_spec_eq(&spec, &expected);
@@ -660,6 +678,7 @@ fn captures_edge_case_array_of_cast_exprs() {
             alias: parse_quote! { r8g8b8 },
         }],
         ensures: vec![],
+        span: Span::call_site(),
     };
 
     assert_spec_eq(&spec, &expected);
@@ -693,6 +712,7 @@ fn captures_edge_case_list_of_cast_exprs() {
             },
         ],
         ensures: vec![],
+        span: Span::call_site(),
     };
 
     assert_spec_eq(&spec, &expected);

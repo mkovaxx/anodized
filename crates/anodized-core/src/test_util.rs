@@ -14,6 +14,7 @@ pub fn assert_spec_eq(left: &Spec, right: &Spec) {
         maintains: left_maintains,
         captures: left_captures,
         ensures: left_ensures,
+        span: _,
     } = left;
 
     let Spec {
@@ -21,6 +22,7 @@ pub fn assert_spec_eq(left: &Spec, right: &Spec) {
         maintains: right_maintains,
         captures: right_captures,
         ensures: right_ensures,
+        span: _,
     } = right;
 
     assert_slice_eq(

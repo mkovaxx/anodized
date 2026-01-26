@@ -1,0 +1,7 @@
+error: The #[spec] attribute doesn't yet support this item: trait const.
+       If this is a problem for your use case, please open a feature
+       request at https://github.com/mkovaxx/anodized/issues/new
+ --> tests/compile_fail/spec_on_trait_const.rs:7:5
+  |
+7 |     #[spec]
+  |     ^^^^^^^
