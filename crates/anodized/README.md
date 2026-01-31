@@ -98,8 +98,10 @@ Anodized aims to become a common layer across runtime checks, fuzzing, and verif
 
 ```toml
 [dependencies]
-anodized = "0.3.0"
+anodized = { version = "0.3.0", features = ["runtime-check-and-panic"] }
 ```
+
+See the [Runtime Behaviors](#runtime-behaviors) section for other runtime features.
 
 **2. Add specifications to your functions.**
 
