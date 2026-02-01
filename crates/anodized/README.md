@@ -98,8 +98,10 @@ Anodized aims to become a common layer across runtime checks, fuzzing, and verif
 
 ```toml
 [dependencies]
-anodized = "0.3.0"
+anodized = { version = "0.3.0", features = ["runtime-check-and-panic"] }
 ```
+
+See the [Runtime Behaviors](#runtime-behaviors) section for other runtime features.
 
 **2. Add specifications to your functions.**
 
@@ -137,7 +139,7 @@ fn main() {
 Your code is automatically instrumented to check the specifications at runtime. A spec violation will cause a panic with a descriptive error message:
 
 ```text
-thread 'main' panicked at 'Precondition failed: whole > 0', src/main.rs:17:5
+thread 'main' panicked at 'Precondition failed: part <= whole', src/main.rs:17:5
 ```
 
 By default, runtime spec-checking is always active (just like Rust's `assert!` macro). For performance-sensitive code, you can use `#[cfg]` attributes to control when checks run (see the [#[cfg] section](#cfg-configure-runtime-checks) below).
