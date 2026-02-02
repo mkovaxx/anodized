@@ -9,6 +9,8 @@ pub struct SpecLocation {
     pub original_text: String,
     /// The content inside spec(...), without the #[spec( and )]
     pub content: String,
+    /// The base indentation (number of spaces before #[spec()
+    pub base_indent: usize,
 }
 
 #[derive(Debug, thiserror::Error)]
@@ -50,17 +52,38 @@ pub fn find_spec_attributes(source: &str) -> Result<Vec<SpecLocation>, FindError
         let original_text = source[abs_start..abs_end].to_string();
         let content = source[content_start..abs_content_end].to_string();
 
+        // Calculate base indentation by counting spaces from start of line to #[spec(
+        let base_indent = calculate_base_indent(source, abs_start);
+
         locations.push(SpecLocation {
             start: abs_start,
             end: abs_end,
             original_text,
             content,
+            base_indent,
         });
 
         search_start = abs_end;
     }
 
     Ok(locations)
+}
+
+/// Calculate the base indentation of a spec attribute
+/// Returns the number of spaces from the start of the line to the #[spec(
+fn calculate_base_indent(source: &str, spec_start: usize) -> usize {
+    // Find the start of the line
+    let line_start = source[..spec_start]
+        .rfind('\n')
+        .map(|pos| pos + 1)
+        .unwrap_or(0);
+
+    // Count spaces/tabs from line start to spec start
+    let indent_str = &source[line_start..spec_start];
+    indent_str
+        .chars()
+        .take_while(|c| c.is_whitespace() && *c != '\n')
+        .count()
 }
 
 /// Find the position of the matching closing bracket
@@ -125,6 +148,7 @@ fn foo(x: i32) -> i32 { x + 1 }
         let result = find_spec_attributes(source).unwrap();
         assert_eq!(result.len(), 1);
         assert_eq!(result[0].content, "requires: x > 0");
+        assert_eq!(result[0].base_indent, 0);
     }
 
     #[test]

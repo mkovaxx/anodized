@@ -5,10 +5,11 @@ use crate::config::{Config, TrailingComma};
 use crate::expr_fmt::format_expr;
 
 /// Format a complete Spec into a #[spec(...)] attribute string
-pub fn format_spec(spec: &Spec, config: &Config) -> String {
+pub fn format_spec(spec: &Spec, config: &Config, base_indent: usize) -> String {
     let mut output = String::from("#[spec(");
 
-    let indent = config.indent_str();
+    let base_indent_str = " ".repeat(base_indent);
+    let indent = base_indent_str.clone() + &config.indent_str();
     let has_content = !spec.requires.is_empty()
         || !spec.maintains.is_empty()
         || !spec.captures.is_empty()
@@ -40,7 +41,7 @@ pub fn format_spec(spec: &Spec, config: &Config) -> String {
 
     // Format captures
     if !spec.captures.is_empty() {
-        let formatted = format_captures(&spec.captures, config);
+        let formatted = format_captures(&spec.captures, config, &indent);
         output.push_str(&indent);
         output.push_str(&formatted);
         output.push('\n');
@@ -54,6 +55,7 @@ pub fn format_spec(spec: &Spec, config: &Config) -> String {
         output.push('\n');
     }
 
+    output.push_str(&base_indent_str);
     output.push_str(")]");
 
     output
@@ -100,7 +102,7 @@ fn format_postcondition(keyword: &str, condition: &PostCondition, config: &Confi
 }
 
 /// Format captures
-fn format_captures(captures: &[Capture], config: &Config) -> String {
+fn format_captures(captures: &[Capture], config: &Config, indent: &str) -> String {
     if captures.is_empty() {
         return String::new();
     }
@@ -113,7 +115,9 @@ fn format_captures(captures: &[Capture], config: &Config) -> String {
 
     // Multiple captures - use array format
     let mut result = String::from("captures: [\n");
-    let double_indent = config.indent_str() + &config.indent_str();
+    // Note: indent parameter already includes base_indent + config indent
+    // For nested items, we need base_indent + 2*config_indent
+    let double_indent = format!("{}{}", indent.trim_start(), config.indent_str());
 
     for (i, capture) in captures.iter().enumerate() {
         let expr_str = format_expr(&capture.expr);
@@ -126,7 +130,7 @@ fn format_captures(captures: &[Capture], config: &Config) -> String {
         result.push('\n');
     }
 
-    result.push_str(&config.indent_str());
+    result.push_str(indent);
     result.push_str("],");
 
     result
@@ -151,7 +155,7 @@ mod tests {
         let spec: Spec = parse_str("requires: x > 0").expect("Failed to parse spec");
 
         let config = Config::default();
-        let formatted = format_spec(&spec, &config);
+        let formatted = format_spec(&spec, &config, 0);
 
         assert!(formatted.contains("#[spec("));
         assert!(formatted.contains("requires:"));
@@ -164,7 +168,7 @@ mod tests {
         let spec: Spec = parse_str("ensures: *output > 0").expect("Failed to parse spec");
 
         let config = Config::default();
-        let formatted = format_spec(&spec, &config);
+        let formatted = format_spec(&spec, &config, 0);
 
         assert!(formatted.contains("ensures:"));
         assert!(formatted.contains("> 0"));
@@ -175,7 +179,7 @@ mod tests {
         let spec: Spec = parse_str("").expect("Failed to parse spec");
 
         let config = Config::default();
-        let formatted = format_spec(&spec, &config);
+        let formatted = format_spec(&spec, &config, 0);
 
         assert_eq!(formatted, "#[spec()]");
     }

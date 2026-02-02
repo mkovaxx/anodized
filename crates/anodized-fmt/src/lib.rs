@@ -70,7 +70,7 @@ pub fn format_file(source: &str, config: &Config) -> Result<String> {
 
         // Parse and format this spec
         let spec: Spec = parse_str(&location.content)?;
-        let formatted = format_spec(&spec, config);
+        let formatted = format_spec(&spec, config, location.base_indent);
         output.push_str(&formatted);
 
         last_end = location.end;
