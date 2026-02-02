@@ -35,11 +35,6 @@ impl Default for Config {
 }
 
 impl Config {
-    /// Get the indentation string based on config
-    pub fn indent_str(&self) -> String {
-        " ".repeat(self.indent)
-    }
-
     /// Load configuration from a TOML file
     pub fn from_file(path: &std::path::Path) -> Result<Self, ConfigError> {
         let content =

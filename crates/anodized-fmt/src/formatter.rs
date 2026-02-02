@@ -8,8 +8,6 @@ use crate::expr_fmt::format_expr;
 pub fn format_spec(spec: &Spec, config: &Config, base_indent: usize) -> String {
     let mut output = String::from("#[spec(");
 
-    let base_indent_str = " ".repeat(base_indent);
-    let indent = base_indent_str.clone() + &config.indent_str();
     let has_content = !spec.requires.is_empty()
         || !spec.maintains.is_empty()
         || !spec.captures.is_empty()
@@ -22,6 +20,7 @@ pub fn format_spec(spec: &Spec, config: &Config, base_indent: usize) -> String {
 
     // For Phase 1, always use vertical layout
     output.push('\n');
+    let indent = " ".repeat(base_indent + config.indent);
 
     // Format requires
     for condition in &spec.requires {
@@ -55,7 +54,7 @@ pub fn format_spec(spec: &Spec, config: &Config, base_indent: usize) -> String {
         output.push('\n');
     }
 
-    output.push_str(&base_indent_str);
+    output.push_str(&" ".repeat(base_indent));
     output.push_str(")]");
 
     output
@@ -69,7 +68,7 @@ fn format_precondition(keyword: &str, condition: &PreCondition, config: &Config)
     if let Some(ref cfg) = condition.cfg {
         result.push_str(&format_cfg_attr(cfg));
         result.push('\n');
-        result.push_str(&config.indent_str());
+        result.push_str(&" ".repeat(config.indent));
     }
 
     // Extract the expression from the closure body
@@ -89,7 +88,7 @@ fn format_postcondition(keyword: &str, condition: &PostCondition, config: &Confi
     if let Some(ref cfg) = condition.cfg {
         result.push_str(&format_cfg_attr(cfg));
         result.push('\n');
-        result.push_str(&config.indent_str());
+        result.push_str(&" ".repeat(config.indent));
     }
 
     // Extract the expression from the closure body
@@ -117,7 +116,7 @@ fn format_captures(captures: &[Capture], config: &Config, indent: &str) -> Strin
     let mut result = String::from("captures: [\n");
     // Note: indent parameter already includes base_indent + config indent
     // For nested items, we need base_indent + 2*config_indent
-    let double_indent = format!("{}{}", indent.trim_start(), config.indent_str());
+    let double_indent = " ".repeat(indent.len() + config.indent);
 
     for (i, capture) in captures.iter().enumerate() {
         let expr_str = format_expr(&capture.expr);
