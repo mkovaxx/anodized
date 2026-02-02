@@ -1,47 +1,44 @@
-use proc_macro2::{Punct, Spacing, TokenStream};
 use quote::ToTokens;
-use syn::{Expr, Pat, UnOp};
+use syn::{Expr, Pat};
 
-/// Format an expression
-/// Uses quote! but handles dereference specially to avoid space after *
+/// Format an expression using prettyplease
+/// This properly formats Rust expressions without excessive whitespace
 pub fn format_expr(expr: &Expr) -> String {
-    format_expr_impl(expr).to_string()
-}
+    // prettyplease::unparse works on syn::File, so we need to wrap the expression
+    // in a const item to format it
+    let item = syn::Item::Const(syn::ItemConst {
+        attrs: vec![],
+        vis: syn::Visibility::Inherited,
+        const_token: Default::default(),
+        ident: syn::Ident::new("DUMMY", proc_macro2::Span::call_site()),
+        generics: Default::default(),
+        colon_token: Default::default(),
+        ty: Box::new(syn::parse_quote!(())),
+        eq_token: Default::default(),
+        expr: Box::new(expr.clone()),
+        semi_token: Default::default(),
+    });
 
-/// Internal implementation that builds TokenStream with special dereference handling
-fn format_expr_impl(expr: &Expr) -> TokenStream {
-    match expr {
-        // Handle unary dereference specially to avoid space after *
-        Expr::Unary(expr_unary) if matches!(expr_unary.op, UnOp::Deref(_)) => {
-            let inner = format_expr_impl(&expr_unary.expr);
-            // Manually construct * without space
-            let mut tokens = TokenStream::new();
-            tokens.extend(std::iter::once(proc_macro2::TokenTree::Punct(Punct::new(
-                '*',
-                Spacing::Joint,
-            ))));
-            tokens.extend(inner);
-            tokens
-        }
-        // Handle binary expressions recursively to process any nested derefs
-        Expr::Binary(expr_binary) => {
-            let left = format_expr_impl(&expr_binary.left);
-            let op = &expr_binary.op;
-            let right = format_expr_impl(&expr_binary.right);
-            quote::quote!(#left #op #right)
-        }
-        // Handle parenthesized expressions recursively
-        Expr::Paren(expr_paren) => {
-            let inner = format_expr_impl(&expr_paren.expr);
-            quote::quote!((#inner))
-        }
-        // For all other expressions, use their default token representation
-        _ => expr.to_token_stream(),
-    }
+    let file = syn::File {
+        shebang: None,
+        attrs: vec![],
+        items: vec![item],
+    };
+
+    let formatted = prettyplease::unparse(&file);
+
+    // Extract the expression from "const DUMMY: () = <expr>;"
+    formatted
+        .strip_prefix("const DUMMY: () = ")
+        .and_then(|s| s.strip_suffix(";\n"))
+        .unwrap_or(expr.to_token_stream().to_string().as_str())
+        .trim()
+        .to_string()
 }
 
 /// Format a pattern (for binds parameter)
 pub fn format_pattern(pat: &Pat) -> String {
+    // For patterns, quote works fine
     quote::quote!(#pat).to_string()
 }
 

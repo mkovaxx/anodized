@@ -134,7 +134,10 @@ fn format_captures(captures: &[Capture], config: &Config) -> String {
 
 /// Format a cfg attribute
 fn format_cfg_attr(meta: &Meta) -> String {
-    format!("#[cfg({})]", quote::quote!(#meta))
+    // For cfg attributes, we can use syn's Display implementation
+    // which gives us clean output without extra spaces
+    let tokens = quote::quote!(#meta);
+    format!("#[cfg({})]", tokens)
 }
 
 #[cfg(test)]

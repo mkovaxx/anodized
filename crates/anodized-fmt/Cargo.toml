@@ -25,10 +25,10 @@ quote.workspace = true
 syn.workspace = true
 
 clap = { version = "4", features = ["derive"] }
+prettyplease = "0.2"
 serde = { version = "1", features = ["derive"] }
-toml = "0.9"
 thiserror = "2"
-# File system
+toml = "0.9"
 walkdir = "2"
 
 [dev-dependencies]
