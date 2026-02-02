@@ -73,26 +73,8 @@ max_width = 100
 # Number of spaces for indentation
 indent = 4
 
-# Layout style for conditions: "compact", "vertical", "auto"
-layout_style = "vertical"
-
-# Threshold for switching from compact to vertical in auto mode
-auto_layout_threshold = 3
-
-# Always use lists for multiple conditions
-prefer_lists = true
-
-# Array alignment: "block", "visual"
-array_alignment = "block"
-
 # Trailing comma: "always", "never", "auto"
-trailing_comma = "auto"
-
-# Sort conditions alphabetically
-sort_conditions = false
-
-# Blank line before #[spec]
-blank_line_before_spec = false
+trailing_comma = "always"
 ```
 
 ## Example
