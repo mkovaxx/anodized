@@ -1,4 +1,4 @@
-use anodized_fmt::{format_file, Config};
+use anodized_fmt::{Config, format_file};
 use pretty_assertions::assert_eq;
 
 #[test]
@@ -16,6 +16,28 @@ fn test_format_simple_function() {
 fn test_format_complex_spec() {
     let input = include_str!("fixtures/input/complex_spec.rs");
     let expected = include_str!("fixtures/expected/complex_spec.rs");
+
+    let config = Config::default();
+    let formatted = format_file(input, &config).expect("Failed to format");
+
+    assert_eq!(formatted, expected);
+}
+
+#[test]
+fn test_format_matches_and_functions() {
+    let input = include_str!("fixtures/input/matches_and_functions.rs");
+    let expected = include_str!("fixtures/expected/matches_and_functions.rs");
+
+    let config = Config::default();
+    let formatted = format_file(input, &config).expect("Failed to format");
+
+    assert_eq!(formatted, expected);
+}
+
+#[test]
+fn test_format_basic_traits() {
+    let input = include_str!("fixtures/input/basic_traits.rs");
+    let expected = include_str!("fixtures/expected/basic_traits.rs");
 
     let config = Config::default();
     let formatted = format_file(input, &config).expect("Failed to format");
@@ -42,21 +64,21 @@ fn test_format_is_idempotent() {
 #[test]
 fn test_format_preserves_other_code() {
     let input = r#"
-// Some comment
-use anodized::spec;
+        // Some comment
+        use anodized::spec;
 
-const VALUE: i32 = 42;
+        const VALUE: i32 = 42;
 
-#[spec(requires: x > 0)]
-fn foo(x: i32) -> i32 {
-    x + VALUE
-}
+        #[spec(requires: x > 0)]
+        fn foo(x: i32) -> i32 {
+            x + VALUE
+        }
 
-#[derive(Debug)]
-struct MyStruct {
-    field: i32,
-}
-"#;
+        #[derive(Debug)]
+        struct MyStruct {
+            field: i32,
+        }
+        "#;
 
     let config = Config::default();
     let formatted = format_file(input, &config).expect("Failed to format");
