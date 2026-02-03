@@ -1,10 +1,7 @@
-use proc_macro2::Span;
+use proc_macro2::{Span, TokenStream};
+use quote::TokenStreamExt;
 use syn::{
-    Attribute, Expr, Ident, Meta, Pat, Token,
-    parse::{Parse, ParseStream, Result},
-    parse_quote,
-    punctuated::Punctuated,
-    spanned::Spanned,
+    Attribute, Expr, Ident, Pat, Token, parse::{Parse, ParseStream, Result}, punctuated::Punctuated
 };
 
 /// Raw representation of spec argument syntax.
@@ -20,6 +17,127 @@ impl Parse for SpecArgs {
     }
 }
 
+/// Encodes the high-level syntax of spec elements.
+pub struct SpecArg {
+    pub attrs: Vec<Attribute>,
+    pub keyword: Keyword,
+    pub keyword_span: Span,
+    pub colon: Token![:],
+    pub value: SpecArgValue,
+}
+
+impl SpecArg {
+    pub fn get_order(&self) -> &Keyword {
+        &self.keyword
+    }
+
+    pub fn get_keyword_span(&self) -> Span {
+        self.keyword_span
+    }
+
+    fn is_value_terminated(input: ParseStream) -> bool {
+        input.peek(Token![,]) || input.peek2(Token![:]) && input.peek(Ident)
+    }
+}
+
+impl Parse for SpecArg {
+    fn parse(input: ParseStream) -> Result<Self> {
+        let attrs = input.call(Attribute::parse_outer)?;
+        let (keyword, keyword_span) = Keyword::parse(input)?;
+        let colon = input.parse()?;
+        let value = match keyword {
+            Keyword::Binds => SpecArgValue::parse_pat_or_expr(input)?,
+            _ => SpecArgValue::parse_expr_or_pat(input)?,
+        };
+
+        Ok(Self {
+            attrs,
+            keyword,
+            keyword_span,
+            colon,
+            value,
+        })
+    }
+}
+
+#[derive(Debug, Clone)]
+pub enum SpecArgValue {
+    Expr(Expr),
+    Pat(Pat),
+}
+
+impl SpecArgValue {
+    /// Return the `Expr` or fail.
+    pub fn try_into_expr(self) -> Result<Expr> {
+        match self {
+            Self::Expr(expr) => Ok(expr),
+            Self::Pat(pat) => Err(syn::Error::new_spanned(
+                pat,
+                "expected an expression",
+            )),
+        }
+    }
+
+    /// Return the `Pat` or fail.
+    pub fn try_into_pat(self) -> Result<Pat> {
+        match self {
+            Self::Pat(pat) => Ok(pat),
+            Self::Expr(expr) => Err(syn::Error::new_spanned(
+                expr,
+                "expected a pattern",
+            )),
+        }
+    }
+
+    /// Try to parse as `Expr` then as `Pat`.
+    fn parse_expr_or_pat(input: ParseStream) -> Result<Self> {
+        if let Ok(expr) = Self::parse_expr_or_nothing(input) {
+            Ok(Self::Expr(expr))
+        } else if let Ok(pat) = Self::parse_pat_or_nothing(input) {
+            Ok(Self::Pat(pat))
+        } else {
+            Err(input.error("expected an expression or a pattern"))
+        }
+    }
+
+    /// Try to parse as `Pat` then as `Expr`.
+    fn parse_pat_or_expr(input: ParseStream) -> Result<Self> {
+        if let Ok(pat) = Self::parse_pat_or_nothing(input) {
+            Ok(Self::Pat(pat))
+        } else if let Ok(expr) = Self::parse_expr_or_nothing(input) {
+            Ok(Self::Expr(expr))
+        } else {
+            Err(input.error("expected a pattern or an expression"))
+        }
+    }
+
+    /// Try to parse as `Expr` but consume no input on failure.
+    pub fn parse_expr_or_nothing(input: ParseStream<'_>) -> Result<Expr> {
+        use syn::parse::discouraged::Speculative;
+        let fork = input.fork();
+        match Expr::parse(&fork) {
+            Ok(expr) => {
+                input.advance_to(&fork);
+                Ok(expr)
+            }
+            Err(err) => Err(err),
+        }
+    }
+
+    /// Try to parse as `Pat` but consume no input on failure.
+    pub fn parse_pat_or_nothing(input: ParseStream<'_>) -> Result<Pat> {
+        use syn::parse::discouraged::Speculative;
+        let fork = input.fork();
+        match Pat::parse_single(&fork) {
+            Ok(pat) => {
+                input.advance_to(&fork);
+                Ok(pat)
+            }
+            Err(err) => Err(err),
+        }
+    }
+}
+
 /// Custom keywords for parsing. This allows us to use `requires`, `ensures`, etc.,
 /// as if they were built-in Rust keywords during parsing.
 pub mod kw {
@@ -30,8 +148,9 @@ pub mod kw {
     syn::custom_keyword!(ensures);
 }
 
-#[derive(PartialEq, PartialOrd, Clone, Copy, Debug)]
-pub enum ArgOrder {
+#[derive(PartialEq, PartialOrd, Clone, Debug)]
+pub enum Keyword {
+    Unknown(Ident),
     Requires,
     Maintains,
     Captures,
@@ -39,109 +158,28 @@ pub enum ArgOrder {
     Ensures,
 }
 
-/// An intermediate enum to help parse either a condition or a `binds` setting.
-pub enum SpecArg {
-    Requires {
-        keyword: kw::requires,
-        attrs: Vec<Attribute>,
-        expr: Expr,
-    },
-    Ensures {
-        keyword: kw::ensures,
-        attrs: Vec<Attribute>,
-        expr: Expr,
-    },
-    Maintains {
-        keyword: kw::maintains,
-        attrs: Vec<Attribute>,
-        expr: Expr,
-    },
-    Captures {
-        keyword: kw::captures,
-        attrs: Vec<Attribute>,
-        expr: Expr,
-    },
-    Binds {
-        keyword: kw::binds,
-        attrs: Vec<Attribute>,
-        pattern: Pat,
-    },
-}
-
-impl SpecArg {
-    pub fn get_order(&self) -> ArgOrder {
-        match self {
-            SpecArg::Requires { .. } => ArgOrder::Requires,
-            SpecArg::Maintains { .. } => ArgOrder::Maintains,
-            SpecArg::Captures { .. } => ArgOrder::Captures,
-            SpecArg::Binds { .. } => ArgOrder::Binds,
-            SpecArg::Ensures { .. } => ArgOrder::Ensures,
-        }
-    }
-
-    pub fn get_keyword_span(&self) -> Span {
-        match self {
-            SpecArg::Requires { keyword, .. } => keyword.span,
-            SpecArg::Ensures { keyword, .. } => keyword.span,
-            SpecArg::Maintains { keyword, .. } => keyword.span,
-            SpecArg::Captures { keyword, .. } => keyword.span,
-            SpecArg::Binds { keyword, .. } => keyword.span,
-        }
-    }
-}
-
-impl Parse for SpecArg {
-    fn parse(input: ParseStream) -> Result<Self> {
-        let attrs = input.call(Attribute::parse_outer)?;
-
-        let lookahead = input.lookahead1();
-        if lookahead.peek(kw::captures) {
-            // Parse `captures: <captures>`
-            let keyword = input.parse::<kw::captures>()?;
-            input.parse::<Token![:]>()?;
-            Ok(SpecArg::Captures {
-                keyword,
-                attrs,
-                expr: input.parse()?,
-            })
-        } else if lookahead.peek(kw::binds) {
-            // Parse `binds: <pattern>`
-            let keyword = input.parse::<kw::binds>()?;
-            input.parse::<Token![:]>()?;
-            Ok(SpecArg::Binds {
-                keyword,
-                attrs,
-                pattern: Pat::parse_single(input)?,
-            })
-        } else if lookahead.peek(kw::requires) {
-            // Parse `requires: <conditions>`
-            let keyword = input.parse::<kw::requires>()?;
-            input.parse::<Token![:]>()?;
-            Ok(SpecArg::Requires {
-                keyword,
-                attrs,
-                expr: input.parse()?,
-            })
-        } else if lookahead.peek(kw::maintains) {
-            // Parse `maintains: <conditions>`
-            let keyword = input.parse::<kw::maintains>()?;
-            input.parse::<Token![:]>()?;
-            Ok(SpecArg::Maintains {
-                keyword,
-                attrs,
-                expr: input.parse()?,
-            })
-        } else if lookahead.peek(kw::ensures) {
-            // Parse `ensures: <conditions>`
-            let keyword = input.parse::<kw::ensures>()?;
-            input.parse::<Token![:]>()?;
-            Ok(SpecArg::Ensures {
-                keyword,
-                attrs,
-                expr: input.parse()?,
-            })
+impl Keyword {
+    fn parse(input: ParseStream) -> Result<(Self, Span)> {
+        use Keyword::*;
+        Ok(if input.peek(kw::requires) {
+            let keyword: kw::requires = input.parse()?;
+            (Requires, keyword.span)
+        } else if input.peek(kw::maintains) {
+            let token: kw::maintains = input.parse()?;
+            (Maintains, token.span)
+        } else if input.peek(kw::captures) {
+            let token: kw::captures = input.parse()?;
+            (Captures, token.span)
+        } else if input.peek(kw::binds) {
+            let token: kw::binds = input.parse()?;
+            (Binds, token.span)
+        } else if input.peek(kw::ensures) {
+            let token: kw::ensures = input.parse()?;
+            (Ensures, token.span)
         } else {
-            Err(lookahead.error())
-        }
+            let ident: Ident = input.parse()?;
+            let span = ident.span();
+            (Unknown(ident), span)
+        })
     }
 }

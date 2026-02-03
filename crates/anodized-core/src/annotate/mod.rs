@@ -8,7 +8,7 @@ use syn::{
 use crate::{Capture, PostCondition, PreCondition, Spec};
 
 pub mod syntax;
-use syntax::{SpecArg, ArgOrder};
+use syntax::Keyword;
 
 #[cfg(test)]
 mod tests;
@@ -18,7 +18,7 @@ impl Parse for Spec {
         let raw = syntax::SpecArgs::parse(input)?;
         let args = raw.args;
 
-        let mut last_arg_order: Option<ArgOrder> = None;
+        let mut last_arg_order: Option<Keyword> = None;
         let mut requires: Vec<PreCondition> = vec![];
         let mut maintains: Vec<PreCondition> = vec![];
         let mut captures: Vec<Capture> = vec![];
@@ -26,7 +26,7 @@ impl Parse for Spec {
         let mut ensures: Vec<PostCondition> = vec![];
 
         for arg in args {
-            let current_arg_order = arg.get_order();
+            let current_arg_order = arg.get_order().clone();
             if let Some(last_order) = last_arg_order {
                 if current_arg_order < last_order {
                     return Err(syn::Error::new(
@@ -37,14 +37,15 @@ impl Parse for Spec {
             }
             last_arg_order = Some(current_arg_order);
 
-            match arg {
-                SpecArg::Requires { attrs, expr, .. } => {
-                    let cfg_attr = find_cfg_attribute(&attrs)?;
+            match arg.keyword {
+                Keyword::Requires => {
+                    let cfg_attr = find_cfg_attribute(&arg.attrs)?;
                     let cfg: Option<Meta> = if let Some(attr) = cfg_attr {
                         Some(attr.parse_args()?)
                     } else {
                         None
                     };
+                    let expr = arg.value.try_into_expr()?;
                     if let Expr::Array(conditions) = expr {
                         for expr in conditions.elems {
                             requires.push(PreCondition {
@@ -59,13 +60,14 @@ impl Parse for Spec {
                         });
                     }
                 }
-                SpecArg::Maintains { attrs, expr, .. } => {
-                    let cfg_attr = find_cfg_attribute(&attrs)?;
+                Keyword::Maintains => {
+                    let cfg_attr = find_cfg_attribute(&arg.attrs)?;
                     let cfg: Option<Meta> = if let Some(attr) = cfg_attr {
                         Some(attr.parse_args()?)
                     } else {
                         None
                     };
+                    let expr = arg.value.try_into_expr()?;
                     if let Expr::Array(conditions) = expr {
                         for expr in conditions.elems {
                             maintains.push(PreCondition {
@@ -80,8 +82,8 @@ impl Parse for Spec {
                         });
                     }
                 }
-                SpecArg::Captures { keyword, attrs, expr } => {
-                    let cfg_attr = find_cfg_attribute(&attrs)?;
+                Keyword::Captures => {
+                    let cfg_attr = find_cfg_attribute(&arg.attrs)?;
                     if cfg_attr.is_some() {
                         return Err(syn::Error::new(
                             cfg_attr.span(),
@@ -90,18 +92,19 @@ impl Parse for Spec {
                     }
                     if !captures.is_empty() {
                         return Err(syn::Error::new(
-                            keyword.span(),
+                            arg.keyword_span,
                             "at most one `captures` parameter is allowed; to capture multiple values, use a list: `captures: [expr1, expr2, ...]`",
                         ));
                     }
+                    let expr = arg.value.try_into_expr()?;
                     if let Expr::Array(array) = expr {
                         captures.extend(interpret_array_as_captures(array)?);
                     } else {
                         captures.push(interpret_expr_as_capture(expr)?);
                     }
                 }
-                SpecArg::Binds { keyword, attrs, pattern } => {
-                    let cfg_attr = find_cfg_attribute(&attrs)?;
+                Keyword::Binds => {
+                    let cfg_attr = find_cfg_attribute(&arg.attrs)?;
                     if cfg_attr.is_some() {
                         return Err(syn::Error::new(
                             cfg_attr.span(),
@@ -110,22 +113,22 @@ impl Parse for Spec {
                     }
                     if binds_pattern.is_some() {
                         return Err(syn::Error::new(
-                            keyword.span(),
+                            arg.keyword_span,
                             "multiple `binds` parameters are not allowed",
                         ));
                     }
+                    let pattern = arg.value.try_into_pat()?;
                     binds_pattern = Some(pattern);
                 }
-                SpecArg::Ensures { attrs, expr, .. } => {
-                    let cfg_attr = find_cfg_attribute(&attrs)?;
+                Keyword::Ensures => {
+                    let cfg_attr = find_cfg_attribute(&arg.attrs)?;
                     let cfg: Option<Meta> = if let Some(attr) = cfg_attr {
                         Some(attr.parse_args()?)
                     } else {
                         None
                     };
-
+                    let expr = arg.value.try_into_expr()?;
                     let default_pattern = binds_pattern.clone().unwrap_or(parse_quote! { output });
-
                     if let Expr::Array(conditions) = expr {
                         for expr in conditions.elems {
                             ensures.push(PostCondition {
@@ -142,6 +145,12 @@ impl Parse for Spec {
                             cfg,
                         });
                     }
+                }
+                Keyword::Unknown(ident) => {
+                    return Err(syn::Error::new(
+                        arg.keyword_span,
+                        format!("unknown spec keyword `{ident}`"),
+                    ));
                 }
             }
         }
@@ -257,7 +266,7 @@ fn interpret_expr_as_postcondition(expr: Expr, default_binding: Pat) -> Result<s
                 Ok(closure)
             } else {
                 Err(syn::Error::new_spanned(
-                    closure.or1_token,
+                    &closure.or1_token,
                     format!(
                         "postcondition closure must have exactly one argument, found {}",
                         closure.inputs.len()
