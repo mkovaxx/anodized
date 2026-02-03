@@ -18,3 +18,7 @@ path = "push_checked.rs"
 [[bin]]
 name = "withdraw"
 path = "withdraw.rs"
+
+[[bin]]
+name = "pattern_match"
+path = "pattern_match.rs"

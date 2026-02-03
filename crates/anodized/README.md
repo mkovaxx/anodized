@@ -248,10 +248,22 @@ use anodized::spec;
     ],
 )]
 fn add_item<T: Clone + Eq>(items: &mut Vec<T>, item: T) { todo!() }
+
+// Pattern matching works on arrays:
+#[spec(
+    captures: arr as [first, second, third],
+    ensures: [
+        first == arr[0],
+        second == arr[1],
+        third == arr[2],
+    ],
+)]
+fn match_array(arr: [i32; 3]) { todo!() }
 ```
 
 - **Simple identifiers** get an automatic `old_` prefix, i.e. `x` becomes `old_x`.
 - **Complex expressions** require an explicit alias using `as`, i.e. `self.items.len() as orig_len`.
+- **Pattern Match Expressions** are also possible with the `ident as pattern` syntax.
 - **No automatic cloning**: Each captured expression is **moved**. For a `Copy` type, a copy is made implicitly. For a non-`Copy` type, you must explicitly use `.clone()`, `.to_owned()`, or another appropriate method.
 - Capturing happens **after** preconditions are checked but **before** the function body executes.
 - The captured values are **only** available to postconditions, not to preconditions or the function body itself.

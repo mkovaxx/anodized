@@ -1,14 +1,14 @@
 use syn::{
-    Attribute, Expr, Ident, Meta, Pat,
+    Attribute, Expr, Ident, Meta, Pat, PatIdent,
     parse::{Parse, ParseStream, Result},
     parse_quote,
     spanned::Spanned,
 };
 
-use crate::{Capture, PostCondition, PreCondition, Spec};
+use crate::{Capture, PostCondition, PreCondition, Spec, annotate::syntax::CaptureExpr};
 
 pub mod syntax;
-use syntax::Keyword;
+use syntax::{CaptureList, Keyword};
 
 #[cfg(test)]
 mod tests;
@@ -84,11 +84,16 @@ impl Parse for Spec {
                             "at most one `captures` parameter is allowed; to capture multiple values, use a list: `captures: [expr1, expr2, ...]`",
                         ));
                     }
-                    let expr = arg.value.try_into_expr()?;
-                    if let Expr::Array(array) = expr {
-                        captures.extend(interpret_array_as_captures(array)?);
-                    } else {
-                        captures.push(interpret_expr_as_capture(expr)?);
+                    let capture_list = arg.value.try_into_captures()?;
+                    match capture_list {
+                        CaptureList::Single(capture_expr) => {
+                            captures.push(interpret_capture_expr_as_capture(capture_expr)?);
+                        }
+                        CaptureList::Array { elems, .. } => {
+                            for capture_expr in elems {
+                                captures.push(interpret_capture_expr_as_capture(capture_expr)?);
+                            }
+                        }
                     }
                 }
                 Keyword::Binds => {
@@ -163,55 +168,104 @@ impl Parse for Spec {
     }
 }
 
-/// Try to interpret an Expr::Array as a list of Captures
-fn interpret_array_as_captures(array: syn::ExprArray) -> Result<Vec<Capture>> {
-    let mut bindings = Vec::new();
-
-    for elem in array.elems {
-        // Try to interpret each element as a capture
-        // If any fails, propagate that error immediately
-        bindings.push(interpret_expr_as_capture(elem)?);
-    }
-
-    Ok(bindings)
-}
-
 /// Try to interpret an Expr as a single Capture
-fn interpret_expr_as_capture(expr: Expr) -> Result<Capture> {
-    match expr {
+fn interpret_capture_expr_as_capture(capture_expr: CaptureExpr) -> Result<Capture> {
+    match capture_expr {
         // Simple identifier: count -> old_count
-        Expr::Path(ref path)
+        CaptureExpr::Ident(ref path)
             if path.path.segments.len() == 1
                 && path.path.leading_colon.is_none()
                 && path.attrs.is_empty()
                 && path.qself.is_none() =>
         {
             let ident = &path.path.segments[0].ident;
-            let alias = Ident::new(&format!("old_{}", ident), ident.span());
-            Ok(Capture { expr, alias })
+            let ident_alias = Ident::new(&format!("old_{}", ident), ident.span());
+            let pattern_alias = Pat::Ident(PatIdent {
+                ident: ident_alias,
+                attrs: vec![],
+                mutability: None,
+                by_ref: None,
+                subpat: None,
+            });
+            Ok(Capture {
+                expr: Expr::Path(path.clone()),
+                pat: pattern_alias,
+            })
         }
         // Cast expression: value as old_value
-        Expr::Cast(cast) => {
-            // The cast.ty should be a simple identifier that we use as the alias
-            if let syn::Type::Path(ref type_path) = *cast.ty {
+        CaptureExpr::Cast(cast) => {
+            match *cast.ty {
+                syn::Type::Path(ref type_path)
+                    if type_path.path.segments.len() == 1
+                        && type_path.path.leading_colon.is_none()
+                        && type_path.qself.is_none() =>
+                {
+                    // The cast.ty is a simple identifier that we use as the alias
+                    let ident = type_path.path.segments[0].ident.clone();
+                    let pat = Pat::Ident(PatIdent {
+                        attrs: vec![],
+                        by_ref: None,
+                        mutability: None,
+                        ident,
+                        subpat: None,
+                    });
+                    Ok(Capture {
+                        expr: *cast.expr,
+                        pat,
+                    })
+                }
+                _ => Err(syn::Error::new_spanned(
+                    cast.expr,
+                    "Invalid pattern for alias",
+                )),
+            }
+        }
+        // Handle ident as pattern (stored internally as Pat::Ident with subpat)
+        CaptureExpr::Pattern(Pat::Ident(pat_ident)) if pat_ident.subpat.is_some() => {
+            let (_, subpat) = pat_ident.subpat.unwrap();
+            let ident = pat_ident.ident;
+            let expr = Expr::Path(syn::ExprPath {
+                attrs: vec![],
+                qself: None,
+                path: ident.into(),
+            });
+            Ok(Capture { expr, pat: *subpat })
+        }
+        CaptureExpr::Pattern(pat) => Err(syn::Error::new_spanned(
+            pat,
+            "pattern captures must use `ident as [pattern]` syntax",
+        )),
+        // General expression with cast: `complex_expr as alias`
+        CaptureExpr::Expr(Expr::Cast(cast)) => match *cast.ty {
+            syn::Type::Path(ref type_path)
                 if type_path.path.segments.len() == 1
                     && type_path.path.leading_colon.is_none()
-                    && type_path.qself.is_none()
-                {
-                    let alias = type_path.path.segments[0].ident.clone();
-                    return Ok(Capture {
-                        expr: *cast.expr,
-                        alias,
-                    });
-                }
+                    && type_path.qself.is_none() =>
+            {
+                let ident = type_path.path.segments[0].ident.clone();
+                let pat = Pat::Ident(PatIdent {
+                    attrs: vec![],
+                    by_ref: None,
+                    mutability: None,
+                    ident,
+                    subpat: None,
+                });
+                Ok(Capture {
+                    expr: *cast.expr,
+                    pat,
+                })
             }
-            Err(syn::Error::new_spanned(
-                cast,
+            _ => Err(syn::Error::new_spanned(
+                cast.ty,
                 "alias must be a simple identifier",
-            ))
-        }
-        // Any other expression requires an explicit alias
-        _ => Err(syn::Error::new_spanned(
+            )),
+        },
+        CaptureExpr::Ident(path) => Err(syn::Error::new_spanned(
+            path,
+            "complex expressions require an explicit alias using `as`",
+        )),
+        // General expression without alias - error
+        CaptureExpr::Expr(expr) => Err(syn::Error::new_spanned(
             expr,
             "complex expressions require an explicit alias using `as`",
         )),

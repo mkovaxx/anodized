@@ -73,8 +73,10 @@ impl Backend {
         let aliases = spec
             .captures
             .iter()
-            .map(|cb| &cb.alias)
-            .chain(std::iter::once(&output_ident));
+            // convert to token stream so that the mismatch
+            // types can be chained
+            .map(|cb| cb.pat.to_token_stream())
+            .chain(std::iter::once(output_ident.to_token_stream()));
 
         // Chain capture expressions with body expression
         let capture_exprs = spec.captures.iter().map(|cb| {

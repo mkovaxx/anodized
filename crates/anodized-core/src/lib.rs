@@ -1,7 +1,7 @@
 #![doc = include_str!("../README.md")]
 
 use proc_macro2::Span;
-use syn::{Expr, Ident, Meta};
+use syn::{Expr, Meta, Pat};
 
 pub mod annotate;
 pub mod instrument;
@@ -69,6 +69,6 @@ pub struct PostCondition {
 pub struct Capture {
     /// The expression to capture.
     pub expr: Expr,
-    /// The identifier to bind the captured value to.
-    pub alias: Ident,
+    /// The pattern to bind the captured value to.
+    pub pat: Pat,
 }
