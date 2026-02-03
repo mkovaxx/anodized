@@ -9,7 +9,7 @@ pub mod instrument;
 #[cfg(test)]
 mod test_util;
 
-/// A spec specifies the intended behavior of a function or method.
+/// Specifies the intended behavior of a function or method.
 #[derive(Debug)]
 pub struct Spec {
     /// Preconditions: conditions that must hold when the function is called.
