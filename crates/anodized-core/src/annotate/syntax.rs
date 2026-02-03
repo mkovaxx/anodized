@@ -1,10 +1,11 @@
-use proc_macro2::{Span, TokenStream};
-use quote::TokenStreamExt;
+use proc_macro2::Span;
 use syn::{
     Attribute, Expr, Ident, Pat, Token, parse::{Parse, ParseStream, Result}, punctuated::Punctuated
 };
 
-/// Raw representation of spec argument syntax.
+/// Raw spec arguments.
+///
+/// Can represent a well-formed but invalid spec so that e.g. `anodized-fmt` may work with it.
 pub struct SpecArgs {
     pub args: Punctuated<SpecArg, Token![,]>,
 }
@@ -17,27 +18,13 @@ impl Parse for SpecArgs {
     }
 }
 
-/// Encodes the high-level syntax of spec elements.
+/// A single spec argument.
 pub struct SpecArg {
     pub attrs: Vec<Attribute>,
     pub keyword: Keyword,
     pub keyword_span: Span,
     pub colon: Token![:],
     pub value: SpecArgValue,
-}
-
-impl SpecArg {
-    pub fn get_order(&self) -> &Keyword {
-        &self.keyword
-    }
-
-    pub fn get_keyword_span(&self) -> Span {
-        self.keyword_span
-    }
-
-    fn is_value_terminated(input: ParseStream) -> bool {
-        input.peek(Token![,]) || input.peek2(Token![:]) && input.peek(Ident)
-    }
 }
 
 impl Parse for SpecArg {
@@ -60,6 +47,7 @@ impl Parse for SpecArg {
     }
 }
 
+/// Each SpecArg's value needs to be parsed in a way that allows invalid specs.
 #[derive(Debug, Clone)]
 pub enum SpecArgValue {
     Expr(Expr),
@@ -112,7 +100,7 @@ impl SpecArgValue {
     }
 
     /// Try to parse as `Expr` but consume no input on failure.
-    pub fn parse_expr_or_nothing(input: ParseStream<'_>) -> Result<Expr> {
+    fn parse_expr_or_nothing(input: ParseStream<'_>) -> Result<Expr> {
         use syn::parse::discouraged::Speculative;
         let fork = input.fork();
         match Expr::parse(&fork) {
@@ -125,7 +113,7 @@ impl SpecArgValue {
     }
 
     /// Try to parse as `Pat` but consume no input on failure.
-    pub fn parse_pat_or_nothing(input: ParseStream<'_>) -> Result<Pat> {
+    fn parse_pat_or_nothing(input: ParseStream<'_>) -> Result<Pat> {
         use syn::parse::discouraged::Speculative;
         let fork = input.fork();
         match Pat::parse_single(&fork) {
