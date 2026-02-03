@@ -291,7 +291,7 @@ fn interpret_expr_as_postcondition(expr: Expr, default_binding: Pat) -> Result<s
     }
 }
 
-pub fn find_cfg_attribute(attrs: &[Attribute]) -> Result<Option<&Attribute>> {
+fn find_cfg_attribute(attrs: &[Attribute]) -> Result<Option<&Attribute>> {
     let mut cfg_attr: Option<&Attribute> = None;
 
     for attr in attrs {
