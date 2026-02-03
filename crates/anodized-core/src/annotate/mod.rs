@@ -15,19 +15,18 @@ mod tests;
 
 impl Parse for Spec {
     fn parse(input: ParseStream) -> Result<Self> {
-        let raw = syntax::SpecArgs::parse(input)?;
-        let args = raw.args;
+        let raw_spec = syntax::SpecArgs::parse(input)?;
 
-        let mut last_arg_order: Option<Keyword> = None;
+        let mut prev_keyword: Option<Keyword> = None;
         let mut requires: Vec<PreCondition> = vec![];
         let mut maintains: Vec<PreCondition> = vec![];
         let mut captures: Vec<Capture> = vec![];
         let mut binds_pattern: Option<Pat> = None;
         let mut ensures: Vec<PostCondition> = vec![];
 
-        for arg in args {
-            if let Some(last_order) = last_arg_order {
-                if arg.keyword < last_order {
+        for arg in raw_spec.args {
+            if let Some(prev_keyword) = prev_keyword {
+                if arg.keyword < prev_keyword {
                     return Err(syn::Error::new(
                         arg.keyword_span,
                         "parameters are out of order: their order must be `requires`, `maintains`, `captures`, `binds`, `ensures`",
@@ -152,7 +151,7 @@ impl Parse for Spec {
                 }
             }
 
-            last_arg_order = Some(arg.keyword);
+            prev_keyword = Some(arg.keyword);
         }
 
         Ok(Spec {
