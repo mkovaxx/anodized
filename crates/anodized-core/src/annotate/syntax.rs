@@ -43,25 +43,27 @@ pub enum ArgOrder {
 pub enum SpecArg {
     Requires {
         keyword: kw::requires,
-        cfg: Option<Meta>,
+        attrs: Vec<Attribute>,
         expr: Expr,
     },
     Ensures {
         keyword: kw::ensures,
-        cfg: Option<Meta>,
+        attrs: Vec<Attribute>,
         expr: Expr,
     },
     Maintains {
         keyword: kw::maintains,
-        cfg: Option<Meta>,
+        attrs: Vec<Attribute>,
         expr: Expr,
     },
     Captures {
         keyword: kw::captures,
+        attrs: Vec<Attribute>,
         expr: Expr,
     },
     Binds {
         keyword: kw::binds,
+        attrs: Vec<Attribute>,
         pattern: Pat,
     },
 }
@@ -91,37 +93,24 @@ impl SpecArg {
 impl Parse for SpecArg {
     fn parse(input: ParseStream) -> Result<Self> {
         let attrs = input.call(Attribute::parse_outer)?;
-        let cfg = super::parse_cfg_attribute(&attrs)?;
 
         let lookahead = input.lookahead1();
         if lookahead.peek(kw::captures) {
-            if cfg.is_some() {
-                return Err(syn::Error::new(
-                    attrs[0].span(),
-                    "`cfg` attribute is not supported on `captures`",
-                ));
-            }
-
             // Parse `captures: <captures>`
             let keyword = input.parse::<kw::captures>()?;
             input.parse::<Token![:]>()?;
             Ok(SpecArg::Captures {
                 keyword,
+                attrs,
                 expr: input.parse()?,
             })
         } else if lookahead.peek(kw::binds) {
-            if cfg.is_some() {
-                return Err(syn::Error::new(
-                    attrs[0].span(),
-                    "`cfg` attribute is not supported on `binds`",
-                ));
-            }
-
             // Parse `binds: <pattern>`
             let keyword = input.parse::<kw::binds>()?;
             input.parse::<Token![:]>()?;
             Ok(SpecArg::Binds {
                 keyword,
+                attrs,
                 pattern: Pat::parse_single(input)?,
             })
         } else if lookahead.peek(kw::requires) {
@@ -130,7 +119,7 @@ impl Parse for SpecArg {
             input.parse::<Token![:]>()?;
             Ok(SpecArg::Requires {
                 keyword,
-                cfg,
+                attrs,
                 expr: input.parse()?,
             })
         } else if lookahead.peek(kw::maintains) {
@@ -139,7 +128,7 @@ impl Parse for SpecArg {
             input.parse::<Token![:]>()?;
             Ok(SpecArg::Maintains {
                 keyword,
-                cfg,
+                attrs,
                 expr: input.parse()?,
             })
         } else if lookahead.peek(kw::ensures) {
@@ -148,7 +137,7 @@ impl Parse for SpecArg {
             input.parse::<Token![:]>()?;
             Ok(SpecArg::Ensures {
                 keyword,
-                cfg,
+                attrs,
                 expr: input.parse()?,
             })
         } else {

@@ -38,7 +38,13 @@ impl Parse for Spec {
             last_arg_order = Some(current_arg_order);
 
             match arg {
-                SpecArg::Requires { cfg, expr, .. } => {
+                SpecArg::Requires { attrs, expr, .. } => {
+                    let cfg_attr = find_cfg_attribute(&attrs)?;
+                    let cfg: Option<Meta> = if let Some(attr) = cfg_attr {
+                        Some(attr.parse_args()?)
+                    } else {
+                        None
+                    };
                     if let Expr::Array(conditions) = expr {
                         for expr in conditions.elems {
                             requires.push(PreCondition {
@@ -53,7 +59,13 @@ impl Parse for Spec {
                         });
                     }
                 }
-                SpecArg::Maintains { cfg, expr, .. } => {
+                SpecArg::Maintains { attrs, expr, .. } => {
+                    let cfg_attr = find_cfg_attribute(&attrs)?;
+                    let cfg: Option<Meta> = if let Some(attr) = cfg_attr {
+                        Some(attr.parse_args()?)
+                    } else {
+                        None
+                    };
                     if let Expr::Array(conditions) = expr {
                         for expr in conditions.elems {
                             maintains.push(PreCondition {
@@ -68,7 +80,14 @@ impl Parse for Spec {
                         });
                     }
                 }
-                SpecArg::Captures { keyword, expr } => {
+                SpecArg::Captures { keyword, attrs, expr } => {
+                    let cfg_attr = find_cfg_attribute(&attrs)?;
+                    if cfg_attr.is_some() {
+                        return Err(syn::Error::new(
+                            cfg_attr.span(),
+                            "`cfg` attribute is not supported on `captures`",
+                        ));
+                    }
                     if !captures.is_empty() {
                         return Err(syn::Error::new(
                             keyword.span(),
@@ -81,7 +100,14 @@ impl Parse for Spec {
                         captures.push(interpret_expr_as_capture(expr)?);
                     }
                 }
-                SpecArg::Binds { keyword, pattern } => {
+                SpecArg::Binds { keyword, attrs, pattern } => {
+                    let cfg_attr = find_cfg_attribute(&attrs)?;
+                    if cfg_attr.is_some() {
+                        return Err(syn::Error::new(
+                            cfg_attr.span(),
+                            "`cfg` attribute is not supported on `binds`",
+                        ));
+                    }
                     if binds_pattern.is_some() {
                         return Err(syn::Error::new(
                             keyword.span(),
@@ -90,7 +116,14 @@ impl Parse for Spec {
                     }
                     binds_pattern = Some(pattern);
                 }
-                SpecArg::Ensures { cfg, expr, .. } => {
+                SpecArg::Ensures { attrs, expr, .. } => {
+                    let cfg_attr = find_cfg_attribute(&attrs)?;
+                    let cfg: Option<Meta> = if let Some(attr) = cfg_attr {
+                        Some(attr.parse_args()?)
+                    } else {
+                        None
+                    };
+
                     let default_pattern = binds_pattern.clone().unwrap_or(parse_quote! { output });
 
                     if let Expr::Array(conditions) = expr {
@@ -249,12 +282,18 @@ fn interpret_expr_as_postcondition(expr: Expr, default_binding: Pat) -> Result<s
     }
 }
 
-pub fn parse_cfg_attribute(attrs: &[Attribute]) -> Result<Option<Meta>> {
-    let mut cfg_attrs: Vec<Meta> = vec![];
+pub fn find_cfg_attribute(attrs: &[Attribute]) -> Result<Option<&Attribute>> {
+    let mut cfg_attr: Option<&Attribute> = None;
 
     for attr in attrs {
         if attr.path().is_ident("cfg") {
-            cfg_attrs.push(attr.parse_args()?);
+            if cfg_attr.is_some() {
+                return Err(syn::Error::new(
+                    attr.span(),
+                    "multiple `cfg` attributes are not supported",
+                ));
+            }
+            cfg_attr = Some(attr);
         } else {
             return Err(syn::Error::new(
                 attr.span(),
@@ -263,12 +302,5 @@ pub fn parse_cfg_attribute(attrs: &[Attribute]) -> Result<Option<Meta>> {
         }
     }
 
-    if cfg_attrs.len() > 1 {
-        return Err(syn::Error::new(
-            cfg_attrs[1].span(),
-            "multiple `cfg` attributes are not supported",
-        ));
-    }
-
-    Ok(cfg_attrs.pop())
+    Ok(cfg_attr)
 }
