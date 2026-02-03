@@ -34,7 +34,7 @@ anodized-fmt src/
 anodized-fmt
 ```
 
-### Check mode (CI)
+### Check Mode (CI)
 
 ```bash
 # Check if files are formatted without modifying them
