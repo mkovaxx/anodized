@@ -21,7 +21,7 @@ cargo build --release
 
 ## Usage
 
-### Format files
+### Format Files
 
 ```bash
 # Format a single file
