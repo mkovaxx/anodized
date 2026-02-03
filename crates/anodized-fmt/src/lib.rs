@@ -20,20 +20,11 @@ pub enum FormatError {
     #[error("Failed to parse spec attribute: {0}")]
     SpecParseError(#[from] syn::Error),
 
-    #[error("Unmatched brackets in spec attribute at position {0}")]
-    UnmatchedBracket(usize),
-
     #[error("IO error: {0}")]
     IoError(#[from] std::io::Error),
 
     #[error("Configuration error: {0}")]
     ConfigError(#[from] ConfigError),
-
-    #[error("File contains invalid UTF-8")]
-    InvalidUtf8,
-
-    #[error("Failed to format expression: {0}")]
-    ExpressionFormatError(String),
 
     #[error("Find error: {0}")]
     FindError(#[from] FindError),
