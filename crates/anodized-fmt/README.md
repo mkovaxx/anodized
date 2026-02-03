@@ -4,7 +4,7 @@ A formatter for `#[spec]` annotations in Rust code using [Anodized](https://gith
 
 ## Overview
 
-`anodized-fmt` reformats `#[spec]` attributes while leaving all other code unchanged. It is built on top of `anodized-core` which provides anodized specification.
+`anodized-fmt` reformats `#[spec]` attributes while leaving all other code unchanged. It is built on top of `anodized-core` which provides specification annotations.
 
 ## Installation
 
