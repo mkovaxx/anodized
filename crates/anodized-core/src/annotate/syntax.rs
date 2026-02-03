@@ -1,6 +1,8 @@
 use proc_macro2::Span;
 use syn::{
-    Attribute, Expr, Ident, Pat, Token, parse::{Parse, ParseStream, Result}, punctuated::Punctuated
+    Attribute, Expr, Ident, Pat, Token,
+    parse::{Parse, ParseStream, Result},
+    punctuated::Punctuated,
 };
 
 /// Raw spec arguments.
@@ -59,10 +61,7 @@ impl SpecArgValue {
     pub fn try_into_expr(self) -> Result<Expr> {
         match self {
             Self::Expr(expr) => Ok(expr),
-            Self::Pat(pat) => Err(syn::Error::new_spanned(
-                pat,
-                "expected an expression",
-            )),
+            Self::Pat(pat) => Err(syn::Error::new_spanned(pat, "expected an expression")),
         }
     }
 
@@ -70,10 +69,7 @@ impl SpecArgValue {
     pub fn try_into_pat(self) -> Result<Pat> {
         match self {
             Self::Pat(pat) => Ok(pat),
-            Self::Expr(expr) => Err(syn::Error::new_spanned(
-                expr,
-                "expected a pattern",
-            )),
+            Self::Expr(expr) => Err(syn::Error::new_spanned(expr, "expected a pattern")),
         }
     }
 
