@@ -7,6 +7,19 @@ use syn::{
     spanned::Spanned,
 };
 
+/// Raw representation of spec argument syntax.
+pub struct SpecArgs {
+    pub args: Punctuated<SpecArg, Token![,]>,
+}
+
+impl Parse for SpecArgs {
+    fn parse(input: ParseStream) -> Result<Self> {
+        Ok(Self {
+            args: Punctuated::<SpecArg, Token![,]>::parse_terminated(input)?,
+        })
+    }
+}
+
 /// Custom keywords for parsing. This allows us to use `requires`, `ensures`, etc.,
 /// as if they were built-in Rust keywords during parsing.
 pub mod kw {

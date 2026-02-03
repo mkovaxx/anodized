@@ -1,9 +1,7 @@
-use proc_macro2::Span;
 use syn::{
-    Attribute, Expr, Ident, Meta, Pat, Token,
+    Attribute, Expr, Ident, Meta, Pat,
     parse::{Parse, ParseStream, Result},
     parse_quote,
-    punctuated::Punctuated,
     spanned::Spanned,
 };
 
@@ -17,7 +15,8 @@ mod tests;
 
 impl Parse for Spec {
     fn parse(input: ParseStream) -> Result<Self> {
-        let args = Punctuated::<SpecArg, Token![,]>::parse_terminated(input)?;
+        let raw = syntax::SpecArgs::parse(input)?;
+        let args = raw.args;
 
         let mut last_arg_order: Option<ArgOrder> = None;
         let mut requires: Vec<PreCondition> = vec![];
