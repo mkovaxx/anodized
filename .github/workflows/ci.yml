@@ -52,8 +52,5 @@ jobs:
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
 
-      - name: Unit test anodized-fmt lib
-        run: cargo test -p anodized-fmt --lib --no-fail-fast
-
-      - name: Integration test anodized-fmt
+      - name: Unit and integration test anodized-fmt
         run: cargo test -p anodized-fmt --tests --no-fail-fast
