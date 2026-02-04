@@ -25,15 +25,6 @@ impl Parse for Spec {
         let mut ensures: Vec<PostCondition> = vec![];
 
         for arg in raw_spec.args {
-            if let Some(prev_keyword) = prev_keyword {
-                if arg.keyword < prev_keyword {
-                    return Err(syn::Error::new(
-                        arg.keyword_span,
-                        "parameters are out of order: their order must be `requires`, `maintains`, `captures`, `binds`, `ensures`",
-                    ));
-                }
-            }
-
             match &arg.keyword {
                 Keyword::Requires => {
                     let cfg_attr = find_cfg_attribute(&arg.attrs)?;
@@ -151,6 +142,14 @@ impl Parse for Spec {
                 }
             }
 
+            if let Some(prev_keyword) = prev_keyword {
+                if arg.keyword < prev_keyword {
+                    return Err(syn::Error::new(
+                        arg.keyword_span,
+                        "parameters are out of order: their order must be `requires`, `maintains`, `captures`, `binds`, `ensures`",
+                    ));
+                }
+            }
             prev_keyword = Some(arg.keyword);
         }
 
