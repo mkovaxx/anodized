@@ -264,7 +264,7 @@ fn interpret_expr_as_postcondition(expr: Expr, default_binding: Pat) -> Result<s
                 Ok(closure)
             } else {
                 Err(syn::Error::new_spanned(
-                    &closure.or1_token,
+                    closure.or1_token,
                     format!(
                         "postcondition closure must have exactly one argument, found {}",
                         closure.inputs.len()
