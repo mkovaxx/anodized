@@ -2,6 +2,11 @@
 members = [
     "crates/anodized",
     "crates/anodized-core",
+    "examples",
+]
+default-members = [
+    "crates/anodized",
+    "crates/anodized-core",
 ]
 resolver = "2"
 

@@ -1,0 +1,20 @@
+[package]
+name = "anodized-examples"
+version = "0.0.0"
+edition = "2024"
+publish = false
+
+[dependencies]
+anodized = { path = "../crates/anodized", features = ["runtime-check-and-print"] }
+
+[[bin]]
+name = "percentage"
+path = "percentage.rs"
+
+[[bin]]
+name = "push_checked"
+path = "push_checked.rs"
+
+[[bin]]
+name = "withdraw"
+path = "withdraw.rs"

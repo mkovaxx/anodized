@@ -41,3 +41,24 @@ jobs:
 
       - name: Integration test anodized with runtime behavior `${{ matrix.runtime }}`
         run: cargo test -p anodized --tests --no-fail-fast --features "runtime-${{ matrix.runtime }}"
+  build-examples:
+    name: Build and run examples
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Build examples
+        run: cargo build -p anodized-examples
+
+      - name: Run percentage example
+        run: cargo run -p anodized-examples --bin percentage
+
+      - name: Run push_checked example
+        run: cargo run -p anodized-examples --bin push_checked
+
+      - name: Run withdraw example
+        run: cargo run -p anodized-examples --bin withdraw
