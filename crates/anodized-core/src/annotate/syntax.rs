@@ -5,7 +5,7 @@ use syn::{
     punctuated::Punctuated,
 };
 
-/// Raw spec arguments.
+/// Raw arguments to the spec proc macro annotation (ie #[spec(SpecArgs)])
 ///
 /// Can represent a well-formed but invalid spec so that e.g. `anodized-fmt` may work with it.
 pub struct SpecArgs {
