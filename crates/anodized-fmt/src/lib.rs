@@ -10,9 +10,9 @@ pub mod formatter;
 
 pub use config::{Config, ConfigError};
 pub use finder::{FindError, SpecLocation, find_spec_attributes};
-pub use formatter::format_spec;
+pub use formatter::format_spec_args;
 
-use anodized_core::Spec;
+use anodized_core::annotate::syntax::SpecArgs;
 use syn::parse_str;
 
 #[derive(Debug, thiserror::Error)]
@@ -39,7 +39,7 @@ pub type Result<T> = std::result::Result<T, FormatError>;
 ///
 /// This function:
 /// 1. Finds all #[spec] attributes in the source
-/// 2. Parses each one using anodized-core
+/// 2. Parses each one using anodized-core's SpecArgs (permissive parsing)
 /// 3. Reformats them according to the configuration
 /// 4. Returns the modified source code
 pub fn format_file(source: &str, config: &Config) -> Result<String> {
@@ -59,9 +59,9 @@ pub fn format_file(source: &str, config: &Config) -> Result<String> {
         // Add everything before this spec
         output.push_str(&source[last_end..location.start]);
 
-        // Parse and format this spec
-        let spec: Spec = parse_str(&location.content)?;
-        let formatted = format_spec(&spec, config, location.base_indent);
+        // Parse and format this spec using the new SpecArgs structure
+        let spec_args: SpecArgs = parse_str(&location.content)?;
+        let formatted = format_spec_args(&spec_args, config, location.base_indent);
         output.push_str(&formatted);
 
         last_end = location.end;
