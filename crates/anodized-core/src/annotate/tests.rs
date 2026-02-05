@@ -58,6 +58,16 @@ fn all_clauses() {
 }
 
 #[test]
+#[should_panic(expected = "unknown spec keyword `goat`")]
+fn unknown_keyword() {
+    let _: Spec = parse_quote! {
+        ensures: output == x,
+        goat: 42,
+        requires: x > 0 && !is_zero(x),
+    };
+}
+
+#[test]
 #[should_panic(expected = "parameters are out of order")]
 fn out_of_order() {
     let _: Spec = parse_quote! {

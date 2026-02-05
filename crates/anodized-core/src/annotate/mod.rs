@@ -1,42 +1,39 @@
-use proc_macro2::Span;
 use syn::{
-    Attribute, Expr, Ident, Meta, Pat, Token,
+    Attribute, Expr, Ident, Meta, Pat,
     parse::{Parse, ParseStream, Result},
     parse_quote,
-    punctuated::Punctuated,
     spanned::Spanned,
 };
 
 use crate::{Capture, PostCondition, PreCondition, Spec};
+
+pub mod syntax;
+use syntax::Keyword;
 
 #[cfg(test)]
 mod tests;
 
 impl Parse for Spec {
     fn parse(input: ParseStream) -> Result<Self> {
-        let args = Punctuated::<SpecArg, Token![,]>::parse_terminated(input)?;
+        let raw_spec = syntax::SpecArgs::parse(input)?;
 
-        let mut last_arg_order: Option<ArgOrder> = None;
+        let mut prev_keyword: Option<Keyword> = None;
         let mut requires: Vec<PreCondition> = vec![];
         let mut maintains: Vec<PreCondition> = vec![];
         let mut captures: Vec<Capture> = vec![];
         let mut binds_pattern: Option<Pat> = None;
         let mut ensures: Vec<PostCondition> = vec![];
 
-        for arg in args {
-            let current_arg_order = arg.get_order();
-            if let Some(last_order) = last_arg_order {
-                if current_arg_order < last_order {
-                    return Err(syn::Error::new(
-                        arg.get_keyword_span(),
-                        "parameters are out of order: their order must be `requires`, `maintains`, `captures`, `binds`, `ensures`",
-                    ));
-                }
-            }
-            last_arg_order = Some(current_arg_order);
-
-            match arg {
-                SpecArg::Requires { cfg, expr, .. } => {
+        for arg in raw_spec.args {
+            match &arg.keyword {
+                Keyword::Requires => {
+                    let cfg_attr = find_cfg_attribute(&arg.attrs)?;
+                    let cfg: Option<Meta> = if let Some(attr) = cfg_attr {
+                        Some(attr.parse_args()?)
+                    } else {
+                        None
+                    };
+                    let expr = arg.value.try_into_expr()?;
                     if let Expr::Array(conditions) = expr {
                         for expr in conditions.elems {
                             requires.push(PreCondition {
@@ -51,7 +48,14 @@ impl Parse for Spec {
                         });
                     }
                 }
-                SpecArg::Maintains { cfg, expr, .. } => {
+                Keyword::Maintains => {
+                    let cfg_attr = find_cfg_attribute(&arg.attrs)?;
+                    let cfg: Option<Meta> = if let Some(attr) = cfg_attr {
+                        Some(attr.parse_args()?)
+                    } else {
+                        None
+                    };
+                    let expr = arg.value.try_into_expr()?;
                     if let Expr::Array(conditions) = expr {
                         for expr in conditions.elems {
                             maintains.push(PreCondition {
@@ -66,31 +70,53 @@ impl Parse for Spec {
                         });
                     }
                 }
-                SpecArg::Captures { keyword, expr } => {
+                Keyword::Captures => {
+                    let cfg_attr = find_cfg_attribute(&arg.attrs)?;
+                    if cfg_attr.is_some() {
+                        return Err(syn::Error::new(
+                            cfg_attr.span(),
+                            "`cfg` attribute is not supported on `captures`",
+                        ));
+                    }
                     if !captures.is_empty() {
                         return Err(syn::Error::new(
-                            keyword.span(),
+                            arg.keyword_span,
                             "at most one `captures` parameter is allowed; to capture multiple values, use a list: `captures: [expr1, expr2, ...]`",
                         ));
                     }
+                    let expr = arg.value.try_into_expr()?;
                     if let Expr::Array(array) = expr {
                         captures.extend(interpret_array_as_captures(array)?);
                     } else {
                         captures.push(interpret_expr_as_capture(expr)?);
                     }
                 }
-                SpecArg::Binds { keyword, pattern } => {
+                Keyword::Binds => {
+                    let cfg_attr = find_cfg_attribute(&arg.attrs)?;
+                    if cfg_attr.is_some() {
+                        return Err(syn::Error::new(
+                            cfg_attr.span(),
+                            "`cfg` attribute is not supported on `binds`",
+                        ));
+                    }
                     if binds_pattern.is_some() {
                         return Err(syn::Error::new(
-                            keyword.span(),
+                            arg.keyword_span,
                             "multiple `binds` parameters are not allowed",
                         ));
                     }
+                    let pattern = arg.value.try_into_pat()?;
                     binds_pattern = Some(pattern);
                 }
-                SpecArg::Ensures { cfg, expr, .. } => {
+                Keyword::Ensures => {
+                    let cfg_attr = find_cfg_attribute(&arg.attrs)?;
+                    let cfg: Option<Meta> = if let Some(attr) = cfg_attr {
+                        Some(attr.parse_args()?)
+                    } else {
+                        None
+                    };
+                    let expr = arg.value.try_into_expr()?;
                     let default_pattern = binds_pattern.clone().unwrap_or(parse_quote! { output });
-
                     if let Expr::Array(conditions) = expr {
                         for expr in conditions.elems {
                             ensures.push(PostCondition {
@@ -108,7 +134,23 @@ impl Parse for Spec {
                         });
                     }
                 }
+                Keyword::Unknown(ident) => {
+                    return Err(syn::Error::new(
+                        arg.keyword_span,
+                        format!("unknown spec keyword `{ident}`"),
+                    ));
+                }
             }
+
+            if let Some(prev_keyword) = prev_keyword {
+                if arg.keyword < prev_keyword {
+                    return Err(syn::Error::new(
+                        arg.keyword_span,
+                        "parameters are out of order: their order must be `requires`, `maintains`, `captures`, `binds`, `ensures`",
+                    ));
+                }
+            }
+            prev_keyword = Some(arg.keyword);
         }
 
         Ok(Spec {
@@ -118,133 +160,6 @@ impl Parse for Spec {
             ensures,
             span: input.span(),
         })
-    }
-}
-
-#[derive(PartialEq, PartialOrd, Clone, Copy, Debug)]
-enum ArgOrder {
-    Requires,
-    Maintains,
-    Captures,
-    Binds,
-    Ensures,
-}
-
-/// An intermediate enum to help parse either a condition or a `binds` setting.
-enum SpecArg {
-    Requires {
-        keyword: kw::requires,
-        cfg: Option<Meta>,
-        expr: Expr,
-    },
-    Ensures {
-        keyword: kw::ensures,
-        cfg: Option<Meta>,
-        expr: Expr,
-    },
-    Maintains {
-        keyword: kw::maintains,
-        cfg: Option<Meta>,
-        expr: Expr,
-    },
-    Captures {
-        keyword: kw::captures,
-        expr: Expr,
-    },
-    Binds {
-        keyword: kw::binds,
-        pattern: Pat,
-    },
-}
-
-impl SpecArg {
-    fn get_order(&self) -> ArgOrder {
-        match self {
-            SpecArg::Requires { .. } => ArgOrder::Requires,
-            SpecArg::Maintains { .. } => ArgOrder::Maintains,
-            SpecArg::Captures { .. } => ArgOrder::Captures,
-            SpecArg::Binds { .. } => ArgOrder::Binds,
-            SpecArg::Ensures { .. } => ArgOrder::Ensures,
-        }
-    }
-
-    fn get_keyword_span(&self) -> Span {
-        match self {
-            SpecArg::Requires { keyword, .. } => keyword.span,
-            SpecArg::Ensures { keyword, .. } => keyword.span,
-            SpecArg::Maintains { keyword, .. } => keyword.span,
-            SpecArg::Captures { keyword, .. } => keyword.span,
-            SpecArg::Binds { keyword, .. } => keyword.span,
-        }
-    }
-}
-
-impl Parse for SpecArg {
-    fn parse(input: ParseStream) -> Result<Self> {
-        let attrs = input.call(Attribute::parse_outer)?;
-        let cfg = parse_cfg_attribute(&attrs)?;
-
-        let lookahead = input.lookahead1();
-        if lookahead.peek(kw::captures) {
-            if cfg.is_some() {
-                return Err(syn::Error::new(
-                    attrs[0].span(),
-                    "`cfg` attribute is not supported on `captures`",
-                ));
-            }
-
-            // Parse `captures: <captures>`
-            let keyword = input.parse::<kw::captures>()?;
-            input.parse::<Token![:]>()?;
-            Ok(SpecArg::Captures {
-                keyword,
-                expr: input.parse()?,
-            })
-        } else if lookahead.peek(kw::binds) {
-            if cfg.is_some() {
-                return Err(syn::Error::new(
-                    attrs[0].span(),
-                    "`cfg` attribute is not supported on `binds`",
-                ));
-            }
-
-            // Parse `binds: <pattern>`
-            let keyword = input.parse::<kw::binds>()?;
-            input.parse::<Token![:]>()?;
-            Ok(SpecArg::Binds {
-                keyword,
-                pattern: Pat::parse_single(input)?,
-            })
-        } else if lookahead.peek(kw::requires) {
-            // Parse `requires: <conditions>`
-            let keyword = input.parse::<kw::requires>()?;
-            input.parse::<Token![:]>()?;
-            Ok(SpecArg::Requires {
-                keyword,
-                cfg,
-                expr: input.parse()?,
-            })
-        } else if lookahead.peek(kw::maintains) {
-            // Parse `maintains: <conditions>`
-            let keyword = input.parse::<kw::maintains>()?;
-            input.parse::<Token![:]>()?;
-            Ok(SpecArg::Maintains {
-                keyword,
-                cfg,
-                expr: input.parse()?,
-            })
-        } else if lookahead.peek(kw::ensures) {
-            // Parse `ensures: <conditions>`
-            let keyword = input.parse::<kw::ensures>()?;
-            input.parse::<Token![:]>()?;
-            Ok(SpecArg::Ensures {
-                keyword,
-                cfg,
-                expr: input.parse()?,
-            })
-        } else {
-            Err(lookahead.error())
-        }
     }
 }
 
@@ -339,7 +254,7 @@ fn interpret_expr_as_precondition(expr: Expr) -> Result<syn::ExprClosure> {
 }
 
 /// Interpret expression as a closure with a single argument (eg the list of
-/// aliases and function result), wrapping if necessary.  
+/// aliases and function result), wrapping if necessary.
 /// Used for postconditions which take the return value as an argument.
 fn interpret_expr_as_postcondition(expr: Expr, default_binding: Pat) -> Result<syn::ExprClosure> {
     match expr {
@@ -374,12 +289,18 @@ fn interpret_expr_as_postcondition(expr: Expr, default_binding: Pat) -> Result<s
     }
 }
 
-fn parse_cfg_attribute(attrs: &[Attribute]) -> Result<Option<Meta>> {
-    let mut cfg_attrs: Vec<Meta> = vec![];
+fn find_cfg_attribute(attrs: &[Attribute]) -> Result<Option<&Attribute>> {
+    let mut cfg_attr: Option<&Attribute> = None;
 
     for attr in attrs {
         if attr.path().is_ident("cfg") {
-            cfg_attrs.push(attr.parse_args()?);
+            if cfg_attr.is_some() {
+                return Err(syn::Error::new(
+                    attr.span(),
+                    "multiple `cfg` attributes are not supported",
+                ));
+            }
+            cfg_attr = Some(attr);
         } else {
             return Err(syn::Error::new(
                 attr.span(),
@@ -388,22 +309,5 @@ fn parse_cfg_attribute(attrs: &[Attribute]) -> Result<Option<Meta>> {
         }
     }
 
-    if cfg_attrs.len() > 1 {
-        return Err(syn::Error::new(
-            cfg_attrs[1].span(),
-            "multiple `cfg` attributes are not supported",
-        ));
-    }
-
-    Ok(cfg_attrs.pop())
-}
-
-/// Custom keywords for parsing. This allows us to use `requires`, `ensures`, etc.,
-/// as if they were built-in Rust keywords during parsing.
-mod kw {
-    syn::custom_keyword!(requires);
-    syn::custom_keyword!(maintains);
-    syn::custom_keyword!(captures);
-    syn::custom_keyword!(binds);
-    syn::custom_keyword!(ensures);
+    Ok(cfg_attr)
 }
