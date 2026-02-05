@@ -155,7 +155,7 @@ impl SpecArgValue {
 /// These are not composed of top level [`syn::Expr`] expressions.
 #[derive(Debug, Clone)]
 pub enum Captures {
-    One(CaptureExpr),
+    One(Box<CaptureExpr>),
     Many {
         bracket: token::Bracket,
         elems: Punctuated<CaptureExpr, Token![,]>,
@@ -164,8 +164,6 @@ pub enum Captures {
 
 impl Parse for Captures {
     fn parse(input: ParseStream) -> Result<Self> {
-        use syn::parse::discouraged::Speculative;
-
         // For bracketed input, we need to distinguish between:
         // 1. `[a, b, c]` - an array of capture expressions
         // 2. `[a, b, c] as slice` - a single capture with an array expr
