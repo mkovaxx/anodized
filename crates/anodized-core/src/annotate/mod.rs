@@ -147,13 +147,13 @@ impl Parse for Spec {
                 }
             }
 
-            if let Some(prev_keyword) = prev_keyword {
-                if arg.keyword < prev_keyword {
-                    return Err(syn::Error::new(
-                        arg.keyword_span,
-                        "parameters are out of order: their order must be `requires`, `maintains`, `captures`, `binds`, `ensures`",
-                    ));
-                }
+            if let Some(prev_keyword) = prev_keyword
+                && arg.keyword < prev_keyword
+            {
+                return Err(syn::Error::new(
+                    arg.keyword_span,
+                    "parameters are out of order: their order must be `requires`, `maintains`, `captures`, `binds`, `ensures`",
+                ));
             }
             prev_keyword = Some(arg.keyword);
         }
