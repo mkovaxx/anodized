@@ -121,8 +121,8 @@ let formatted = format_file(source, &config)?;
 ## How It Works
 
 1. **Find** - Locate `#[spec(` patterns in source text using simple string search
-2. **Parse** - Parse each spec using `anodized-core` into a `Spec` struct
-3. **Format** - Walk the `Spec` struct and emit formatted text
+2. **Parse** - Parse each spec using `anodized-core::SpecArgs` for permissive parsing
+3. **Format** - Walk the `SpecArgs` struct and emit formatted text with configurable options
 4. **Replace** - Substitute the original attribute with the formatted version
 
-Individual expressions are formatted using `quote` for consistency with Rust formatting.
+Individual expressions(`syn::expr::Expr`) are formatted using `prettyplease` and patterns(`syn::pat::Pat`) are formatted with quote::quote! .
