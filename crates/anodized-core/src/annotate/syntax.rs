@@ -132,7 +132,7 @@ pub mod kw {
     syn::custom_keyword!(ensures);
 }
 
-#[derive(PartialEq, PartialOrd, Clone, Debug)]
+#[derive(PartialEq, Eq, PartialOrd, Ord, Clone, Debug)]
 pub enum Keyword {
     Unknown(Ident),
     Requires,

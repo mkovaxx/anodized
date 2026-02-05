@@ -67,11 +67,15 @@ anodized-fmt --print-config current
 Create an `anodized-fmt.toml` file in your project root:
 
 ```toml
-# Maximum line width for spec attributes
-max_width = 100
-
 # Number of spaces for indentation
 indent = 4
+
+# Sort spec arguments into recommended order
+# (requires, maintains, captures, binds, ensures)
+sort_args = true,
+
+# Maximum line width for spec attributes
+max_width = 100
 
 # Trailing comma: "always", "never", "auto"
 trailing_comma = "always"

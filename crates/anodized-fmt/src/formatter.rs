@@ -17,8 +17,16 @@ pub fn format_spec_args(spec_args: &SpecArgs, config: &Config, base_indent: usiz
     output.push('\n');
     let indent = " ".repeat(base_indent + config.indent);
 
+    // Collect args into a Vec so we can sort if needed
+    let mut args: Vec<&SpecArg> = spec_args.args.iter().collect();
+
+    // Sort arguments if configured
+    if config.sort_args {
+        args.sort_by_key(|arg| &arg.keyword);
+    }
+
     // Format each argument
-    for arg in &spec_args.args {
+    for arg in args {
         let formatted = format_spec_arg(arg, config);
         output.push_str(&indent);
         output.push_str(&formatted);
@@ -81,10 +89,8 @@ mod tests {
         let config = Config::default();
         let formatted = format_spec_args(&spec_args, &config, 0);
 
-        assert!(formatted.contains("#[spec("));
-        assert!(formatted.contains("requires:"));
-        assert!(formatted.contains("x > 0"));
-        assert!(formatted.ends_with(")]"));
+        let expected = "#[spec(\n    requires: x > 0,\n)]";
+        assert_eq!(formatted, expected);
     }
 
     #[test]
@@ -94,8 +100,8 @@ mod tests {
         let config = Config::default();
         let formatted = format_spec_args(&spec_args, &config, 0);
 
-        assert!(formatted.contains("ensures:"));
-        assert!(formatted.contains("> 0"));
+        let expected = "#[spec(\n    ensures: *output > 0,\n)]";
+        assert_eq!(formatted, expected);
     }
 
     #[test]
@@ -116,8 +122,40 @@ mod tests {
         let config = Config::default();
         let formatted = format_spec_args(&spec_args, &config, 0);
 
-        assert!(formatted.contains("binds:"));
-        assert!(formatted.contains("result"));
-        assert!(formatted.contains("ensures:"));
+        let expected = "#[spec(\n    binds: result,\n    ensures: result > 0,\n)]";
+        assert_eq!(formatted, expected);
+    }
+
+    #[test]
+    fn test_format_spec_with_sorting() {
+        // Parse args in wrong order: ensures, binds, requires
+        let spec_args: SpecArgs = parse_str("ensures: result > 0, binds: result, requires: x > 0")
+            .expect("Failed to parse spec");
+
+        let config = Config::default(); // sort_args = true by default
+
+        let formatted = format_spec_args(&spec_args, &config, 0);
+
+        // Should be sorted: requires, binds, ensures
+        let expected =
+            "#[spec(\n    requires: x > 0,\n    binds: result,\n    ensures: result > 0,\n)]";
+        assert_eq!(formatted, expected);
+    }
+
+    #[test]
+    fn test_format_spec_without_sorting() {
+        // Parse args in wrong order: ensures, binds, requires
+        let spec_args: SpecArgs = parse_str("ensures: result > 0, binds: result, requires: x > 0")
+            .expect("Failed to parse spec");
+
+        let mut config = Config::default();
+        config.sort_args = false;
+
+        let formatted = format_spec_args(&spec_args, &config, 0);
+
+        // Should preserve original order: ensures, binds, requires
+        let expected =
+            "#[spec(\n    ensures: result > 0,\n    binds: result,\n    requires: x > 0,\n)]";
+        assert_eq!(formatted, expected);
     }
 }

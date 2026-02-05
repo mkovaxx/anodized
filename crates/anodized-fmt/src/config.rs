@@ -11,6 +11,10 @@ pub struct Config {
 
     /// Trailing comma style in arrays
     pub trailing_comma: TrailingComma,
+
+    /// Sort spec arguments into recommended order
+    /// (requires, maintains, captures, binds, ensures)
+    pub sort_args: bool,
 }
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
@@ -30,6 +34,7 @@ impl Default for Config {
             max_width: 100,
             indent: 4,
             trailing_comma: TrailingComma::Always,
+            sort_args: true,
         }
     }
 }
