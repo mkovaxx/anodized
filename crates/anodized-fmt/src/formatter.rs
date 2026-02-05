@@ -1,4 +1,4 @@
-use anodized_core::annotate::syntax::{Keyword, SpecArg, SpecArgs};
+use anodized_core::annotate::syntax::{SpecArg, SpecArgValue, SpecArgs};
 use syn::Meta;
 
 use crate::config::Config;
@@ -44,23 +44,13 @@ fn format_spec_arg(arg: &SpecArg, config: &Config) -> String {
         }
     }
 
-    // Get the keyword name
-    let keyword_name = match &arg.keyword {
-        Keyword::Requires => "requires",
-        Keyword::Maintains => "maintains",
-        Keyword::Captures => "captures",
-        Keyword::Binds => "binds",
-        Keyword::Ensures => "ensures",
-        Keyword::Unknown(ident) => return format!("{}: <unknown>,", ident),
-    };
-
     // Format the value based on what it contains
     let value_str = match &arg.value {
-        anodized_core::annotate::syntax::SpecArgValue::Expr(expr) => format_expr(expr),
-        anodized_core::annotate::syntax::SpecArgValue::Pat(pat) => format_pattern(pat),
+        SpecArgValue::Expr(expr) => format_expr(expr),
+        SpecArgValue::Pat(pat) => format_pattern(pat),
     };
 
-    result.push_str(&format!("{}: {},", keyword_name, value_str));
+    result.push_str(&format!("{}: {},", arg.keyword, value_str));
 
     result
 }
