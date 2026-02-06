@@ -107,24 +107,31 @@ fn find_matching_paren(s: &str, open: char, close: char) -> Result<usize, FindEr
         }
 
         match ch {
+            // Handle escape sequences in strings and char literals
             '\\' if in_string || in_char => {
                 escape_next = true;
             }
+            // Toggle string literal state (but not if we're inside a char literal)
             '"' if !in_char => {
                 in_string = !in_string;
             }
+            // Toggle char literal state (but not if we're inside a string literal)
             '\'' if !in_string => {
                 in_char = !in_char;
             }
+            // Found an opening bracket outside of strings/chars - increase nesting depth
             c if c == open && !in_string && !in_char => {
                 depth += 1;
             }
+            // Found a closing bracket outside of strings/chars - decrease nesting depth
+            // If depth reaches 0, we've found our matching bracket
             c if c == close && !in_string && !in_char => {
                 depth -= 1;
                 if depth == 0 {
                     return Ok(pos);
                 }
             }
+            // Ignore all other characters
             _ => {}
         }
 
@@ -141,26 +148,24 @@ mod tests {
     #[test]
     fn test_find_simple_spec() {
         let source = r#"
-#[spec(requires: x > 0)]
-fn foo(x: i32) -> i32 { x + 1 }
-"#;
-
+            #[spec(requires: x > 0)]
+            fn foo(x: i32) -> i32 { x + 1 }
+            "#;
         let result = find_spec_attributes(source).unwrap();
         assert_eq!(result.len(), 1);
         assert_eq!(result[0].content, "requires: x > 0");
-        assert_eq!(result[0].base_indent, 0);
+        assert_eq!(result[0].base_indent, 12); // 12 spaces before #[spec( from line start
     }
 
     #[test]
     fn test_find_multiple_specs() {
         let source = r#"
-#[spec(requires: x > 0)]
-fn foo(x: i32) -> i32 { x + 1 }
+            #[spec(requires: x > 0)]
+            fn foo(x: i32) -> i32 { x + 1 }
 
-#[spec(ensures: *output > 0)]
-fn bar() -> i32 { 42 }
-"#;
-
+            #[spec(ensures: *output > 0)]
+            fn bar() -> i32 { 42 }
+            "#;
         let result = find_spec_attributes(source).unwrap();
         assert_eq!(result.len(), 2);
     }
@@ -168,10 +173,9 @@ fn bar() -> i32 { 42 }
     #[test]
     fn test_find_spec_with_nested_parens() {
         let source = r#"
-#[spec(requires: (x > 0 && (y > 0 || z > 0)))]
-fn foo(x: i32, y: i32, z: i32) -> i32 { x + y + z }
-"#;
-
+            #[spec(requires: (x > 0 && (y > 0 || z > 0)))]
+            fn foo(x: i32, y: i32, z: i32) -> i32 { x + y + z }
+            "#;
         let result = find_spec_attributes(source).unwrap();
         assert_eq!(result.len(), 1);
         assert!(result[0].content.contains("(x > 0 && (y > 0 || z > 0))"));
@@ -180,10 +184,9 @@ fn foo(x: i32, y: i32, z: i32) -> i32 { x + y + z }
     #[test]
     fn test_find_spec_with_string() {
         let source = r##"
-#[spec(requires: s == "hello (world)")]
-fn foo(s: &str) -> bool { true }
-"##;
-
+            #[spec(requires: s == "hello (world)")]
+            fn foo(s: &str) -> bool { true }
+            "##;
         let result = find_spec_attributes(source).unwrap();
         assert_eq!(result.len(), 1);
         assert!(result[0].content.contains(r#"s == "hello (world)""#));
