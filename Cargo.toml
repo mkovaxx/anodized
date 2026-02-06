@@ -2,6 +2,7 @@
 members = [
     "crates/anodized",
     "crates/anodized-core",
+    "crates/anodized-fmt",
 ]
 resolver = "2"
 
