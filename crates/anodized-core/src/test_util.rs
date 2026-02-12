@@ -126,12 +126,12 @@ fn assert_capture_eq(left: &Capture, right: &Capture, msg_prefix: &str) {
     // Destructure to ensure we handle all fields
     let Capture {
         expr: left_expr,
-        alias: left_alias,
+        pat: left_alias,
     } = left;
 
     let Capture {
         expr: right_expr,
-        alias: right_alias,
+        pat: right_alias,
     } = right;
 
     assert_eq!(
