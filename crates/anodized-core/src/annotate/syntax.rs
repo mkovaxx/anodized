@@ -67,39 +67,29 @@ pub enum SpecArgValue {
 impl SpecArgValue {
     /// Return the `Expr` or fail.
     pub fn try_into_expr(self) -> Result<Expr> {
-        match self {
-            Self::Expr(expr) => Ok(expr),
-            Self::Pat(pat) => Err(syn::Error::new_spanned(pat, "expected an expression")),
-            Self::Captures(captures) => {
-                Err(syn::Error::new_spanned(captures, "expected an expression"))
-            }
-        }
+        if let Self::Expr(expr) = self {
+            return Ok(expr);
+        };
+        Err(syn::Error::new_spanned(self, "expected an expression"))
     }
 
     /// Return the `Pat` or fail.
     pub fn try_into_pat(self) -> Result<Pat> {
-        match self {
-            Self::Pat(pat) => Ok(pat),
-            Self::Expr(expr) => Err(syn::Error::new_spanned(expr, "expected a pattern")),
-            Self::Captures(captures) => {
-                Err(syn::Error::new_spanned(captures, "expected a pattern"))
-            }
-        }
+        if let Self::Pat(pat) = self {
+            return Ok(pat);
+        };
+        Err(syn::Error::new_spanned(self, "expected a pattern"))
     }
 
-    /// Return the `CaptureList` or fail.
+    /// Return the `Captures` or fail.
     pub fn try_into_captures(self) -> Result<Captures> {
-        match self {
-            Self::Captures(list) => Ok(list),
-            Self::Expr(expr) => Err(syn::Error::new_spanned(
-                expr,
-                "expected captures: expression `as` pattern",
-            )),
-            Self::Pat(pat) => Err(syn::Error::new_spanned(
-                pat,
-                "expected captures: expression `as` pattern",
-            )),
-        }
+        if let Self::Captures(captures) = self {
+            return Ok(captures);
+        };
+        Err(syn::Error::new_spanned(
+            self,
+            "expected captures: expression `as` pattern",
+        ))
     }
 
     /// Try to parse as `Expr` then as `Pat`.
@@ -151,6 +141,16 @@ impl SpecArgValue {
     }
 }
 
+impl ToTokens for SpecArgValue {
+    fn to_tokens(&self, tokens: &mut TokenStream) {
+        match self {
+            SpecArgValue::Expr(expr) => expr.to_tokens(tokens),
+            SpecArgValue::Pat(pat) => pat.to_tokens(tokens),
+            SpecArgValue::Captures(captures) => captures.to_tokens(tokens),
+        }
+    }
+}
+
 /// A group of capture expressions, either a single one or a list.
 /// These are not composed of top level [`syn::Expr`] expressions.
 #[derive(Debug, Clone)]
@@ -164,8 +164,6 @@ pub enum Captures {
 
 impl Parse for Captures {
     fn parse(input: ParseStream) -> Result<Self> {
-        use syn::parse::discouraged::Speculative;
-
         // For bracketed input, we need to distinguish between:
         // 1. `[a, b, c]` - an array of capture expressions
         // 2. `[a, b, c] as slice` - a single capture with an array expr
