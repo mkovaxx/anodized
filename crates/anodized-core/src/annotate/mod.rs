@@ -1,5 +1,7 @@
+use proc_macro2::TokenStream;
+use quote::ToTokens;
 use syn::{
-    Attribute, Expr, Ident, Meta, Pat, PatIdent,
+    Attribute, Expr, ExprCast, Ident, Meta, Pat, PatIdent,
     parse::{Parse, ParseStream, Result},
     parse_quote,
     spanned::Spanned,
@@ -174,16 +176,17 @@ fn interpret_capture_expr_as_capture(capture_expr: CaptureExpr) -> Result<Captur
     let CaptureExpr { expr, as_, pat } = capture_expr;
 
     match (expr, as_, pat) {
-        // Has an explicit pattern (including simple alias): use it directly
+        // Complete form: <expression> `as` <pattern>
         (Some(expr), Some(_), Some(pat)) => Ok(Capture { expr, pat }),
 
-        // Simple identifier without alias: auto-generate `old_` prefix
+        // Shorthand: <identifier>
         (Some(ref expr @ Expr::Path(ref path)), None, None)
             if path.path.segments.len() == 1
                 && path.path.leading_colon.is_none()
                 && path.attrs.is_empty()
                 && path.qself.is_none() =>
         {
+            // auto-generate binding with `old_` prefix
             let ident = &path.path.segments[0].ident;
             let ident_alias = Ident::new(&format!("old_{}", ident), ident.span());
             let pat = Pat::Ident(PatIdent {
@@ -199,24 +202,21 @@ fn interpret_capture_expr_as_capture(capture_expr: CaptureExpr) -> Result<Captur
             })
         }
 
-        (Some(expr), Some(_), None) => Err(syn::Error::new_spanned(
-            expr,
-            "missing expected pattern or identifier after `as`",
-        )),
+        (Some(_), Some(_), None) => {
+            Err(syn::Error::new_spanned(as_, "expected pattern after `as`"))
+        }
 
-        // Any other expression without alias - error
         (Some(expr), None, None) => Err(syn::Error::new_spanned(
             expr,
-            "complex expressions require an explicit alias using `as`",
+            "complex expression must be bound/descructured: <expression> `as` <pattern>",
         )),
 
-        (Some(_), None, Some(_)) => Err(syn::Error::new(
+        (Some(_), None, Some(pat)) => Err(syn::Error::new_spanned(pat, "expected `as` <pattern>")),
+
+        (None, _, _) => Err(syn::Error::new(
             span,
-            "Missing `as` between alias and pattern",
+            "expected capture: <expression> `as` <pattern>",
         )),
-
-        // Missing expr is invalid at the semantic level
-        (None, _, _) => Err(syn::Error::new(span, "capture expression is missing")),
     }
 }
 

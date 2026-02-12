@@ -1,8 +1,8 @@
 use proc_macro2::{Span, TokenStream, TokenTree};
-use quote::ToTokens;
+use quote::{ToTokens, TokenStreamExt};
 use syn::{
-    Attribute, Expr, ExprCast, ExprPath, Ident, Pat, Token,
-    parse::{Parse, ParseStream, Result},
+    Attribute, Expr, Ident, Pat, Token,
+    parse::{Parse, ParseStream, Result, discouraged::Speculative},
     punctuated::Punctuated,
     token,
 };
@@ -217,102 +217,16 @@ impl ToTokens for CaptureExpr {
 
 impl Parse for CaptureExpr {
     fn parse(input: ParseStream) -> Result<Self> {
-        use syn::parse::discouraged::Speculative;
-
-        // Try `expr as <something>` by splitting at the top-level `as` keyword.
-        {
-            let fork = input.fork();
-            let lhs_ts = take_until_as(&fork)?;
-
-            if fork.peek(Token![as]) {
-                let _: Token![as] = fork.parse()?;
-
-                // Try RHS as a complex pattern (struct, tuple, slice, etc.)
-                if lhs_ts.is_empty() {
-                    // No expr before `as` — incomplete input (e.g. `as Person { name, age }`)
-                    let fork_after_as = fork.fork();
-                    if let Ok(pat) = Pat::parse_single(&fork_after_as) {
-                        let done = fork_after_as.is_empty() || fork_after_as.peek(Token![,]);
-                        if done {
-                            input.advance_to(&fork_after_as);
-                            return Ok(CaptureExpr {
-                                expr: None,
-                                as_: Some(Default::default()),
-                                pat: Some(pat),
-                            });
-                        }
-                    }
-                } else if let Ok(lhs_expr) = syn::parse2::<Expr>(lhs_ts) {
-                    let fork_after_as = fork.fork();
-                    if let Ok(pat) = Pat::parse_single(&fork_after_as) {
-                        let is_complex_pattern =
-                            !matches!(&pat, Pat::Ident(p) if p.subpat.is_none());
-                        let done = fork_after_as.is_empty() || fork_after_as.peek(Token![,]);
-
-                        if is_complex_pattern && done {
-                            input.advance_to(&fork_after_as);
-                            return Ok(CaptureExpr {
-                                expr: Some(lhs_expr),
-                                as_: Some(Default::default()),
-                                pat: Some(pat),
-                            });
-                        }
-                    }
-                }
-
-                // Try as a simple cast/alias (`expr as alias`).
-                // Re-parse the full input as ExprCast since we need syn to build the node.
-                {
-                    let fork_after_as = input.fork();
-                    if let Ok(cast) = fork_after_as.parse::<ExprCast>()
-                        && let syn::Type::Path(ref type_path) = *cast.ty
-                        && type_path.qself.is_none()
-                        && type_path.path.leading_colon.is_none()
-                        && type_path.path.segments.len() == 1
-                        && type_path.path.segments[0].arguments.is_none()
-                    {
-                        let done = fork_after_as.is_empty() || fork_after_as.peek(Token![,]);
-                        if done {
-                            input.advance_to(&fork_after_as);
-                            return Ok(CaptureExpr {
-                                expr: Some(*cast.expr),
-                                as_: Some(cast.as_token),
-                                pat: Some(Pat::Ident(syn::PatIdent {
-                                    attrs: vec![],
-                                    by_ref: None,
-                                    mutability: None,
-                                    ident: type_path.path.segments[0].ident.clone(),
-                                    subpat: None,
-                                })),
-                            });
-                        }
-                    }
-                }
-            }
-        }
-
-        // Try ExprPath (e.g., `foo` or `foo::bar`)
-        // Only accept if it's a path (optionally followed by a comma)
-        {
-            let fork = input.fork();
-            if let Ok(path) = fork.parse::<ExprPath>()
-                && (fork.is_empty() || fork.peek(Token![,]))
-            {
-                input.advance_to(&fork);
-                return Ok(CaptureExpr {
-                    expr: Some(Expr::Path(path)),
-                    as_: None,
-                    pat: None,
-                });
-            }
-        }
-
-        // Fall back to general Expr (will be validated later for alias requirement)
-        Ok(CaptureExpr {
-            expr: Some(input.parse()?),
-            as_: None,
-            pat: None,
-        })
+        let tokens_before_as = take_until_last_as_before_comma(input)?;
+        let expr = syn::parse::Parser::parse2(Expr::parse, tokens_before_as).ok();
+        // TODO: need to check that the entirety of `tokens_before_as` was consumed
+        let as_ = if input.peek(Token![as]) {
+            Some(input.parse()?)
+        } else {
+            None
+        };
+        let pat = SpecArgValue::parse_pat_or_nothing(input).ok();
+        Ok(Self { expr, as_, pat })
     }
 }
 
@@ -362,22 +276,23 @@ impl Keyword {
     }
 }
 
-/// Consume tokens from the parse stream up to (but not including) a top-level `as` keyword.
-/// Returns the collected tokens. Groups (delimited by `()`, `[]`, `{}`) are consumed atomically,
-/// so any `as` inside them is ignored.
-fn take_until_as(input: ParseStream) -> Result<TokenStream> {
-    input.step(|cursor| {
-        let mut ts = TokenStream::new();
-        let mut c = *cursor;
-
-        while let Some((tt, next)) = c.token_tree() {
-            if matches!(&tt, TokenTree::Ident(id) if id == "as") {
-                break;
-            }
-            ts.extend(std::iter::once(tt));
-            c = next;
+/// Find the last `as` token that is before a comma (or end of input).
+/// Consume and return tokens before the last `as`, or nothing.
+/// Groups (delimited by `()`, `[]`, `{}`) are considered atomically,
+/// so any `as` or comma inside them is ignored.
+fn take_until_last_as_before_comma(input: ParseStream) -> Result<TokenStream> {
+    let fork = input.fork();
+    let mut peeked_tokens = TokenStream::new();
+    let mut consumed_tokens = TokenStream::new();
+    while !fork.is_empty() && !fork.peek(Token![,]) {
+        if fork.peek(Token![as]) {
+            // Consumed peeked tokens
+            consumed_tokens.extend(peeked_tokens);
+            peeked_tokens = TokenStream::new();
+            input.advance_to(&fork);
         }
-
-        Ok((ts, c))
-    })
+        let token: TokenTree = fork.parse()?;
+        peeked_tokens.append(token);
+    }
+    Ok(consumed_tokens)
 }
