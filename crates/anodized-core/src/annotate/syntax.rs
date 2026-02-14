@@ -2,7 +2,7 @@ use proc_macro2::{Span, TokenStream, TokenTree};
 use quote::{ToTokens, TokenStreamExt};
 use syn::{
     Attribute, Expr, Ident, Pat, Token,
-    parse::{Parse, ParseStream, Result, discouraged::Speculative},
+    parse::{Parse, ParseStream, Result},
     punctuated::Punctuated,
     token,
 };
@@ -282,6 +282,7 @@ impl Keyword {
 /// Groups (delimited by `()`, `[]`, `{}`) are considered atomically,
 /// so any `as` or comma inside them is ignored.
 fn take_until_comma_or_last_as(input: ParseStream) -> Result<TokenStream> {
+    use syn::parse::discouraged::Speculative;
     let fork = input.fork();
     let mut peeked_tokens = TokenStream::new();
     let mut consumed_tokens = TokenStream::new();
