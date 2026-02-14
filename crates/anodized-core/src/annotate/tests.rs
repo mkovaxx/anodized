@@ -595,7 +595,7 @@ fn captures_array_expression() {
 }
 
 #[test]
-#[should_panic(expected = "complex expressions require an explicit alias using `as`")]
+#[should_panic(expected = "complex expression must be bound/descructured: <expression> `as` <pattern>")]
 fn captures_complex_expr_without_alias() {
     let _: Spec = parse_quote! {
         captures: self.items.len(),
@@ -604,7 +604,7 @@ fn captures_complex_expr_without_alias() {
 }
 
 #[test]
-#[should_panic(expected = "complex expressions require an explicit alias using `as`")]
+#[should_panic(expected = "complex expression must be bound/descructured: <expression> `as` <pattern>")]
 fn captures_method_call_without_alias() {
     let _: Spec = parse_quote! {
         captures: foo.bar(),
@@ -613,7 +613,7 @@ fn captures_method_call_without_alias() {
 }
 
 #[test]
-#[should_panic(expected = "complex expressions require an explicit alias using `as`")]
+#[should_panic(expected = "complex expression must be bound/descructured: <expression> `as` <pattern>")]
 fn captures_binary_expr_without_alias() {
     let _: Spec = parse_quote! {
         captures: a + b,
@@ -622,7 +622,7 @@ fn captures_binary_expr_without_alias() {
 }
 
 #[test]
-#[should_panic(expected = "complex expressions require an explicit alias using `as`")]
+#[should_panic(expected = "complex expression must be bound/descructured: <expression> `as` <pattern>")]
 fn captures_array_with_complex_expr_no_alias() {
     let _: Spec = parse_quote! {
         captures: [
@@ -635,7 +635,7 @@ fn captures_array_with_complex_expr_no_alias() {
 }
 
 #[test]
-#[should_panic(expected = "complex expressions require an explicit alias using `as`")]
+#[should_panic(expected = "complex expression must be bound/descructured: <expression> `as` <pattern>")]
 fn captures_indexing_expr_requires_alias() {
     // This should fail - `foo[0]` is a complex expression that requires an alias
     // Previously this was incorrectly parsed as just `foo`, silently capturing the wrong value
@@ -848,7 +848,7 @@ fn captures_missing_expr_parses_as_spec_args() {
 }
 
 #[test]
-#[should_panic(expected = "capture expression is missing")]
+#[should_panic(expected = "expected capture: <expression> `as` <pattern>")]
 fn captures_missing_expr_errors_as_spec() {
     let _: Spec = parse_str("captures: as Person { name, age },").unwrap();
 }
@@ -863,7 +863,7 @@ fn captures_expr_as_with_missing_pat_errors() {
     let err = interpret_capture_expr_as_capture(capture_expr).unwrap_err();
     assert!(
         err.to_string()
-            .contains("missing expected pattern or identifier after `as`"),
+            .contains("expected pattern after `as`"),
         "{}",
         err
     );
@@ -879,7 +879,7 @@ fn captures_pat_without_as_errors() {
     let err = interpret_capture_expr_as_capture(capture_expr).unwrap_err();
     assert!(
         err.to_string()
-            .contains("Missing `as` between alias and pattern"),
+            .contains("expected `as` <pattern>"),
         "{}",
         err
     );
