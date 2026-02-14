@@ -298,10 +298,10 @@ fn take_until_comma_or_last_as(input: ParseStream) -> Result<TokenStream> {
         let token: TokenTree = fork.parse()?;
         peeked_tokens.append(token);
     }
-    Ok(if has_seen_as {
-        consumed_tokens
+    if has_seen_as {
+        Ok(consumed_tokens)
     } else {
         input.advance_to(&fork);
-        peeked_tokens
-    })
+        Ok(peeked_tokens)
+    }
 }
