@@ -200,17 +200,21 @@ fn interpret_capture_expr_as_capture(capture_expr: CaptureExpr) -> Result<Captur
             })
         }
 
+        // Missing <pattern>
         (Some(_), Some(_), None) => {
             Err(syn::Error::new_spanned(as_, "expected pattern after `as`"))
         }
 
+        // Missing `as` and <pattern>
         (Some(expr), None, None) => Err(syn::Error::new_spanned(
             expr,
             "complex expression must be bound/descructured: <expression> `as` <pattern>",
         )),
 
+        // Missing `as`
         (Some(_), None, Some(pat)) => Err(syn::Error::new_spanned(pat, "expected `as` <pattern>")),
 
+        // Missing <expression>
         (None, _, _) => Err(syn::Error::new(
             span,
             "expected capture: <expression> `as` <pattern>",
