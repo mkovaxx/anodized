@@ -217,7 +217,7 @@ impl ToTokens for CaptureExpr {
 
 impl Parse for CaptureExpr {
     fn parse(input: ParseStream) -> Result<Self> {
-        let tokens_before_as = take_until_comma_before_last_as(input)?;
+        let tokens_before_as = take_until_comma_or_last_as(input)?;
         let expr = syn::parse::Parser::parse2(Expr::parse, tokens_before_as).ok();
         // TODO: need to check that the entirety of `tokens_before_as` was consumed
         let as_ = if input.peek(Token![as]) {
@@ -277,11 +277,11 @@ impl Keyword {
 }
 
 /// Find the last `as` token that is before a comma (or end of input).
-/// Consume and return tokens before the last `as`, or nothing.
+/// Consume and return tokens before the last `as`.
 /// If no `as` is encountered, consume and return all tokens before a comma.
 /// Groups (delimited by `()`, `[]`, `{}`) are considered atomically,
 /// so any `as` or comma inside them is ignored.
-fn take_until_comma_before_last_as(input: ParseStream) -> Result<TokenStream> {
+fn take_until_comma_or_last_as(input: ParseStream) -> Result<TokenStream> {
     let fork = input.fork();
     let mut peeked_tokens = TokenStream::new();
     let mut consumed_tokens = TokenStream::new();
