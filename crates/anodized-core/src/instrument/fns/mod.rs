@@ -5,7 +5,7 @@ use crate::{Spec, instrument::Backend};
 
 use proc_macro2::Span;
 use quote::{ToTokens, quote};
-use syn::{Block, Ident, ItemFn, parse::Result, parse_quote};
+use syn::{Block, Ident, ItemFn, Pat, PatIdent, parse::Result, parse_quote};
 
 impl Backend {
     pub fn instrument_fn(&self, spec: Spec, mut func: ItemFn) -> syn::Result<ItemFn> {
@@ -36,7 +36,13 @@ impl Backend {
         let build_check = self.build_check;
 
         // The identifier for the return value binding.
-        let output_ident = Ident::new("__anodized_output", Span::mixed_site());
+        let output_ident = Pat::Ident(PatIdent {
+            attrs: vec![],
+            by_ref: None,
+            mutability: None,
+            ident: Ident::new("__anodized_output", Span::mixed_site()),
+            subpat: None,
+        });
 
         // --- Generate Precondition Checks ---
         let precondition_checks = spec
@@ -73,7 +79,7 @@ impl Backend {
         let aliases = spec
             .captures
             .iter()
-            .map(|cb| &cb.alias)
+            .map(|cb| &cb.pat)
             .chain(std::iter::once(&output_ident));
 
         // Chain capture expressions with body expression

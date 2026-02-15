@@ -2,7 +2,7 @@ use crate::test_util::assert_spec_eq;
 
 use super::*;
 use proc_macro2::Span;
-use syn::parse_quote;
+use syn::{parse_quote, parse_str};
 
 #[test]
 fn simple_spec() {
@@ -440,7 +440,7 @@ fn captures_simple_identifier() {
         maintains: vec![],
         captures: vec![Capture {
             expr: parse_quote! { count },
-            alias: parse_quote! { old_count },
+            pat: parse_quote! { old_count },
         }],
         ensures: vec![PostCondition {
             closure: parse_quote! { |output| output == old_count + 1 },
@@ -464,7 +464,7 @@ fn captures_identifier_with_alias() {
         maintains: vec![],
         captures: vec![Capture {
             expr: parse_quote! { value },
-            alias: parse_quote! { prev_value },
+            pat: parse_quote! { prev_value },
         }],
         ensures: vec![PostCondition {
             closure: parse_quote! { |output| output > prev_value },
@@ -497,15 +497,15 @@ fn captures_array() {
         captures: vec![
             Capture {
                 expr: parse_quote! { count },
-                alias: parse_quote! { old_count },
+                pat: parse_quote! { old_count },
             },
             Capture {
                 expr: parse_quote! { index },
-                alias: parse_quote! { old_index },
+                pat: parse_quote! { old_index },
             },
             Capture {
                 expr: parse_quote! { value },
-                alias: parse_quote! { old_value },
+                pat: parse_quote! { old_value },
             },
         ],
         ensures: vec![
@@ -549,7 +549,7 @@ fn captures_with_all_clauses() {
         }],
         captures: vec![Capture {
             expr: parse_quote! { value },
-            alias: parse_quote! { old_val },
+            pat: parse_quote! { old_val },
         }],
         ensures: vec![PostCondition {
             closure: parse_quote! { |result| result > old_val },
@@ -582,7 +582,7 @@ fn captures_array_expression() {
         maintains: vec![],
         captures: vec![Capture {
             expr: parse_quote! { [a, b, c] },
-            alias: parse_quote! { slice },
+            pat: parse_quote! { slice },
         }],
         ensures: vec![PostCondition {
             closure: parse_quote! { |output| slice.len() == 3 },
@@ -635,6 +635,17 @@ fn captures_array_with_complex_expr_no_alias() {
 }
 
 #[test]
+#[should_panic(expected = "complex expressions require an explicit alias using `as`")]
+fn captures_indexing_expr_requires_alias() {
+    // This should fail - `foo[0]` is a complex expression that requires an alias
+    // Previously this was incorrectly parsed as just `foo`, silently capturing the wrong value
+    let _: Spec = parse_quote! {
+        captures: foo[0],
+        ensures: output > 0,
+    };
+}
+
+#[test]
 #[should_panic(expected = "`cfg` attribute is not supported on `captures`")]
 fn cfg_on_captures() {
     let _: Spec = parse_quote! {
@@ -655,7 +666,7 @@ fn captures_edge_case_cast_expr() {
         maintains: vec![],
         captures: vec![Capture {
             expr: parse_quote! { r as u8 },
-            alias: parse_quote! { old_red },
+            pat: parse_quote! { old_red },
         }],
         ensures: vec![],
         span: Span::call_site(),
@@ -685,7 +696,7 @@ fn captures_edge_case_array_of_cast_exprs() {
                     b as u8,
                 ]
             },
-            alias: parse_quote! { r8g8b8 },
+            pat: parse_quote! { r8g8b8 },
         }],
         ensures: vec![],
         span: Span::call_site(),
@@ -710,15 +721,15 @@ fn captures_edge_case_list_of_cast_exprs() {
         captures: vec![
             Capture {
                 expr: parse_quote! { r as u8 },
-                alias: parse_quote! { old_red },
+                pat: parse_quote! { old_red },
             },
             Capture {
                 expr: parse_quote! { g as u8 },
-                alias: parse_quote! { old_green },
+                pat: parse_quote! { old_green },
             },
             Capture {
                 expr: parse_quote! { b as u8 },
-                alias: parse_quote! { old_blue },
+                pat: parse_quote! { old_blue },
             },
         ],
         ensures: vec![],
@@ -726,4 +737,150 @@ fn captures_edge_case_list_of_cast_exprs() {
     };
 
     assert_spec_eq(&spec, &expected);
+}
+
+#[test]
+fn captures_pattern_matches_slices() {
+    let spec: Spec = parse_quote! {
+        captures: rgb as [r, g, b],
+    };
+
+    let expected = Spec {
+        requires: vec![],
+        maintains: vec![],
+        captures: vec![Capture {
+            expr: parse_quote! { rgb },
+            pat: parse_quote! { [r, g, b] },
+        }],
+        ensures: vec![],
+        span: Span::call_site(),
+    };
+
+    assert_spec_eq(&spec, &expected);
+}
+
+#[test]
+fn captures_pattern_matches_tuples() {
+    let spec: Spec = parse_quote! {
+        captures: point as (x, y, z),
+    };
+
+    let expected = Spec {
+        requires: vec![],
+        maintains: vec![],
+        captures: vec![Capture {
+            expr: parse_quote! { point },
+            pat: parse_quote! { (x, y, z) },
+        }],
+        ensures: vec![],
+        span: Span::call_site(),
+    };
+
+    assert_spec_eq(&spec, &expected);
+}
+
+#[test]
+fn captures_pattern_matches_structs() {
+    let spec: Spec = parse_quote! {
+        captures: person.clone() as Person { name, age },
+    };
+
+    let expected = Spec {
+        requires: vec![],
+        maintains: vec![],
+        captures: vec![Capture {
+            expr: parse_quote! { person.clone() },
+            pat: parse_quote! { Person { name, age } },
+        }],
+        ensures: vec![],
+        span: Span::call_site(),
+    };
+
+    assert_spec_eq(&spec, &expected);
+}
+
+#[test]
+fn captures_pattern_matches_nested() {
+    let spec: Spec = parse_quote! {
+        captures: data.as_ref() as Some((a, b)),
+    };
+
+    let expected = Spec {
+        requires: vec![],
+        maintains: vec![],
+        captures: vec![Capture {
+            expr: parse_quote! { data.as_ref() },
+            pat: parse_quote! { Some((a, b)) },
+        }],
+        ensures: vec![],
+        span: Span::call_site(),
+    };
+
+    assert_spec_eq(&spec, &expected);
+}
+
+#[test]
+fn captures_pattern_with_binding_modifier() {
+    let spec: Spec = parse_quote! {
+        captures: data as Some(inner_tuple @ (a, b)),
+    };
+
+    let expected = Spec {
+        requires: vec![],
+        maintains: vec![],
+        captures: vec![Capture {
+            expr: parse_quote! { data },
+            pat: parse_quote! { Some(inner_tuple @ (a, b)) },
+        }],
+        ensures: vec![],
+        span: Span::call_site(),
+    };
+
+    assert_spec_eq(&spec, &expected);
+}
+
+#[test]
+fn captures_missing_expr_parses_as_spec_args() {
+    let input = "captures: as Person { name, age },";
+    let spec_args: syntax::SpecArgs =
+        parse_str(input).expect("should parse incomplete capture expr for formatting");
+    assert_eq!(spec_args.args.len(), 1);
+}
+
+#[test]
+#[should_panic(expected = "capture expression is missing")]
+fn captures_missing_expr_errors_as_spec() {
+    let _: Spec = parse_str("captures: as Person { name, age },").unwrap();
+}
+
+#[test]
+fn captures_expr_as_with_missing_pat_errors() {
+    let capture_expr = syntax::CaptureExpr {
+        expr: Some(parse_quote! { value }),
+        as_: Some(Default::default()),
+        pat: None,
+    };
+    let err = interpret_capture_expr_as_capture(capture_expr).unwrap_err();
+    assert!(
+        err.to_string()
+            .contains("missing expected pattern or identifier after `as`"),
+        "{}",
+        err
+    );
+}
+
+#[test]
+fn captures_pat_without_as_errors() {
+    let capture_expr = syntax::CaptureExpr {
+        expr: Some(parse_quote! { value }),
+        as_: None,
+        pat: Some(parse_quote! { old_value }),
+    };
+    let err = interpret_capture_expr_as_capture(capture_expr).unwrap_err();
+    assert!(
+        err.to_string()
+            .contains("Missing `as` between alias and pattern"),
+        "{}",
+        err
+    );
 }
