@@ -1,4 +1,4 @@
-use anodized_core::annotate::syntax::{SpecArg, SpecArgValue, SpecArgs};
+use anodized_core::annotate::syntax::{CaptureExpr, Captures, SpecArg, SpecArgValue, SpecArgs};
 use syn::Meta;
 
 use crate::config::{Config, TrailingComma};
@@ -57,12 +57,14 @@ fn format_spec_arg(arg: &SpecArg, config: &Config) -> String {
         SpecArgValue::Expr(expr) => {
             // Special handling for arrays to format with proper indentation
             if let syn::Expr::Array(array) = expr {
-                format_array(array, config)
+                let elem_strs = Vec::from_iter(array.elems.iter().map(format_expr));
+                format_array(&elem_strs, config)
             } else {
                 format_expr(expr)
             }
         }
         SpecArgValue::Pat(pat) => format_pattern(pat),
+        SpecArgValue::Captures(captures) => format_captures(captures, config),
     };
 
     result.push_str(&format!("{}: {},", arg.keyword, value_str));
@@ -70,16 +72,41 @@ fn format_spec_arg(arg: &SpecArg, config: &Config) -> String {
     result
 }
 
+/// Format a group of captures
+fn format_captures(captures: &Captures, config: &Config) -> String {
+    match captures {
+        Captures::One(capture_expr) => format_capture(capture_expr),
+        Captures::Many { elems, .. } => {
+            let elems = Vec::from_iter(elems.iter().map(format_capture));
+            format_array(&elems, config)
+        }
+    }
+}
+
+/// Format a single capture
+fn format_capture(capture_expr: &CaptureExpr) -> String {
+    let mut elems = vec![];
+    if let Some(expr) = &capture_expr.expr {
+        elems.push(format_expr(expr));
+    }
+    if capture_expr.as_.is_some() {
+        elems.push("as".into());
+    }
+    if let Some(pat) = &capture_expr.pat {
+        elems.push(format_pattern(pat));
+    }
+    elems.join(" ")
+}
+
 /// Format an array expression with proper indentation
-fn format_array(array: &syn::ExprArray, config: &Config) -> String {
-    if array.elems.is_empty() {
+fn format_array(elems: &[String], config: &Config) -> String {
+    if elems.is_empty() {
         return "[]".to_string();
     }
 
     // For single element arrays, keep them compact
-    if array.elems.len() == 1 {
-        let elem_str = format_expr(&array.elems[0]);
-        return format!("[{}]", elem_str);
+    if elems.len() == 1 {
+        return format!("[{}]", elems[0]);
     }
 
     // Multi-element arrays: one per line with proper indentation
@@ -90,16 +117,15 @@ fn format_array(array: &syn::ExprArray, config: &Config) -> String {
     let add_trailing_comma = match config.trailing_comma {
         TrailingComma::Always => true,
         TrailingComma::Never => false,
-        TrailingComma::Auto => array.elems.len() > 1, // Multi-line = add trailing comma
+        TrailingComma::Auto => elems.len() > 1, // Multi-line = add trailing comma
     };
 
-    for (i, elem) in array.elems.iter().enumerate() {
-        let elem_str = format_expr(elem);
+    for (i, elem) in elems.iter().enumerate() {
         result.push_str(&elem_indent);
-        result.push_str(&elem_str);
+        result.push_str(&elem);
 
         // Add comma after each element, including last if configured
-        if i < array.elems.len() - 1 || add_trailing_comma {
+        if i < elems.len() - 1 || add_trailing_comma {
             result.push(',');
         }
         result.push('\n');
