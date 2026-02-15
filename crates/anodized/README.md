@@ -263,7 +263,7 @@ fn match_tuple(triple: (bool, char, i32)) { todo!() }
 
 - **Simple identifiers** get an automatic `old_` prefix, i.e. `x` becomes `old_x`.
 - **Complex expressions** require an explicit alias using `as`, i.e. `self.items.len() as orig_len`.
-**Patterns** may be used to destructure the captured value, e.g. `person.clone() as Person { name, age }`.- **No automatic cloning**: Each captured expression is **moved**. For a `Copy` type, a copy is made implicitly. For a non-`Copy` type, you must explicitly use `.clone()`, `.to_owned()`, or another appropriate method.
+- **Patterns** may be used to destructure the captured value, e.g. `person.clone() as Person { name, age }`.- **No automatic cloning**: Each captured expression is **moved**. For a `Copy` type, a copy is made implicitly. For a non-`Copy` type, you must explicitly use `.clone()`, `.to_owned()`, or another appropriate method.
 - Capturing happens **after** preconditions are checked but **before** the function body executes.
 - The captured values are **only** available to postconditions, not to preconditions or the function body itself.
 
