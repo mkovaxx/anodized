@@ -326,7 +326,7 @@ pub mod kw {
     syn::custom_keyword!(ensures);
 }
 
-#[derive(PartialEq, PartialOrd, Clone, Debug)]
+#[derive(PartialEq, Eq, PartialOrd, Ord, Clone, Debug)]
 pub enum Keyword {
     Unknown(Ident),
     Requires,
@@ -359,6 +359,19 @@ impl Keyword {
             let span = ident.span();
             (Unknown(ident), span)
         })
+    }
+}
+
+impl std::fmt::Display for Keyword {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Keyword::Requires => write!(f, "requires"),
+            Keyword::Maintains => write!(f, "maintains"),
+            Keyword::Captures => write!(f, "captures"),
+            Keyword::Binds => write!(f, "binds"),
+            Keyword::Ensures => write!(f, "ensures"),
+            Keyword::Unknown(ident) => write!(f, "{}", ident),
+        }
     }
 }
 
