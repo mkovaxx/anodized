@@ -87,7 +87,8 @@ impl Parse for Spec {
                     let capture_list = arg.value.try_into_captures()?;
                     match capture_list {
                         Captures::One(capture_expr) => {
-                            captures.push(interpret_capture_expr_as_capture(capture_expr)?);
+                            captures
+                                .push(interpret_capture_expr_as_capture(*capture_expr.clone())?);
                         }
                         Captures::Many { elems, .. } => {
                             for capture_expr in elems {
@@ -147,13 +148,13 @@ impl Parse for Spec {
                 }
             }
 
-            if let Some(prev_keyword) = prev_keyword {
-                if arg.keyword < prev_keyword {
-                    return Err(syn::Error::new(
-                        arg.keyword_span,
-                        "parameters are out of order: their order must be `requires`, `maintains`, `captures`, `binds`, `ensures`",
-                    ));
-                }
+            if let Some(prev_keyword) = prev_keyword
+                && arg.keyword < prev_keyword
+            {
+                return Err(syn::Error::new(
+                    arg.keyword_span,
+                    "parameters are out of order: their order must be `requires`, `maintains`, `captures`, `binds`, `ensures`",
+                ));
             }
             prev_keyword = Some(arg.keyword);
         }

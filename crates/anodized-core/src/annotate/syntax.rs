@@ -155,7 +155,7 @@ impl ToTokens for SpecArgValue {
 /// These are not composed of top level [`syn::Expr`] expressions.
 #[derive(Debug, Clone)]
 pub enum Captures {
-    One(CaptureExpr),
+    One(Box<CaptureExpr>),
     Many {
         bracket: token::Bracket,
         elems: Punctuated<CaptureExpr, Token![,]>,
