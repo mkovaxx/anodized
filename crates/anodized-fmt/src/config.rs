@@ -7,7 +7,7 @@ pub struct Config {
     pub max_width: usize,
 
     /// Number of spaces for indentation
-    pub indent: usize,
+    pub tab_spaces: usize,
 
     /// Trailing comma style in arrays
     pub trailing_comma: TrailingComma,
