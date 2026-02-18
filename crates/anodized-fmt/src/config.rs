@@ -12,9 +12,8 @@ pub struct Config {
     /// Trailing comma style in arrays
     pub trailing_comma: TrailingComma,
 
-    /// Sort spec arguments into recommended order
-    /// (requires, maintains, captures, binds, ensures)
-    pub sort_args: bool,
+    /// Rearrange items according to their mandatory order
+    pub reorder_spec_items: bool,
 }
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
