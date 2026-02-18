@@ -57,6 +57,17 @@ fn test_format_binds() {
 }
 
 #[test]
+fn test_format_capture_patterns() {
+    let input = include_str!("fixtures/input/capture_patterns.rs");
+    let expected = include_str!("fixtures/expected/capture_patterns.rs");
+
+    let config = Config::default();
+    let formatted = format_file(input, &config).expect("Failed to format");
+
+    assert_eq!(formatted, expected);
+}
+
+#[test]
 fn test_format_is_idempotent() {
     let input = include_str!("fixtures/input/simple_function.rs");
 
