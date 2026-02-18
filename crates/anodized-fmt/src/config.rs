@@ -24,7 +24,7 @@ pub enum TrailingComma {
     /// Never add trailing comma
     Never,
     /// Add based on whether items span multiple lines
-    Auto,
+    Vertical,
 }
 
 impl Default for Config {
