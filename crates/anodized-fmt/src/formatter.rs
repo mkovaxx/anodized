@@ -15,13 +15,13 @@ pub fn format_spec_args(spec_args: &SpecArgs, config: &Config, base_indent: usiz
 
     // For Phase 1, always use vertical layout
     output.push('\n');
-    let indent = " ".repeat(base_indent + config.indent);
+    let indent = " ".repeat(base_indent + config.tab_spaces);
 
     // Collect args into a Vec so we can sort if needed
     let mut args: Vec<&SpecArg> = spec_args.args.iter().collect();
 
     // Sort arguments if configured
-    if config.sort_args {
+    if config.reorder_spec_items {
         args.sort_by_key(|arg| &arg.keyword);
     }
 
@@ -48,7 +48,7 @@ fn format_spec_arg(arg: &SpecArg, config: &Config) -> String {
         if let Ok(meta) = cfg_attr.parse_args::<Meta>() {
             result.push_str(&format_cfg_attr(&meta));
             result.push('\n');
-            result.push_str(&" ".repeat(config.indent));
+            result.push_str(&" ".repeat(config.tab_spaces));
         }
     }
 
@@ -104,20 +104,20 @@ fn format_array(elems: &[String], config: &Config) -> String {
         return "[]".to_string();
     }
 
-    // For single element arrays, keep them compact
+    // For single element arrays, keep them compact without brackets
     if elems.len() == 1 {
-        return format!("[{}]", elems[0]);
+        return elems[0].clone();
     }
 
     // Multi-element arrays: one per line with proper indentation
     let mut result = String::from("[\n");
-    let elem_indent = " ".repeat(config.indent * 2);
+    let elem_indent = " ".repeat(config.tab_spaces * 2);
 
     // Determine if we should add trailing comma
     let add_trailing_comma = match config.trailing_comma {
         TrailingComma::Always => true,
         TrailingComma::Never => false,
-        TrailingComma::Auto => elems.len() > 1, // Multi-line = add trailing comma
+        TrailingComma::Vertical => elems.len() > 1, // Multi-line = add trailing comma
     };
 
     for (i, elem) in elems.iter().enumerate() {
@@ -131,7 +131,7 @@ fn format_array(elems: &[String], config: &Config) -> String {
         result.push('\n');
     }
 
-    result.push_str(&" ".repeat(config.indent));
+    result.push_str(&" ".repeat(config.tab_spaces));
     result.push(']');
 
     result
@@ -223,7 +223,7 @@ mod tests {
             .expect("Failed to parse spec");
 
         let mut config = Config::default();
-        config.sort_args = false;
+        config.reorder_spec_items = false;
 
         let formatted = format_spec_args(&spec_args, &config, 0);
 
@@ -252,7 +252,7 @@ mod tests {
         let config = Config::default();
         let formatted = format_spec_args(&spec_args, &config, 0);
 
-        let expected = "#[spec(\n    ensures: [a > 0],\n)]";
+        let expected = "#[spec(\n    ensures: a > 0,\n)]";
         assert_eq!(formatted, expected);
     }
 
@@ -288,7 +288,7 @@ mod tests {
             parse_str("ensures: [a > 0, b > 0]").expect("Failed to parse spec");
 
         let mut config = Config::default();
-        config.trailing_comma = TrailingComma::Auto;
+        config.trailing_comma = TrailingComma::Vertical;
         let formatted = format_spec_args(&spec_args, &config, 0);
 
         // Auto adds trailing comma for multi-line arrays

@@ -68,16 +68,16 @@ Create an `anodized-fmt.toml` file in your project root:
 
 ```toml
 # Number of spaces for indentation
-indent = 4
+tab_spaces = 4
 
-# Sort spec arguments into recommended order
+# Reorder spec arguments into recommended order
 # (requires, maintains, captures, binds, ensures)
-sort_args = true,
+reorder_spec_items = true,
 
 # Maximum line width for spec attributes
 max_width = 100
 
-# Trailing comma: "always", "never", "auto"
+# Trailing comma: "always", "never", "vertical"
 trailing_comma = "always"
 ```
 

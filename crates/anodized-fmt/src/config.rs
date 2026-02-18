@@ -12,7 +12,7 @@ pub struct Config {
     /// Trailing comma style in arrays
     pub trailing_comma: TrailingComma,
 
-    /// Rearrange items according to their mandatory order
+    /// Rearrange items according to their recommended order
     pub reorder_spec_items: bool,
 }
 
@@ -31,9 +31,9 @@ impl Default for Config {
     fn default() -> Self {
         Self {
             max_width: 100,
-            indent: 4,
+            tab_spaces: 4,
             trailing_comma: TrailingComma::Always,
-            sort_args: true,
+            reorder_spec_items: true,
         }
     }
 }
