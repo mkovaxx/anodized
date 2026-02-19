@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-/// Configuration for anodized-fmt formatting behavior
+/// Configuration for formatting behavior
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Config {
     /// Maximum line width for spec attributes
