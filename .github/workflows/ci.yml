@@ -41,3 +41,16 @@ jobs:
 
       - name: Integration test anodized with runtime behavior `${{ matrix.runtime }}`
         run: cargo test -p anodized --tests --no-fail-fast --features "runtime-${{ matrix.runtime }}"
+
+  test-anodized-fmt:
+    name: Test anodized-fmt
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Unit and integration test anodized-fmt
+        run: cargo test -p anodized-fmt --tests --no-fail-fast
