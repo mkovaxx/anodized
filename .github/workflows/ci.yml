@@ -10,8 +10,8 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  test-anodized-core:
-    name: Test anodized-core
+  fmt:
+    name: Check formatting
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -19,13 +19,35 @@ jobs:
 
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt
+
+      - name: Check formatting
+        run: cargo fmt --all -- --check
+
+  test-anodized-core:
+    name: Lint and test anodized-core
+    runs-on: ubuntu-latest
+    needs: fmt
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy
+
+      - name: Lint anodized-core
+        run: cargo clippy -p anodized-core --all-targets -- -D warnings
 
       - name: Unit test anodized-core
         run: cargo test -p anodized-core --lib --no-fail-fast
 
   test-anodized:
-    name: Test anodized with runtime behavior `${{ matrix.runtime }}`
+    name: Lint and test anodized with runtime behavior `${{ matrix.runtime }}`
     runs-on: ubuntu-latest
+    needs: fmt
     strategy:
       matrix:
         include:
@@ -38,6 +60,30 @@ jobs:
 
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy
+
+      - name: Lint anodized with runtime behavior `${{ matrix.runtime }}`
+        run: cargo clippy -p anodized --all-targets --no-default-features --features "runtime-${{ matrix.runtime }}" -- -D warnings
 
       - name: Integration test anodized with runtime behavior `${{ matrix.runtime }}`
-        run: cargo test -p anodized --tests --no-fail-fast --features "runtime-${{ matrix.runtime }}"
+        run: cargo test -p anodized --tests --no-fail-fast --no-default-features --features "runtime-${{ matrix.runtime }}"
+
+  test-anodized-fmt:
+    name: Lint and test anodized-fmt
+    runs-on: ubuntu-latest
+    needs: fmt
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy
+
+      - name: Lint anodized-fmt
+        run: cargo clippy -p anodized-fmt --all-targets -- -D warnings
+
+      - name: Unit and integration test anodized-fmt
+        run: cargo test -p anodized-fmt --tests --no-fail-fast
