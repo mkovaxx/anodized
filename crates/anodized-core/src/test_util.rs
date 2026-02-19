@@ -29,25 +29,20 @@ pub fn assert_spec_eq(left: &Spec, right: &Spec) {
         left_requires,
         right_requires,
         "requires",
-        &assert_precondition_eq,
+        assert_precondition_eq,
     );
     assert_slice_eq(
         left_maintains,
         right_maintains,
         "maintains",
-        &assert_precondition_eq,
+        assert_precondition_eq,
     );
-    assert_slice_eq(
-        left_captures,
-        right_captures,
-        "captures",
-        &assert_capture_eq,
-    );
+    assert_slice_eq(left_captures, right_captures, "captures", assert_capture_eq);
     assert_slice_eq(
         left_ensures,
         right_ensures,
         "ensures",
-        &assert_postcondition_eq,
+        assert_postcondition_eq,
     );
 }
 
