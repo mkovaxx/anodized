@@ -45,11 +45,12 @@ fn format_spec_arg(arg: &SpecArg, config: &Config) -> String {
 
     // Add cfg attribute if present
     if let Some(cfg_attr) = find_cfg_attribute(&arg.attrs)
-        && let Ok(meta) = cfg_attr.parse_args::<Meta>() {
-            result.push_str(&format_cfg_attr(&meta));
-            result.push('\n');
-            result.push_str(&" ".repeat(config.tab_spaces));
-        }
+        && let Ok(meta) = cfg_attr.parse_args::<Meta>()
+    {
+        result.push_str(&format_cfg_attr(&meta));
+        result.push('\n');
+        result.push_str(&" ".repeat(config.tab_spaces));
+    }
 
     // Format the value based on what it contains
     let value_str = match &arg.value {
