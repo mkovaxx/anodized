@@ -1,3 +1,5 @@
+#![allow(clippy::unit_cmp, clippy::needless_return)]
+
 use anodized::spec;
 
 #[spec(

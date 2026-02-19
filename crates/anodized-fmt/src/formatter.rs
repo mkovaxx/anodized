@@ -45,11 +45,12 @@ fn format_spec_arg(arg: &SpecArg, config: &Config) -> String {
 
     // Add cfg attribute if present
     if let Some(cfg_attr) = find_cfg_attribute(&arg.attrs)
-        && let Ok(meta) = cfg_attr.parse_args::<Meta>() {
-            result.push_str(&format_cfg_attr(&meta));
-            result.push('\n');
-            result.push_str(&" ".repeat(config.tab_spaces));
-        }
+        && let Ok(meta) = cfg_attr.parse_args::<Meta>()
+    {
+        result.push_str(&format_cfg_attr(&meta));
+        result.push('\n');
+        result.push_str(&" ".repeat(config.tab_spaces));
+    }
 
     // Format the value based on what it contains
     let value_str = match &arg.value {
@@ -221,8 +222,10 @@ mod tests {
         let spec_args: SpecArgs = parse_str("ensures: result > 0, binds: result, requires: x > 0")
             .expect("Failed to parse spec");
 
-        let mut config = Config::default();
-        config.reorder_spec_items = false;
+        let config = Config {
+            reorder_spec_items: false,
+            ..Config::default()
+        };
 
         let formatted = format_spec_args(&spec_args, &config, 0);
 
@@ -260,8 +263,10 @@ mod tests {
         let spec_args: SpecArgs =
             parse_str("ensures: [a > 0, b > 0]").expect("Failed to parse spec");
 
-        let mut config = Config::default();
-        config.trailing_comma = TrailingComma::Always;
+        let config = Config {
+            trailing_comma: TrailingComma::Always,
+            ..Config::default()
+        };
         let formatted = format_spec_args(&spec_args, &config, 0);
 
         let expected = "#[spec(\n    ensures: [\n        a > 0,\n        b > 0,\n    ],\n)]";
@@ -273,8 +278,10 @@ mod tests {
         let spec_args: SpecArgs =
             parse_str("ensures: [a > 0, b > 0]").expect("Failed to parse spec");
 
-        let mut config = Config::default();
-        config.trailing_comma = TrailingComma::Never;
+        let config = Config {
+            trailing_comma: TrailingComma::Never,
+            ..Config::default()
+        };
         let formatted = format_spec_args(&spec_args, &config, 0);
 
         let expected = "#[spec(\n    ensures: [\n        a > 0,\n        b > 0\n    ],\n)]";
@@ -286,8 +293,10 @@ mod tests {
         let spec_args: SpecArgs =
             parse_str("ensures: [a > 0, b > 0]").expect("Failed to parse spec");
 
-        let mut config = Config::default();
-        config.trailing_comma = TrailingComma::Vertical;
+        let config = Config {
+            trailing_comma: TrailingComma::Vertical,
+            ..Config::default()
+        };
         let formatted = format_spec_args(&spec_args, &config, 0);
 
         // Auto adds trailing comma for multi-line arrays
