@@ -99,14 +99,14 @@ fn main() -> Result<()> {
     let mut rust_files = Vec::new();
     for path in paths {
         if path.is_file() {
-            if path.extension().map_or(false, |ext| ext == "rs") {
+            if path.extension().is_some_and(|ext| ext == "rs") {
                 rust_files.push(path);
             }
         } else if path.is_dir() {
             for entry in WalkDir::new(&path)
                 .into_iter()
                 .filter_map(|e| e.ok())
-                .filter(|e| e.path().extension().map_or(false, |ext| ext == "rs"))
+                .filter(|e| e.path().extension().is_some_and(|ext| ext == "rs"))
             {
                 rust_files.push(entry.path().to_path_buf());
             }
@@ -141,15 +141,13 @@ fn main() -> Result<()> {
                     } else if cli.verbose {
                         println!("{}: formatted correctly", file_path.display());
                     }
-                } else {
-                    if changed {
-                        files_formatted += 1;
-                        if !cli.quiet {
-                            println!("{}: formatted", file_path.display());
-                        }
-                    } else if cli.verbose {
-                        println!("{}: no changes needed", file_path.display());
+                } else if changed {
+                    files_formatted += 1;
+                    if !cli.quiet {
+                        println!("{}: formatted", file_path.display());
                     }
+                } else if cli.verbose {
+                    println!("{}: no changes needed", file_path.display());
                 }
             }
             Err(e) => {

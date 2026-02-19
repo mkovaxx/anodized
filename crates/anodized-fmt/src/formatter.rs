@@ -44,13 +44,12 @@ fn format_spec_arg(arg: &SpecArg, config: &Config) -> String {
     let mut result = String::new();
 
     // Add cfg attribute if present
-    if let Some(cfg_attr) = find_cfg_attribute(&arg.attrs) {
-        if let Ok(meta) = cfg_attr.parse_args::<Meta>() {
+    if let Some(cfg_attr) = find_cfg_attribute(&arg.attrs)
+        && let Ok(meta) = cfg_attr.parse_args::<Meta>() {
             result.push_str(&format_cfg_attr(&meta));
             result.push('\n');
             result.push_str(&" ".repeat(config.tab_spaces));
         }
-    }
 
     // Format the value based on what it contains
     let value_str = match &arg.value {
@@ -122,7 +121,7 @@ fn format_array(elems: &[String], config: &Config) -> String {
 
     for (i, elem) in elems.iter().enumerate() {
         result.push_str(&elem_indent);
-        result.push_str(&elem);
+        result.push_str(elem);
 
         // Add comma after each element, including last if configured
         if i < elems.len() - 1 || add_trailing_comma {
