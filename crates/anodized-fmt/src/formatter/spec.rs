@@ -41,7 +41,7 @@ fn format_spec_args_internal(formatter: &mut Formatter, spec_args: &SpecArgs, ba
     formatter.set_indent(arg_indent);
 
     // Collect args with their original line numbers for comment association
-    let mut args_with_lines: Vec<(&SpecArg, usize)> = spec_args
+    let args_with_lines: Vec<(&SpecArg, usize)> = spec_args
         .args
         .iter()
         .map(|arg| {
@@ -50,16 +50,64 @@ fn format_spec_args_internal(formatter: &mut Formatter, spec_args: &SpecArgs, ba
         })
         .collect();
 
-    // Sort if reordering is enabled
+    // Associate comments with their corresponding args before sorting
+    // For each arg, find comments that appear between the previous arg and this arg
+    type ArgWithComments<'a> = (&'a SpecArg, usize, Vec<(usize, Option<String>)>);
+    let args_with_comments: Vec<ArgWithComments> = if formatter.settings.reorder_spec_items {
+        // Collect comments for each arg based on line ranges
+        args_with_lines
+            .iter()
+            .enumerate()
+            .map(|(idx, (arg, line))| {
+                // Find the line range for this arg's comments
+                let start_line = if idx == 0 {
+                    0
+                } else {
+                    args_with_lines[idx - 1].1 + 1
+                };
+                let end_line = *line;
+
+                // Extract comments in this range
+                let mut comments = Vec::new();
+                for l in start_line..end_line {
+                    if let Some(comment) = formatter.whitespace_and_comments.get(&l) {
+                        comments.push((l, comment.clone()));
+                    }
+                }
+
+                (*arg, *line, comments)
+            })
+            .collect()
+    } else {
+        // No reordering, so no need to pre-collect comments
+        args_with_lines
+            .into_iter()
+            .map(|(arg, line)| (arg, line, Vec::new()))
+            .collect()
+    };
+
+    // Sort if reordering is enabled (comments are now bundled with args)
+    let mut final_args = args_with_comments;
     if formatter.settings.reorder_spec_items {
-        args_with_lines.sort_by_key(|(arg, _line)| formatter.keyword_order(&arg.keyword));
+        final_args.sort_by_key(|(arg, _line, _comments)| formatter.keyword_order(&arg.keyword));
     }
 
     // Format each arg with its associated comments
-    for (arg, original_line) in args_with_lines {
-        // Flush comments that appeared before this arg in the original source
-        // This makes comments "stick" to their arg when reordering
-        formatter.flush_comments(original_line, false);
+    for (arg, original_line, comments) in final_args {
+        if formatter.settings.reorder_spec_items {
+            // Write the pre-collected comments for this arg
+            for (_line, comment_opt) in comments {
+                if let Some(comment) = comment_opt {
+                    formatter.write_indent();
+                    formatter.write("// ");
+                    formatter.write(&comment);
+                    formatter.newline();
+                }
+            }
+        } else {
+            // Flush comments in the original order
+            formatter.flush_comments(original_line, false);
+        }
 
         formatter.write_indent();
         formatter.format_spec_arg(arg);

@@ -2,9 +2,8 @@ use anodized::spec;
 
 #[spec(
     // This is a precondition
-
-    requires : x > 0,
-          // This ensures the output is positive
+    requires: x > 0,
+    // This ensures the output is positive
     ensures: *output > x,
 )]
 fn double_positive(x: i32) -> i32 {
@@ -13,9 +12,9 @@ fn double_positive(x: i32) -> i32 {
 
 #[spec(
     // First parameter must be positive
-    requires  :   a   > 0,
+    requires: a > 0,
     // Result is positive
-       ensures:   * output > 0,
+    ensures: *output > 0,
 )]
 fn add(a: i32, b: i32) -> i32 {
     a + b
@@ -29,11 +28,11 @@ fn add(a: i32, b: i32) -> i32 {
     // Comment requires
     requires: active,
     captures: [
-        // Capture 1st
         values as [first , second , third],
-        // Capture 2nd
         state.clone() as State { active , count },
     ],
+    // Capture 1st
+    // Capture 2nd
     ensures: first + second + third == count,
 )]
 fn complex_capture_multiple(values: [i32; 3], state: &State) -> bool {
@@ -43,8 +42,8 @@ fn complex_capture_multiple(values: [i32; 3], state: &State) -> bool {
 // Test: capture pattern matches tuples
 #[spec(
     // Capture the point coordinates
-    captures:   point as (x , y , z),
-          // All coordinates must be less than 100
+    captures: point as (x , y , z),
+    // All coordinates must be less than 100
     ensures: x < 100 && y < 100 && z < 100,
 )]
 fn validate_point(point: (i32, i32, i32)) -> bool {
@@ -53,13 +52,13 @@ fn validate_point(point: (i32, i32, i32)) -> bool {
 
 // Test: Capture with all spec clauses
 #[spec(
-    // Balance must be positive before withdrawal
-    requires  :  *balance > 0,
+             // Bind the result
+        binds: result,
     // Capture initial balance
-       captures: *balance as initial,
-    // Bind the result
-    binds: result,
-             // Ensure correct calculation
+    captures: *balance as initial,
+    // Balance must be positive before withdrawal
+    requires: *balance > 0,
+    // Ensure correct calculation
     ensures: result == initial - amount,
 )]
 fn withdraw_with_capture(balance: &mut u64, amount: u64) -> u64 {
