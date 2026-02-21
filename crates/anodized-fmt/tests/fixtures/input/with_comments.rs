@@ -1,10 +1,10 @@
 use anodized::spec;
 
 #[spec(
+ // This ensures the output is positive
+         ensures: *output > x,
     // This is a precondition
     requires: x > 0,
-    // This ensures the output is positive
-    ensures: *output > x,
 )]
 fn double_positive(x: i32) -> i32 {
     x * 2
