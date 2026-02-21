@@ -1,5 +1,9 @@
 [workspace]
-members = ["crates/anodized", "crates/anodized-core", "crates/anodized-fmt"]
+members = [
+    "crates/anodized",
+    "crates/anodized-core",
+    "crates/anodized-fmt",
+]
 resolver = "2"
 
 [workspace.package]
