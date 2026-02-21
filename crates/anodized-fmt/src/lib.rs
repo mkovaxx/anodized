@@ -8,9 +8,16 @@ pub mod expr_fmt;
 pub mod finder;
 pub mod formatter;
 
+// New modules for comment-preserving formatting
+mod collect;
+mod collect_comments;
+mod formatter_new;
+pub mod source_file;
+
 pub use config::{Config, ConfigError};
 pub use finder::{FindError, SpecLocation, find_spec_attributes};
 pub use formatter::format_spec_args;
+pub use source_file::format_file_source;
 
 use anodized_core::annotate::syntax::SpecArgs;
 use syn::parse_str;

@@ -1,4 +1,4 @@
-use anodized_fmt::{Config, format_file};
+use anodized_fmt::{Config, format_file, format_file_source};
 use pretty_assertions::assert_eq;
 
 #[test]
@@ -110,4 +110,15 @@ fn test_format_preserves_other_code() {
     assert!(formatted.contains("const VALUE: i32 = 42;"));
     assert!(formatted.contains("#[derive(Debug)]"));
     assert!(formatted.contains("struct MyStruct"));
+}
+
+#[test]
+fn test_format_with_comments() {
+    let input = include_str!("fixtures/input/with_comments.rs");
+    let expected = include_str!("fixtures/expected/with_comments.rs");
+
+    let config = Config::default();
+    let formatted = format_file_source(input, &config).expect("Failed to format");
+
+    assert_eq!(formatted, expected);
 }
