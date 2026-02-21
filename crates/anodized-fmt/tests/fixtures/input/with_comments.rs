@@ -22,6 +22,9 @@ fn add(a: i32, b: i32) -> i32 {
 }
 
 // Test: Complex capture with multiple patterns
+// Note: Comments inside nested structures (like arrays) are not preserved
+// in their original positions. They will be moved to before the next top-level
+// spec arg. This is a known limitation of the current implementation.
 #[spec(
     // Comment requires
     requires: active,
