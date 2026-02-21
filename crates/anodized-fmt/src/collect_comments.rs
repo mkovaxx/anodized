@@ -33,8 +33,7 @@ pub(crate) fn extract_whitespace_and_comments(
 
                     let line_index = last_span.end().line - 1 + idx;
 
-                    // Skip the line immediately after the last token or before the current token
-                    // if there's no comment - these are just token boundaries
+                    // Skip empty lines at token boundaries, but keep comments
                     if comment.is_none()
                         && (line_index == last_span.end().line - 1
                             || line_index == span.start().line - 1)
@@ -75,7 +74,7 @@ fn get_text_between_spans(rope: &Rope, start: LineColumn, end: LineColumn) -> St
 }
 
 /// Convert a LineColumn position to a byte offset in the Rope.
-fn line_column_to_byte(source: &Rope, point: LineColumn) -> usize {
+pub fn line_column_to_byte(source: &Rope, point: LineColumn) -> usize {
     let line_byte = source.byte_of_line(point.line - 1);
     let line = source.line(point.line - 1);
     let char_byte: usize = line.chars().take(point.column).map(|c| c.len_utf8()).sum();
@@ -85,15 +84,14 @@ fn line_column_to_byte(source: &Rope, point: LineColumn) -> usize {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use quote::quote;
 
     #[test]
     fn test_extract_simple_comment() {
         let source_text = r#"
-requires: x > 0,
-// This is a comment
-ensures: *output > 0
-"#;
+            requires: x > 0,
+            // This is a comment
+            ensures: *output > 0
+            "#;
         let rope = Rope::from(source_text);
         let tokens: TokenStream = source_text.parse().unwrap();
 
@@ -122,27 +120,32 @@ ensures: *output > 0
     #[test]
     fn test_multiple_comments() {
         let source_text = r#"
-// First comment
-requires: x > 0,
-// Second comment
-// Third comment
-ensures: *output > 0
-"#;
+            requires: x > 0,
+            // First comment
+            // Second comment
+            ensures: *output > 0,
+            // Third comment
+            binds: result
+            "#;
         let rope = Rope::from(source_text);
         let tokens: TokenStream = source_text.parse().unwrap();
 
         let comments = extract_whitespace_and_comments(&rope, tokens);
 
-        assert!(comments.len() >= 3);
+        // Should find all three comments
+        assert!(comments.len() == 3);
+        assert_eq!(comments.get(&2), Some(&Some("First comment".to_string())));
+        assert_eq!(comments.get(&3), Some(&Some("Second comment".to_string())));
+        assert_eq!(comments.get(&5), Some(&Some("Third comment".to_string())));
     }
 
     #[test]
     fn test_empty_lines() {
         let source_text = r#"
-requires: x > 0,
+            requires: x > 0,
 
-ensures: *output > 0
-"#;
+            ensures: *output > 0
+            "#;
         let rope = Rope::from(source_text);
         let tokens: TokenStream = source_text.parse().unwrap();
 

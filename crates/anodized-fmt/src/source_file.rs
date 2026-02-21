@@ -1,26 +1,16 @@
 use std::ops::Range;
 
 use crop::Rope;
-use proc_macro2::LineColumn;
 use quote::ToTokens;
 use syn::{parse_file, spanned::Spanned};
-use thiserror::Error;
 
 use crate::{
-    collect::{collect_spec_attrs_in_file, SpecAttr},
-    collect_comments::extract_whitespace_and_comments,
+    FormatError,
+    collect::{SpecAttr, collect_spec_attrs_in_file},
+    collect_comments::{extract_whitespace_and_comments, line_column_to_byte},
     config::Config,
-    formatter_new::format_spec_attribute,
+    formatter::format_spec_attribute,
 };
-
-#[derive(Error, Debug)]
-pub enum FormatError {
-    #[error("Could not parse file: {0}")]
-    ParseError(#[from] syn::Error),
-
-    #[error("IO error: {0}")]
-    IoError(#[from] std::io::Error),
-}
 
 #[derive(Debug)]
 struct TextEdit {
@@ -38,7 +28,7 @@ struct TextEdit {
 ///    - Formats with comment preservation
 ///    - Tracks the text replacement
 /// 4. Applies all replacements to produce formatted output
-pub fn format_file_source(source: &str, config: &Config) -> Result<String, FormatError> {
+pub fn format_file(source: &str, config: &Config) -> Result<String, FormatError> {
     let ast = parse_file(source)?;
     let rope = Rope::from(source);
     let spec_attrs = collect_spec_attrs_in_file(&ast, &rope);
@@ -69,13 +59,8 @@ fn format_source(
         };
 
         // Format with comments
-        let formatted = format_spec_attribute(
-            &spec_args,
-            config,
-            &spec_attr.base_indent,
-            &rope,
-            comments,
-        );
+        let formatted =
+            format_spec_attribute(&spec_args, config, &spec_attr.base_indent, &rope, comments);
 
         let start_byte = line_column_to_byte(&rope, start);
         let end_byte = line_column_to_byte(&rope, end);
@@ -103,12 +88,12 @@ fn format_source(
     Ok(rope.to_string())
 }
 
-/// Convert a LineColumn position to a byte offset in the Rope.
-fn line_column_to_byte(source: &Rope, point: LineColumn) -> usize {
-    let line_byte = source.byte_of_line(point.line - 1);
-    let line = source.line(point.line - 1);
-    let char_byte: usize = line.chars().take(point.column).map(|c| c.len_utf8()).sum();
-    line_byte + char_byte
+/// Check if a file's #[spec] attributes are formatted correctly
+///
+/// Returns true if the file is already formatted according to the config
+pub fn check_file(source: &str, config: &Config) -> Result<bool, FormatError> {
+    let formatted = format_file(source, config)?;
+    Ok(formatted == source)
 }
 
 #[cfg(test)]
@@ -118,15 +103,15 @@ mod tests {
     #[test]
     fn test_format_simple_spec() {
         let source = r#"
-use anodized::spec;
+            use anodized::spec;
 
-#[spec(requires: x > 0)]
-fn foo(x: i32) -> i32 {
-    x + 1
-}
-"#;
+            #[spec(requires: x > 0)]
+            fn foo(x: i32) -> i32 {
+                x + 1
+            }
+            "#;
         let config = Config::default();
-        let result = format_file_source(source, &config);
+        let result = format_file(source, &config);
 
         assert!(result.is_ok());
         let formatted = result.unwrap();
@@ -138,22 +123,22 @@ fn foo(x: i32) -> i32 {
     #[test]
     fn test_preserves_non_spec_code() {
         let source = r#"
-use anodized::spec;
+            use anodized::spec;
 
-const VALUE: i32 = 42;
+            const VALUE: i32 = 42;
 
-#[spec(requires: x > 0)]
-fn foo(x: i32) -> i32 {
-    x + VALUE
-}
+            #[spec(requires: x > 0)]
+            fn foo(x: i32) -> i32 {
+                x + VALUE
+            }
 
-#[derive(Debug)]
-struct MyStruct {
-    field: i32,
-}
-"#;
+            #[derive(Debug)]
+            struct MyStruct {
+                field: i32,
+            }
+            "#;
         let config = Config::default();
-        let result = format_file_source(source, &config);
+        let result = format_file(source, &config);
 
         assert!(result.is_ok());
         let formatted = result.unwrap();
@@ -167,18 +152,18 @@ struct MyStruct {
     #[test]
     fn test_multiple_specs() {
         let source = r#"
-#[spec(requires: x > 0)]
-fn foo(x: i32) -> i32 {
-    x + 1
-}
+            #[spec(requires: x > 0)]
+            fn foo(x: i32) -> i32 {
+                x + 1
+            }
 
-#[spec(requires: y > 0)]
-fn bar(y: i32) -> i32 {
-    y + 2
-}
-"#;
+            #[spec(requires: y > 0)]
+            fn bar(y: i32) -> i32 {
+                y + 2
+            }
+            "#;
         let config = Config::default();
-        let result = format_file_source(source, &config);
+        let result = format_file(source, &config);
 
         assert!(result.is_ok());
         let formatted = result.unwrap();

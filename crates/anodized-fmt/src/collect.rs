@@ -127,54 +127,54 @@ mod tests {
     #[test]
     fn test_collect_simple_spec() {
         let source = r#"
-use anodized::spec;
+            use anodized::spec;
 
-#[spec(requires: x > 0)]
-fn foo(x: i32) -> i32 {
-    x + 1
-}
-"#;
+            #[spec(requires: x > 0)]
+            fn foo(x: i32) -> i32 {
+                x + 1
+            }
+            "#;
         let rope = Rope::from(source);
         let ast = parse_file(source).unwrap();
         let specs = collect_spec_attrs_in_file(&ast, &rope);
 
         assert_eq!(specs.len(), 1);
-        assert_eq!(specs[0].base_indent.spaces, 0);
+        assert_eq!(specs[0].base_indent.spaces, 12); // 12 spaces due to test formatting
         assert_eq!(specs[0].base_indent.tabs, 0);
     }
 
     #[test]
     fn test_collect_indented_spec() {
         let source = r#"
-impl MyStruct {
-    #[spec(requires: x > 0)]
-    fn foo(x: i32) -> i32 {
-        x + 1
-    }
-}
-"#;
+            impl MyStruct {
+                #[spec(requires: x > 0)]
+                fn foo(x: i32) -> i32 {
+                    x + 1
+                }
+            }
+            "#;
         let rope = Rope::from(source);
         let ast = parse_file(source).unwrap();
         let specs = collect_spec_attrs_in_file(&ast, &rope);
 
         assert_eq!(specs.len(), 1);
-        // Should detect 4 spaces of indentation
-        assert_eq!(specs[0].base_indent.spaces, 4);
+        // Should detect 16 spaces of indentation due to test formatting
+        assert_eq!(specs[0].base_indent.spaces, 16);
     }
 
     #[test]
     fn test_collect_multiple_specs() {
         let source = r#"
-#[spec(requires: x > 0)]
-fn foo(x: i32) -> i32 {
-    x + 1
-}
+            #[spec(requires: x > 0)]
+            fn foo(x: i32) -> i32 {
+                x + 1
+            }
 
-#[spec(requires: y > 0)]
-fn bar(y: i32) -> i32 {
-    y + 2
-}
-"#;
+            #[spec(requires: y > 0)]
+            fn bar(y: i32) -> i32 {
+                y + 2
+            }
+            "#;
         let rope = Rope::from(source);
         let ast = parse_file(source).unwrap();
         let specs = collect_spec_attrs_in_file(&ast, &rope);
@@ -185,12 +185,12 @@ fn bar(y: i32) -> i32 {
     #[test]
     fn test_ignore_non_spec_attributes() {
         let source = r#"
-#[derive(Debug)]
-#[spec(requires: x > 0)]
-fn foo(x: i32) -> i32 {
-    x + 1
-}
-"#;
+            #[derive(Debug)]
+            #[spec(requires: x > 0)]
+            fn foo(x: i32) -> i32 {
+                x + 1
+            }
+            "#;
         let rope = Rope::from(source);
         let ast = parse_file(source).unwrap();
         let specs = collect_spec_attrs_in_file(&ast, &rope);
@@ -202,11 +202,11 @@ fn foo(x: i32) -> i32 {
     #[test]
     fn test_trait_methods() {
         let source = r#"
-trait MyTrait {
-    #[spec(requires: x > 0)]
-    fn foo(&self, x: i32) -> i32;
-}
-"#;
+            trait MyTrait {
+                #[spec(requires: x > 0)]
+                fn foo(&self, x: i32) -> i32;
+            }
+            "#;
         let rope = Rope::from(source);
         let ast = parse_file(source).unwrap();
         let specs = collect_spec_attrs_in_file(&ast, &rope);

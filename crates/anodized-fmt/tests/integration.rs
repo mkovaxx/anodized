@@ -1,4 +1,4 @@
-use anodized_fmt::{Config, format_file, format_file_source};
+use anodized_fmt::{Config, format_file};
 use pretty_assertions::assert_eq;
 
 #[test]
@@ -68,17 +68,24 @@ fn test_format_capture_patterns() {
 }
 
 #[test]
-fn test_format_is_idempotent() {
-    let input = include_str!("fixtures/input/simple_function.rs");
+fn test_format_with_comments() {
+    let input = include_str!("fixtures/input/with_comments.rs");
+    let expected = include_str!("fixtures/expected/with_comments.rs");
 
     let config = Config::default();
+    let formatted = format_file(input, &config).expect("Failed to format");
 
+    assert_eq!(formatted, expected);
+}
+
+#[test]
+fn test_format_is_idempotent() {
+    let input = include_str!("fixtures/input/simple_function.rs");
+    let config = Config::default();
     // Format once
     let formatted1 = format_file(input, &config).expect("Failed to format first time");
-
     // Format again
     let formatted2 = format_file(&formatted1, &config).expect("Failed to format second time");
-
     // Should be the same
     assert_eq!(formatted1, formatted2, "Formatting should be idempotent");
 }
@@ -110,15 +117,4 @@ fn test_format_preserves_other_code() {
     assert!(formatted.contains("const VALUE: i32 = 42;"));
     assert!(formatted.contains("#[derive(Debug)]"));
     assert!(formatted.contains("struct MyStruct"));
-}
-
-#[test]
-fn test_format_with_comments() {
-    let input = include_str!("fixtures/input/with_comments.rs");
-    let expected = include_str!("fixtures/expected/with_comments.rs");
-
-    let config = Config::default();
-    let formatted = format_file_source(input, &config).expect("Failed to format");
-
-    assert_eq!(formatted, expected);
 }

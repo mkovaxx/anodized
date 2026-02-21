@@ -4,12 +4,12 @@ use anodized_core::annotate::syntax::{CaptureExpr, Captures, Keyword, SpecArg, S
 use crop::Rope;
 use syn::Meta;
 
-use crate::{
-    config::{Config, TrailingComma},
-    expr_fmt::{format_expr, format_pattern},
-};
+use crate::config::{Config, TrailingComma};
 
+mod expr;
 mod spec;
+
+use expr::{format_expr, format_pattern};
 
 pub use spec::format_spec_attribute;
 
@@ -19,8 +19,6 @@ pub struct Formatter<'a> {
     output: String,
     /// Configuration settings
     settings: &'a Config,
-    /// Optional source rope for accessing original text
-    source: Option<&'a Rope>,
     /// Map of line numbers to comments/empty lines
     whitespace_and_comments: HashMap<usize, Option<String>>,
     /// Current line offset (tracks position in source for comment flushing)
@@ -33,14 +31,13 @@ impl<'a> Formatter<'a> {
     /// Create a formatter with source and comment map (for comment-preserving formatting).
     pub fn with_source(
         settings: &'a Config,
-        source: &'a Rope,
-        comments: HashMap<usize, Option<String>>,
+        _source: &'a Rope,
+        whitespace_and_comments: HashMap<usize, Option<String>>,
     ) -> Self {
         Self {
             output: String::new(),
             settings,
-            source: Some(source),
-            whitespace_and_comments: comments,
+            whitespace_and_comments,
             line_offset: None,
             current_indent: 0,
         }

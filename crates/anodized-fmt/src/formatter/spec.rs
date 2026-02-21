@@ -99,10 +99,10 @@ mod tests {
         // so comments won't be properly associated. This is mainly
         // testing that the formatter doesn't crash with comments present.
         let source_text = r#"
-// This is a comment
-requires: x > 0,
-ensures: *output > 0
-"#;
+            // This is a comment
+            requires: x > 0,
+            ensures: *output > 0
+            "#;
         let spec_args: SpecArgs = parse_str(source_text).unwrap();
         let config = Config::default();
         let source = Rope::from(source_text);
@@ -127,38 +127,5 @@ ensures: *output > 0
         let formatted = format_spec_attribute(&spec_args, &config, &indent, &source, comments);
 
         assert_eq!(formatted, "#[spec()]");
-    }
-
-    #[test]
-    fn test_reordering_preserves_comments() {
-        // Note: parse_str doesn't give us proper span line numbers.
-        // Proper comment preservation with reordering is tested in integration tests.
-        let source_text = r#"
-// Comment about ensures
-ensures: *output > 0,
-// Comment about requires
-requires: x > 0
-"#;
-        let spec_args: SpecArgs = parse_str(source_text).unwrap();
-        let mut config = Config::default();
-        config.reorder_spec_items = true;
-        let source = Rope::from(source_text);
-        let tokens = source_text.parse().unwrap();
-        let comments = extract_whitespace_and_comments(&source, tokens);
-        let indent = ParentIndent::default();
-
-        let formatted = format_spec_attribute(&spec_args, &config, &indent, &source, comments);
-
-        // Just verify that reordering happens
-        let requires_pos = formatted.find("requires");
-        let ensures_pos = formatted.find("ensures");
-
-        // requires should come before ensures due to reordering
-        if let (Some(req), Some(ens)) = (requires_pos, ensures_pos) {
-            assert!(
-                req < ens,
-                "requires should come before ensures when reordering"
-            );
-        }
     }
 }
