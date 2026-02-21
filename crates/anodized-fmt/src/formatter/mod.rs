@@ -1,7 +1,6 @@
 use std::collections::HashMap;
 
 use anodized_core::annotate::syntax::{CaptureExpr, Captures, Keyword, SpecArg, SpecArgValue};
-use crop::Rope;
 use syn::Meta;
 
 use crate::config::{Config, TrailingComma};
@@ -28,10 +27,9 @@ pub struct Formatter<'a> {
 }
 
 impl<'a> Formatter<'a> {
-    /// Create a formatter with source and comment map (for comment-preserving formatting).
-    pub fn with_source(
+    /// Create a formatter with comment map (for comment-preserving formatting).
+    pub fn with_comments(
         settings: &'a Config,
-        _source: &'a Rope,
         whitespace_and_comments: HashMap<usize, Option<String>>,
     ) -> Self {
         Self {
@@ -116,12 +114,12 @@ impl<'a> Formatter<'a> {
     /// Format a SpecArg into the output.
     pub fn format_spec_arg(&mut self, arg: &SpecArg) {
         // Add cfg attribute if present
-        if let Some(cfg_attr) = Self::find_cfg_attribute(&arg.attrs) {
-            if let Ok(meta) = cfg_attr.parse_args::<Meta>() {
-                self.write(&Self::format_cfg_attr(&meta));
-                self.newline();
-                self.write_indent();
-            }
+        if let Some(cfg_attr) = Self::find_cfg_attribute(&arg.attrs)
+            && let Ok(meta) = cfg_attr.parse_args::<Meta>()
+        {
+            self.write(&Self::format_cfg_attr(&meta));
+            self.newline();
+            self.write_indent();
         }
 
         // Format the value based on what it contains

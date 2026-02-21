@@ -59,8 +59,7 @@ fn format_source(
         };
 
         // Format with comments
-        let formatted =
-            format_spec_attribute(&spec_args, config, &spec_attr.base_indent, &rope, comments);
+        let formatted = format_spec_attribute(&spec_args, config, &spec_attr.base_indent, comments);
 
         let start_byte = line_column_to_byte(&rope, start);
         let end_byte = line_column_to_byte(&rope, end);

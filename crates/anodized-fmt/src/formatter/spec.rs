@@ -1,7 +1,6 @@
 use std::collections::HashMap;
 
 use anodized_core::annotate::syntax::{SpecArg, SpecArgs};
-use crop::Rope;
 
 use crate::{collect::ParentIndent, config::Config};
 
@@ -17,10 +16,9 @@ pub fn format_spec_attribute(
     spec_args: &SpecArgs,
     config: &Config,
     base_indent: &ParentIndent,
-    source: &Rope,
     comments: HashMap<usize, Option<String>>,
 ) -> String {
-    let mut formatter = Formatter::with_source(config, source, comments);
+    let mut formatter = Formatter::with_comments(config, comments);
     let indent_spaces = base_indent.total_spaces(config.tab_spaces);
     formatter.set_indent(indent_spaces);
 
@@ -78,17 +76,17 @@ fn format_spec_args_internal(formatter: &mut Formatter, spec_args: &SpecArgs, ba
 mod tests {
     use super::*;
     use crate::collect_comments::extract_whitespace_and_comments;
+    use crop::Rope;
     use syn::parse_str;
 
     #[test]
     fn test_format_simple_spec() {
         let spec_args: SpecArgs = parse_str("requires: x > 0").unwrap();
         let config = Config::default();
-        let source = Rope::from("requires: x > 0");
         let comments = HashMap::new();
         let indent = ParentIndent::default();
 
-        let formatted = format_spec_attribute(&spec_args, &config, &indent, &source, comments);
+        let formatted = format_spec_attribute(&spec_args, &config, &indent, comments);
 
         assert_eq!(formatted, "#[spec(\n    requires: x > 0,\n)]");
     }
@@ -110,7 +108,7 @@ mod tests {
         let comments = extract_whitespace_and_comments(&source, tokens);
         let indent = ParentIndent::default();
 
-        let formatted = format_spec_attribute(&spec_args, &config, &indent, &source, comments);
+        let formatted = format_spec_attribute(&spec_args, &config, &indent, comments);
 
         // Should format the spec args (comment preservation is tested in integration tests)
         assert!(formatted.contains("requires: x > 0"));
@@ -120,11 +118,10 @@ mod tests {
     fn test_format_empty_spec() {
         let spec_args: SpecArgs = parse_str("").unwrap();
         let config = Config::default();
-        let source = Rope::from("");
         let comments = HashMap::new();
         let indent = ParentIndent::default();
 
-        let formatted = format_spec_attribute(&spec_args, &config, &indent, &source, comments);
+        let formatted = format_spec_attribute(&spec_args, &config, &indent, comments);
 
         assert_eq!(formatted, "#[spec()]");
     }

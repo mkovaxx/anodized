@@ -110,10 +110,7 @@ impl<'a, 'ast> Visit<'ast> for SpecAttrVisitor<'a, 'ast> {
 ///
 /// This uses syn's visitor pattern to traverse the AST and find all
 /// spec attributes, recording their indentation from the source.
-pub fn collect_spec_attrs_in_file<'a, 'ast>(
-    file: &'ast File,
-    source: &'a Rope,
-) -> Vec<SpecAttr<'ast>> {
+pub fn collect_spec_attrs_in_file<'ast>(file: &'ast File, source: &Rope) -> Vec<SpecAttr<'ast>> {
     let mut visitor = SpecAttrVisitor::new(source);
     visitor.visit_file(file);
     visitor.attrs
