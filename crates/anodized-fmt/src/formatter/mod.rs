@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use anodized_core::annotate::syntax::{CaptureExpr, Captures, Keyword, SpecArg, SpecArgValue};
+use anodized_core::annotate::syntax::{CaptureExpr, Captures, SpecArg, SpecArgValue};
 use syn::Meta;
 
 use crate::config::{Config, TrailingComma};
@@ -213,17 +213,5 @@ impl<'a> Formatter<'a> {
     fn format_cfg_attr(meta: &Meta) -> String {
         let tokens = quote::quote!(#meta);
         format!("#[cfg({})]", tokens)
-    }
-
-    /// Get the order index for a keyword (for sorting).
-    pub fn keyword_order(&self, keyword: &Keyword) -> usize {
-        match keyword {
-            Keyword::Requires => 0,
-            Keyword::Maintains => 1,
-            Keyword::Captures => 2,
-            Keyword::Binds => 3,
-            Keyword::Ensures => 4,
-            Keyword::Unknown(_) => 999,
-        }
     }
 }

@@ -89,7 +89,7 @@ fn format_spec_args_internal(formatter: &mut Formatter, spec_args: &SpecArgs, ba
     // Sort if reordering is enabled (comments are now bundled with args)
     let mut final_args = args_with_comments;
     if formatter.settings.reorder_spec_items {
-        final_args.sort_by_key(|(arg, _line, _comments)| formatter.keyword_order(&arg.keyword));
+        final_args.sort_by_key(|(arg, _line, _comments)| &arg.keyword);
     }
 
     // Format each arg with its associated comments
