@@ -1,5 +1,17 @@
 use anodized::spec;
 
+// Basic comment preservation
+#[spec(
+    // This is a comment for the requires clause
+    requires: x > 0,
+    // This is a comment for the ensures clause
+    ensures: *output > 0,
+)]
+fn foo(x: i32) -> i32 {
+    x + 1
+}
+
+// Comment reordering test
 #[spec(
     // This is a precondition
     requires: x > 0,
@@ -10,8 +22,10 @@ fn double_positive(x: i32) -> i32 {
     x * 2
 }
 
+// Multiple comments for same arg
 #[spec(
     // First parameter must be positive
+    // Another comment about the precondition
     requires: a > 0,
     // Result is positive
     ensures: *output > 0,
@@ -20,7 +34,17 @@ fn add(a: i32, b: i32) -> i32 {
     a + b
 }
 
-// Test: Complex capture with multiple patterns
+// Inline comment test
+// Note: Inline comments are not preserved
+// This is a known limitation of the current implementation.
+#[spec(
+    requires: x > 0,
+    ensures: *output > 0,
+)]
+fn inline_comments(x: i32) -> i32 {
+    x + 1
+}
+
 // Note: Comments inside nested structures (like arrays) are not preserved
 // in their original positions. They will be moved to before the next top-level
 // spec arg. This is a known limitation of the current implementation.
