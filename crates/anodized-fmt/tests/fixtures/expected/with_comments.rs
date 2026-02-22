@@ -55,10 +55,12 @@ fn validate_point(point: (i32, i32, i32)) -> bool {
     // Balance must be positive before withdrawal
     requires: *balance > 0,
     // Capture initial balance
+    // Balance must be positive before withdrawal
     captures: *balance as initial,
     // Bind the result
     binds: result,
     // Ensure correct calculation
+    // Result should be initial balance minus amount
     ensures: result == initial - amount,
 )]
 fn withdraw_with_capture(balance: &mut u64, amount: u64) -> u64 {
