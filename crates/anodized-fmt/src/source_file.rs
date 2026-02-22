@@ -12,6 +12,8 @@ use crate::{
     formatter::format_spec_attribute,
 };
 
+use anodized_core::annotate::syntax::SpecArgs;
+
 #[derive(Debug)]
 struct TextEdit {
     range: Range<usize>,
@@ -53,7 +55,7 @@ fn format_source(
         let comments = extract_whitespace_and_comments(&rope, tokens);
 
         // Parse the spec arguments
-        let spec_args = match attr.parse_args::<anodized_core::annotate::syntax::SpecArgs>() {
+        let spec_args = match attr.parse_args::<SpecArgs>() {
             Ok(args) => args,
             Err(_) => continue, // Skip malformed specs
         };
