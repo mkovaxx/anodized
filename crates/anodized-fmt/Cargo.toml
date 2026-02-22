@@ -25,6 +25,7 @@ quote.workspace = true
 syn.workspace = true
 
 clap = { version = "4", features = ["derive"] }
+crop = "0.4"
 prettyplease = "0.2"
 serde = { version = "1", features = ["derive"] }
 thiserror = "2"
