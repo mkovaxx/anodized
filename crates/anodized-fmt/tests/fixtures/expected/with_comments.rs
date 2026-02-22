@@ -66,3 +66,53 @@ fn validate_point(point: (i32, i32, i32)) -> bool {
 fn withdraw_with_capture(balance: &mut u64, amount: u64) -> u64 {
     todo!()
 }
+
+// Test: Impl method with comments
+struct Calculator;
+
+impl Calculator {
+    // Method in impl block
+    #[spec(
+        // Value must not be zero
+        requires: value != 0,
+        // Must return positive result
+        ensures: *output > 0,
+    )]
+    fn inverse(&self, value: f64) -> f64 {
+        1.0 / value
+    }
+
+    #[spec(
+        // Base must be positive
+        requires: self.base > 0,
+        // Captures the base value
+        captures: self.base as initial_base,
+        // Result combines base and value
+        ensures: *output == initial_base + value,
+    )]
+    fn add_to_base(&self, value: i32) -> i32 {
+        todo!()
+    }
+}
+
+// Test: Trait method with comments
+trait Validator {
+    // Trait method declaration
+    #[spec(
+        // Input must be in valid range
+        requires: input >= 0 && input <= 100,
+        // Output indicates validity
+        ensures: *output == true,
+    )]
+    fn validate(&self, input: i32) -> bool;
+
+    #[spec(
+        // Data must not be empty
+        requires: !data.is_empty(),
+        // Must capture the data
+        captures: data.clone() as snapshot,
+        // Result reflects the snapshot
+        ensures: *output == snapshot.len(),
+    )]
+    fn process(&self, data: &[u8]) -> usize;
+}
