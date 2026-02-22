@@ -16,7 +16,7 @@ proc-macro = true
 [features]
 # Users should explicitly select a runtime feature when using this crate.
 # The default below is for development only:
-default = ["runtime-check-and-print"]
+# default = ["runtime-check-and-print"]
 runtime-check-and-panic = []
 runtime-check-and-print = []
 runtime-no-check = []
