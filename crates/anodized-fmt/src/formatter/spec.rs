@@ -9,8 +9,8 @@ use super::Formatter;
 /// Format a complete #[spec(...)] attribute with comment preservation.
 ///
 /// This is the main entry point for formatting a spec attribute. It:
-/// 1. Creates a formatter with the comment map
-/// 2. Formats the spec args with proper indentation
+/// 1. Creates a formatter with the comment map and base indentation
+/// 2. Formats the spec args
 /// 3. Returns the complete #[spec(...)] string
 pub fn format_spec_attribute(
     spec_args: &SpecArgs,
@@ -18,106 +18,107 @@ pub fn format_spec_attribute(
     base_indent: &ParentIndent,
     comments: HashMap<usize, Option<String>>,
 ) -> String {
-    let mut formatter = Formatter::with_comments(config, comments);
     let indent_spaces = base_indent.total_spaces(config.tab_spaces);
-    formatter.set_indent(indent_spaces);
-
-    format_spec_args_internal(&mut formatter, spec_args, indent_spaces);
+    let mut formatter = Formatter::new(config, indent_spaces, comments);
+    formatter.spec_args(spec_args);
     formatter.finish()
 }
 
-/// Internal function to format SpecArgs with the formatter.
-fn format_spec_args_internal(formatter: &mut Formatter, spec_args: &SpecArgs, base_indent: usize) {
-    formatter.write("#[spec(");
+impl Formatter<'_> {
+    /// Format SpecArgs into the output.
+    pub fn spec_args(&mut self, spec_args: &SpecArgs) {
+        let base_indent = self.base_indent;
+        self.write("#[spec(");
 
-    if spec_args.args.is_empty() {
-        formatter.write(")]");
-        return;
-    }
-
-    // Use vertical layout
-    formatter.newline();
-    let arg_indent = base_indent + formatter.settings.tab_spaces;
-    formatter.set_indent(arg_indent);
-
-    // Collect args with their original line numbers for comment association
-    let args_with_lines: Vec<(&SpecArg, usize)> = spec_args
-        .args
-        .iter()
-        .map(|arg| {
-            let line = arg.keyword_span.start().line.saturating_sub(1);
-            (arg, line)
-        })
-        .collect();
-
-    // Associate comments with their corresponding args before sorting
-    // For each arg, find comments that appear between the previous arg and this arg
-    type ArgWithComments<'a> = (&'a SpecArg, usize, Vec<(usize, Option<String>)>);
-    let args_with_comments: Vec<ArgWithComments> = if formatter.settings.reorder_spec_items {
-        // Collect comments for each arg based on line ranges
-        args_with_lines
-            .iter()
-            .enumerate()
-            .map(|(idx, (arg, line))| {
-                // Find the line range for this arg's comments
-                let start_line = if idx == 0 {
-                    0
-                } else {
-                    args_with_lines[idx - 1].1 + 1
-                };
-                let end_line = *line;
-
-                // Extract comments in this range
-                let mut comments = Vec::new();
-                for l in start_line..end_line {
-                    if let Some(comment) = formatter.whitespace_and_comments.get(&l) {
-                        comments.push((l, comment.clone()));
-                    }
-                }
-
-                (*arg, *line, comments)
-            })
-            .collect()
-    } else {
-        // No reordering, so no need to pre-collect comments
-        args_with_lines
-            .into_iter()
-            .map(|(arg, line)| (arg, line, Vec::new()))
-            .collect()
-    };
-
-    // Sort if reordering is enabled (comments are now bundled with args)
-    let mut final_args = args_with_comments;
-    if formatter.settings.reorder_spec_items {
-        final_args.sort_by_key(|(arg, _line, _comments)| &arg.keyword);
-    }
-
-    // Format each arg with its associated comments
-    for (arg, original_line, comments) in final_args {
-        if formatter.settings.reorder_spec_items {
-            // Write the pre-collected comments for this arg
-            for (_line, comment_opt) in comments {
-                if let Some(comment) = comment_opt {
-                    formatter.write_indent();
-                    formatter.write("// ");
-                    formatter.write(&comment);
-                    formatter.newline();
-                }
-            }
-        } else {
-            // Flush comments in the original order
-            formatter.flush_comments(original_line, false);
+        if spec_args.args.is_empty() {
+            self.write(")]");
+            return;
         }
 
-        formatter.write_indent();
-        formatter.format_spec_arg(arg);
-        formatter.newline();
-    }
+        // Use vertical layout
+        self.newline();
+        let arg_indent = base_indent + self.settings.tab_spaces;
+        self.set_indent(arg_indent);
 
-    // Return to base indentation for closing bracket
-    formatter.set_indent(base_indent);
-    formatter.write_indent();
-    formatter.write(")]");
+        // Collect args with their original line numbers for comment association
+        let args_with_lines: Vec<(&SpecArg, usize)> = spec_args
+            .args
+            .iter()
+            .map(|arg| {
+                let line = arg.keyword_span.start().line.saturating_sub(1);
+                (arg, line)
+            })
+            .collect();
+
+        // Associate comments with their corresponding args before sorting
+        // For each arg, find comments that appear between the previous arg and this arg
+        type ArgWithComments<'a> = (&'a SpecArg, usize, Vec<(usize, Option<String>)>);
+        let args_with_comments: Vec<ArgWithComments> = if self.settings.reorder_spec_items {
+            // Collect comments for each arg based on line ranges
+            args_with_lines
+                .iter()
+                .enumerate()
+                .map(|(idx, (arg, line))| {
+                    // Find the line range for this arg's comments
+                    let start_line = if idx == 0 {
+                        0
+                    } else {
+                        args_with_lines[idx - 1].1 + 1
+                    };
+                    let end_line = *line;
+
+                    // Extract comments in this range
+                    let mut comments = Vec::new();
+                    for l in start_line..end_line {
+                        if let Some(comment) = self.whitespace_and_comments.get(&l) {
+                            comments.push((l, comment.clone()));
+                        }
+                    }
+
+                    (*arg, *line, comments)
+                })
+                .collect()
+        } else {
+            // No reordering, so no need to pre-collect comments
+            args_with_lines
+                .into_iter()
+                .map(|(arg, line)| (arg, line, Vec::new()))
+                .collect()
+        };
+
+        // Sort if reordering is enabled (comments are now bundled with args)
+        let mut final_args = args_with_comments;
+        if self.settings.reorder_spec_items {
+            final_args.sort_by_key(|(arg, _line, _comments)| &arg.keyword);
+        }
+
+        // Format each arg with its associated comments
+        for (arg, original_line, comments) in final_args {
+            if self.settings.reorder_spec_items {
+                // Write the pre-collected comments for this arg
+                for (_line, comment_opt) in comments {
+                    if let Some(comment) = comment_opt {
+                        self.write_indent();
+                        self.write("// ");
+                        self.write(&comment);
+                        self.newline();
+                    }
+                }
+            } else {
+                // Flush comments in the original order
+                self.flush_comments(original_line, false);
+            }
+
+            self.write_indent();
+            self.format_spec_arg(arg);
+            self.newline();
+        }
+
+        // Return to base indentation for closing bracket
+        self.set_indent(base_indent);
+        self.write_indent();
+        self.write(")]");
+    }
 }
 
 #[cfg(test)]

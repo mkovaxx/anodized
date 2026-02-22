@@ -23,13 +23,14 @@ pub struct Formatter<'a> {
     /// Current line offset (tracks position in source for comment flushing)
     line_offset: Option<usize>,
     /// Current indentation level (in spaces)
-    current_indent: usize,
+    base_indent: usize,
 }
 
 impl<'a> Formatter<'a> {
-    /// Create a formatter with comment map (for comment-preserving formatting).
-    pub fn with_comments(
+    /// Create a formatter with comment map and base indentation (for comment-preserving formatting).
+    pub fn new(
         settings: &'a Config,
+        base_indent: usize,
         whitespace_and_comments: HashMap<usize, Option<String>>,
     ) -> Self {
         Self {
@@ -37,13 +38,13 @@ impl<'a> Formatter<'a> {
             settings,
             whitespace_and_comments,
             line_offset: None,
-            current_indent: 0,
+            base_indent,
         }
     }
 
     /// Set the current indentation level.
     pub fn set_indent(&mut self, spaces: usize) {
-        self.current_indent = spaces;
+        self.base_indent = spaces;
     }
 
     /// Write a string to the output.
@@ -58,7 +59,7 @@ impl<'a> Formatter<'a> {
 
     /// Write indentation spaces.
     pub fn write_indent(&mut self) {
-        self.output.push_str(&" ".repeat(self.current_indent));
+        self.output.push_str(&" ".repeat(self.base_indent));
     }
 
     /// Flush any comments that appear before the given line number.
@@ -179,7 +180,7 @@ impl<'a> Formatter<'a> {
 
         // Multi-element arrays: one per line with proper indentation
         let mut result = String::from("[\n");
-        let elem_indent = " ".repeat(self.current_indent + self.settings.tab_spaces);
+        let elem_indent = " ".repeat(self.base_indent + self.settings.tab_spaces);
 
         // Determine if we should add trailing comma
         let add_trailing_comma = match self.settings.trailing_comma {
@@ -198,7 +199,7 @@ impl<'a> Formatter<'a> {
             result.push('\n');
         }
 
-        result.push_str(&" ".repeat(self.current_indent));
+        result.push_str(&" ".repeat(self.base_indent));
         result.push(']');
 
         result
