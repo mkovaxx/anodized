@@ -38,7 +38,7 @@ pub fn format_file(source: &str, config: &Config) -> Result<String, FormatError>
 }
 
 fn format_source(
-    mut rope: Rope,
+    mut source: Rope,
     spec_attrs: Vec<SpecAttr<'_>>,
     config: &Config,
 ) -> Result<String, FormatError> {
@@ -52,7 +52,7 @@ fn format_source(
 
         // Extract comments from this attribute's token stream
         let tokens = attr.meta.to_token_stream();
-        let comments = extract_whitespace_and_comments(&rope, tokens);
+        let comments = extract_whitespace_and_comments(&source, tokens);
 
         // Parse the spec arguments
         let spec_args = match attr.parse_args::<SpecArgs>() {
@@ -63,8 +63,8 @@ fn format_source(
         // Format with comments
         let formatted = format_spec_attribute(&spec_args, config, &spec_attr.base_indent, comments);
 
-        let start_byte = line_column_to_byte(&rope, start);
-        let end_byte = line_column_to_byte(&rope, end);
+        let start_byte = line_column_to_byte(&source, start);
+        let end_byte = line_column_to_byte(&source, end);
 
         edits.push(TextEdit {
             range: start_byte..end_byte,
@@ -79,14 +79,14 @@ fn format_source(
         let end = edit.range.end;
         let new_text = edit.new_text;
 
-        rope.replace(
+        source.replace(
             (start as isize + last_offset) as usize..(end as isize + last_offset) as usize,
             &new_text,
         );
         last_offset += new_text.len() as isize - (end as isize - start as isize);
     }
 
-    Ok(rope.to_string())
+    Ok(source.to_string())
 }
 
 /// Check if a file's #[spec] attributes are formatted correctly
