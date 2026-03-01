@@ -37,7 +37,7 @@ fn add(a: i32, b: i32) -> i32 {
 // Test: capture pattern matches tuples
 #[spec(
     // Capture the point coordinates
-    captures: point as (x , y , z),
+    captures: point as (x, y, z),
     // All coordinates must be less than 100
     ensures: x < 100 && y < 100 && z < 100,
 )]
