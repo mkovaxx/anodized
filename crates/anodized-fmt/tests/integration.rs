@@ -79,6 +79,17 @@ fn test_format_with_comments() {
 }
 
 #[test]
+fn test_skipped_formatting() {
+    let input = include_str!("fixtures/input/skipped_formatting.rs");
+    let expected = include_str!("fixtures/expected/skipped_formatting.rs");
+
+    let config = Config::default();
+    let formatted = format_file(input, &config).expect("Failed to format");
+
+    assert_eq!(formatted, expected);
+}
+
+#[test]
 fn test_format_is_idempotent() {
     let input = include_str!("fixtures/input/simple_function.rs");
     let config = Config::default();

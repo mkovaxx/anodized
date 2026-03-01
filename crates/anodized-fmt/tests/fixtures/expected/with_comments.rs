@@ -34,35 +34,6 @@ fn add(a: i32, b: i32) -> i32 {
     a + b
 }
 
-// Inline comment test
-// Note: Inline comments are not preserved
-// This is a known limitation of the current implementation.
-#[spec(
-    requires: x > 0,
-    ensures: *output > 0,
-)]
-fn inline_comments(x: i32) -> i32 {
-    x + 1
-}
-
-// Note: Comments inside nested structures (like arrays) are not preserved
-// in their original positions. They will be moved to before the next top-level
-// spec arg. This is a known limitation of the current implementation.
-#[spec(
-    // Comment requires
-    requires: active,
-    captures: [
-        values as [first , second , third],
-        state.clone() as State { active , count },
-    ],
-    // Capture 1st
-    // Capture 2nd
-    ensures: first + second + third == count,
-)]
-fn complex_capture_multiple(values: [i32; 3], state: &State) -> bool {
-    todo!()
-}
-
 // Test: capture pattern matches tuples
 #[spec(
     // Capture the point coordinates
