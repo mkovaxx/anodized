@@ -87,7 +87,7 @@ pub fn has_nested_structure_comments(source: &Rope, tokens: TokenStream) -> bool
 }
 
 // Recursively check for comments inside nested groups, tracking depth to avoid false positives.
-fn has_nested_structure_comments_inner(source: &Rope, tokens: TokenStream, depth: usize) -> bool {
+fn has_nested_structure_comments_inner(source: &Rope, tokens: TokenStream, _depth: usize) -> bool {
     for token in tokens {
         if let proc_macro2::TokenTree::Group(group) = token {
             // Check for comments inside any nested structure (arrays, blocks, structs, etc.)
@@ -98,22 +98,22 @@ fn has_nested_structure_comments_inner(source: &Rope, tokens: TokenStream, depth
             // Check gaps between tokens inside the group, including after the opening delimiter
             let mut last_span: Option<Span> = Some(opening_span);
             traverse_token_stream(group.stream(), &mut |span: Span| {
-                if let Some(last) = last_span {
-                    if last.end().line != span.start().line {
-                        let text = get_text_between_spans(source, last.end(), span.start());
-                        for (idx, line) in text.lines().enumerate() {
-                            let comment = line
-                                .to_string()
-                                .split_once("//")
-                                .map(|(_, txt)| txt)
-                                .map(str::trim)
-                                .map(ToOwned::to_owned);
+                if let Some(last) = last_span
+                    && last.end().line != span.start().line
+                {
+                    let text = get_text_between_spans(source, last.end(), span.start());
+                    for (idx, line) in text.lines().enumerate() {
+                        let comment = line
+                            .to_string()
+                            .split_once("//")
+                            .map(|(_, txt)| txt)
+                            .map(str::trim)
+                            .map(ToOwned::to_owned);
 
-                            let line_index = last.end().line - 1 + idx;
+                        let line_index = last.end().line - 1 + idx;
 
-                            if comment.is_some() {
-                                group_comments.insert(line_index, comment);
-                            }
+                        if comment.is_some() {
+                            group_comments.insert(line_index, comment);
                         }
                     }
                 }
@@ -125,7 +125,7 @@ fn has_nested_structure_comments_inner(source: &Rope, tokens: TokenStream, depth
             }
 
             // Recursively check nested groups at increased depth
-            if has_nested_structure_comments_inner(source, group.stream(), depth + 1) {
+            if has_nested_structure_comments_inner(source, group.stream(), _depth + 1) {
                 return true;
             }
         }
