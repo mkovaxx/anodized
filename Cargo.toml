@@ -12,11 +12,20 @@ edition = "2024"
 license = "MIT OR Apache-2.0"
 repository = "https://github.com/mkovaxx/anodized"
 description = "An ecosystem for correct Rust based on lightweight specification annotations"
-categories = ["development-tools", "development-tools::procedural-macro-helpers"]
-keywords = ["correctness", "design-by-contract", "fuzzing", "testing", "verification"]
+categories = [
+    "development-tools",
+    "development-tools::procedural-macro-helpers",
+]
+keywords = [
+    "correctness",
+    "design-by-contract",
+    "fuzzing",
+    "testing",
+    "verification",
+]
 
 [workspace.dependencies]
 anodized-core = { version = "0.3.0", path = "crates/anodized-core" }
-proc-macro2 = "1.0"
+proc-macro2 = { version = "1.0", features = ["span-locations"] }
 quote = "1.0"
-syn = { version = "2.0", features = ["extra-traits", "full"] }
+syn = { version = "2.0", features = ["extra-traits", "full", "visit"] }

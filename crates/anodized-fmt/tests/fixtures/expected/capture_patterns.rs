@@ -3,7 +3,7 @@ use anodized::spec;
 
 // Test: capture pattern matches slices
 #[spec(
-    captures: rgb as [r , g , b],
+    captures: rgb as [r, g, b],
     ensures: r + g + b == 255,
 )]
 fn process_color(rgb: [u8; 3]) -> bool {
@@ -12,7 +12,7 @@ fn process_color(rgb: [u8; 3]) -> bool {
 
 // Test: capture pattern matches tuples
 #[spec(
-    captures: point as (x , y , z),
+    captures: point as (x, y, z),
     ensures: x < 100 && y < 100 && z < 100,
 )]
 fn validate_point(point: (i32, i32, i32)) -> bool {
@@ -21,7 +21,7 @@ fn validate_point(point: (i32, i32, i32)) -> bool {
 
 // Test: capture pattern matches structs
 #[spec(
-    captures: person.clone() as Person { name , age },
+    captures: person.clone() as Person { name, age },
     ensures: age >= 0,
 )]
 fn check_person(person: &Person) -> bool {
@@ -30,7 +30,7 @@ fn check_person(person: &Person) -> bool {
 
 // Test: capture pattern matches nested
 #[spec(
-    captures: data.as_ref() as Some ((a , b)),
+    captures: data.as_ref() as Some ((a, b)),
     ensures: a > 0 && b > 0,
 )]
 fn process_optional_tuple(data: Option<(i32, i32)>) -> bool {
@@ -39,7 +39,7 @@ fn process_optional_tuple(data: Option<(i32, i32)>) -> bool {
 
 // Test: capture pattern with binding modifier
 #[spec(
-    captures: data as Some (inner_tuple @ (a , b)),
+    captures: data as Some (inner_tuple @ (a, b)),
     ensures: inner_tuple.0 == a,
 )]
 fn process_with_binding(data: Option<(i32, i32)>) -> bool {
@@ -50,8 +50,8 @@ fn process_with_binding(data: Option<(i32, i32)>) -> bool {
 #[spec(
     requires: active,
     captures: [
-        values as [first , second , third],
-        state.clone() as State { active , count },
+        values as [first, second, third],
+        state.clone() as State { active, count },
     ],
     ensures: first + second + third == count,
 )]
@@ -73,9 +73,9 @@ fn withdraw_with_capture(balance: &mut u64, amount: u64) -> u64 {
 // Test: Multiple captures with tuple and struct patterns
 #[spec(
     captures: [
-        position as (x , y),
-        velocity as (vx , vy),
-        state.clone() as PhysicsState { mass , friction },
+        position as (x, y),
+        velocity as (vx, vy),
+        state.clone() as PhysicsState { mass, friction },
     ],
     ensures: x >= 0 && y >= 0,
 )]

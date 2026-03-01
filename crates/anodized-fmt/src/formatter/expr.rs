@@ -28,18 +28,30 @@ pub fn format_expr(expr: &Expr) -> String {
     let formatted = prettyplease::unparse(&file);
 
     // Extract the expression from "const DUMMY: () = <expr>;"
-    formatted
+    let result = formatted
         .strip_prefix("const DUMMY: () = ")
         .and_then(|s| s.strip_suffix(";\n"))
         .unwrap_or(expr.to_token_stream().to_string().as_str())
         .trim()
-        .to_string()
+        .to_string();
+
+    // Remove extra spaces before commas in arrays and tuples
+    remove_spaces_before_commas(&result)
 }
 
 /// Format a pattern (for binds parameter)
 pub fn format_pattern(pat: &Pat) -> String {
     // For patterns, quote works fine
-    quote::quote!(#pat).to_string()
+    let result = quote::quote!(#pat).to_string();
+
+    // Remove extra spaces before commas in patterns too
+    remove_spaces_before_commas(&result)
+}
+
+/// Remove spaces before commas in formatted output
+/// This handles prettyplease's formatting of arrays/tuples like `[a , b , c]` -> `[a, b, c]`
+fn remove_spaces_before_commas(s: &str) -> String {
+    s.replace(" ,", ",")
 }
 
 #[cfg(test)]
