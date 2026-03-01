@@ -1,6 +1,6 @@
 use anodized::spec;
 
-// Following cases are not supported and skipped by the 
+// Following cases are not supported and skipped by the
 // current anodized-fmt
 
 // Block expressions with comments
@@ -17,7 +17,7 @@ fn block_expr(a: i32, b: i32) -> i32 {
     todo!()
 }
 
-// Inline comment test
+// Inline comments
 #[spec(
           // Requires must be positive
     requires: x > 0,      // Inline comment for requires
