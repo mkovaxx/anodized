@@ -81,6 +81,59 @@ pub fn line_column_to_byte(source: &Rope, point: LineColumn) -> usize {
     line_byte + char_byte
 }
 
+/// Check if a TokenStream contains comments inside nested structures.
+pub fn has_nested_structure_comments(source: &Rope, tokens: TokenStream) -> bool {
+    has_nested_structure_comments_inner(source, tokens, 0)
+}
+
+// Recursively check for comments inside nested groups, tracking depth to avoid false positives.
+fn has_nested_structure_comments_inner(source: &Rope, tokens: TokenStream, depth: usize) -> bool {
+    for token in tokens {
+        if let proc_macro2::TokenTree::Group(group) = token {
+            // Check for comments inside any nested structure (arrays, blocks, structs, etc.)
+            // We need to include the opening delimiter to check for comments after the opening brace/bracket
+            let mut group_comments = HashMap::new();
+            let opening_span = group.span_open();
+
+            // Check gaps between tokens inside the group, including after the opening delimiter
+            let mut last_span: Option<Span> = Some(opening_span);
+            traverse_token_stream(group.stream(), &mut |span: Span| {
+                if let Some(last) = last_span {
+                    if last.end().line != span.start().line {
+                        let text = get_text_between_spans(source, last.end(), span.start());
+                        for (idx, line) in text.lines().enumerate() {
+                            let comment = line
+                                .to_string()
+                                .split_once("//")
+                                .map(|(_, txt)| txt)
+                                .map(str::trim)
+                                .map(ToOwned::to_owned);
+
+                            let line_index = last.end().line - 1 + idx;
+
+                            if comment.is_some() {
+                                group_comments.insert(line_index, comment);
+                            }
+                        }
+                    }
+                }
+                last_span = Some(span);
+            });
+
+            if !group_comments.is_empty() {
+                return true;
+            }
+
+            // Recursively check nested groups at increased depth
+            if has_nested_structure_comments_inner(source, group.stream(), depth + 1) {
+                return true;
+            }
+        }
+    }
+
+    false
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
