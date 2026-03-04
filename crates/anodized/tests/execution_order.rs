@@ -12,8 +12,8 @@ use anodized::spec;
         return log.push("maintains2") == (),
     ],
     captures: [
-        log.push("captures1") as _alias1,
-        log.push("captures2") as _alias2,
+        { return log.push("captures1"); } as _alias1,
+        { return log.push("captures2"); } as _alias2,
     ],
     ensures: [
         return log.push("ensures1") == (),
