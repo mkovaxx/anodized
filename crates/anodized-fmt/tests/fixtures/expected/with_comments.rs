@@ -111,3 +111,76 @@ trait Validator {
     )]
     fn process(&self, data: &[u8]) -> usize;
 }
+
+// Multiple clauses in requires without internal comments
+#[spec(
+    // Preconditions for all three parameters
+    requires: x > 0 && y > 0 && z > 0,
+    ensures: *output > 0,
+)]
+fn requires_multiple_clauses(x: i32, y: i32, z: i32) -> i32 {
+    todo!()
+}
+
+// Multiple clauses in ensures without internal comments
+#[spec(
+    requires: x > 0,
+    // Post-conditions about the result
+    ensures: *output > x && *output < 100,
+)]
+fn ensures_multiple_clauses(x: i32) -> i32 {
+    todo!()
+}
+
+// Multiple clauses in maintains without internal comments
+#[spec(
+    // Invariants for the method
+    maintains: self.count >= 0 && self.active,
+    ensures: *output == self.count,
+)]
+fn maintains_multiple_clauses(&self) -> i32 {
+    todo!()
+}
+
+// Array syntax for multiple ensures clauses (valid syntax, unusual pattern)
+#[spec(
+    requires: x > 0,
+    // Multiple post-conditions using array syntax
+    ensures: [
+        *output > x,
+        *output < 100,
+    ],
+)]
+fn ensures_array_syntax(x: i32) -> i32 {
+    todo!()
+}
+
+// Array syntax for multiple requires clauses
+#[spec(
+    // Multiple preconditions using array syntax
+    requires: [
+        x > 0,
+        y > 0,
+        z > 0,
+    ],
+    ensures: *output > 0,
+)]
+fn requires_array_syntax(x: i32, y: i32, z: i32) -> i32 {
+    todo!()
+}
+
+// Mixed: some clauses with array syntax, some without
+#[spec(
+    requires: x > 0,
+    captures: [
+        x as old_x,
+        y as old_y,
+    ],
+    ensures: [
+        *output > old_x,
+        *output > old_y,
+    ],
+)]
+fn mixed_array_syntax(x: i32, y: i32) -> i32 {
+    todo!()
+}
