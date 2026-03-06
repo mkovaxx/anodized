@@ -176,10 +176,12 @@ fn requires_array_syntax(x: i32, y: i32, z: i32) -> i32 {
 // Mixed: some clauses with array syntax, some without
 #[spec(
     requires: x > 0,
+         // Capture initial values
     captures: [
         x as old_x,
         y as old_y,
     ],
+        // Multiple post-conditions
     ensures: [
         *output > old_x,
         *output > old_y,
