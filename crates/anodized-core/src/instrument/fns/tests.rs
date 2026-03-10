@@ -507,7 +507,7 @@ fn captures() {
     let expected: Block = parse_quote! {
         {
             assert!((| | CONDITION_1)(), "Precondition failed: {}", "CONDITION_1");
-            let (ALIAS_1, ALIAS_2, __anodized_output): (_, _, #ret_type) = (EXPR_1, EXPR_2, (|| #body)());
+            let (ALIAS_1, ALIAS_2, __anodized_output): (_, _, #ret_type) = ((| | EXPR_1) (), (| | EXPR_2) (), (|| #body)());
             assert!((|output: &#ret_type| CONDITION_2)(&__anodized_output), "Postcondition failed: {}", "| output | CONDITION_2");
             assert!((|output: &#ret_type| CONDITION_3)(&__anodized_output), "Postcondition failed: {}", "| output | CONDITION_3");
             __anodized_output
