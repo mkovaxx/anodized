@@ -85,7 +85,8 @@ impl Backend {
         // Chain capture expressions with body expression
         let capture_exprs = spec.captures.iter().map(|cb| {
             let expr = &cb.expr;
-            quote! { #expr }
+            // Evaluate expression in a closure to prevent early return.
+            quote! { (|| #expr)() }
         });
 
         // Chain underscore types with return type for tuple type annotation
