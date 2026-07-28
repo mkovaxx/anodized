@@ -6,6 +6,7 @@ use proptest_derive::Arbitrary;
 proptest! {
     #![proptest_config(ProptestConfig::with_cases(10_000))]
 
+    /// Generate random inputs and assert that the precondition implies the postcondition.
     #[test]
     fn test_spec(inputs: Inputs<i32>) {
         // Use Anodized's `try_call!` macro to defer acting on spec violations.

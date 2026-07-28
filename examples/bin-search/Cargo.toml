@@ -11,3 +11,4 @@ anodized = { path = "../../crates/anodized" }
 [dev-dependencies]
 proptest = "1.11.0"
 proptest-derive = "0.8.0"
+quickcheck = "1.1.0"
