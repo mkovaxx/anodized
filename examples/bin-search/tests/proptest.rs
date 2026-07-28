@@ -4,6 +4,8 @@ use proptest::prelude::*;
 use proptest_derive::Arbitrary;
 
 proptest! {
+    #![proptest_config(ProptestConfig::with_cases(10_000))]
+
     #[test]
     fn test_spec(inputs: Inputs<i32>) {
         // Use Anodized's `try_call!` macro to defer acting on spec violations.
