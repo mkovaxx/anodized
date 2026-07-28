@@ -6,7 +6,6 @@ use quickcheck::{Arbitrary, Gen, QuickCheck, TestResult};
 #[test]
 fn test_spec() {
     QuickCheck::new()
-        .rng(Gen::new(1_000))
         .tests(10_000)
         .quickcheck(test_spec_property as fn(Inputs<i32>) -> TestResult);
 }
