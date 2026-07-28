@@ -1,3 +1,5 @@
+target-applies-to-host = false
+
 [host]
 rustflags = [
     "--cfg", "anodized_print",

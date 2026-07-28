@@ -170,14 +170,17 @@ jobs:
       - name: Check formatting
         run: cargo fmt --all -- --check
 
-      - name: Lint
+      - name: Lint lib and tests
         run: cargo clippy --all-targets -- -D warnings
 
-      - name: Build
+      - name: Build lib
         run: cargo build
 
+      - name: Build tests
+        run: cargo build --tests
+
       - name: Lint fuzz targets
-        run: cargo clippy --manifest-path ./fuzz/Cargo.toml --all-targets --config 'build.rustflags=["--cfg","anodized_print", "--cfg","anodized_panic", "--cfg","anodized_try"]' -- -D warnings
+        run: cargo clippy --manifest-path ./fuzz/Cargo.toml --all-targets -- -D warnings
 
       - name: Install cargo-fuzz
         run: cargo install cargo-fuzz
