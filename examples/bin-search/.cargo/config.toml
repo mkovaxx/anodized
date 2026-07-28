@@ -7,7 +7,7 @@ rustflags = [
     "--cfg", "anodized_try",
 ]
 
-[target.aarch64-apple-darwin]
+[build]
 rustflags = [
     "--cfg", "anodized_print",
     "--cfg", "anodized_panic",
