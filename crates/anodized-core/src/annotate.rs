@@ -108,6 +108,12 @@ impl Parse for Spec {
                     }
                 }
                 Keyword::Binds => {
+                    errors.add(Error::new(
+                        arg.keyword_span,
+                        "the `binds` parameter was renamed to `inspects`",
+                    ));
+                }
+                Keyword::Inspects => {
                     if binds_pattern.is_some() {
                         errors.add(Error::new(
                             arg.keyword_span,

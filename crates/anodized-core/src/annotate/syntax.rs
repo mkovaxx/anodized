@@ -265,6 +265,7 @@ pub mod kw {
     syn::custom_keyword!(maintains);
     syn::custom_keyword!(captures);
     syn::custom_keyword!(binds);
+    syn::custom_keyword!(inspects);
     syn::custom_keyword!(ensures);
     syn::custom_keyword!(decreases);
 }
@@ -283,6 +284,7 @@ pub enum Keyword {
     Maintains,
     Captures,
     Binds,
+    Inspects,
     Ensures,
     Decreases,
 }
@@ -323,6 +325,9 @@ impl Keyword {
         } else if input.peek(kw::binds) {
             let token: kw::binds = input.parse()?;
             (Binds, token.span)
+        } else if input.peek(kw::inspects) {
+            let token: kw::inspects = input.parse()?;
+            (Inspects, token.span)
         } else if input.peek(kw::ensures) {
             let token: kw::ensures = input.parse()?;
             (Ensures, token.span)
@@ -352,6 +357,7 @@ impl std::fmt::Display for Keyword {
             Keyword::Maintains => write!(f, "maintains"),
             Keyword::Captures => write!(f, "captures"),
             Keyword::Binds => write!(f, "binds"),
+            Keyword::Inspects => write!(f, "inspects"),
             Keyword::Ensures => write!(f, "ensures"),
             Keyword::Decreases => write!(f, "decreases"),
         }
