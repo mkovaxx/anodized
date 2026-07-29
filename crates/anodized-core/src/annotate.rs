@@ -26,7 +26,7 @@ impl Parse for Spec {
         let mut requires: Vec<Condition> = vec![];
         let mut maintains: Vec<Condition> = vec![];
         let mut captures: Vec<Capture> = vec![];
-        let mut binds_pattern: Option<Pat> = None;
+        let mut inspects: Option<Pat> = None;
         let mut ensures: Vec<Condition> = vec![];
 
         let is_sorted = raw_spec.is_sorted();
@@ -114,13 +114,13 @@ impl Parse for Spec {
                     ));
                 }
                 Keyword::Inspects => {
-                    if binds_pattern.is_some() {
+                    if inspects.is_some() {
                         errors.add(Error::new(
                             arg.keyword_span,
-                            "multiple `binds` parameters are not allowed",
+                            "multiple `inspects` parameters are not allowed",
                         ));
                     }
-                    if let Err(error) = arg.parse_binds(&mut binds_pattern) {
+                    if let Err(error) = arg.parse_binds(&mut inspects) {
                         errors.add(error);
                     }
                 }
@@ -141,7 +141,7 @@ impl Parse for Spec {
         if !is_sorted {
             errors.add(Error::new(
                 input.span(),
-                "parameters are out of order: the expected order is: `<QUALIFIERS>`, `requires`, `maintains`, `captures`, `binds`, `ensures`, where `<QUALIFIERS>` are:\n
+                "parameters are out of order: the expected order is: `<QUALIFIERS>`, `requires`, `maintains`, `captures`, `inspects`, `ensures`, where `<QUALIFIERS>` are:\n
 `functional` (`pure` and `total`),\n
 `pure` (`deterministic` and `effectfree`),\n
 `total` (`infallible` and `terminating`)",
@@ -157,7 +157,7 @@ impl Parse for Spec {
             requires,
             maintains,
             captures,
-            binds: binds_pattern,
+            inspects,
             ensures,
             span: input.span(),
         })

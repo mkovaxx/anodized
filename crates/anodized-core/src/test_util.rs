@@ -28,7 +28,7 @@ pub fn assert_spec_eq(left: &Spec, right: &Spec) {
         requires: left_requires,
         maintains: left_maintains,
         captures: left_captures,
-        binds: left_binds,
+        inspects: left_binds,
         ensures: left_ensures,
         span: _,
     } = left;
@@ -38,7 +38,7 @@ pub fn assert_spec_eq(left: &Spec, right: &Spec) {
         requires: right_requires,
         maintains: right_maintains,
         captures: right_captures,
-        binds: right_binds,
+        inspects: right_binds,
         ensures: right_ensures,
         span: _,
     } = right;

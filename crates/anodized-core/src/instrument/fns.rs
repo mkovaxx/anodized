@@ -286,7 +286,7 @@ impl CheckSettings {
             };
 
         let output_binder_stmt: Option<Stmt> = spec
-            .binds
+            .inspects
             .as_ref()
             .map(|pat| parse_quote! { let #pat = #output_ident; });
 
