@@ -333,7 +333,7 @@ impl SpecArg {
         Ok(())
     }
 
-    fn parse_binds(self, pattern: &mut Option<Pat>) -> Result<()> {
+    fn parse_inspects(self, pattern: &mut Option<Pat>) -> Result<()> {
         let cfg_attr = find_cfg_attribute(&self.attrs)?;
         if cfg_attr.is_some() {
             return Err(Error::new(
@@ -341,8 +341,8 @@ impl SpecArg {
                 "`cfg` attribute is not supported on `inspects`",
             ));
         }
-        let binds_pattern = self.value.try_into_pat()?;
-        *pattern = Some(binds_pattern);
+        let inspects_pattern = self.value.try_into_pat()?;
+        *pattern = Some(inspects_pattern);
         Ok(())
     }
 

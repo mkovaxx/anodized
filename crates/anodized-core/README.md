@@ -32,7 +32,7 @@ params = [ requires_params ]
        (* not a typo: at most one `captures:` *)
        , [ captures_param ]
        (* not a typo: at most one `inspects:` *)
-       , [ binds_param ]
+       , [ inspects_param ]
        , [ ensures_params ];
 
 requires_params  = { requires_param };
@@ -42,7 +42,7 @@ ensures_params   = { ensures_param };
 requires_param  = [ cfg_attr ] , `requires:` , pre_conditions, `,`;
 maintains_param = [ cfg_attr ] , `maintains:` , pre_conditions, `,`;
 captures_param  = `captures:` , captures, `,`;
-binds_param     = `inspects:` , pattern, `,`;
+inspects_param     = `inspects:` , pattern, `,`;
 ensures_param   = [ cfg_attr ] , `ensures:` , post_conditions, `,`;
 
 pre_conditions = pre_condition_expr | pre_condition_list;
