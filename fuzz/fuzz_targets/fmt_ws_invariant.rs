@@ -63,7 +63,7 @@ fn make_template() -> Template {
         .z().tokens("] ,").fixed("\n")
 
         .z().fixed("// return value binding\n")
-        .z().tokens("binds : ret_val ,").fixed("\n")
+        .z().tokens("inspects : ret_val ,").fixed("\n")
 
         .z().fixed("// postconditions\n")
         .z().tokens("ensures : [").fixed("\n")

@@ -147,7 +147,7 @@ fn match_tuple(triple: (bool, char, i32)) { todo!() }
 - Capturing happens **after** preconditions are checked but **before** the function body executes.
 - The captured values are **only** available to postconditions, not to preconditions or the function body itself.
 
-### `binds`: Bind the Return Value
+### `inspects`: Bind the Return Value
 
 In **postconditions** (`ensures`), you can refer to the function's return value by the default name `output`.
 
@@ -164,7 +164,7 @@ fn get_positive_value() -> i32 { todo!() }
 
 The default spec-wide binding is `output`. If that collides with an existing identifier, you can choose a different name for it in two ways:
 
-**1. Spec-Wide Binding**: Use the `binds` parameter to set a new name for the return value across all postconditions in the specification. It must be placed immediately before any `ensures` conditions.
+**1. Spec-Wide Binding**: Use the `inspects` parameter to set a new name for the return value across all postconditions in the specification. It must be placed immediately before any `ensures` conditions.
 
 ```rust, no_run
 use anodized::spec;

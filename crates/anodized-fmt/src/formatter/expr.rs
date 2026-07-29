@@ -39,7 +39,7 @@ pub fn format_expr(expr: &Expr) -> String {
     remove_spaces_before_commas(&result)
 }
 
-/// Format a pattern (for binds parameter)
+/// Format a pattern (for inspects parameter)
 pub fn format_pattern(pat: &Pat) -> String {
     // For patterns, quote works fine
     let result = quote::quote!(#pat).to_string();

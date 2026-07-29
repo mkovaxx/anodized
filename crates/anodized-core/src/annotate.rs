@@ -338,7 +338,7 @@ impl SpecArg {
         if cfg_attr.is_some() {
             return Err(Error::new(
                 cfg_attr.span(),
-                "`cfg` attribute is not supported on `binds`",
+                "`cfg` attribute is not supported on `inspects`",
             ));
         }
         let binds_pattern = self.value.try_into_pat()?;

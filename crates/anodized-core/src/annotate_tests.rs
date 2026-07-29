@@ -484,7 +484,7 @@ fn multiple_cfg_attributes() {
 }
 
 #[test]
-#[should_panic(expected = "`cfg` attribute is not supported on `binds`")]
+#[should_panic(expected = "`cfg` attribute is not supported on `inspects`")]
 fn cfg_on_binds() {
     let _: Spec = parse_quote! {
         #[cfg(test)]
