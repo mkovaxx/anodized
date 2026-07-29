@@ -52,9 +52,7 @@ impl Parse for SpecArg {
             (
                 input.parse()?,
                 match keyword {
-                    Keyword::Binds | Keyword::Inspects => {
-                        SpecArgValue::parse_pat_or_expr(input)?
-                    }
+                    Keyword::Binds | Keyword::Inspects => SpecArgValue::parse_pat_or_expr(input)?,
                     Keyword::Captures => SpecArgValue::Captures(input.parse()?),
                     _ => SpecArgValue::parse_expr_or_pat(input)?,
                 },
