@@ -52,8 +52,8 @@ fn validate_point(point: (i32, i32, i32)) -> bool {
     // Capture initial balance
     // Balance must be positive before withdrawal
     captures: *balance as initial,
-    // Bind the result
-    binds: result,
+    // Bind the result for inspection
+    inspects: result,
     // Ensure correct calculation
     // Result should be initial balance minus amount
     ensures: result == initial - amount,

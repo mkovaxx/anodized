@@ -147,7 +147,7 @@ fn match_tuple(triple: (bool, char, i32)) { todo!() }
 - Capturing happens **after** preconditions are checked but **before** the function body executes.
 - The captured values are **only** available to postconditions, not to preconditions or the function body itself.
 
-### `binds`: Bind the Return Value
+### `inspects`: Bind the Return Value
 
 In **postconditions** (`ensures`), you can refer to the function's return value by the default name `output`.
 
@@ -164,13 +164,13 @@ fn get_positive_value() -> i32 { todo!() }
 
 The default spec-wide binding is `output`. If that collides with an existing identifier, you can choose a different name for it in two ways:
 
-**1. Spec-Wide Binding**: Use the `binds` parameter to set a new name for the return value across all postconditions in the specification. It must be placed immediately before any `ensures` conditions.
+**1. Spec-Wide Binding**: Use the `inspects` parameter to set a new name for the return value across all postconditions in the specification. It must be placed immediately before any `ensures` conditions.
 
 ```rust, no_run
 use anodized::spec;
 
 #[spec(
-    binds: new_value,
+    inspects: new_value,
     ensures: *new_value > old_value,
 )]
 fn increment(old_value: i32) -> i32 { todo!() }
@@ -200,7 +200,7 @@ use anodized::spec;
 // A function where 'output' is an argument name, requiring a different name.
 #[spec(
     // Set a spec-wide binding for the return value: `result`.
-    binds: result,
+    inspects: result,
     ensures: [
         // This postcondition uses the spec-wide binding: `result`.
         *result > output,
@@ -220,7 +220,7 @@ use anodized::spec;
 
 #[spec(
     // Destructure the returned tuple into `(a, b)`.
-    binds: (a, b),
+    inspects: (a, b),
     // Postconditions can now use the bound variables `a` and `b`.
     ensures: [
         a <= b,
@@ -240,7 +240,7 @@ use anodized::spec;
     requires: *balance >= amount,
     maintains: *balance >= 0,
     captures: *balance as initial_balance,
-    binds: (new_balance, receipt_amount),
+    inspects: (new_balance, receipt_amount),
     ensures: [
         *new_balance == initial_balance - amount,
         *receipt_amount == amount,

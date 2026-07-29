@@ -12,7 +12,7 @@ fn embed_spec_item_impl() {
             #[spec(
                 requires: COND_1,
                 maintains: COND_2,
-                binds: PAT_1,
+                inspects: PAT_1,
                 ensures: COND_3,
             )]
             fn FUNC(&self, PARAM_1: TYPE_1, PARAM_2: TYPE_2) -> RET_TYPE {
@@ -65,7 +65,7 @@ fn default_instrument_item_impl() {
             #[spec(
                 requires: COND_1,
                 maintains: COND_2,
-                binds: PAT_1,
+                inspects: PAT_1,
                 ensures: COND_3,
             )]
             fn FUNC(&self, PARAM_1: TYPE_1, PARAM_2: TYPE_2) -> RET_TYPE {
@@ -112,7 +112,7 @@ fn emit_try_fn_instrument_item_impl() {
             #[spec(
                 requires: COND_1,
                 maintains: COND_2,
-                binds: PAT_1,
+                inspects: PAT_1,
                 ensures: COND_3,
             )]
             // An associated `fn` (no receiver) is syntactically identical to a free-standing `fn`.

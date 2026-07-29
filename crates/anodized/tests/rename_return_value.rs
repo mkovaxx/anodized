@@ -1,7 +1,7 @@
 use anodized::spec;
 
 #[spec(
-    binds: result,
+    inspects: result,
     ensures: [
         result > output,
         result % 2 == 0,
@@ -22,7 +22,7 @@ fn rename_success() {
 }
 
 #[spec(
-    binds: result,
+    inspects: result,
     ensures: result % 2 == 0,
 )]
 #[allow(unused)]

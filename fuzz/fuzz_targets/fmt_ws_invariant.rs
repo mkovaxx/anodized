@@ -29,7 +29,7 @@ static TEMPLATE: OnceLock<Template> = OnceLock::new();
 ///             state.clone() as State { active , count },
 ///         ],
 ///         // return value binding
-///         binds: ret_val,
+///         inspects: ret_val,
 ///         // postconditions
 ///         ensures: [
 ///             *output > x,
@@ -63,7 +63,7 @@ fn make_template() -> Template {
         .z().tokens("] ,").fixed("\n")
 
         .z().fixed("// return value binding\n")
-        .z().tokens("binds : ret_val ,").fixed("\n")
+        .z().tokens("inspects : ret_val ,").fixed("\n")
 
         .z().fixed("// postconditions\n")
         .z().tokens("ensures : [").fixed("\n")

@@ -4,7 +4,7 @@ use anodized::spec;
 // Test simple identifier capturing with auto-generated alias
 #[spec(
     captures: count,
-    binds: output,
+    inspects: output,
     ensures: old_count <= output,
 )]
 fn increment_counter(count: u32) -> u32 {

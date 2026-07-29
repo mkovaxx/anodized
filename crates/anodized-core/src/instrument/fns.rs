@@ -146,7 +146,7 @@ impl Mode {
     pub fn build_postcondition_fn_body(
         maintains: &[Condition],
         captures: &[Capture],
-        binds: &Option<Pat>,
+        inspects: &Option<Pat>,
         ensures: &[Condition],
     ) -> Result<Block> {
         let mut statements: Vec<Stmt> = vec![];
@@ -161,12 +161,13 @@ impl Mode {
         }
 
         {
-            let patterns = binds
+            let patterns = inspects
                 .iter()
                 .chain(captures.iter().map(|capture| &capture.pat));
 
-            let return_value: Option<Expr> =
-                binds.as_ref().map(|_| parse_quote! { __anodized_output });
+            let return_value: Option<Expr> = inspects
+                .as_ref()
+                .map(|_| parse_quote! { __anodized_output });
             let values = return_value
                 .into_iter()
                 .chain(captures.iter().map(|capture| -> Expr {
@@ -286,7 +287,7 @@ impl CheckSettings {
             };
 
         let output_binder_stmt: Option<Stmt> = spec
-            .binds
+            .inspects
             .as_ref()
             .map(|pat| parse_quote! { let #pat = #output_ident; });
 

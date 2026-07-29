@@ -2,7 +2,7 @@
 use anodized::spec;
 
 #[spec(
-    binds: ref output,
+    inspects: ref output,
     ensures: [
         seq.iter().any(|elem| elem == output),
         seq.iter().all(|elem| elem <= output),
@@ -25,7 +25,7 @@ pub fn find_maximum(seq: &[u8]) -> u8 {
 
 #[spec(
     requires: seq.is_sorted(),
-    binds: output,
+    inspects: output,
     ensures: [
         output <= seq.len(),
         seq[0..output].iter().all(|item| item < value),

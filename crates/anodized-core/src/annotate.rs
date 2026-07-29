@@ -26,7 +26,7 @@ impl Parse for Spec {
         let mut requires: Vec<Condition> = vec![];
         let mut maintains: Vec<Condition> = vec![];
         let mut captures: Vec<Capture> = vec![];
-        let mut binds_pattern: Option<Pat> = None;
+        let mut inspects: Option<Pat> = None;
         let mut ensures: Vec<Condition> = vec![];
 
         let is_sorted = raw_spec.is_sorted();
@@ -108,13 +108,19 @@ impl Parse for Spec {
                     }
                 }
                 Keyword::Binds => {
-                    if binds_pattern.is_some() {
+                    errors.add(Error::new(
+                        arg.keyword_span,
+                        "the `binds` parameter was renamed to `inspects`",
+                    ));
+                }
+                Keyword::Inspects => {
+                    if inspects.is_some() {
                         errors.add(Error::new(
                             arg.keyword_span,
-                            "multiple `binds` parameters are not allowed",
+                            "multiple `inspects` parameters are not allowed",
                         ));
                     }
-                    if let Err(error) = arg.parse_binds(&mut binds_pattern) {
+                    if let Err(error) = arg.parse_inspects(&mut inspects) {
                         errors.add(error);
                     }
                 }
@@ -135,7 +141,7 @@ impl Parse for Spec {
         if !is_sorted {
             errors.add(Error::new(
                 input.span(),
-                "parameters are out of order: the expected order is: `<QUALIFIERS>`, `requires`, `maintains`, `captures`, `binds`, `ensures`, where `<QUALIFIERS>` are:\n
+                "parameters are out of order: the expected order is: `<QUALIFIERS>`, `requires`, `maintains`, `captures`, `inspects`, `ensures`, where `<QUALIFIERS>` are:\n
 `functional` (`pure` and `total`),\n
 `pure` (`deterministic` and `effectfree`),\n
 `total` (`infallible` and `terminating`)",
@@ -151,7 +157,7 @@ impl Parse for Spec {
             requires,
             maintains,
             captures,
-            binds: binds_pattern,
+            inspects,
             ensures,
             span: input.span(),
         })
@@ -327,16 +333,16 @@ impl SpecArg {
         Ok(())
     }
 
-    fn parse_binds(self, pattern: &mut Option<Pat>) -> Result<()> {
+    fn parse_inspects(self, pattern: &mut Option<Pat>) -> Result<()> {
         let cfg_attr = find_cfg_attribute(&self.attrs)?;
         if cfg_attr.is_some() {
             return Err(Error::new(
                 cfg_attr.span(),
-                "`cfg` attribute is not supported on `binds`",
+                "`cfg` attribute is not supported on `inspects`",
             ));
         }
-        let binds_pattern = self.value.try_into_pat()?;
-        *pattern = Some(binds_pattern);
+        let inspects_pattern = self.value.try_into_pat()?;
+        *pattern = Some(inspects_pattern);
         Ok(())
     }
 
