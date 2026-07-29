@@ -120,7 +120,7 @@ impl Parse for Spec {
                             "multiple `inspects` parameters are not allowed",
                         ));
                     }
-                    if let Err(error) = arg.parse_binds(&mut inspects) {
+                    if let Err(error) = arg.parse_inspects(&mut inspects) {
                         errors.add(error);
                     }
                 }
