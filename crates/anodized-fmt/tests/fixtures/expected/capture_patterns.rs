@@ -63,7 +63,7 @@ fn complex_capture_multiple(values: [i32; 3], state: &State) -> bool {
 #[spec(
     requires: *balance > 0,
     captures: *balance as initial,
-    binds: result,
+    inspects: result,
     ensures: result == initial - amount,
 )]
 fn withdraw_with_capture(balance: &mut u64, amount: u64) -> u64 {

@@ -10,11 +10,11 @@ error: `captures` parameter is not supported here
 8 |     captures: self.x as old_x,
   |     ^^^^^^^^
 
-error: `binds` parameter is not supported here
+error: `inspects` parameter is not supported here
  --> tests/compile_fail/struct_invalid_spec.rs:9:5
   |
-9 |     binds: ret_val,
-  |     ^^^^^
+9 |     inspects: ret_val,
+  |     ^^^^^^^^
 
 error: `ensures` parameter is not supported here
   --> tests/compile_fail/struct_invalid_spec.rs:10:5

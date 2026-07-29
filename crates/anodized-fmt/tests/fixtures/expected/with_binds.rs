@@ -1,7 +1,7 @@
 use anodized::spec;
 
 #[spec(
-    binds: result,
+    inspects: result,
     ensures: *result % 2 == 0,
 )]
 fn calculate_odd_result(output: i32) -> i32 {

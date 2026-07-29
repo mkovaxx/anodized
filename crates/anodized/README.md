@@ -50,7 +50,7 @@ use anodized::spec;
         part <= whole,
         whole > 0.0,
     ],
-    binds: output,
+    inspects: output,
     ensures: [
         output >= 0.0,
         output <= 100.0,

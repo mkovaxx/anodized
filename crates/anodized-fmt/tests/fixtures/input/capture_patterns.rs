@@ -26,7 +26,7 @@ fn process_optional_tuple(data: Option<(i32, i32)>) -> bool {
 }
 
 // Test: capture pattern with binding modifier
-#[spec(captures: data as Some( inner_tuple @ (a, b) ), 
+#[spec(captures: data as Some( inner_tuple @ (a, b) ),
             ensures: inner_tuple.0 == a)]
 fn process_with_binding(data: Option<(i32, i32)>) -> bool {
     todo!()
@@ -34,9 +34,9 @@ fn process_with_binding(data: Option<(i32, i32)>) -> bool {
 
 // Test: Complex capture with multiple patterns
 #[spec(
-    captures: [values as [first, 
-                          second, 
-                          third], 
+    captures: [values as [first,
+                          second,
+                          third],
                state.clone() as State { active, count }],
     requires: active,
     ensures: first + second + third == count
@@ -48,7 +48,7 @@ fn complex_capture_multiple(values: [i32; 3], state: &State) -> bool {
 // Test: Capture with all spec clauses
 #[spec(
     requires: *balance > 0, captures: *balance as initial,
-    binds: result, ensures: result == initial - amount
+    inspects: result, ensures: result == initial - amount
 )]
 fn withdraw_with_capture(balance: &mut u64, amount: u64) -> u64 {
     todo!()

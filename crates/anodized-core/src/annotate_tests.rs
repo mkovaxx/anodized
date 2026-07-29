@@ -185,7 +185,7 @@ fn all_clauses() {
     let spec: Spec = parse_quote! {
         requires: x > 0 && x.is_power_of_two(),
         maintains: self.is_valid(),
-        binds: z,
+        inspects: z,
         ensures: z >= x,
     };
 
@@ -231,11 +231,11 @@ fn out_of_order() {
 }
 
 #[test]
-#[should_panic(expected = "multiple `binds` parameters are not allowed")]
+#[should_panic(expected = "multiple `inspects` parameters are not allowed")]
 fn multiple_binds() {
     let _: Spec = parse_quote! {
-        binds: y,
-        binds: z,
+        inspects: y,
+        inspects: z,
     };
 }
 
@@ -488,7 +488,7 @@ fn multiple_cfg_attributes() {
 fn cfg_on_binds() {
     let _: Spec = parse_quote! {
         #[cfg(test)]
-        binds: y,
+        inspects: y,
     };
 }
 
@@ -525,7 +525,7 @@ fn macro_in_condition() {
 #[test]
 fn binds_pattern() {
     let spec: Spec = parse_quote! {
-        binds: (a, b),
+        inspects: (a, b),
         ensures: [
             a <= b,
             (a, b) == pair || (b, a) == pair,
@@ -597,7 +597,7 @@ fn multiple_conditions() {
 #[test]
 fn rename_return_value() {
     let spec: Spec = parse_quote! {
-        binds: result,
+        inspects: result,
         ensures: [
             result > output,
             val % 2 == 0,
@@ -738,7 +738,7 @@ fn captures_with_all_clauses() {
         requires: x > 0,
         maintains: self.is_valid(),
         captures: value as old_val,
-        binds: result,
+        inspects: result,
         ensures: result > old_val,
     };
 

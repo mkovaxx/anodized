@@ -170,7 +170,7 @@ The default spec-wide binding is `output`. If that collides with an existing ide
 use anodized::spec;
 
 #[spec(
-    binds: new_value,
+    inspects: new_value,
     ensures: *new_value > old_value,
 )]
 fn increment(old_value: i32) -> i32 { todo!() }
@@ -200,7 +200,7 @@ use anodized::spec;
 // A function where 'output' is an argument name, requiring a different name.
 #[spec(
     // Set a spec-wide binding for the return value: `result`.
-    binds: result,
+    inspects: result,
     ensures: [
         // This postcondition uses the spec-wide binding: `result`.
         *result > output,
@@ -220,7 +220,7 @@ use anodized::spec;
 
 #[spec(
     // Destructure the returned tuple into `(a, b)`.
-    binds: (a, b),
+    inspects: (a, b),
     // Postconditions can now use the bound variables `a` and `b`.
     ensures: [
         a <= b,
@@ -240,7 +240,7 @@ use anodized::spec;
     requires: *balance >= amount,
     maintains: *balance >= 0,
     captures: *balance as initial_balance,
-    binds: (new_balance, receipt_amount),
+    inspects: (new_balance, receipt_amount),
     ensures: [
         *new_balance == initial_balance - amount,
         *receipt_amount == amount,

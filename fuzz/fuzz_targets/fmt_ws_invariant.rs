@@ -29,7 +29,7 @@ static TEMPLATE: OnceLock<Template> = OnceLock::new();
 ///             state.clone() as State { active , count },
 ///         ],
 ///         // return value binding
-///         binds: ret_val,
+///         inspects: ret_val,
 ///         // postconditions
 ///         ensures: [
 ///             *output > x,
