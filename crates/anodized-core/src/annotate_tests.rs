@@ -681,11 +681,11 @@ fn captures_identifier_with_alias() {
 #[test]
 fn captures_array() {
     let spec: Spec = parse_quote! {
-        captures: {
-            old_count = count;
-            old_index = index;
-            old_value = value;
-        },
+        captures: [
+            old_count = count,
+            old_index = index,
+            old_value = value,
+        ],
         ensures: [
             count == old_count + 1,
             index == old_index + 1,
@@ -805,12 +805,12 @@ fn captures_array_expression() {
 #[test]
 fn captures_complex_expressions() {
     let spec: Spec = parse_quote! {
-        captures: {
-            item_count = self.items.len();
-            bar = foo.bar();
-            sum = a + b;
-            first = foo[0];
-        },
+        captures: [
+            item_count = self.items.len(),
+            bar = foo.bar(),
+            sum = a + b,
+            first = foo[0],
+        ],
         ensures: output > 0,
     };
 
@@ -884,11 +884,11 @@ fn captures_edge_case_array_of_cast_exprs() {
 #[test]
 fn captures_edge_case_list_of_cast_exprs() {
     let spec: Spec = parse_quote! {
-        captures: {
-            old_red = r as u8;
-            old_green = g as u8;
-            old_blue = b as u8;
-        },
+        captures: [
+            old_red = r as u8,
+            old_green = g as u8,
+            old_blue = b as u8,
+        ],
     };
 
     let expected = Spec {
