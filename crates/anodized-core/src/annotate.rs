@@ -1,6 +1,7 @@
 use syn::{
-    Attribute, Error, Expr, ExprLet, Meta, Pat, Stmt,
+    Attribute, Error, Expr, ExprAssign, ExprLet, Meta, Pat, Stmt,
     parse::{Parse, ParseStream, Result},
+    parse_quote,
     spanned::Spanned,
 };
 
@@ -321,27 +322,27 @@ impl SpecArg {
         }
         let capture_list = self.value.try_into_expr()?;
         match capture_list {
-            Expr::Let(let_expr) => {
-                captures.push(interpret_let_expr_as_capture(let_expr)?);
+            Expr::Assign(assignment) => {
+                captures.push(interpret_assignment_as_capture(assignment)?);
             }
             Expr::Block(block) => {
                 for stmt in block.block.stmts {
-                    let Stmt::Local(local) = stmt else {
-                        return Err(Error::new_spanned(stmt, "expected a `let` binding"));
+                    let Stmt::Expr(Expr::Assign(assignment), semi) = stmt else {
+                        return Err(Error::new_spanned(stmt, "expected an assignment"));
                     };
-                    let Some(init) = local.init else {
-                        return Err(Error::new_spanned(local, "expected a `let` binding"));
+                    if semi.is_none() {
+                        return Err(Error::new_spanned(
+                            assignment,
+                            "expected a semicolon after this",
+                        ));
                     };
-                    captures.push(Capture {
-                        pat: local.pat,
-                        expr: *init.expr,
-                    });
+                    captures.push(interpret_assignment_as_capture(assignment)?);
                 }
             }
             _ => {
                 return Err(Error::new_spanned(
                     capture_list,
-                    "expected a `let` binding or block",
+                    "expected an assignment or block",
                 ));
             }
         }
@@ -379,12 +380,13 @@ impl SpecArg {
     }
 }
 
-/// Try to interpret an ExprLet as a single Capture
-fn interpret_let_expr_as_capture(let_expr: ExprLet) -> Result<Capture> {
-    // TODO: Disallow `mut`, `ref`, etc.
+/// Try to interpret an ExprAssign as a single Capture.
+fn interpret_assignment_as_capture(assignment: ExprAssign) -> Result<Capture> {
+    let left = assignment.left;
     Ok(Capture {
-        pat: *let_expr.pat,
-        expr: *let_expr.expr,
+        // TODO: Make this less janky.
+        pat: parse_quote! { #left },
+        expr: *assignment.right,
     })
 }
 
