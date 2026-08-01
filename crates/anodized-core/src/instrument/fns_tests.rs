@@ -12,10 +12,10 @@ fn make_complex_spec() -> Spec {
         maintains: [COND_4, COND_5],
         #[cfg(META_2)]
         maintains: COND_6,
-        captures: [
-            EXPR_1 as ALIAS_1,
-            EXPR_2 as (ALIAS_2, ALIAS_3),
-        ],
+        captures: {
+            let ALIAS_1 = EXPR_1;
+            let (ALIAS_2, ALIAS_3) = EXPR_2;
+        },
         inspects: PAT_1,
         ensures: COND_7,
         #[cfg(META_3)]
@@ -958,10 +958,10 @@ fn complex_mixed_conditions() {
 fn captures() {
     let spec: Spec = parse_quote! {
         requires: CONDITION_1,
-        captures: [
-            EXPR_1 as ALIAS_1,
-            EXPR_2 as ALIAS_2,
-        ],
+        captures: {
+            let ALIAS_1 = EXPR_1;
+            let ALIAS_2 = EXPR_2;
+        },
         ensures: [
             CONDITION_2,
             CONDITION_3,
