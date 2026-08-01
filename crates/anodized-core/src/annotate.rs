@@ -1,17 +1,17 @@
 use syn::{
-    Attribute, Error, Expr, ExprLet, Ident, Meta, Pat, PatIdent, Stmt,
+    Attribute, Error, Expr, ExprLet, Meta, Pat, Stmt,
     parse::{Parse, ParseStream, Result},
     spanned::Spanned,
 };
 
 use crate::{
     Capture, Condition, DataSpec, LoopSpec, LoopVariant, Spec,
-    annotate::syntax::{CaptureExpr, SpecArg, SpecArgValue},
+    annotate::syntax::{SpecArg, SpecArgValue},
     qualifiers::FnQualifiers,
 };
 
 pub mod syntax;
-use syntax::{Captures, Keyword};
+use syntax::Keyword;
 
 #[cfg(test)]
 #[path = "annotate_tests.rs"]
