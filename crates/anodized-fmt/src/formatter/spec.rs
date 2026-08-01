@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use anodized_core::annotate::syntax::{Captures, SpecArg, SpecArgValue, SpecArgs};
+use anodized_core::annotate::syntax::{SpecArg, SpecArgValue, SpecArgs};
 use syn::spanned::Spanned;
 
 use crate::{collect::ParentIndent, config::Config};
@@ -12,18 +12,6 @@ fn arg_end_line(arg: &SpecArg) -> usize {
         SpecArgValue::None => arg.keyword_span.end().line.saturating_sub(1),
         SpecArgValue::Expr(expr) => expr.span().end().line.saturating_sub(1),
         SpecArgValue::Pat(pat) => pat.span().end().line.saturating_sub(1),
-        SpecArgValue::Captures(captures) => match captures {
-            Captures::One(ce) => {
-                if let Some(pat) = &ce.pat {
-                    pat.span().end().line.saturating_sub(1)
-                } else if let Some(expr) = &ce.expr {
-                    expr.span().end().line.saturating_sub(1)
-                } else {
-                    arg.keyword_span.end().line.saturating_sub(1)
-                }
-            }
-            Captures::Many { bracket, .. } => bracket.span.close().end().line.saturating_sub(1),
-        },
     }
 }
 

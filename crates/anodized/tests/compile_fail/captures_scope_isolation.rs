@@ -5,8 +5,8 @@ use anodized::spec;
 
 #[spec(
     captures: [
-        x as old_x,
-        y as old_y,
+        old_x = x,
+        old_y = y,
     ],
     ensures: [
         // OK: aliases are available in ensures.
@@ -29,7 +29,7 @@ fn captures_not_in_body(x: i32, y: i32) -> i32 {
         old_x > 0,
     ],
     captures: [
-        x as old_x,
+        old_x = x,
     ],
 )]
 fn captures_not_in_requires(x: i32) {
@@ -42,7 +42,7 @@ fn captures_not_in_requires(x: i32) {
         old_x > 0,
     ],
     captures: [
-        x as old_x,
+        old_x = x,
     ],
 )]
 fn captures_not_in_maintains(x: i32) {

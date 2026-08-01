@@ -1,20 +1,10 @@
 use std::collections::HashMap;
 
-use anodized_core::annotate::syntax::{CaptureExpr, Captures, SpecArg, SpecArgValue};
+use anodized_core::annotate::syntax::{SpecArg, SpecArgValue};
 use syn::Meta;
 use syn::spanned::Spanned;
 
 use crate::config::{Config, TrailingComma};
-
-fn capture_expr_start_line(ce: &CaptureExpr) -> usize {
-    if let Some(expr) = &ce.expr {
-        expr.span().start().line.saturating_sub(1)
-    } else if let Some(pat) = &ce.pat {
-        pat.span().start().line.saturating_sub(1)
-    } else {
-        0
-    }
-}
 
 mod expr;
 mod spec;
@@ -158,7 +148,6 @@ impl<'a> Formatter<'a> {
                 }
             }
             SpecArgValue::Pat(pat) => format_pattern(pat),
-            SpecArgValue::Captures(captures) => self.format_captures(captures),
         };
 
         if value_str.is_empty() {
@@ -166,34 +155,6 @@ impl<'a> Formatter<'a> {
         } else {
             self.write(&format!("{}: {},", arg.keyword, value_str));
         }
-    }
-
-    /// Format a group of captures.
-    fn format_captures(&mut self, captures: &Captures) -> String {
-        match captures {
-            Captures::One(capture_expr) => Self::format_capture(capture_expr),
-            Captures::Many { bracket, elems } => {
-                let elem_strs = Vec::from_iter(elems.iter().map(Self::format_capture));
-                let elem_lines: Vec<usize> = elems.iter().map(capture_expr_start_line).collect();
-                let bracket_line = bracket.span.open().start().line.saturating_sub(1);
-                self.format_array(&elem_strs, Some(&elem_lines), Some(bracket_line))
-            }
-        }
-    }
-
-    /// Format a single capture expression.
-    fn format_capture(capture_expr: &CaptureExpr) -> String {
-        let mut parts = vec![];
-        if let Some(expr) = &capture_expr.expr {
-            parts.push(format_expr(expr));
-        }
-        if capture_expr.as_.is_some() {
-            parts.push("as".into());
-        }
-        if let Some(pat) = &capture_expr.pat {
-            parts.push(format_pattern(pat));
-        }
-        parts.join(" ")
     }
 
     /// Format an array expression with proper indentation.
