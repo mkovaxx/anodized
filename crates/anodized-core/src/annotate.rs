@@ -325,16 +325,10 @@ impl SpecArg {
             Expr::Assign(assignment) => {
                 captures.push(interpret_assignment_as_capture(assignment)?);
             }
-            Expr::Block(block) => {
-                for stmt in block.block.stmts {
-                    let Stmt::Expr(Expr::Assign(assignment), semi) = stmt else {
-                        return Err(Error::new_spanned(stmt, "expected an assignment"));
-                    };
-                    if semi.is_none() {
-                        return Err(Error::new_spanned(
-                            assignment,
-                            "expected a semicolon after this",
-                        ));
+            Expr::Array(array) => {
+                for elem in array.elems {
+                    let Expr::Assign(assignment) = elem else {
+                        return Err(Error::new_spanned(elem, "expected an assignment"));
                     };
                     captures.push(interpret_assignment_as_capture(assignment)?);
                 }
