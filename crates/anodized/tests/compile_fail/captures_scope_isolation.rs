@@ -1,6 +1,6 @@
 use anodized::spec;
 
-// This test verifies that capture aliases are not accessible in the function body
+// This test verifies that capture bindings are not accessible in the function body
 // or in requires/maintains conditions
 
 #[spec(
@@ -9,9 +9,9 @@ use anodized::spec;
         old_y = y,
     ],
     ensures: [
-        // OK: aliases are available in ensures.
+        // OK: capture bindings are available in ensures.
         old_x == 5,
-        // OK: aliases are available in ensures.
+        // OK: capture bindings are available in ensures.
         old_y == 10,
     ],
 )]

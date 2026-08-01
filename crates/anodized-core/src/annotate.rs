@@ -101,7 +101,7 @@ impl Parse for Spec {
                     if !captures.is_empty() {
                         errors.add(Error::new(
                             arg.keyword_span,
-                            "at most one `captures` parameter is allowed; to capture multiple values, use a list: `captures: [expr1, expr2, ...]`",
+                            "at most one `captures` parameter is allowed; to capture multiple values, use a list: `captures: [binding1 = expr1, binding2 = expr2, ...]`",
                         ));
                     }
                     if let Err(error) = arg.parse_captures(&mut captures) {

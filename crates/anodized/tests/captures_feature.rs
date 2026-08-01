@@ -80,7 +80,7 @@ impl Container {
 }
 
 #[test]
-fn simple_capture_with_auto_alias() {
+fn simple_capture() {
     assert_eq!(increment_counter(5), 6);
     assert_eq!(increment_counter(0), 1);
 }

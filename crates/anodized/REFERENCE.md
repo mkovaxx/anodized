@@ -118,9 +118,9 @@ use anodized::spec;
 #[spec(
     captures: [
         // Copy types: captured directly
-        items.len() as orig_len,
+        orig_len = items.len(),
         // Non-Copy types: use .clone() explicitly
-        items.clone() as orig_items,
+        orig_items = items.clone(),
     ],
     ensures: [
         items.len() == orig_len + 1,
@@ -129,9 +129,9 @@ use anodized::spec;
 )]
 fn add_item<T: Clone + Eq>(items: &mut Vec<T>, item: T) { todo!() }
 
-// A capture may have a pattern to destructure tuples, structs, arrays, and other composite types:
+// A capture assignment may use a pattern to destructure tuples, structs, arrays, and other composite types:
 #[spec(
-    captures: triple as (first, second, third),
+    captures: (first, second, third) = triple,
     ensures: [
         first == triple.0,
         second == triple.1,
@@ -141,9 +141,9 @@ fn add_item<T: Clone + Eq>(items: &mut Vec<T>, item: T) { todo!() }
 fn match_tuple(triple: (bool, char, i32)) { todo!() }
 ```
 
-- **Simple identifiers** get an automatic `old_` prefix, i.e. `x` becomes `old_x`.
-- **Complex expressions** require an explicit alias using `as`, i.e. `self.items.len() as orig_len`.
-- **Patterns** may be used to destructure the captured value, e.g. `person.clone() as Person { name, age }`.- **No automatic cloning**: Each captured expression is **moved**. For a `Copy` type, a copy is made implicitly. For a non-`Copy` type, you must explicitly use `.clone()`, `.to_owned()`, or another appropriate method.
+- **Capture assignments** bind a name or pattern on the left to an entry-time expression on the right, e.g. `orig_len = self.items.len()`.
+- **Patterns** may be used to destructure the captured value, e.g. `Person { name, age } = person.clone()`.
+- **No automatic cloning**: Each captured expression is **moved**. For a `Copy` type, a copy is made implicitly. For a non-`Copy` type, you must explicitly use `.clone()`, `.to_owned()`, or another appropriate method.
 - Capturing happens **after** preconditions are checked but **before** the function body executes.
 - The captured values are **only** available to postconditions, not to preconditions or the function body itself.
 
@@ -239,7 +239,7 @@ use anodized::spec;
 #[spec(
     requires: *balance >= amount,
     maintains: *balance >= 0,
-    captures: *balance as initial_balance,
+    captures: initial_balance = *balance,
     inspects: (new_balance, receipt_amount),
     ensures: [
         *new_balance == initial_balance - amount,
@@ -338,7 +338,7 @@ trait MonotonicGenerator {
     fn current(&self) -> i32;
 
     #[spec(
-        captures: self.current() as old_val,
+        captures: old_val = self.current(),
         ensures: self.current() > old_val,
     )]
     fn update(&mut self);

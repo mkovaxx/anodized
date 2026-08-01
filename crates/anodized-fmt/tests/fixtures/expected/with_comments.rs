@@ -37,7 +37,7 @@ fn add(a: i32, b: i32) -> i32 {
 // Test: capture pattern matches tuples
 #[spec(
     // Capture the point coordinates
-    captures: point as (x, y, z),
+    captures: (x, y, z) = point,
     // All coordinates must be less than 100
     ensures: x < 100 && y < 100 && z < 100,
 )]
@@ -51,7 +51,7 @@ fn validate_point(point: (i32, i32, i32)) -> bool {
     requires: *balance > 0,
     // Capture initial balance
     // Balance must be positive before withdrawal
-    captures: *balance as initial,
+    captures: initial = *balance,
     // Bind the result for inspection
     inspects: result,
     // Ensure correct calculation
@@ -81,7 +81,7 @@ impl Calculator {
         // Base must be positive
         requires: self.base > 0,
         // Captures the base value
-        captures: self.base as initial_base,
+        captures: initial_base = self.base,
         // Result combines base and value
         ensures: *output == initial_base + value,
     )]
@@ -105,7 +105,7 @@ trait Validator {
         // Data must not be empty
         requires: !data.is_empty(),
         // Must capture the data
-        captures: data.clone() as snapshot,
+        captures: snapshot = data.clone(),
         // Result reflects the snapshot
         ensures: *output == snapshot.len(),
     )]
@@ -174,8 +174,8 @@ fn requires_array_syntax(x: i32, y: i32, z: i32) -> i32 {
     requires: x > 0,
     // Capture initial values
     captures: [
-        x as old_x,
-        y as old_y,
+        old_x = x,
+        old_y = y,
     ],
     // Multiple post-conditions
     ensures: [

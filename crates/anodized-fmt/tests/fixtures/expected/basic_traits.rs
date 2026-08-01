@@ -8,7 +8,7 @@ pub trait TestTrait {
     /// Has no default
     #[spec(
         requires: x > 0,
-        captures: self.current() as old_val,
+        captures: old_val = self.current(),
         ensures: *output > old_val,
     )]
     fn add_to(&self, x: i32) -> i32;
@@ -16,7 +16,7 @@ pub trait TestTrait {
     /// Has a default
     #[spec(
         requires: x > 0,
-        captures: self.current() as old_val,
+        captures: old_val = self.current(),
         ensures: *output > old_val,
     )]
     fn mul_by(&self, x: i32) -> i32 {

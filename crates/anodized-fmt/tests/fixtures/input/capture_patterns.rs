@@ -25,7 +25,7 @@ fn process_optional_tuple(data: Option<(i32, i32)>) -> bool {
     todo!()
 }
 
-// Test: capture pattern with binding modifier
+// Test: capture assignment
 #[spec(captures: inner_tuple = data,
             ensures: inner_tuple.is_some())]
 fn process_with_binding(data: Option<(i32, i32)>) -> bool {
