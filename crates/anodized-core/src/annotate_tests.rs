@@ -245,8 +245,8 @@ fn multiple_binds() {
 )]
 fn multiple_captures() {
     let _: Spec = parse_quote! {
-        captures: let old_value = value,
-        captures: let old_count = count,
+        captures: old_value = value,
+        captures: old_count = count,
     };
 }
 
@@ -629,7 +629,7 @@ fn rename_return_value() {
 #[test]
 fn captures_simple_identifier() {
     let spec: Spec = parse_quote! {
-        captures: let old_count = count,
+        captures: old_count = count,
         ensures: output == old_count + 1,
     };
 
@@ -655,7 +655,7 @@ fn captures_simple_identifier() {
 #[test]
 fn captures_identifier_with_alias() {
     let spec: Spec = parse_quote! {
-        captures: let prev_value = value,
+        captures: prev_value = value,
         ensures: output > prev_value,
     };
 
@@ -682,9 +682,9 @@ fn captures_identifier_with_alias() {
 fn captures_array() {
     let spec: Spec = parse_quote! {
         captures: {
-            let old_count = count;
-            let old_index = index;
-            let old_value = value;
+            old_count = count;
+            old_index = index;
+            old_value = value;
         },
         ensures: [
             count == old_count + 1,
@@ -737,7 +737,7 @@ fn captures_with_all_clauses() {
     let spec: Spec = parse_quote! {
         requires: x > 0,
         maintains: self.is_valid(),
-        captures: let old_val = value,
+        captures: old_val = value,
         inspects: result,
         ensures: result > old_val,
     };
@@ -771,7 +771,7 @@ fn captures_with_all_clauses() {
 #[should_panic(expected = "parameters are out of order")]
 fn captures_out_of_order() {
     let _: Spec = parse_quote! {
-        captures: let old_value = value,
+        captures: old_value = value,
         maintains: self.is_valid(),
     };
 }
@@ -779,7 +779,7 @@ fn captures_out_of_order() {
 #[test]
 fn captures_array_expression() {
     let spec: Spec = parse_quote! {
-        captures: let slice = [a, b, c],
+        captures: slice = [a, b, c],
         ensures: slice.len() == 3,
     };
 
@@ -806,10 +806,10 @@ fn captures_array_expression() {
 fn captures_complex_expressions() {
     let spec: Spec = parse_quote! {
         captures: {
-            let item_count = self.items.len();
-            let bar = foo.bar();
-            let sum = a + b;
-            let first = foo[0];
+            item_count = self.items.len();
+            bar = foo.bar();
+            sum = a + b;
+            first = foo[0];
         },
         ensures: output > 0,
     };
@@ -822,7 +822,7 @@ fn captures_complex_expressions() {
 fn cfg_on_captures() {
     let _: Spec = parse_quote! {
         #[cfg(test)]
-        captures: let old_value = value,
+        captures: old_value = value,
         ensures: output > old_value,
     };
 }
@@ -830,7 +830,7 @@ fn cfg_on_captures() {
 #[test]
 fn captures_edge_case_cast_expr() {
     let spec: Spec = parse_quote! {
-        captures: let old_red = r as u8,
+        captures: old_red = r as u8,
     };
 
     let expected = Spec {
@@ -852,7 +852,7 @@ fn captures_edge_case_cast_expr() {
 #[test]
 fn captures_edge_case_array_of_cast_exprs() {
     let spec: Spec = parse_quote! {
-        captures: let r8g8b8 = [
+        captures: r8g8b8 = [
             r as u8,
             g as u8,
             b as u8,
@@ -885,9 +885,9 @@ fn captures_edge_case_array_of_cast_exprs() {
 fn captures_edge_case_list_of_cast_exprs() {
     let spec: Spec = parse_quote! {
         captures: {
-            let old_red = r as u8;
-            let old_green = g as u8;
-            let old_blue = b as u8;
+            old_red = r as u8;
+            old_green = g as u8;
+            old_blue = b as u8;
         },
     };
 
@@ -920,7 +920,7 @@ fn captures_edge_case_list_of_cast_exprs() {
 #[test]
 fn captures_pattern_matches_slices() {
     let spec: Spec = parse_quote! {
-        captures: let [r, g, b] = rgb,
+        captures: [r, g, b] = rgb,
     };
 
     let expected = Spec {
@@ -942,7 +942,7 @@ fn captures_pattern_matches_slices() {
 #[test]
 fn captures_pattern_matches_tuples() {
     let spec: Spec = parse_quote! {
-        captures: let (x, y, z) = point,
+        captures: (x, y, z) = point,
     };
 
     let expected = Spec {
@@ -964,7 +964,7 @@ fn captures_pattern_matches_tuples() {
 #[test]
 fn captures_pattern_matches_structs() {
     let spec: Spec = parse_quote! {
-        captures: let Person { name, age } = person.clone(),
+        captures: Person { name, age } = person.clone(),
     };
 
     let expected = Spec {
@@ -986,7 +986,7 @@ fn captures_pattern_matches_structs() {
 #[test]
 fn captures_pattern_matches_nested() {
     let spec: Spec = parse_quote! {
-        captures: let Some((a, b)) = data.as_ref(),
+        captures: Some((a, b)) = data.as_ref(),
     };
 
     let expected = Spec {
@@ -1006,50 +1006,36 @@ fn captures_pattern_matches_nested() {
 }
 
 #[test]
+#[should_panic(expected = "expected `,`")]
 fn captures_pattern_with_binding_modifier() {
-    let spec: Spec = parse_quote! {
-        captures: let Some(inner_tuple @ (a, b)) = data,
+    let _: Spec = parse_quote! {
+        captures: Some(inner_tuple @ (a, b)) = data,
     };
-
-    let expected = Spec {
-        qualifiers: FnQualifiers::empty(),
-        requires: vec![],
-        maintains: vec![],
-        captures: vec![Capture {
-            pat: parse_quote! { Some(inner_tuple @ (a, b)) },
-            expr: parse_quote! { data },
-        }],
-        inspects: None,
-        ensures: vec![],
-        span: Span::call_site(),
-    };
-
-    assert_spec_eq(&spec, &expected);
 }
 
 #[test]
-#[should_panic(expected = "expected an expression or a pattern")]
-fn captures_missing_initializer_is_rejected_by_spec_args() {
-    let input = "captures: let Person { name, age };,";
+#[should_panic(expected = "expected `,`")]
+fn captures_missing_assignment_value_is_rejected_by_spec_args() {
+    let input = "captures: Person { name, age } =,";
     let _: syntax::SpecArgs = parse_str(input).unwrap();
 }
 
 #[test]
-#[should_panic(expected = "expected an expression or a pattern")]
-fn captures_missing_initializer_errors_as_spec() {
-    let _: Spec = parse_str("captures: let Person { name, age };,").unwrap();
+#[should_panic(expected = "expected `,`")]
+fn captures_missing_assignment_value_errors_as_spec() {
+    let _: Spec = parse_str("captures: Person { name, age } =,").unwrap();
 }
 
 #[test]
-#[should_panic(expected = "expected a `let` binding or block")]
-fn captures_require_a_let_binding() {
+#[should_panic(expected = "expected an assignment or block")]
+fn captures_require_an_assignment() {
     let _: Spec = parse_str("captures: value,").unwrap();
 }
 
 #[test]
 #[should_panic(expected = "expected `,`")]
 fn captures_with_extra_semicolon() {
-    let _: Spec = parse_str("captures: let old_value = value;,").unwrap();
+    let _: Spec = parse_str("captures: old_value = value;,").unwrap();
 }
 
 #[test]
