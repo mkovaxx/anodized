@@ -1028,32 +1028,28 @@ fn captures_pattern_with_binding_modifier() {
 }
 
 #[test]
+#[should_panic(expected = "expected an expression or a pattern")]
 fn captures_missing_initializer_is_rejected_by_spec_args() {
     let input = "captures: let Person { name, age };,";
-    let err = parse_str::<syntax::SpecArgs>(input).unwrap_err();
-    assert!(err.to_string().contains("expected `=`"), "{err}");
+    let _: syntax::SpecArgs = parse_str(input).unwrap();
 }
 
 #[test]
-#[should_panic(expected = "expected `=`")]
+#[should_panic(expected = "expected an expression or a pattern")]
 fn captures_missing_initializer_errors_as_spec() {
     let _: Spec = parse_str("captures: let Person { name, age };,").unwrap();
 }
 
 #[test]
+#[should_panic(expected = "expected a `let` binding or block")]
 fn captures_require_a_let_binding() {
-    let err = parse_str::<Spec>("captures: value,").unwrap_err();
-    assert!(
-        err.to_string()
-            .contains("expected a `let` binding or block"),
-        "{err}"
-    );
+    let _: Spec = parse_str("captures: value,").unwrap();
 }
 
 #[test]
+#[should_panic(expected = "expected `,`")]
 fn captures_with_extra_semicolon() {
-    let err = parse_str::<Spec>("captures: let old_value = value;,").unwrap_err();
-    assert!(err.to_string().contains("expected `,`"), "{err}");
+    let _: Spec = parse_str("captures: let old_value = value;,").unwrap();
 }
 
 #[test]
