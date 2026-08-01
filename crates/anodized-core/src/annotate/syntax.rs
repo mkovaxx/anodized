@@ -53,7 +53,6 @@ impl Parse for SpecArg {
                 input.parse()?,
                 match keyword {
                     Keyword::Binds | Keyword::Inspects => SpecArgValue::parse_pat_or_expr(input)?,
-                    Keyword::Captures => SpecArgValue::Captures(input.parse()?),
                     _ => SpecArgValue::parse_expr_or_pat(input)?,
                 },
             )
@@ -81,7 +80,6 @@ pub enum SpecArgValue {
     None,
     Expr(Expr),
     Pat(Pat),
-    Captures(Captures),
 }
 
 impl SpecArgValue {
@@ -99,17 +97,6 @@ impl SpecArgValue {
             return Ok(pat);
         };
         Err(syn::Error::new_spanned(self, "expected a pattern"))
-    }
-
-    /// Return the `Captures` or fail.
-    pub fn try_into_captures(self) -> Result<Captures> {
-        if let Self::Captures(captures) = self {
-            return Ok(captures);
-        };
-        Err(syn::Error::new_spanned(
-            self,
-            "expected captures: expression `as` pattern",
-        ))
     }
 
     /// Try to parse as `Expr` then as `Pat`.
@@ -167,7 +154,6 @@ impl ToTokens for SpecArgValue {
             SpecArgValue::None => {}
             SpecArgValue::Expr(expr) => expr.to_tokens(tokens),
             SpecArgValue::Pat(pat) => pat.to_tokens(tokens),
-            SpecArgValue::Captures(expr) => expr.to_tokens(tokens),
         }
     }
 }

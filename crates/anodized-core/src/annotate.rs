@@ -319,8 +319,8 @@ impl SpecArg {
                 "`cfg` attribute is not supported on `captures`",
             ));
         }
-        let capture_list = self.value.try_into_captures()?;
-        match capture_list.0 {
+        let capture_list = self.value.try_into_expr()?;
+        match capture_list {
             Expr::Let(let_expr) => {
                 captures.push(interpret_let_expr_as_capture(let_expr)?);
             }
@@ -340,7 +340,7 @@ impl SpecArg {
             }
             _ => {
                 return Err(Error::new_spanned(
-                    capture_list.0,
+                    capture_list,
                     "expected a `let` binding or block",
                 ));
             }
