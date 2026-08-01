@@ -1,5 +1,5 @@
 use syn::{
-    Attribute, Error, Expr, ExprAssign, ExprLet, Meta, Pat, Stmt,
+    Attribute, Error, Expr, ExprAssign, Meta, Pat,
     parse::{Parse, ParseStream, Result},
     parse_quote,
     spanned::Spanned,
