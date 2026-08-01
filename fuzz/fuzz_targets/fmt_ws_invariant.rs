@@ -25,8 +25,8 @@ static TEMPLATE: OnceLock<Template> = OnceLock::new();
 ///         // captures
 ///         captures: [
 ///             // capture 1
-///             values as [first , second , third],
-///             state.clone() as State { active , count },
+///             [first, second, third] = values,
+///             State { active, count } = state.clone(),
 ///         ],
 ///         // return value binding
 ///         inspects: ret_val,
@@ -58,8 +58,8 @@ fn make_template() -> Template {
         .z().fixed("// captures\n")
         .z().tokens("captures : [").fixed("\n")
         .z().fixed("// capture 1\n")
-        .z().fixed("values").p().tokens("as [ first , second , third ] ,").fixed("\n")
-        .z().tokens("state . clone ( ) as").p().tokens("State { active , count } ,").fixed("\n")
+        .z().tokens("[ first , second , third ] =").p().fixed("values ,\n")
+        .z().tokens("State { active , count } =").p().tokens("state . clone ( ) ,").fixed("\n")
         .z().tokens("] ,").fixed("\n")
 
         .z().fixed("// return value binding\n")

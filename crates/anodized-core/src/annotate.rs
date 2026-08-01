@@ -1,17 +1,18 @@
 use syn::{
-    Attribute, Error, Expr, Ident, Meta, Pat, PatIdent,
+    Attribute, Error, Expr, ExprAssign, Meta, Pat,
     parse::{Parse, ParseStream, Result},
+    parse_quote,
     spanned::Spanned,
 };
 
 use crate::{
     Capture, Condition, DataSpec, LoopSpec, LoopVariant, Spec,
-    annotate::syntax::{CaptureExpr, SpecArg, SpecArgValue},
+    annotate::syntax::{SpecArg, SpecArgValue},
     qualifiers::FnQualifiers,
 };
 
 pub mod syntax;
-use syntax::{Captures, Keyword};
+use syntax::Keyword;
 
 #[cfg(test)]
 #[path = "annotate_tests.rs"]
@@ -100,7 +101,7 @@ impl Parse for Spec {
                     if !captures.is_empty() {
                         errors.add(Error::new(
                             arg.keyword_span,
-                            "at most one `captures` parameter is allowed; to capture multiple values, use a list: `captures: [expr1, expr2, ...]`",
+                            "at most one `captures` parameter is allowed; to capture multiple values, use a list: `captures: [binding1 = expr1, binding2 = expr2, ...]`",
                         ));
                     }
                     if let Err(error) = arg.parse_captures(&mut captures) {
@@ -319,15 +320,24 @@ impl SpecArg {
                 "`cfg` attribute is not supported on `captures`",
             ));
         }
-        let capture_list = self.value.try_into_captures()?;
+        let capture_list = self.value.try_into_expr()?;
         match capture_list {
-            Captures::One(capture_expr) => {
-                captures.push(interpret_capture_expr_as_capture(*capture_expr.clone())?);
+            Expr::Assign(assignment) => {
+                captures.push(interpret_assignment_as_capture(assignment)?);
             }
-            Captures::Many { elems, .. } => {
-                for capture_expr in elems {
-                    captures.push(interpret_capture_expr_as_capture(capture_expr)?);
+            Expr::Array(array) => {
+                for elem in array.elems {
+                    let Expr::Assign(assignment) = elem else {
+                        return Err(Error::new_spanned(elem, "expected an assignment"));
+                    };
+                    captures.push(interpret_assignment_as_capture(assignment)?);
                 }
+            }
+            _ => {
+                return Err(Error::new_spanned(
+                    capture_list,
+                    "expected an assignment or block",
+                ));
             }
         }
         Ok(())
@@ -364,56 +374,14 @@ impl SpecArg {
     }
 }
 
-/// Try to interpret a CaptureExpr as a single Capture
-fn interpret_capture_expr_as_capture(capture_expr: CaptureExpr) -> Result<Capture> {
-    let span = capture_expr.span();
-    let CaptureExpr { expr, as_, pat } = capture_expr;
-
-    match (expr, as_, pat) {
-        // Complete form: <expression> `as` <pattern>
-        (Some(expr), Some(_), Some(pat)) => Ok(Capture { expr, pat }),
-
-        // Shorthand: <identifier>
-        (Some(ref expr @ Expr::Path(ref path)), None, None)
-            if path.path.segments.len() == 1
-                && path.path.leading_colon.is_none()
-                && path.attrs.is_empty()
-                && path.qself.is_none() =>
-        {
-            // auto-generate binding with `old_` prefix
-            let ident = &path.path.segments[0].ident;
-            let ident_alias = Ident::new(&format!("old_{}", ident), ident.span());
-            let pat = Pat::Ident(PatIdent {
-                ident: ident_alias,
-                attrs: vec![],
-                mutability: None,
-                by_ref: None,
-                subpat: None,
-            });
-            Ok(Capture {
-                expr: expr.clone(),
-                pat,
-            })
-        }
-
-        // Missing <pattern>
-        (Some(_), Some(_), None) => Err(Error::new_spanned(as_, "expected pattern after `as`")),
-
-        // Missing `as` and <pattern>
-        (Some(expr), None, None) => Err(Error::new_spanned(
-            expr,
-            "complex expression must be bound/descructured: <expression> `as` <pattern>",
-        )),
-
-        // Missing `as`
-        (Some(_), None, Some(pat)) => Err(Error::new_spanned(pat, "expected `as` <pattern>")),
-
-        // Missing <expression>
-        (None, _, _) => Err(Error::new(
-            span,
-            "expected capture: <expression> `as` <pattern>",
-        )),
-    }
+/// Try to interpret an ExprAssign as a single Capture.
+fn interpret_assignment_as_capture(assignment: ExprAssign) -> Result<Capture> {
+    let left = assignment.left;
+    Ok(Capture {
+        // TODO: Make this less janky.
+        pat: parse_quote! { #left },
+        expr: *assignment.right,
+    })
 }
 
 fn find_cfg_attribute(attrs: &[Attribute]) -> Result<Option<&Attribute>> {

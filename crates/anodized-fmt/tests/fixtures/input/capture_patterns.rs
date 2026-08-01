@@ -2,42 +2,42 @@
 use anodized::spec;
 
 // Test: capture pattern matches slices
-#[spec(captures: rgb as [r,g,b], ensures: r + g + b == 255)]
+#[spec(captures: [r,g,b] = rgb, ensures: r + g + b == 255)]
 fn process_color(rgb: [u8; 3]) -> bool {
     todo!()
 }
 
 // Test: capture pattern matches tuples
-#[spec(captures: point as (x,   y,    z), ensures: x < 100 && y < 100 && z < 100)]
+#[spec(captures: (x,   y,    z) = point, ensures: x < 100 && y < 100 && z < 100)]
 fn validate_point(point: (i32, i32, i32)) -> bool {
     todo!()
 }
 
 // Test: capture pattern matches structs
-#[spec(captures: person.clone() as Person { name, age }, ensures: age >= 0)]
+#[spec(captures: Person { name, age } = person.clone(), ensures: age >= 0)]
 fn check_person(person: &Person) -> bool {
     todo!()
 }
 
 // Test: capture pattern matches nested
-#[spec(captures: data.as_ref() as Some( (a,   b)), ensures: a > 0 && b > 0)]
+#[spec(captures: Some( (a,   b)) = data.as_ref(), ensures: a > 0 && b > 0)]
 fn process_optional_tuple(data: Option<(i32, i32)>) -> bool {
     todo!()
 }
 
-// Test: capture pattern with binding modifier
-#[spec(captures: data as Some( inner_tuple @ (a, b) ),
-            ensures: inner_tuple.0 == a)]
+// Test: capture assignment
+#[spec(captures: inner_tuple = data,
+            ensures: inner_tuple.is_some())]
 fn process_with_binding(data: Option<(i32, i32)>) -> bool {
     todo!()
 }
 
 // Test: Complex capture with multiple patterns
 #[spec(
-    captures: [values as [first,
-                          second,
-                          third],
-               state.clone() as State { active, count }],
+    captures: [[first,
+                second,
+                third] = values,
+               State { active, count } = state.clone()],
     requires: active,
     ensures: first + second + third == count
 )]
@@ -47,7 +47,7 @@ fn complex_capture_multiple(values: [i32; 3], state: &State) -> bool {
 
 // Test: Capture with all spec clauses
 #[spec(
-    requires: *balance > 0, captures: *balance as initial,
+    requires: *balance > 0, captures: initial = *balance,
     inspects: result, ensures: result == initial - amount
 )]
 fn withdraw_with_capture(balance: &mut u64, amount: u64) -> u64 {
@@ -57,8 +57,8 @@ fn withdraw_with_capture(balance: &mut u64, amount: u64) -> u64 {
 // Test: Multiple captures with tuple and struct patterns
 #[spec(
     captures: [
-        position as (x, y), velocity as (vx, vy),
-        state.clone() as PhysicsState {mass, friction}
+        (x, y) = position, (vx, vy) = velocity,
+        PhysicsState {mass, friction} = state.clone()
     ],
     ensures: x >= 0 && y >= 0
 )]

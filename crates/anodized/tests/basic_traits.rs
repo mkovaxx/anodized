@@ -8,7 +8,7 @@ pub trait TestTrait {
     /// Has no default
     #[spec(
         requires: x > 0,
-        captures: self.current() as old_val,
+        captures: old_val = self.current(),
         inspects: output,
         ensures: output > old_val,
     )]
@@ -17,7 +17,7 @@ pub trait TestTrait {
     /// Has a default
     #[spec(
         requires: x > 0,
-        captures: self.current() as old_val,
+        captures: old_val = self.current(),
         inspects: output,
         ensures: output > old_val,
     )]

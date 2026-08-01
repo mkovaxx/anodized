@@ -7,7 +7,7 @@ error: `requires` parameter is not supported here
 error: `captures` parameter is not supported here
  --> tests/compile_fail/struct_invalid_spec.rs:8:5
   |
-8 |     captures: self.x as old_x,
+8 |     captures: old_x = self.x,
   |     ^^^^^^^^
 
 error: `inspects` parameter is not supported here

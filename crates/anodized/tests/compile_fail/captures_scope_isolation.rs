@@ -1,17 +1,17 @@
 use anodized::spec;
 
-// This test verifies that capture aliases are not accessible in the function body
+// This test verifies that capture bindings are not accessible in the function body
 // or in requires/maintains conditions
 
 #[spec(
     captures: [
-        x as old_x,
-        y as old_y,
+        old_x = x,
+        old_y = y,
     ],
     ensures: [
-        // OK: aliases are available in ensures.
+        // OK: capture bindings are available in ensures.
         old_x == 5,
-        // OK: aliases are available in ensures.
+        // OK: capture bindings are available in ensures.
         old_y == 10,
     ],
 )]
@@ -29,7 +29,7 @@ fn captures_not_in_body(x: i32, y: i32) -> i32 {
         old_x > 0,
     ],
     captures: [
-        x as old_x,
+        old_x = x,
     ],
 )]
 fn captures_not_in_requires(x: i32) {
@@ -42,7 +42,7 @@ fn captures_not_in_requires(x: i32) {
         old_x > 0,
     ],
     captures: [
-        x as old_x,
+        old_x = x,
     ],
 )]
 fn captures_not_in_maintains(x: i32) {

@@ -49,9 +49,9 @@ pre_conditions = pre_condition_expr | pre_condition_list;
 pre_condition_list = `[` , pre_condition_expr , { `,` , pre_condition_expr } , [ `,` ] , `]`;
 pre_condition_expr = expr | pre_closure_expr;
 
-captures = capture_expr | capture_list;
-capture_list = `[` , capture_expr , { `,` , capture_expr } , [ `,` ] , `]`;
-capture_expr = expr | (expr , `as` , ident);
+captures = capture_assignment | capture_list;
+capture_list = `[` , capture_assignment , { `,` , capture_assignment } , [ `,` ] , `]`;
+capture_assignment = pattern , `=` , expr;
 
 post_conditions = post_condition_expr | post_condition_list;
 post_condition_list = `[` , post_condition_expr , { `,` , post_condition_expr } , [ `,` ] , `]`;
@@ -80,7 +80,7 @@ Given an original function like this:
 #[spec(
     requires: <PRECONDITION>,
     maintains: <INVARIANT>,
-    captures: <CAPTURE_EXPR> as <ALIAS>,
+    captures: <ALIAS> = <CAPTURE_EXPR>,
     ensures: |<PATTERN>| <POSTCONDITION>,
 )]
 fn my_function(<ARGUMENTS>) -> <RETURN_TYPE> {

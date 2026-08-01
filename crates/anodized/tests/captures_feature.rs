@@ -1,9 +1,9 @@
 #![allow(unused)]
 use anodized::spec;
 
-// Test simple identifier capturing with auto-generated alias
+// Test simple identifier capturing.
 #[spec(
-    captures: count,
+    captures: old_count = count,
     inspects: output,
     ensures: old_count <= output,
 )]
@@ -35,7 +35,7 @@ impl Container {
     }
 
     #[spec(
-        captures: self.value as initial_value,
+        captures: initial_value = self.value,
         ensures: self.value == initial_value + amount,
     )]
     fn add_to_value(&mut self, amount: i32) {
@@ -43,7 +43,7 @@ impl Container {
     }
 
     #[spec(
-        captures: self.items.clone() as original_items,
+        captures: original_items = self.items.clone(),
         ensures: self.items.len() == original_items.len() || self.items.len() == original_items.len() + 1,
     )]
     fn maybe_push(&mut self, item: String, should_push: bool) {
@@ -54,8 +54,8 @@ impl Container {
 
     #[spec(
         captures: [
-            self.items.len() as original_len,
-            self.capacity as original_cap,
+            original_len = self.items.len(),
+            original_cap = self.capacity,
         ],
         ensures: [
             self.items.len() == original_len + 1,
@@ -71,7 +71,7 @@ impl Container {
 
     #[spec(
         requires: self.is_valid(),
-        captures: self.counter as old_counter,
+        captures: old_counter = self.counter,
         ensures: self.counter == old_counter + 1,
     )]
     fn increment_if_valid(&mut self) {
@@ -80,7 +80,7 @@ impl Container {
 }
 
 #[test]
-fn simple_capture_with_auto_alias() {
+fn simple_capture() {
     assert_eq!(increment_counter(5), 6);
     assert_eq!(increment_counter(0), 1);
 }
@@ -124,7 +124,7 @@ fn captures_with_preconditions() {
 #[should_panic(expected = "postcondition failed")]
 fn capture_postcondition_failure() {
     #[spec(
-        captures: *value as old_value,
+        captures: old_value = *value,
         ensures: *value == old_value + 10,
     )]
     fn bad_increment(value: &mut i32) {
@@ -148,7 +148,7 @@ fn precondition_runs_before_captures() {
     impl TestStruct {
         #[spec(
             requires: self.counter < 100,
-            captures: self.counter as old_counter,
+            captures: old_counter = self.counter,
             ensures: self.counter == old_counter + 1,
         )]
         fn increment(&mut self) {
@@ -183,7 +183,7 @@ struct Point {
 }
 
 #[spec(
-    captures: arr as [first, second, third],
+    captures: [first, second, third] = arr,
     ensures: [
         first == arr[0],
         second == arr[1],
@@ -195,7 +195,7 @@ fn match_array(arr: [i32; 3]) {
 }
 
 #[spec(
-    captures: tuple as (a, b, c),
+    captures: (a, b, c) = tuple,
     ensures: [
         a + b + c == tuple.0 + tuple.1 + tuple.2,
     ],
@@ -206,7 +206,7 @@ fn match_tuple(tuple: (i32, i32, i32)) {
 }
 
 #[spec(
-    captures: point as Point { x, y },
+    captures: Point { x, y } = point,
     ensures: [
         x == point.x,
         y == point.y,
@@ -217,7 +217,7 @@ fn match_struct(point: Point) {
 }
 
 #[spec(
-    captures: [a, b, c] as slice,
+    captures: slice = [a, b, c],
     ensures: [
         slice[0] == a,
         slice[1] == b,

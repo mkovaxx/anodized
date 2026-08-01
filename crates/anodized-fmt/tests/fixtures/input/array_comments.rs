@@ -7,9 +7,9 @@ use anodized::spec;
            // Comment on captures clause array
     captures: [
                // Capture 1st
-        values as [first , second , third],
+        [first , second , third] = values,
     // Capture 2nd
-        state.clone() as State { active , count },
+        State { active , count } = state.clone(),
     ],
     ensures: first + second + third == count,
 )]

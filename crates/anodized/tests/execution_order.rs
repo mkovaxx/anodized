@@ -30,8 +30,8 @@ impl ExecLog {
         return log.push("maintains2") == (),
     ],
     captures: [
-        return log.push("captures1") as _alias1,
-        return log.push("captures2") as _alias2,
+        _alias1 = return log.push("captures1"),
+        _alias2 = return log.push("captures2"),
     ],
     ensures: [
         return log.push("ensures1") == (),
@@ -79,8 +79,8 @@ fn execution_order() {
         log.push("maintains2") != (),
     ],
     captures: [
-        log.push("captures1") as _alias1,
-        log.push("captures2") as _alias2,
+        _alias1 = log.push("captures1"),
+        _alias2 = log.push("captures2"),
     ],
     ensures: [
         log.push("ensures1") != (),
@@ -128,8 +128,8 @@ fn execution_order_print_only() {
         log.push("maintains2") == (),
     ],
     captures: [
-        log.push("captures1") as _alias1,
-        log.push("captures2") as _alias2,
+        _alias1 = log.push("captures1"),
+        _alias2 = log.push("captures2"),
     ],
     ensures: [
         log.push("ensures1") == (),
