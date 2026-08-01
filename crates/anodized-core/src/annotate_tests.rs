@@ -1088,33 +1088,21 @@ fn captures_missing_expr_errors_as_spec() {
 }
 
 #[test]
-fn captures_expr_as_with_missing_pat_errors() {
-    let capture_expr = syntax::CaptureExpr {
-        expr: Some(parse_quote! { value }),
-        as_: Some(Default::default()),
-        pat: None,
-    };
-    let err = interpret_capture_expr_as_capture(capture_expr).unwrap_err();
+fn captures_with_assignment() {
+    let capture_expr = parse_quote! { "whatever" };
+    let err = interpret_stmt_as_capture(capture_expr).unwrap_err();
     assert!(
-        err.to_string().contains("expected pattern after `as`"),
+        err.to_string().contains("expected a `let` binding"),
         "{}",
         err
     );
 }
 
 #[test]
-fn captures_pat_without_as_errors() {
-    let capture_expr = syntax::CaptureExpr {
-        expr: Some(parse_quote! { value }),
-        as_: None,
-        pat: Some(parse_quote! { old_value }),
-    };
-    let err = interpret_capture_expr_as_capture(capture_expr).unwrap_err();
-    assert!(
-        err.to_string().contains("expected `as` <pattern>"),
-        "{}",
-        err
-    );
+fn captures_with_extra_semicolon() {
+    let capture_expr = parse_quote! { let old_value = value; };
+    let err = interpret_stmt_as_capture(capture_expr).unwrap_err();
+    assert!(err.to_string().contains("unexpected semicolon"), "{}", err);
 }
 
 #[test]

@@ -1,7 +1,7 @@
 use proc_macro2::{Span, TokenStream, TokenTree};
 use quote::{ToTokens, TokenStreamExt};
 use syn::{
-    Attribute, Expr, Ident, Pat, Token,
+    Attribute, Block, Expr, ExprLet, Ident, Pat, Stmt, Token,
     parse::{Parse, ParseStream, Result},
     punctuated::Punctuated,
     token,
@@ -167,7 +167,7 @@ impl ToTokens for SpecArgValue {
             SpecArgValue::None => {}
             SpecArgValue::Expr(expr) => expr.to_tokens(tokens),
             SpecArgValue::Pat(pat) => pat.to_tokens(tokens),
-            SpecArgValue::Captures(captures) => captures.to_tokens(tokens),
+            SpecArgValue::Captures(expr) => expr.to_tokens(tokens),
         }
     }
 }
@@ -175,42 +175,17 @@ impl ToTokens for SpecArgValue {
 /// A group of capture expressions, either a single one or a list.
 /// These are not composed of top level [`syn::Expr`] expressions.
 #[derive(Debug, Clone, Eq, PartialEq)]
-pub enum Captures {
-    One(Box<CaptureExpr>),
-    Many {
-        bracket: token::Bracket,
-        elems: Punctuated<CaptureExpr, Token![,]>,
-    },
-}
+pub struct Captures(pub Expr);
 
 impl Parse for Captures {
     fn parse(input: ParseStream) -> Result<Self> {
-        // For bracketed input, we need to distinguish between:
-        // 1. `[a, b, c]` - an array of capture expressions
-        // 2. `[a, b, c] as slice` - a single capture with an array expr
-        //
-        // Multiple captures are in brackets, not followed by `as`
-        if input.peek(token::Bracket) && !input.peek2(Token![as]) {
-            // Parse as an array of captures
-            let content;
-            let bracket = syn::bracketed!(content in input);
-            let elems = Punctuated::parse_terminated(&content)?;
-            Ok(Captures::Many { bracket, elems })
-        } else {
-            // Otherwise parse as one capture
-            Ok(Captures::One(input.parse()?))
-        }
+        Ok(Captures(input.parse()?))
     }
 }
 
 impl ToTokens for Captures {
     fn to_tokens(&self, tokens: &mut TokenStream) {
-        match self {
-            Self::One(capture_expr) => capture_expr.to_tokens(tokens),
-            Self::Many { bracket, elems } => bracket.surround(tokens, |tokens| {
-                elems.to_tokens(tokens);
-            }),
-        }
+        self.0.to_tokens(tokens)
     }
 }
 

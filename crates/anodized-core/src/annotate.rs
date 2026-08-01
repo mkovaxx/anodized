@@ -1,5 +1,5 @@
 use syn::{
-    Attribute, Error, Expr, Ident, Meta, Pat, PatIdent,
+    Attribute, Error, Expr, ExprLet, Ident, Meta, Pat, PatIdent, Stmt,
     parse::{Parse, ParseStream, Result},
     spanned::Spanned,
 };
@@ -320,14 +320,29 @@ impl SpecArg {
             ));
         }
         let capture_list = self.value.try_into_captures()?;
-        match capture_list {
-            Captures::One(capture_expr) => {
-                captures.push(interpret_capture_expr_as_capture(*capture_expr.clone())?);
+        match capture_list.0 {
+            Expr::Let(let_expr) => {
+                captures.push(interpret_let_expr_as_capture(let_expr)?);
             }
-            Captures::Many { elems, .. } => {
-                for capture_expr in elems {
-                    captures.push(interpret_capture_expr_as_capture(capture_expr)?);
+            Expr::Block(block) => {
+                for stmt in block.block.stmts {
+                    let Stmt::Local(local) = stmt else {
+                        return Err(Error::new_spanned(stmt, "expected a `let` binding"));
+                    };
+                    let Some(init) = local.init else {
+                        return Err(Error::new_spanned(local, "expected a `let` binding"));
+                    };
+                    captures.push(Capture {
+                        expr: *init.expr,
+                        pat: local.pat,
+                    });
                 }
+            }
+            _ => {
+                return Err(Error::new_spanned(
+                    capture_list.0,
+                    "expected a `let` binding or block",
+                ));
             }
         }
         Ok(())
@@ -364,56 +379,13 @@ impl SpecArg {
     }
 }
 
-/// Try to interpret a CaptureExpr as a single Capture
-fn interpret_capture_expr_as_capture(capture_expr: CaptureExpr) -> Result<Capture> {
-    let span = capture_expr.span();
-    let CaptureExpr { expr, as_, pat } = capture_expr;
-
-    match (expr, as_, pat) {
-        // Complete form: <expression> `as` <pattern>
-        (Some(expr), Some(_), Some(pat)) => Ok(Capture { expr, pat }),
-
-        // Shorthand: <identifier>
-        (Some(ref expr @ Expr::Path(ref path)), None, None)
-            if path.path.segments.len() == 1
-                && path.path.leading_colon.is_none()
-                && path.attrs.is_empty()
-                && path.qself.is_none() =>
-        {
-            // auto-generate binding with `old_` prefix
-            let ident = &path.path.segments[0].ident;
-            let ident_alias = Ident::new(&format!("old_{}", ident), ident.span());
-            let pat = Pat::Ident(PatIdent {
-                ident: ident_alias,
-                attrs: vec![],
-                mutability: None,
-                by_ref: None,
-                subpat: None,
-            });
-            Ok(Capture {
-                expr: expr.clone(),
-                pat,
-            })
-        }
-
-        // Missing <pattern>
-        (Some(_), Some(_), None) => Err(Error::new_spanned(as_, "expected pattern after `as`")),
-
-        // Missing `as` and <pattern>
-        (Some(expr), None, None) => Err(Error::new_spanned(
-            expr,
-            "complex expression must be bound/descructured: <expression> `as` <pattern>",
-        )),
-
-        // Missing `as`
-        (Some(_), None, Some(pat)) => Err(Error::new_spanned(pat, "expected `as` <pattern>")),
-
-        // Missing <expression>
-        (None, _, _) => Err(Error::new(
-            span,
-            "expected capture: <expression> `as` <pattern>",
-        )),
-    }
+/// Try to interpret an ExprLet as a single Capture
+fn interpret_let_expr_as_capture(let_expr: ExprLet) -> Result<Capture> {
+    // TODO: Disallow `mut`, `ref`, etc.
+    Ok(Capture {
+        expr: *let_expr.expr,
+        pat: *let_expr.pat,
+    })
 }
 
 fn find_cfg_attribute(attrs: &[Attribute]) -> Result<Option<&Attribute>> {
