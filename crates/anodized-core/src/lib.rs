@@ -138,10 +138,10 @@ pub struct Condition {
 /// Captures an expression's value at function entry.
 #[derive(Debug)]
 pub struct Capture {
-    /// The expression to capture.
-    pub expr: Expr,
     /// The pattern to bind/destructure the captured value.
     pub pat: Pat,
+    /// The expression to capture.
+    pub expr: Expr,
 }
 
 /// Decreases with each run of a loop's body.
