@@ -333,8 +333,8 @@ impl SpecArg {
                         return Err(Error::new_spanned(local, "expected a `let` binding"));
                     };
                     captures.push(Capture {
-                        expr: *init.expr,
                         pat: local.pat,
+                        expr: *init.expr,
                     });
                 }
             }
@@ -383,8 +383,8 @@ impl SpecArg {
 fn interpret_let_expr_as_capture(let_expr: ExprLet) -> Result<Capture> {
     // TODO: Disallow `mut`, `ref`, etc.
     Ok(Capture {
-        expr: *let_expr.expr,
         pat: *let_expr.pat,
+        expr: *let_expr.expr,
     })
 }
 

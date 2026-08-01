@@ -638,8 +638,8 @@ fn captures_simple_identifier() {
         requires: vec![],
         maintains: vec![],
         captures: vec![Capture {
-            expr: parse_quote! { count },
             pat: parse_quote! { old_count },
+            expr: parse_quote! { count },
         }],
         inspects: None,
         ensures: vec![Condition {
@@ -664,8 +664,8 @@ fn captures_identifier_with_alias() {
         requires: vec![],
         maintains: vec![],
         captures: vec![Capture {
-            expr: parse_quote! { value },
             pat: parse_quote! { prev_value },
+            expr: parse_quote! { value },
         }],
         inspects: None,
         ensures: vec![Condition {
@@ -699,16 +699,16 @@ fn captures_array() {
         maintains: vec![],
         captures: vec![
             Capture {
-                expr: parse_quote! { count },
                 pat: parse_quote! { old_count },
+                expr: parse_quote! { count },
             },
             Capture {
-                expr: parse_quote! { index },
                 pat: parse_quote! { old_index },
+                expr: parse_quote! { index },
             },
             Capture {
-                expr: parse_quote! { value },
                 pat: parse_quote! { old_value },
+                expr: parse_quote! { value },
             },
         ],
         inspects: None,
@@ -753,8 +753,8 @@ fn captures_with_all_clauses() {
             cfg: None,
         }],
         captures: vec![Capture {
-            expr: parse_quote! { value },
             pat: parse_quote! { old_val },
+            expr: parse_quote! { value },
         }],
         inspects: Some(parse_quote! { result }),
         ensures: vec![Condition {
@@ -788,8 +788,8 @@ fn captures_array_expression() {
         requires: vec![],
         maintains: vec![],
         captures: vec![Capture {
-            expr: parse_quote! { [a, b, c] },
             pat: parse_quote! { slice },
+            expr: parse_quote! { [a, b, c] },
         }],
         inspects: None,
         ensures: vec![Condition {
@@ -838,8 +838,8 @@ fn captures_edge_case_cast_expr() {
         requires: vec![],
         maintains: vec![],
         captures: vec![Capture {
-            expr: parse_quote! { r as u8 },
             pat: parse_quote! { old_red },
+            expr: parse_quote! { r as u8 },
         }],
         inspects: None,
         ensures: vec![],
@@ -864,6 +864,7 @@ fn captures_edge_case_array_of_cast_exprs() {
         requires: vec![],
         maintains: vec![],
         captures: vec![Capture {
+            pat: parse_quote! { r8g8b8 },
             expr: parse_quote! {
                 [
                     r as u8,
@@ -871,7 +872,6 @@ fn captures_edge_case_array_of_cast_exprs() {
                     b as u8,
                 ]
             },
-            pat: parse_quote! { r8g8b8 },
         }],
         inspects: None,
         ensures: vec![],
@@ -897,16 +897,16 @@ fn captures_edge_case_list_of_cast_exprs() {
         maintains: vec![],
         captures: vec![
             Capture {
-                expr: parse_quote! { r as u8 },
                 pat: parse_quote! { old_red },
+                expr: parse_quote! { r as u8 },
             },
             Capture {
-                expr: parse_quote! { g as u8 },
                 pat: parse_quote! { old_green },
+                expr: parse_quote! { g as u8 },
             },
             Capture {
-                expr: parse_quote! { b as u8 },
                 pat: parse_quote! { old_blue },
+                expr: parse_quote! { b as u8 },
             },
         ],
         inspects: None,
@@ -928,8 +928,8 @@ fn captures_pattern_matches_slices() {
         requires: vec![],
         maintains: vec![],
         captures: vec![Capture {
-            expr: parse_quote! { rgb },
             pat: parse_quote! { [r, g, b] },
+            expr: parse_quote! { rgb },
         }],
         inspects: None,
         ensures: vec![],
@@ -950,8 +950,8 @@ fn captures_pattern_matches_tuples() {
         requires: vec![],
         maintains: vec![],
         captures: vec![Capture {
-            expr: parse_quote! { point },
             pat: parse_quote! { (x, y, z) },
+            expr: parse_quote! { point },
         }],
         inspects: None,
         ensures: vec![],
@@ -972,8 +972,8 @@ fn captures_pattern_matches_structs() {
         requires: vec![],
         maintains: vec![],
         captures: vec![Capture {
-            expr: parse_quote! { person.clone() },
             pat: parse_quote! { Person { name, age } },
+            expr: parse_quote! { person.clone() },
         }],
         inspects: None,
         ensures: vec![],
@@ -994,8 +994,8 @@ fn captures_pattern_matches_nested() {
         requires: vec![],
         maintains: vec![],
         captures: vec![Capture {
-            expr: parse_quote! { data.as_ref() },
             pat: parse_quote! { Some((a, b)) },
+            expr: parse_quote! { data.as_ref() },
         }],
         inspects: None,
         ensures: vec![],
@@ -1016,8 +1016,8 @@ fn captures_pattern_with_binding_modifier() {
         requires: vec![],
         maintains: vec![],
         captures: vec![Capture {
-            expr: parse_quote! { data },
             pat: parse_quote! { Some(inner_tuple @ (a, b)) },
+            expr: parse_quote! { data },
         }],
         inspects: None,
         ensures: vec![],

@@ -115,13 +115,13 @@ fn assert_condition_eq(left: &Condition, right: &Condition, msg_prefix: &str) {
 fn assert_capture_eq(left: &Capture, right: &Capture, msg_prefix: &str) {
     // Destructure to ensure we handle all fields
     let Capture {
-        expr: left_expr,
         pat: left_alias,
+        expr: left_expr,
     } = left;
 
     let Capture {
-        expr: right_expr,
         pat: right_alias,
+        expr: right_expr,
     } = right;
 
     assert_eq!(
