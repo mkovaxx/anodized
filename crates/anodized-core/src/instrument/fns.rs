@@ -11,7 +11,7 @@ use syn::{
 };
 
 use crate::{
-    Capture, Condition, Spec,
+    Capture, Condition, PostCondition, Spec,
     instrument::{CheckSettings, Mode},
     qualifiers::FnQualifiers,
 };
@@ -147,7 +147,7 @@ impl Mode {
         maintains: &[Condition],
         captures: &[Capture],
         inspects: &Option<Pat>,
-        ensures: &[Condition],
+        ensures: &[PostCondition],
     ) -> Result<Block> {
         let mut statements: Vec<Stmt> = vec![];
         let mut clauses: Vec<Expr> = vec![];
@@ -161,28 +161,26 @@ impl Mode {
         }
 
         {
-            let patterns = inspects
-                .iter()
-                .chain(captures.iter().map(|capture| &capture.pat));
-
-            let return_value: Option<Expr> = inspects
-                .as_ref()
-                .map(|_| parse_quote! { __anodized_output });
-            let values = return_value
-                .into_iter()
-                .chain(captures.iter().map(|capture| -> Expr {
-                    let expr = &capture.expr;
-                    // Wrap in closure to guard against `return`.
-                    parse_quote! { (|| #expr)() }
-                }));
+            let patterns = captures.iter().map(|capture| &capture.pat);
+            let values = captures.iter().map(|capture| -> Expr {
+                let expr = &capture.expr;
+                // Wrap in closure to guard against `return`.
+                parse_quote! { (|| #expr)() }
+            });
             statements.push(parse_quote! { let (#(#patterns),*) = (#(#values),*); });
         }
 
-        for condition in ensures {
+        for postcond in ensures {
             let i = clauses.len();
             let name = Ident::new(&format!("__anodized_clause_{}", i + 1), Span::mixed_site());
-            let expr = &condition.expr;
-            statements.push(parse_quote! { let #name = (|| -> bool { #expr })(); });
+            let expr = &postcond.expr;
+            if let Some(pat) = postcond.pat.as_ref().or(inspects.as_ref()) {
+                statements.push(
+                    parse_quote! { let #name = (|#pat| -> bool { #expr })(__anodized_output); },
+                );
+            } else {
+                statements.push(parse_quote! { let #name = (|| -> bool { #expr })(); });
+            }
             clauses.push(parse_quote! { #name });
         }
 
@@ -252,11 +250,24 @@ impl CheckSettings {
 
         // Generate postcondition checks.
         let mut postcondition_clauses: Vec<Expr> = vec![];
-        for condition in spec.maintains.iter().chain(&spec.ensures) {
+        for condition in &spec.maintains {
             let expr = &condition.expr;
             let repr = expr.to_token_stream().to_string();
             let expr = parse_quote! { __anodized_eval_post(|| -> bool { #expr }) };
             let clause = self.build_clause_eval(&condition.cfg, &expr, &repr);
+            postcondition_clauses.push(clause);
+        }
+        for postcond in &spec.ensures {
+            let expr = &postcond.expr;
+            let repr = expr.to_token_stream().to_string();
+            let expr = if let Some(pat) = postcond.pat.as_ref().or(spec.inspects.as_ref()) {
+                parse_quote! {
+                    __anodized_eval_post(|| -> bool { let #pat = #output_ident; #expr })
+                }
+            } else {
+                parse_quote! { __anodized_eval_post(|| -> bool { #expr }) }
+            };
+            let clause = self.build_clause_eval(&postcond.cfg, &expr, &repr);
             postcondition_clauses.push(clause);
         }
         if postcondition_clauses.is_empty() {
@@ -286,11 +297,6 @@ impl CheckSettings {
                 )
             };
 
-        let output_binder_stmt: Option<Stmt> = spec
-            .inspects
-            .as_ref()
-            .map(|pat| parse_quote! { let #pat = #output_ident; });
-
         Ok(parse_quote! {
             {
                 if #do_run_checks {
@@ -305,7 +311,6 @@ impl CheckSettings {
                 if #do_run_checks {
                     fn __anodized_eval_post(c: impl Fn() -> bool) -> bool { c() }
                     let mut __anodized_errors = ::std::string::String::new();
-                    #output_binder_stmt;
                     let __anodized_postcond = #(#postcondition_clauses)&*;
                     if !__anodized_postcond {
                         #postcond_fail_action

@@ -6,7 +6,7 @@ use syn::{
 };
 
 use crate::{
-    Capture, Condition, DataSpec, LoopSpec, LoopVariant, Spec,
+    Capture, Condition, DataSpec, LoopSpec, LoopVariant, PostCondition, Spec,
     annotate::syntax::{SpecArg, SpecArgValue},
     qualifiers::FnQualifiers,
 };
@@ -28,7 +28,7 @@ impl Parse for Spec {
         let mut maintains: Vec<Condition> = vec![];
         let mut captures: Vec<Capture> = vec![];
         let mut inspects: Option<Pat> = None;
-        let mut ensures: Vec<Condition> = vec![];
+        let mut ensures: Vec<PostCondition> = vec![];
 
         let is_sorted = raw_spec.is_sorted();
 
@@ -126,7 +126,7 @@ impl Parse for Spec {
                     }
                 }
                 Keyword::Ensures => {
-                    if let Err(error) = arg.parse_conditions(&mut ensures) {
+                    if let Err(error) = arg.parse_postconds(&mut ensures) {
                         errors.add(error);
                     }
                 }
@@ -308,6 +308,62 @@ impl SpecArg {
             }
         } else {
             conditions.push(Condition { expr, cfg });
+        }
+        Ok(())
+    }
+
+    fn parse_postconds(self, postconds: &mut Vec<PostCondition>) -> Result<()> {
+        let cfg_attr = find_cfg_attribute(&self.attrs)?;
+        let cfg: Option<Meta> = if let Some(attr) = cfg_attr {
+            Some(attr.parse_args()?)
+        } else {
+            None
+        };
+        let expr = self.value.try_into_expr()?;
+        if let Expr::Array(items) = expr {
+            for expr in items.elems {
+                if let Expr::Closure(mut closure_form) = expr {
+                    if closure_form.inputs.len() != 1 {
+                        return Err(Error::new_spanned(
+                            closure_form,
+                            "postcondition closure must have exactly one input",
+                        ));
+                    }
+                    let (pat, _) = closure_form.inputs.pop().unwrap().into_tuple();
+                    postconds.push(PostCondition {
+                        pat: Some(pat),
+                        expr: *closure_form.body,
+                        cfg: cfg.clone(),
+                    });
+                } else {
+                    postconds.push(PostCondition {
+                        pat: None,
+                        expr,
+                        cfg: cfg.clone(),
+                    });
+                }
+            }
+        } else {
+            if let Expr::Closure(mut closure_form) = expr {
+                if closure_form.inputs.len() != 1 {
+                    return Err(Error::new_spanned(
+                        closure_form,
+                        "postcondition closure must have exactly one input",
+                    ));
+                }
+                let (pat, _) = closure_form.inputs.pop().unwrap().into_tuple();
+                postconds.push(PostCondition {
+                    pat: Some(pat),
+                    expr: *closure_form.body,
+                    cfg: cfg.clone(),
+                });
+            } else {
+                postconds.push(PostCondition {
+                    pat: None,
+                    expr,
+                    cfg: cfg.clone(),
+                });
+            }
         }
         Ok(())
     }

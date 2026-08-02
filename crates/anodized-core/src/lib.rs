@@ -27,7 +27,7 @@ pub struct Spec {
     /// Inspects: pattern to bind the output of the function for postconditions.
     pub inspects: Option<Pat>,
     /// Postconditions: conditions that must hold when the function returns.
-    pub ensures: Vec<Condition>,
+    pub ensures: Vec<PostCondition>,
     /// The span in the source code, from which this spec was parsed.
     span: Span,
 }
@@ -124,9 +124,22 @@ impl LoopSpec {
 
 /// A condition represented by a `bool`-valued expression.
 #[derive(Debug)]
-// TODO: Rename to `Condition` for clarity.
 pub struct Condition {
     /// The expression that validates the condition, e.g. `value > 42`.
+    pub expr: Expr,
+    /// **Static analyzers can safely ignore this field.**
+    ///
+    /// Build configuration filter to decide whether to add runtime checks.
+    /// Passed to a `cfg!()` guard in the instrumented function.
+    pub cfg: Option<Meta>,
+}
+
+/// A postcondition represented by a pattern to bind the output and a `bool`-valued expression.
+#[derive(Debug)]
+pub struct PostCondition {
+    /// The pattern to bind/destructure the function's output, e.g. `ref answer`.
+    pub pat: Option<Pat>,
+    /// The expression that validates the postcondition, e.g. `answer == "forty-two"`.
     pub expr: Expr,
     /// **Static analyzers can safely ignore this field.**
     ///
