@@ -1,4 +1,4 @@
-use crate::{Capture, Condition, Spec};
+use crate::{Capture, Condition, PostCondition, Spec};
 use pretty_assertions::assert_eq;
 use quote::{ToTokens, quote};
 
@@ -65,7 +65,12 @@ pub fn assert_spec_eq(left: &Spec, right: &Spec) {
         left_inspects, right_inspects,
         "inspects patterns do not match: {left_inspects:?} vs {right_inspects:?}"
     );
-    assert_slice_eq(left_ensures, right_ensures, "ensures", assert_condition_eq);
+    assert_slice_eq(
+        left_ensures,
+        right_ensures,
+        "ensures",
+        assert_postcondition_eq,
+    );
 }
 
 fn assert_slice_eq<T, F>(left: &[T], right: &[T], item_name: &str, assert_item_eq: F)
@@ -104,6 +109,33 @@ fn assert_condition_eq(left: &Condition, right: &Condition, msg_prefix: &str) {
         msg_prefix
     );
 
+    assert_eq!(
+        left_cfg.to_token_stream().to_string(),
+        right_cfg.to_token_stream().to_string(),
+        "{}`cfg` does not match",
+        msg_prefix
+    );
+}
+
+fn assert_postcondition_eq(left: &PostCondition, right: &PostCondition, msg_prefix: &str) {
+    let PostCondition {
+        pat: left_pat,
+        expr: left_expr,
+        cfg: left_cfg,
+    } = left;
+    let PostCondition {
+        pat: right_pat,
+        expr: right_expr,
+        cfg: right_cfg,
+    } = right;
+
+    assert_eq!(left_pat, right_pat, "{}`pat` does not match", msg_prefix);
+    assert_eq!(
+        left_expr.to_token_stream().to_string(),
+        right_expr.to_token_stream().to_string(),
+        "{}`expr` does not match",
+        msg_prefix
+    );
     assert_eq!(
         left_cfg.to_token_stream().to_string(),
         right_cfg.to_token_stream().to_string(),

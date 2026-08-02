@@ -36,8 +36,8 @@ fn embed_spec_item_trait() {
             #[allow(warnings)]
             fn __anodized_fn_ensures_FUNC(&self, PARAM_1: TYPE_1, PARAM_2: TYPE_2, __anodized_output: RET_TYPE) -> bool {
                 let __anodized_clause_1 = (|| -> bool { COND_2 })();
-                let (PAT_1) = (__anodized_output);
-                let __anodized_clause_2 = (|| -> bool { COND_3 })();
+                let () = ();
+                let __anodized_clause_2 = (|PAT_1| -> bool { COND_3 })(__anodized_output);
                 __anodized_clause_1 && __anodized_clause_2
             }
 
@@ -106,9 +106,8 @@ fn default_instrument_item_trait() {
                 if false {
                     fn __anodized_eval_post(c: impl Fn() -> bool) -> bool { c() }
                     let mut __anodized_errors = ::std::string::String::new();
-                    let PAT_1 = __anodized_output;
                     let __anodized_postcond = __anodized_eval_post(|| -> bool { COND_2 })
-                        & __anodized_eval_post(|| -> bool { COND_3 });
+                        & __anodized_eval_post(|| -> bool { let PAT_1 = __anodized_output; COND_3 });
                     if !__anodized_postcond {}
                 }
                 __anodized_output
@@ -187,10 +186,9 @@ fn emit_try_fn_instrument_item_trait() {
                 if true {
                     fn __anodized_eval_post(c: impl Fn() -> bool) -> bool { c() }
                     let mut __anodized_errors = ::std::string::String::new();
-                    let PAT_1 = __anodized_output;
                     let __anodized_postcond = (__anodized_eval_post(|| -> bool { COND_2 })
                             || __anodized_errors.push_str("\n    COND_2") != ())
-                        & (__anodized_eval_post(|| -> bool { COND_3 })
+                        & (__anodized_eval_post(|| -> bool { let PAT_1 = __anodized_output; COND_3 })
                             || __anodized_errors.push_str("\n    COND_3") != ());
                     if !__anodized_postcond {
                         return ::anodized::result::post_err(__anodized_output, __anodized_errors);
@@ -239,8 +237,8 @@ fn embed_spec_item_impl_trait() {
             #[allow(warnings)]
             fn __anodized_fn_ensures_FUNC(&self, PARAM_1: TYPE_1, PARAM_2: TYPE_2, __anodized_output: RET_TYPE) -> bool {
                 let __anodized_clause_1 = (|| -> bool { COND_2 })();
-                let (PAT_1) = (__anodized_output);
-                let __anodized_clause_2 = (|| -> bool { COND_3 })();
+                let () = ();
+                let __anodized_clause_2 = (|PAT_1| -> bool { COND_3 })(__anodized_output);
                 __anodized_clause_1 && __anodized_clause_2
             }
 
@@ -305,9 +303,8 @@ fn default_instrument_item_impl_trait() {
                 if false {
                     fn __anodized_eval_post(c: impl Fn() -> bool) -> bool { c() }
                     let mut __anodized_errors = ::std::string::String::new();
-                    let PAT_1 = __anodized_output;
                     let __anodized_postcond = __anodized_eval_post(|| -> bool { COND_2 })
-                        & __anodized_eval_post(|| -> bool { COND_3 });
+                        & __anodized_eval_post(|| -> bool { let PAT_1 = __anodized_output; COND_3 });
                     if !__anodized_postcond {}
                 }
                 __anodized_output
@@ -370,10 +367,9 @@ fn emit_try_fn_instrument_item_impl_trait() {
                 if true {
                     fn __anodized_eval_post(c: impl Fn() -> bool) -> bool { c() }
                     let mut __anodized_errors = ::std::string::String::new();
-                    let PAT_1 = __anodized_output;
                     let __anodized_postcond = (__anodized_eval_post(|| -> bool { COND_2 })
                             || __anodized_errors.push_str("\n    COND_2") != ())
-                        & (__anodized_eval_post(|| -> bool { COND_3 })
+                        & (__anodized_eval_post(|| -> bool { let PAT_1 = __anodized_output; COND_3 })
                             || __anodized_errors.push_str("\n    COND_3") != ());
                     if !__anodized_postcond {
                         panic!("postcondition failed:{__anodized_errors}");
