@@ -1,7 +1,7 @@
 use anodized::spec;
 
 #[spec(
-    // Should fail: closure-form is no longer allowed.
+    // Should fail: postcondition closures must bind exactly one output value.
     ensures: |x, y| x > 0,
 )]
 fn returns_positive() -> i32 {
@@ -9,7 +9,7 @@ fn returns_positive() -> i32 {
 }
 
 #[spec(
-    // Should fail: closure-form is no longer allowed.
+    // Should fail: postcondition closures must bind exactly one output value.
     ensures: || true,
 )]
 fn returns_something() -> i32 {
