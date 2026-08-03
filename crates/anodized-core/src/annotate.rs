@@ -20,7 +20,7 @@ mod annotate_tests;
 
 impl Parse for Spec {
     fn parse(input: ParseStream) -> Result<Self> {
-        let raw_spec = syntax::SpecArgs::parse(input)?;
+        let raw_spec = syntax::SpecFields::parse(input)?;
 
         let mut errors = MultiError::empty();
         let mut qualifiers = FnQualifiers::empty();
@@ -31,101 +31,102 @@ impl Parse for Spec {
 
         let is_sorted = raw_spec.is_sorted();
 
-        for arg in raw_spec.args {
-            let keyword = Keyword::from(&arg.member);
+        for field in raw_spec.fields {
+            let keyword = Keyword::from(&field.member);
             match keyword {
                 Keyword::Unknown(ident) => {
                     errors.add(Error::new_spanned(
-                        &arg.member,
+                        &field.member,
                         format!("unknown spec keyword `{ident}`"),
                     ));
                 }
                 Keyword::Functional => {
                     if let Err(error) =
-                        parse_fn_qualifier(arg, FnQualifiers::FUNCTIONAL, &mut qualifiers)
+                        parse_fn_qualifier(field, FnQualifiers::FUNCTIONAL, &mut qualifiers)
                     {
                         errors.add(error);
                     }
                 }
                 Keyword::Pure => {
-                    if let Err(error) = parse_fn_qualifier(arg, FnQualifiers::PURE, &mut qualifiers)
+                    if let Err(error) =
+                        parse_fn_qualifier(field, FnQualifiers::PURE, &mut qualifiers)
                     {
                         errors.add(error);
                     }
                 }
                 Keyword::Total => {
                     if let Err(error) =
-                        parse_fn_qualifier(arg, FnQualifiers::TOTAL, &mut qualifiers)
+                        parse_fn_qualifier(field, FnQualifiers::TOTAL, &mut qualifiers)
                     {
                         errors.add(error);
                     }
                 }
                 Keyword::Deterministic => {
                     if let Err(error) =
-                        parse_fn_qualifier(arg, FnQualifiers::DETERMINISTIC, &mut qualifiers)
+                        parse_fn_qualifier(field, FnQualifiers::DETERMINISTIC, &mut qualifiers)
                     {
                         errors.add(error);
                     }
                 }
                 Keyword::Effectfree => {
                     if let Err(error) =
-                        parse_fn_qualifier(arg, FnQualifiers::EFFECTFREE, &mut qualifiers)
+                        parse_fn_qualifier(field, FnQualifiers::EFFECTFREE, &mut qualifiers)
                     {
                         errors.add(error);
                     }
                 }
                 Keyword::Infallible => {
                     if let Err(error) =
-                        parse_fn_qualifier(arg, FnQualifiers::INFALLIBLE, &mut qualifiers)
+                        parse_fn_qualifier(field, FnQualifiers::INFALLIBLE, &mut qualifiers)
                     {
                         errors.add(error);
                     }
                 }
                 Keyword::Terminating => {
                     if let Err(error) =
-                        parse_fn_qualifier(arg, FnQualifiers::TERMINATING, &mut qualifiers)
+                        parse_fn_qualifier(field, FnQualifiers::TERMINATING, &mut qualifiers)
                     {
                         errors.add(error);
                     }
                 }
                 Keyword::Requires => {
-                    if let Err(error) = parse_conditions(arg, &mut requires) {
+                    if let Err(error) = parse_conditions(field, &mut requires) {
                         errors.add(error);
                     }
                 }
                 Keyword::Maintains => {
-                    if let Err(error) = parse_conditions(arg, &mut maintains) {
+                    if let Err(error) = parse_conditions(field, &mut maintains) {
                         errors.add(error);
                     }
                 }
                 Keyword::Captures => {
                     if !captures.is_empty() {
                         errors.add(Error::new_spanned(
-                            &arg.member,
+                            &field.member,
                             "at most one `captures` parameter is allowed; to capture multiple values, use a list: `captures: [binding1 = expr1, binding2 = expr2, ...]`",
                         ));
                     }
-                    if let Err(error) = parse_captures(arg, &mut captures) {
+                    if let Err(error) = parse_captures(field, &mut captures) {
                         errors.add(error);
                     }
                 }
                 Keyword::Binds | Keyword::Inspects => {
                     errors.add(Error::new_spanned(
-                        &arg.member,
+                        &field.member,
                         "no longer supported, use the following form instead: `ensures: |PAT| [EXPR, EXPR, ...]`",
                     ));
                 }
                 Keyword::Ensures => {
-                    if let Err(error) = parse_postconds(arg, &mut ensures) {
+                    if let Err(error) = parse_postconds(field, &mut ensures) {
                         errors.add(error);
                     }
                 }
                 Keyword::Decreases => {
                     errors.add(Error::new_spanned(
-                        &arg.member,
+                        &field.member,
                         format!(
                             "`{}` parameter is not supported here",
-                            arg.member.to_token_stream(),
+                            field.member.to_token_stream(),
                         ),
                     ));
                 }
@@ -159,31 +160,31 @@ impl Parse for Spec {
 
 impl Parse for DataSpec {
     fn parse(input: ParseStream) -> Result<Self> {
-        let raw_spec = syntax::SpecArgs::parse(input)?;
+        let raw_spec = syntax::SpecFields::parse(input)?;
 
         let mut errors = MultiError::empty();
         let mut maintains: Vec<Condition> = vec![];
 
-        for arg in raw_spec.args {
-            let keyword = Keyword::from(&arg.member);
+        for field in raw_spec.fields {
+            let keyword = Keyword::from(&field.member);
             match keyword {
                 Keyword::Unknown(ident) => {
                     errors.add(Error::new_spanned(
-                        &arg.member,
+                        &field.member,
                         format!("unknown spec keyword `{ident}`"),
                     ));
                 }
                 Keyword::Maintains => {
-                    if let Err(error) = parse_conditions(arg, &mut maintains) {
+                    if let Err(error) = parse_conditions(field, &mut maintains) {
                         errors.add(error);
                     }
                 }
                 _ => {
                     errors.add(Error::new_spanned(
-                        &arg.member,
+                        &field.member,
                         format!(
                             "`{}` parameter is not supported here",
-                            arg.member.to_token_stream(),
+                            field.member.to_token_stream(),
                         ),
                     ));
                 }
@@ -203,7 +204,7 @@ impl Parse for DataSpec {
 
 impl Parse for LoopSpec {
     fn parse(input: ParseStream) -> Result<Self> {
-        let raw_spec = syntax::SpecArgs::parse(input)?;
+        let raw_spec = syntax::SpecFields::parse(input)?;
 
         let is_sorted = raw_spec.is_sorted();
 
@@ -211,37 +212,37 @@ impl Parse for LoopSpec {
         let mut decreases = None;
         let mut maintains: Vec<Condition> = vec![];
 
-        for arg in raw_spec.args {
-            let keyword = Keyword::from(&arg.member);
+        for field in raw_spec.fields {
+            let keyword = Keyword::from(&field.member);
             match keyword {
                 Keyword::Unknown(ident) => {
                     errors.add(Error::new_spanned(
-                        &arg.member,
+                        &field.member,
                         format!("unknown spec keyword `{ident}`"),
                     ));
                 }
                 Keyword::Maintains => {
-                    if let Err(error) = parse_conditions(arg, &mut maintains) {
+                    if let Err(error) = parse_conditions(field, &mut maintains) {
                         errors.add(error);
                     }
                 }
                 Keyword::Decreases => {
                     if decreases.is_some() {
                         errors.add(Error::new_spanned(
-                            &arg.member,
+                            &field.member,
                             "multiple `decreases` parameters are not allowed",
                         ));
                     }
-                    if let Err(error) = parse_decreases(arg, &mut decreases) {
+                    if let Err(error) = parse_decreases(field, &mut decreases) {
                         errors.add(error);
                     }
                 }
                 _ => {
                     errors.add(Error::new_spanned(
-                        &arg.member,
+                        &field.member,
                         format!(
                             "`{}` parameter is not supported here",
-                            arg.member.to_token_stream(),
+                            field.member.to_token_stream(),
                         ),
                     ));
                 }

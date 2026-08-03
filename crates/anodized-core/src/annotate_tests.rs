@@ -999,7 +999,7 @@ fn captures_pattern_with_binding_modifier() {
 #[should_panic(expected = "expected an expression")]
 fn captures_missing_assignment_value_is_rejected_by_spec_args() {
     let input = "captures: Person { name, age } =,";
-    let _: syntax::SpecArgs = parse_str(input).unwrap();
+    let _: syntax::SpecFields = parse_str(input).unwrap();
 }
 
 #[test]
@@ -1022,13 +1022,13 @@ fn captures_with_extra_semicolon() {
 
 #[test]
 fn field_value_supports_shorthand_expression() {
-    let spec_args: syntax::SpecArgs = parse_quote! {
+    let spec_args: syntax::SpecFields = parse_quote! {
         key_1,
         key_2: value,
         key_3: value as expr,
     };
 
-    let args: Vec<_> = spec_args.args.into_iter().collect();
+    let args: Vec<_> = spec_args.fields.into_iter().collect();
     let [arg_1, arg_2, arg_3] = args.as_slice() else {
         panic!("expected 3 args");
     };

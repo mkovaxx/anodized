@@ -4,26 +4,26 @@ use syn::{
     punctuated::Punctuated,
 };
 
-/// Raw spec arguments, i.e. as they appear in the `#[spec(...)]` proc macro invocation.
+/// Raw spec fields, i.e. as they appear in the `#[spec(...)]` proc macro invocation.
 ///
-/// Can represent a well-formed but invalid spec so that e.g. `anodized-fmt` may work with it.
+/// Represents a syntactically well-formed but otherwise unvalidated set of `spec` fields.
 #[derive(Debug, Clone)]
-pub struct SpecArgs {
-    pub args: Punctuated<FieldValue, Token![,]>,
+pub struct SpecFields {
+    pub fields: Punctuated<FieldValue, Token![,]>,
 }
 
-impl Parse for SpecArgs {
+impl Parse for SpecFields {
     fn parse(input: ParseStream) -> Result<Self> {
         Ok(Self {
-            args: Punctuated::<FieldValue, Token![,]>::parse_terminated(input)?,
+            fields: Punctuated::<FieldValue, Token![,]>::parse_terminated(input)?,
         })
     }
 }
 
-impl SpecArgs {
+impl SpecFields {
     /// Check whether the spec arguments are sorted correctly, ignoring unknown keywords.
     pub fn is_sorted(&self) -> bool {
-        self.args
+        self.fields
             .iter()
             .map(|field| Keyword::from(&field.member))
             .filter(|keyword| !matches!(keyword, Keyword::Unknown(_)))
