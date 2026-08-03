@@ -2,6 +2,7 @@ use crate::test_util::assert_spec_eq;
 
 use super::*;
 use proc_macro2::Span;
+use quote::ToTokens;
 use syn::{parse_quote, parse_str};
 
 #[test]
@@ -108,7 +109,7 @@ fn fn_qualifiers_typo_colon_instead_of_comma() {
 }
 
 #[test]
-#[should_panic = "expected an expression or a pattern"]
+#[should_panic = "expected an expression"]
 fn fn_qualifiers_invalid_colon() {
     let _: Spec = parse_quote! {
         pure:,
@@ -995,14 +996,14 @@ fn captures_pattern_with_binding_modifier() {
 }
 
 #[test]
-#[should_panic(expected = "expected `,`")]
+#[should_panic(expected = "expected an expression")]
 fn captures_missing_assignment_value_is_rejected_by_spec_args() {
     let input = "captures: Person { name, age } =,";
     let _: syntax::SpecArgs = parse_str(input).unwrap();
 }
 
 #[test]
-#[should_panic(expected = "expected `,`")]
+#[should_panic(expected = "expected an expression")]
 fn captures_missing_assignment_value_errors_as_spec() {
     let _: Spec = parse_str("captures: Person { name, age } =,").unwrap();
 }
@@ -1034,13 +1035,19 @@ fn spec_arg_can_omit_value() {
 
     assert!(arg_1.keyword.to_string() == "key_1");
     assert!(arg_1.colon.is_none());
-    assert_eq!(arg_1.value, SpecArgValue::None);
+    assert!(arg_1.value.is_none());
 
     assert!(arg_2.keyword.to_string() == "key_2");
     assert!(arg_2.colon.is_some());
-    assert_eq!(arg_2.value, SpecArgValue::Expr(parse_quote!(value)));
+    assert_eq!(
+        arg_2.value.as_ref().unwrap().to_token_stream().to_string(),
+        "value"
+    );
 
     assert!(arg_3.keyword.to_string() == "key_3");
     assert!(arg_3.colon.is_some());
-    assert_eq!(arg_3.value, SpecArgValue::Expr(parse_quote!(value as expr)));
+    assert_eq!(
+        arg_3.value.as_ref().unwrap().to_token_stream().to_string(),
+        "value as expr"
+    );
 }
