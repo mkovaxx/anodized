@@ -7,6 +7,9 @@ use syn::{
 /// Raw spec fields, i.e. as they appear in the `#[spec(...)]` proc macro invocation.
 ///
 /// Represents a syntactically well-formed but otherwise unvalidated set of `spec` fields.
+///
+/// It reuses Rust's grammar of fields inside a `struct` expression. For reference, see:
+/// https://doc.rust-lang.org/reference/expressions/struct-expr.html#railroad-StructExprField
 #[derive(Debug, Clone)]
 pub struct SpecFields {
     pub fields: Punctuated<FieldValue, Token![,]>,
