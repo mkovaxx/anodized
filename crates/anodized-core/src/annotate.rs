@@ -282,7 +282,7 @@ fn parse_fn_qualifier(
             ),
         ));
     }
-    if !matches!(field.colon_token, None) {
+    if field.colon_token.is_some() {
         return Err(Error::new_spanned(
             &field.member,
             format!(
