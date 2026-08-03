@@ -2,8 +2,7 @@ use anodized::spec;
 
 #[spec(
     requires: input.is_palindrome(),
-    inspects: (prefix, middle),
-    ensures: {
+    ensures: |(prefix, middle)| {
         let reassembled = prefix.chars().chain(middle).chain(prefix.chars().rev());
         reassembled.eq(input.chars())
     },

@@ -2,8 +2,7 @@ use anodized::spec;
 
 #[spec(
     requires: x.is_finite(),
-    inspects: output,
-    ensures: output + output == x,
+    ensures: |output| output + output == x,
 )]
 #[allow(unused)]
 async fn async_half(x: f32) -> f32 {

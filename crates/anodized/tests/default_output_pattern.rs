@@ -1,8 +1,7 @@
 use anodized::spec;
 
 #[spec(
-    inspects: (a, b),
-    ensures: [
+    ensures: |(a, b)| [
         a <= b,
         (a, b) == pair || (b, a) == pair,
     ],
