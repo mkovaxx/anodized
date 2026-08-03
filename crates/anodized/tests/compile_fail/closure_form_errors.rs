@@ -24,4 +24,15 @@ fn some_func() -> i32 {
     todo!()
 }
 
+#[spec(
+    // Should fail: cannot re-bind the postcondition's input.
+    ensures: |output| [
+        output >= 42,
+        |answer| answer <= 42,
+    ],
+)]
+fn some_func_2() -> i32 {
+    todo!()
+}
+
 fn main() {}
