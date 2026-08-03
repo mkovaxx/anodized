@@ -19,7 +19,6 @@ fn simple_spec() {
         }],
         maintains: vec![],
         captures: vec![],
-        inspects: None,
         ensures: vec![PostCondition {
             pat: None,
             expr: parse_quote! { output > x },
@@ -42,7 +41,6 @@ fn fn_qualifiers_functional() {
         requires: vec![],
         maintains: vec![],
         captures: vec![],
-        inspects: None,
         ensures: vec![],
         span: Span::call_site(),
     };
@@ -62,7 +60,6 @@ fn fn_qualifiers_pure_total() {
         requires: vec![],
         maintains: vec![],
         captures: vec![],
-        inspects: None,
         ensures: vec![],
         span: Span::call_site(),
     };
@@ -87,7 +84,6 @@ fn fn_qualifiers_deterministic_effectfree_infallible_terminating() {
         requires: vec![],
         maintains: vec![],
         captures: vec![],
-        inspects: None,
         ensures: vec![],
         span: Span::call_site(),
     };
@@ -186,8 +182,7 @@ fn all_clauses() {
     let spec: Spec = parse_quote! {
         requires: x > 0 && x.is_power_of_two(),
         maintains: self.is_valid(),
-        inspects: z,
-        ensures: z >= x,
+        ensures: |z| z >= x,
     };
 
     let expected = Spec {
@@ -201,9 +196,8 @@ fn all_clauses() {
             cfg: None,
         }],
         captures: vec![],
-        inspects: Some(parse_quote! { z }),
         ensures: vec![PostCondition {
-            pat: None,
+            pat: Some(parse_quote! { z }),
             expr: parse_quote! { z >= x },
             cfg: None,
         }],
@@ -233,7 +227,7 @@ fn out_of_order() {
 }
 
 #[test]
-#[should_panic(expected = "multiple `inspects` parameters are not allowed")]
+#[should_panic(expected = "no longer supported")]
 fn multiple_binds() {
     let _: Spec = parse_quote! {
         inspects: y,
@@ -279,7 +273,6 @@ fn array_of_conditions() {
         ],
         maintains: vec![],
         captures: vec![],
-        inspects: None,
         ensures: vec![
             PostCondition {
                 pat: None,
@@ -309,7 +302,6 @@ fn ensures_with_explicit_closure() {
         requires: vec![],
         maintains: vec![],
         captures: vec![],
-        inspects: None,
         ensures: vec![PostCondition {
             pat: Some(parse_quote! { result }),
             expr: parse_quote! { result.is_ok() || result.unwrap_err().kind() == ErrorKind::NotFound },
@@ -344,7 +336,6 @@ fn multiple_clauses_of_same_flavor() {
         ],
         maintains: vec![],
         captures: vec![],
-        inspects: None,
         ensures: vec![
             PostCondition {
                 pat: None,
@@ -400,7 +391,6 @@ fn mixed_single_and_array_clauses() {
         ],
         maintains: vec![],
         captures: vec![],
-        inspects: None,
         ensures: vec![
             PostCondition {
                 pat: None,
@@ -451,7 +441,6 @@ fn cfg_attributes() {
         }],
         maintains: vec![],
         captures: vec![],
-        inspects: None,
         ensures: vec![PostCondition {
             pat: None,
             expr: parse_quote! { output < x },
@@ -483,7 +472,7 @@ fn multiple_cfg_attributes() {
 }
 
 #[test]
-#[should_panic(expected = "`cfg` attribute is not supported on `inspects`")]
+#[should_panic(expected = "no longer supported")]
 fn cfg_on_binds() {
     let _: Spec = parse_quote! {
         #[cfg(test)]
@@ -510,7 +499,6 @@ fn macro_in_condition() {
             cfg: None,
         }],
         captures: vec![],
-        inspects: None,
         ensures: vec![PostCondition {
             pat: None,
             expr: parse_quote! { matches!(self.state, State::Running) },
@@ -525,8 +513,7 @@ fn macro_in_condition() {
 #[test]
 fn binds_pattern() {
     let spec: Spec = parse_quote! {
-        inspects: (a, b),
-        ensures: [
+        ensures: |(a, b)| [
             a <= b,
             (a, b) == pair || (b, a) == pair,
         ],
@@ -537,15 +524,14 @@ fn binds_pattern() {
         requires: vec![],
         maintains: vec![],
         captures: vec![],
-        inspects: Some(parse_quote! { (a, b) }),
         ensures: vec![
             PostCondition {
-                pat: None,
+                pat: Some(parse_quote! { (a, b) }),
                 expr: parse_quote! { a <= b },
                 cfg: None,
             },
             PostCondition {
-                pat: None,
+                pat: Some(parse_quote! { (a, b) }),
                 expr: parse_quote! { (a, b) == pair || (b, a) == pair },
                 cfg: None,
             },
@@ -588,7 +574,6 @@ fn multiple_conditions() {
             cfg: None,
         }],
         captures: vec![],
-        inspects: None,
         ensures: vec![],
         span: Span::call_site(),
     };
@@ -599,10 +584,9 @@ fn multiple_conditions() {
 #[test]
 fn rename_return_value() {
     let spec: Spec = parse_quote! {
-        inspects: result,
-        ensures: [
+        ensures: |result| [
             result > output,
-            |val| val % 2 == 0,
+            result % 2 == 0,
         ],
     };
 
@@ -611,16 +595,15 @@ fn rename_return_value() {
         requires: vec![],
         maintains: vec![],
         captures: vec![],
-        inspects: Some(parse_quote! { result }),
         ensures: vec![
             PostCondition {
-                pat: None,
+                pat: Some(parse_quote! { result }),
                 expr: parse_quote! { result > output },
                 cfg: None,
             },
             PostCondition {
-                pat: Some(parse_quote! { val }),
-                expr: parse_quote! { val % 2 == 0 },
+                pat: Some(parse_quote! { result }),
+                expr: parse_quote! { result % 2 == 0 },
                 cfg: None,
             },
         ],
@@ -645,7 +628,6 @@ fn captures_simple_identifier() {
             pat: parse_quote! { old_count },
             expr: parse_quote! { count },
         }],
-        inspects: None,
         ensures: vec![PostCondition {
             pat: None,
             expr: parse_quote! { output == old_count + 1 },
@@ -672,7 +654,6 @@ fn captures_identifier_with_alias() {
             pat: parse_quote! { prev_value },
             expr: parse_quote! { value },
         }],
-        inspects: None,
         ensures: vec![PostCondition {
             pat: None,
             expr: parse_quote! { output > prev_value },
@@ -717,7 +698,6 @@ fn captures_array() {
                 expr: parse_quote! { value },
             },
         ],
-        inspects: None,
         ensures: vec![
             PostCondition {
                 pat: None,
@@ -747,8 +727,7 @@ fn captures_with_all_clauses() {
         requires: x > 0,
         maintains: self.is_valid(),
         captures: old_val = value,
-        inspects: result,
-        ensures: result > old_val,
+        ensures: |result| result > old_val,
     };
 
     let expected = Spec {
@@ -765,9 +744,8 @@ fn captures_with_all_clauses() {
             pat: parse_quote! { old_val },
             expr: parse_quote! { value },
         }],
-        inspects: Some(parse_quote! { result }),
         ensures: vec![PostCondition {
-            pat: None,
+            pat: Some(parse_quote! { result }),
             expr: parse_quote! { result > old_val },
             cfg: None,
         }],
@@ -801,7 +779,6 @@ fn captures_array_expression() {
             pat: parse_quote! { slice },
             expr: parse_quote! { [a, b, c] },
         }],
-        inspects: None,
         ensures: vec![PostCondition {
             pat: None,
             expr: parse_quote! { slice.len() == 3 },
@@ -852,7 +829,6 @@ fn captures_edge_case_cast_expr() {
             pat: parse_quote! { old_red },
             expr: parse_quote! { r as u8 },
         }],
-        inspects: None,
         ensures: vec![],
         span: Span::call_site(),
     };
@@ -884,7 +860,6 @@ fn captures_edge_case_array_of_cast_exprs() {
                 ]
             },
         }],
-        inspects: None,
         ensures: vec![],
         span: Span::call_site(),
     };
@@ -920,7 +895,6 @@ fn captures_edge_case_list_of_cast_exprs() {
                 expr: parse_quote! { b as u8 },
             },
         ],
-        inspects: None,
         ensures: vec![],
         span: Span::call_site(),
     };
@@ -942,7 +916,6 @@ fn captures_pattern_matches_slices() {
             pat: parse_quote! { [r, g, b] },
             expr: parse_quote! { rgb },
         }],
-        inspects: None,
         ensures: vec![],
         span: Span::call_site(),
     };
@@ -964,7 +937,6 @@ fn captures_pattern_matches_tuples() {
             pat: parse_quote! { (x, y, z) },
             expr: parse_quote! { point },
         }],
-        inspects: None,
         ensures: vec![],
         span: Span::call_site(),
     };
@@ -986,7 +958,6 @@ fn captures_pattern_matches_structs() {
             pat: parse_quote! { Person { name, age } },
             expr: parse_quote! { person.clone() },
         }],
-        inspects: None,
         ensures: vec![],
         span: Span::call_site(),
     };
@@ -1008,7 +979,6 @@ fn captures_pattern_matches_nested() {
             pat: parse_quote! { Some((a, b)) },
             expr: parse_quote! { data.as_ref() },
         }],
-        inspects: None,
         ensures: vec![],
         span: Span::call_site(),
     };
