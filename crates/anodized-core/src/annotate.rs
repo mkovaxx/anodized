@@ -108,22 +108,11 @@ impl Parse for Spec {
                         errors.add(error);
                     }
                 }
-                Keyword::Binds => {
+                Keyword::Binds | Keyword::Inspects => {
                     errors.add(Error::new(
                         arg.keyword_span,
-                        "the `binds` parameter was renamed to `inspects`",
+                        "no longer supported, use the following form instead: `ensures: |PAT| [EXPR, EXPR, ...]`",
                     ));
-                }
-                Keyword::Inspects => {
-                    if inspects.is_some() {
-                        errors.add(Error::new(
-                            arg.keyword_span,
-                            "multiple `inspects` parameters are not allowed",
-                        ));
-                    }
-                    if let Err(error) = arg.parse_inspects(&mut inspects) {
-                        errors.add(error);
-                    }
                 }
                 Keyword::Ensures => {
                     if let Err(error) = arg.parse_postconds(&mut ensures) {
