@@ -1,5 +1,5 @@
 use syn::{
-    Attribute, Error, Expr, ExprAssign, Meta,
+    Attribute, Error, Expr, ExprAssign, FieldValue, Meta,
     parse::{Parse, ParseStream, Result},
     parse_quote,
     spanned::Spanned,
@@ -7,7 +7,6 @@ use syn::{
 
 use crate::{
     Capture, Condition, DataSpec, LoopSpec, LoopVariant, PostCondition, Spec,
-    annotate::syntax::{SpecArg, SpecArgValue},
     qualifiers::FnQualifiers,
 };
 
@@ -20,7 +19,7 @@ mod annotate_tests;
 
 impl Parse for Spec {
     fn parse(input: ParseStream) -> Result<Self> {
-        let raw_spec = syntax::SpecArgs::parse(input)?;
+        let raw_spec = syntax::SpecFields::parse(input)?;
 
         let mut errors = MultiError::empty();
         let mut qualifiers = FnQualifiers::empty();
@@ -31,98 +30,96 @@ impl Parse for Spec {
 
         let is_sorted = raw_spec.is_sorted();
 
-        for arg in raw_spec.args {
-            match arg.keyword {
-                Keyword::Unknown(ident) => {
-                    errors.add(Error::new(
-                        arg.keyword_span,
-                        format!("unknown spec keyword `{ident}`"),
-                    ));
+        for field in raw_spec.fields {
+            let keyword = Keyword::from(&field.member);
+            match keyword {
+                Keyword::Unknown(_) => {
+                    // TODO: Check if it seems like a typo of a known keyword.
+                    errors.add(Error::new_spanned(&field.member, "unknown spec field"));
                 }
                 Keyword::Functional => {
                     if let Err(error) =
-                        arg.parse_fn_qualifier(FnQualifiers::FUNCTIONAL, &mut qualifiers)
+                        parse_fn_qualifier(field, FnQualifiers::FUNCTIONAL, &mut qualifiers)
                     {
                         errors.add(error);
                     }
                 }
                 Keyword::Pure => {
-                    if let Err(error) = arg.parse_fn_qualifier(FnQualifiers::PURE, &mut qualifiers)
+                    if let Err(error) =
+                        parse_fn_qualifier(field, FnQualifiers::PURE, &mut qualifiers)
                     {
                         errors.add(error);
                     }
                 }
                 Keyword::Total => {
-                    if let Err(error) = arg.parse_fn_qualifier(FnQualifiers::TOTAL, &mut qualifiers)
+                    if let Err(error) =
+                        parse_fn_qualifier(field, FnQualifiers::TOTAL, &mut qualifiers)
                     {
                         errors.add(error);
                     }
                 }
                 Keyword::Deterministic => {
                     if let Err(error) =
-                        arg.parse_fn_qualifier(FnQualifiers::DETERMINISTIC, &mut qualifiers)
+                        parse_fn_qualifier(field, FnQualifiers::DETERMINISTIC, &mut qualifiers)
                     {
                         errors.add(error);
                     }
                 }
                 Keyword::Effectfree => {
                     if let Err(error) =
-                        arg.parse_fn_qualifier(FnQualifiers::EFFECTFREE, &mut qualifiers)
+                        parse_fn_qualifier(field, FnQualifiers::EFFECTFREE, &mut qualifiers)
                     {
                         errors.add(error);
                     }
                 }
                 Keyword::Infallible => {
                     if let Err(error) =
-                        arg.parse_fn_qualifier(FnQualifiers::INFALLIBLE, &mut qualifiers)
+                        parse_fn_qualifier(field, FnQualifiers::INFALLIBLE, &mut qualifiers)
                     {
                         errors.add(error);
                     }
                 }
                 Keyword::Terminating => {
                     if let Err(error) =
-                        arg.parse_fn_qualifier(FnQualifiers::TERMINATING, &mut qualifiers)
+                        parse_fn_qualifier(field, FnQualifiers::TERMINATING, &mut qualifiers)
                     {
                         errors.add(error);
                     }
                 }
                 Keyword::Requires => {
-                    if let Err(error) = arg.parse_conditions(&mut requires) {
+                    if let Err(error) = parse_conditions(field, &mut requires) {
                         errors.add(error);
                     }
                 }
                 Keyword::Maintains => {
-                    if let Err(error) = arg.parse_conditions(&mut maintains) {
+                    if let Err(error) = parse_conditions(field, &mut maintains) {
                         errors.add(error);
                     }
                 }
                 Keyword::Captures => {
                     if !captures.is_empty() {
-                        errors.add(Error::new(
-                            arg.keyword_span,
-                            "at most one `captures` parameter is allowed; to capture multiple values, use a list: `captures: [binding1 = expr1, binding2 = expr2, ...]`",
+                        errors.add(Error::new_spanned(
+                            &field.member,
+                            "at most one `captures` field is allowed; to capture multiple values, use a list: `captures: [binding1 = expr1, binding2 = expr2, ...]`",
                         ));
                     }
-                    if let Err(error) = arg.parse_captures(&mut captures) {
+                    if let Err(error) = parse_captures(field, &mut captures) {
                         errors.add(error);
                     }
                 }
                 Keyword::Binds | Keyword::Inspects => {
-                    errors.add(Error::new(
-                        arg.keyword_span,
+                    errors.add(Error::new_spanned(
+                        &field.member,
                         "no longer supported, use the following form instead: `ensures: |PAT| [EXPR, EXPR, ...]`",
                     ));
                 }
                 Keyword::Ensures => {
-                    if let Err(error) = arg.parse_postconds(&mut ensures) {
+                    if let Err(error) = parse_postconds(field, &mut ensures) {
                         errors.add(error);
                     }
                 }
                 Keyword::Decreases => {
-                    errors.add(Error::new(
-                        arg.keyword_span,
-                        format!("`{}` parameter is not supported here", arg.keyword),
-                    ));
+                    errors.add(Error::new_spanned(&field.member, "not allowed here"));
                 }
             }
         }
@@ -130,7 +127,7 @@ impl Parse for Spec {
         if !is_sorted {
             errors.add(Error::new(
                 input.span(),
-                "parameters are out of order: the expected order is: `<QUALIFIERS>`, `requires`, `maintains`, `captures`, `inspects`, `ensures`, where `<QUALIFIERS>` are:\n
+                "fields are out of order: the expected order is: `<QUALIFIERS>`, `requires`, `maintains`, `captures`, `inspects`, `ensures`, where `<QUALIFIERS>` are:\n
 `functional` (`pure` and `total`),\n
 `pure` (`deterministic` and `effectfree`),\n
 `total` (`infallible` and `terminating`)",
@@ -154,29 +151,24 @@ impl Parse for Spec {
 
 impl Parse for DataSpec {
     fn parse(input: ParseStream) -> Result<Self> {
-        let raw_spec = syntax::SpecArgs::parse(input)?;
+        let raw_spec = syntax::SpecFields::parse(input)?;
 
         let mut errors = MultiError::empty();
         let mut maintains: Vec<Condition> = vec![];
 
-        for arg in raw_spec.args {
-            match arg.keyword {
-                Keyword::Unknown(ident) => {
-                    errors.add(Error::new(
-                        arg.keyword_span,
-                        format!("unknown spec keyword `{ident}`"),
-                    ));
+        for field in raw_spec.fields {
+            let keyword = Keyword::from(&field.member);
+            match keyword {
+                Keyword::Unknown(_) => {
+                    errors.add(Error::new_spanned(&field.member, "unknown spec field"));
                 }
                 Keyword::Maintains => {
-                    if let Err(error) = arg.parse_conditions(&mut maintains) {
+                    if let Err(error) = parse_conditions(field, &mut maintains) {
                         errors.add(error);
                     }
                 }
                 _ => {
-                    errors.add(Error::new(
-                        arg.keyword_span,
-                        format!("`{}` parameter is not supported here", arg.keyword),
-                    ));
+                    errors.add(Error::new_spanned(&field.member, "not allowed here"));
                 }
             }
         }
@@ -194,7 +186,7 @@ impl Parse for DataSpec {
 
 impl Parse for LoopSpec {
     fn parse(input: ParseStream) -> Result<Self> {
-        let raw_spec = syntax::SpecArgs::parse(input)?;
+        let raw_spec = syntax::SpecFields::parse(input)?;
 
         let is_sorted = raw_spec.is_sorted();
 
@@ -202,35 +194,30 @@ impl Parse for LoopSpec {
         let mut decreases = None;
         let mut maintains: Vec<Condition> = vec![];
 
-        for arg in raw_spec.args {
-            match arg.keyword {
-                Keyword::Unknown(ident) => {
-                    errors.add(Error::new(
-                        arg.keyword_span,
-                        format!("unknown spec keyword `{ident}`"),
-                    ));
+        for field in raw_spec.fields {
+            let keyword = Keyword::from(&field.member);
+            match keyword {
+                Keyword::Unknown(_) => {
+                    errors.add(Error::new_spanned(&field.member, "unknown spec field"));
                 }
                 Keyword::Maintains => {
-                    if let Err(error) = arg.parse_conditions(&mut maintains) {
+                    if let Err(error) = parse_conditions(field, &mut maintains) {
                         errors.add(error);
                     }
                 }
                 Keyword::Decreases => {
                     if decreases.is_some() {
-                        errors.add(Error::new(
-                            arg.keyword_span,
-                            "multiple `decreases` parameters are not allowed",
+                        errors.add(Error::new_spanned(
+                            &field.member,
+                            "multiple `decreases` fields are not allowed",
                         ));
                     }
-                    if let Err(error) = arg.parse_decreases(&mut decreases) {
+                    if let Err(error) = parse_decreases(field, &mut decreases) {
                         errors.add(error);
                     }
                 }
                 _ => {
-                    errors.add(Error::new(
-                        arg.keyword_span,
-                        format!("`{}` parameter is not supported here", arg.keyword),
-                    ));
+                    errors.add(Error::new_spanned(&field.member, "not allowed here"));
                 }
             }
         }
@@ -238,7 +225,7 @@ impl Parse for LoopSpec {
         if !is_sorted {
             errors.add(Error::new(
                 input.span(),
-                "parameters are out of order: the expected order is `maintains`, `decreases`",
+                "fields are out of order: the expected order is `maintains`, `decreases`",
             ));
         }
 
@@ -254,166 +241,184 @@ impl Parse for LoopSpec {
     }
 }
 
-impl SpecArg {
-    fn parse_fn_qualifier(self, value: FnQualifiers, qualifiers: &mut FnQualifiers) -> Result<()> {
-        if let Some(first_attr) = self.attrs.first() {
-            return Err(Error::new_spanned(
-                first_attr,
-                format!("attributes are not supported on `{}`", self.keyword),
-            ));
-        }
-        if !matches!(self.value, SpecArgValue::None) {
-            return Err(Error::new_spanned(
-                self.value,
-                format!("qualifier `{}` does not take a value", self.keyword),
-            ));
-        }
-        if qualifiers.contains(value) {
-            return Err(Error::new(
-                self.keyword_span,
-                "this qualifier is redundant; remove it",
-            ));
-        }
-        *qualifiers |= value;
-        Ok(())
+fn parse_fn_qualifier(
+    field: FieldValue,
+    value: FnQualifiers,
+    qualifiers: &mut FnQualifiers,
+) -> Result<()> {
+    if let Some(first_attr) = field.attrs.first() {
+        return Err(Error::new_spanned(
+            first_attr,
+            "attributes are not supported here",
+        ));
     }
+    if field.colon_token.is_some() {
+        return Err(Error::new_spanned(
+            field.member,
+            "qualifier does not take a value",
+        ));
+    }
+    if qualifiers.contains(value) {
+        return Err(Error::new_spanned(
+            field.member,
+            "this qualifier is redundant; remove it",
+        ));
+    }
+    *qualifiers |= value;
+    Ok(())
+}
 
-    fn parse_conditions(self, conditions: &mut Vec<Condition>) -> Result<()> {
-        let cfg_attr = find_cfg_attribute(&self.attrs)?;
-        let cfg: Option<Meta> = if let Some(attr) = cfg_attr {
-            Some(attr.parse_args()?)
-        } else {
-            None
-        };
-        let expr = self.value.try_into_expr()?;
-        if let Expr::Array(items) = expr {
-            for expr in items.elems {
-                conditions.push(Condition {
-                    expr,
+fn parse_conditions(field: FieldValue, conditions: &mut Vec<Condition>) -> Result<()> {
+    let cfg_attr = find_cfg_attribute(&field.attrs)?;
+    let cfg: Option<Meta> = if let Some(attr) = cfg_attr {
+        Some(attr.parse_args()?)
+    } else {
+        None
+    };
+    if field.colon_token.is_none() {
+        return Err(Error::new_spanned(field.expr, "expected an expression"));
+    };
+    if let Expr::Array(items) = field.expr {
+        for expr in items.elems {
+            conditions.push(Condition {
+                expr,
+                cfg: cfg.clone(),
+            });
+        }
+    } else {
+        conditions.push(Condition {
+            expr: field.expr,
+            cfg,
+        });
+    }
+    Ok(())
+}
+
+fn parse_postconds(field: FieldValue, postconds: &mut Vec<PostCondition>) -> Result<()> {
+    let cfg_attr = find_cfg_attribute(&field.attrs)?;
+    let cfg: Option<Meta> = if let Some(attr) = cfg_attr {
+        Some(attr.parse_args()?)
+    } else {
+        None
+    };
+    if field.colon_token.is_none() {
+        return Err(Error::new_spanned(&field.expr, "expected an expression"));
+    };
+    match field.expr {
+        Expr::Closure(mut closure) => {
+            if closure.inputs.len() != 1 {
+                return Err(Error::new_spanned(
+                    closure,
+                    "postcondition closure must have exactly one input",
+                ));
+            }
+            let (pat, _) = closure.inputs.pop().unwrap().into_tuple();
+            if let Expr::Array(array) = *closure.body {
+                for expr in array.elems {
+                    postconds.push(PostCondition {
+                        pat: Some(pat.clone()),
+                        expr,
+                        cfg: cfg.clone(),
+                    });
+                }
+            } else {
+                postconds.push(PostCondition {
+                    pat: Some(pat),
+                    expr: *closure.body,
                     cfg: cfg.clone(),
                 });
             }
-        } else {
-            conditions.push(Condition { expr, cfg });
         }
-        Ok(())
-    }
-
-    fn parse_postconds(self, postconds: &mut Vec<PostCondition>) -> Result<()> {
-        let cfg_attr = find_cfg_attribute(&self.attrs)?;
-        let cfg: Option<Meta> = if let Some(attr) = cfg_attr {
-            Some(attr.parse_args()?)
-        } else {
-            None
-        };
-        let expr = self.value.try_into_expr()?;
-        match expr {
-            Expr::Closure(mut closure) => {
-                if closure.inputs.len() != 1 {
-                    return Err(Error::new_spanned(
-                        closure,
-                        "postcondition closure must have exactly one input",
-                    ));
-                }
-                let (pat, _) = closure.inputs.pop().unwrap().into_tuple();
-                if let Expr::Array(array) = *closure.body {
-                    for expr in array.elems {
-                        postconds.push(PostCondition {
-                            pat: Some(pat.clone()),
-                            expr,
-                            cfg: cfg.clone(),
-                        });
+        Expr::Array(array) => {
+            for expr in array.elems {
+                if let Expr::Closure(mut closure) = expr {
+                    if closure.inputs.len() != 1 {
+                        return Err(Error::new_spanned(
+                            closure,
+                            "postcondition closure must have exactly one input",
+                        ));
                     }
-                } else {
+                    let (pat, _) = closure.inputs.pop().unwrap().into_tuple();
                     postconds.push(PostCondition {
                         pat: Some(pat),
                         expr: *closure.body,
                         cfg: cfg.clone(),
                     });
+                } else {
+                    postconds.push(PostCondition {
+                        pat: None,
+                        expr,
+                        cfg: cfg.clone(),
+                    });
                 }
-            }
-            Expr::Array(array) => {
-                for expr in array.elems {
-                    if let Expr::Closure(mut closure) = expr {
-                        if closure.inputs.len() != 1 {
-                            return Err(Error::new_spanned(
-                                closure,
-                                "postcondition closure must have exactly one input",
-                            ));
-                        }
-                        let (pat, _) = closure.inputs.pop().unwrap().into_tuple();
-                        postconds.push(PostCondition {
-                            pat: Some(pat),
-                            expr: *closure.body,
-                            cfg: cfg.clone(),
-                        });
-                    } else {
-                        postconds.push(PostCondition {
-                            pat: None,
-                            expr,
-                            cfg: cfg.clone(),
-                        });
-                    }
-                }
-            }
-            _ => {
-                postconds.push(PostCondition {
-                    pat: None,
-                    expr,
-                    cfg: cfg.clone(),
-                });
             }
         }
-        Ok(())
+        _ => {
+            postconds.push(PostCondition {
+                pat: None,
+                expr: field.expr,
+                cfg: cfg.clone(),
+            });
+        }
     }
+    Ok(())
+}
 
-    fn parse_captures(self, captures: &mut Vec<Capture>) -> Result<()> {
-        let cfg_attr = find_cfg_attribute(&self.attrs)?;
-        if cfg_attr.is_some() {
-            return Err(Error::new(
-                cfg_attr.span(),
-                "`cfg` attribute is not supported on `captures`",
-            ));
+fn parse_captures(field: FieldValue, captures: &mut Vec<Capture>) -> Result<()> {
+    let cfg_attr = find_cfg_attribute(&field.attrs)?;
+    if cfg_attr.is_some() {
+        return Err(Error::new(
+            cfg_attr.span(),
+            "`cfg` attribute is not supported here",
+        ));
+    }
+    if field.colon_token.is_none() {
+        return Err(Error::new_spanned(field.expr, "expected an expression"));
+    };
+    match field.expr {
+        Expr::Assign(assignment) => {
+            captures.push(interpret_assignment_as_capture(assignment)?);
         }
-        let capture_list = self.value.try_into_expr()?;
-        match capture_list {
-            Expr::Assign(assignment) => {
+        Expr::Array(array) => {
+            for elem in array.elems {
+                let Expr::Assign(assignment) = elem else {
+                    return Err(Error::new_spanned(elem, "expected an assignment"));
+                };
                 captures.push(interpret_assignment_as_capture(assignment)?);
             }
-            Expr::Array(array) => {
-                for elem in array.elems {
-                    let Expr::Assign(assignment) = elem else {
-                        return Err(Error::new_spanned(elem, "expected an assignment"));
-                    };
-                    captures.push(interpret_assignment_as_capture(assignment)?);
-                }
-            }
-            _ => {
-                return Err(Error::new_spanned(
-                    capture_list,
-                    "expected an assignment or block",
-                ));
-            }
         }
-        Ok(())
+        _ => {
+            return Err(Error::new_spanned(
+                field.expr,
+                "expected an assignment or block",
+            ));
+        }
     }
+    Ok(())
+}
 
-    fn parse_decreases(self, decreases: &mut Option<LoopVariant>) -> Result<()> {
-        let cfg_attr = find_cfg_attribute(&self.attrs)?;
-        let cfg: Option<Meta> = if let Some(attr) = cfg_attr {
-            Some(attr.parse_args()?)
-        } else {
-            None
-        };
-        let expr_span = self.value.span();
-        let expr = self.value.try_into_expr()?;
-        if let Expr::Array(_) = expr {
-            return Err(Error::new(expr_span, "expected a single expression"));
-        } else {
-            *decreases = Some(LoopVariant { expr, cfg });
-        }
-        Ok(())
+fn parse_decreases(field: FieldValue, decreases: &mut Option<LoopVariant>) -> Result<()> {
+    let cfg_attr = find_cfg_attribute(&field.attrs)?;
+    let cfg: Option<Meta> = if let Some(attr) = cfg_attr {
+        Some(attr.parse_args()?)
+    } else {
+        None
+    };
+    if field.colon_token.is_none() {
+        return Err(Error::new_spanned(field.expr, "expected an expression"));
+    };
+    if let Expr::Array(_) = field.expr {
+        return Err(Error::new_spanned(
+            field.expr,
+            "expected a single expression",
+        ));
+    } else {
+        *decreases = Some(LoopVariant {
+            expr: field.expr,
+            cfg,
+        });
     }
+    Ok(())
 }
 
 /// Try to interpret an ExprAssign as a single Capture.

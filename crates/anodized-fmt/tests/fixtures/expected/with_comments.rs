@@ -24,7 +24,7 @@ fn double_positive(x: i32) -> i32 {
 
 // Multiple comments for same arg
 #[spec(
-    // First parameter must be positive
+    // First input must be positive
     // Another comment about the precondition
     requires: a > 0,
     // Result is positive
@@ -114,7 +114,7 @@ trait Validator {
 
 // Multiple clauses in requires without internal comments
 #[spec(
-    // Preconditions for all three parameters
+    // Preconditions for all three inputs
     requires: x > 0 && y > 0 && z > 0,
     ensures: *output > 0,
 )]

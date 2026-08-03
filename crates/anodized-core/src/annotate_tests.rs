@@ -2,6 +2,7 @@ use crate::test_util::assert_spec_eq;
 
 use super::*;
 use proc_macro2::Span;
+use quote::ToTokens;
 use syn::{parse_quote, parse_str};
 
 #[test]
@@ -100,7 +101,7 @@ fn fn_qualifiers_typo_missing_comma() {
 }
 
 #[test]
-#[should_panic = "qualifier `pure` does not take a value"]
+#[should_panic = "qualifier does not take a value"]
 fn fn_qualifiers_typo_colon_instead_of_comma() {
     let _: Spec = parse_quote! {
         pure: total,
@@ -108,7 +109,7 @@ fn fn_qualifiers_typo_colon_instead_of_comma() {
 }
 
 #[test]
-#[should_panic = "expected an expression or a pattern"]
+#[should_panic = "expected an expression"]
 fn fn_qualifiers_invalid_colon() {
     let _: Spec = parse_quote! {
         pure:,
@@ -116,7 +117,7 @@ fn fn_qualifiers_invalid_colon() {
 }
 
 #[test]
-#[should_panic = "qualifier `functional` does not take a value"]
+#[should_panic = "qualifier does not take a value"]
 fn fn_qualifiers_invalid_value_expr() {
     let _: Spec = parse_quote! {
         functional: x == 42,
@@ -208,7 +209,7 @@ fn all_clauses() {
 }
 
 #[test]
-#[should_panic(expected = "unknown spec keyword `goat`")]
+#[should_panic(expected = "unknown spec field")]
 fn unknown_keyword() {
     let _: Spec = parse_quote! {
         ensures: output == x,
@@ -218,7 +219,7 @@ fn unknown_keyword() {
 }
 
 #[test]
-#[should_panic(expected = "parameters are out of order")]
+#[should_panic(expected = "fields are out of order")]
 fn out_of_order() {
     let _: Spec = parse_quote! {
         ensures: output == x,
@@ -237,7 +238,7 @@ fn multiple_binds() {
 
 #[test]
 #[should_panic(
-    expected = "at most one `captures` parameter is allowed; to capture multiple values, use a list"
+    expected = "at most one `captures` field is allowed; to capture multiple values, use a list"
 )]
 fn multiple_captures() {
     let _: Spec = parse_quote! {
@@ -756,7 +757,7 @@ fn captures_with_all_clauses() {
 }
 
 #[test]
-#[should_panic(expected = "parameters are out of order")]
+#[should_panic(expected = "fields are out of order")]
 fn captures_out_of_order() {
     let _: Spec = parse_quote! {
         captures: old_value = value,
@@ -806,7 +807,7 @@ fn captures_complex_expressions() {
 }
 
 #[test]
-#[should_panic(expected = "`cfg` attribute is not supported on `captures`")]
+#[should_panic(expected = "`cfg` attribute is not supported here")]
 fn cfg_on_captures() {
     let _: Spec = parse_quote! {
         #[cfg(test)]
@@ -995,14 +996,14 @@ fn captures_pattern_with_binding_modifier() {
 }
 
 #[test]
-#[should_panic(expected = "expected `,`")]
-fn captures_missing_assignment_value_is_rejected_by_spec_args() {
+#[should_panic(expected = "expected an expression")]
+fn captures_missing_assignment_value_is_rejected_by_spec_fields() {
     let input = "captures: Person { name, age } =,";
-    let _: syntax::SpecArgs = parse_str(input).unwrap();
+    let _: syntax::SpecFields = parse_str(input).unwrap();
 }
 
 #[test]
-#[should_panic(expected = "expected `,`")]
+#[should_panic(expected = "expected an expression")]
 fn captures_missing_assignment_value_errors_as_spec() {
     let _: Spec = parse_str("captures: Person { name, age } =,").unwrap();
 }
@@ -1020,27 +1021,27 @@ fn captures_with_extra_semicolon() {
 }
 
 #[test]
-fn spec_arg_can_omit_value() {
-    let spec_args: syntax::SpecArgs = parse_quote! {
+fn field_value_supports_shorthand_expression() {
+    let spec_fields: syntax::SpecFields = parse_quote! {
         key_1,
         key_2: value,
         key_3: value as expr,
     };
 
-    let args: Vec<_> = spec_args.args.into_iter().collect();
-    let [arg_1, arg_2, arg_3] = args.as_slice() else {
-        panic!("expected 3 args");
+    let fields: Vec<_> = spec_fields.fields.into_iter().collect();
+    let [field_1, field_2, field_3] = fields.as_slice() else {
+        panic!("expected 3 fields");
     };
 
-    assert!(arg_1.keyword.to_string() == "key_1");
-    assert!(arg_1.colon.is_none());
-    assert_eq!(arg_1.value, SpecArgValue::None);
+    assert_eq!(field_1.member.to_token_stream().to_string(), "key_1");
+    assert!(field_1.colon_token.is_none());
+    assert_eq!(field_1.expr.to_token_stream().to_string(), "key_1");
 
-    assert!(arg_2.keyword.to_string() == "key_2");
-    assert!(arg_2.colon.is_some());
-    assert_eq!(arg_2.value, SpecArgValue::Expr(parse_quote!(value)));
+    assert_eq!(field_2.member.to_token_stream().to_string(), "key_2");
+    assert!(field_2.colon_token.is_some());
+    assert_eq!(field_2.expr.to_token_stream().to_string(), "value");
 
-    assert!(arg_3.keyword.to_string() == "key_3");
-    assert!(arg_3.colon.is_some());
-    assert_eq!(arg_3.value, SpecArgValue::Expr(parse_quote!(value as expr)));
+    assert_eq!(field_3.member.to_token_stream().to_string(), "key_3");
+    assert!(field_3.colon_token.is_some());
+    assert_eq!(field_3.expr.to_token_stream().to_string(), "value as expr");
 }

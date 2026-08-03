@@ -110,7 +110,7 @@ fn push_checked<T>(vec: &mut Vec<T>, value: T) { todo!() }
 
 ### `captures`: Capture Entry-Time Values
 
-Sometimes postconditions need to compare the function's final state with its initial state. The `captures` parameter lets you capture values at function entry for use in postconditions.
+Sometimes postconditions need to compare the function's final state with its initial state. The `captures` field lets you capture values at function entry for use in postconditions.
 
 ```rust, no_run
 use anodized::spec;
@@ -164,7 +164,7 @@ fn get_positive_value() -> i32 { todo!() }
 
 The default spec-wide binding is `output`. If that collides with an existing identifier, you can choose a different name for it in two ways:
 
-**1. Spec-Wide Binding**: Use the `inspects` parameter to set a new name for the return value across all postconditions in the specification. It must be placed immediately before any `ensures` conditions.
+**1. Spec-Wide Binding**: Use the `inspects` field to set a new name for the return value across all postconditions in the specification. It must be placed immediately before any `ensures` conditions.
 
 ```rust, no_run
 use anodized::spec;
@@ -231,7 +231,7 @@ use anodized::spec;
 fn sort_pair(pair: (i32, i32)) -> (i32, i32) { todo!() }
 ```
 
-**5. Example With All Function Spec Arguments**
+**5. Example With All Function Spec Fields**
 
 ```rust, no_run
 use anodized::spec;
@@ -411,4 +411,4 @@ enum MonotonicVec<T: Ord> {
 Important restrictions:
 
 - Runtime checks are **not implemented** yet.
-- Only the `maintains` spec parameter is supported.
+- Only the `maintains` spec field is supported.

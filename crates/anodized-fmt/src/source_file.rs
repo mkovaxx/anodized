@@ -11,7 +11,7 @@ use crate::{
     formatter::format_spec_attribute,
 };
 
-use anodized_core::annotate::syntax::SpecArgs;
+use anodized_core::annotate::syntax::SpecFields;
 
 #[derive(Debug)]
 struct TextEdit {
@@ -49,9 +49,9 @@ fn format_source(
         let start = span.start();
         let end = span.end();
 
-        // Parse the spec arguments
-        let spec_args = match attr.parse_args::<SpecArgs>() {
-            Ok(args) => args,
+        // Parse the spec fields.
+        let spec_fields = match attr.parse_args::<SpecFields>() {
+            Ok(fields) => fields,
             Err(_) => continue, // Skip malformed specs
         };
 
@@ -71,7 +71,8 @@ fn format_source(
             crate::collect_comments::extract_standalone_comments(&attr_source, start.line - 1);
 
         // Format with comments
-        let formatted = format_spec_attribute(&spec_args, config, &spec_attr.base_indent, comments);
+        let formatted =
+            format_spec_attribute(&spec_fields, config, &spec_attr.base_indent, comments);
 
         edits.push(TextEdit {
             range: start_byte..end_byte,

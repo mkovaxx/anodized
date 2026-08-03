@@ -72,7 +72,7 @@ Create an `anodized-fmt.toml` file in your project root:
 # Number of spaces for indentation
 tab_spaces = 4
 
-# Reorder spec arguments into recommended order
+# Reorder spec fields into recommended order
 # (requires, maintains, captures, inspects, ensures)
 reorder_spec_items = true,
 
@@ -123,8 +123,8 @@ let formatted = format_file(source, &config)?;
 ## How It Works
 
 1. **Find** - Locate `#[spec(` patterns in source text using simple string search
-2. **Parse** - Parse each spec using `anodized-core::SpecArgs` for permissive parsing
-3. **Format** - Walk the `SpecArgs` struct and emit formatted text with configurable options
+2. **Parse** - Parse each spec using `anodized-core::SpecFields` for permissive parsing
+3. **Format** - Walk the `SpecFields` struct and emit formatted text with configurable options
 4. **Replace** - Substitute the original attribute with the formatted version
 
-Individual expressions(`syn::expr::Expr`) are formatted using `prettyplease` and patterns(`syn::pat::Pat`) are formatted with quote::quote! .
+Individual expressions (`syn::expr::Expr`) are formatted using `prettyplease`.
