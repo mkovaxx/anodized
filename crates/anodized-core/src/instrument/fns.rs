@@ -146,7 +146,6 @@ impl Mode {
     pub fn build_postcondition_fn_body(
         maintains: &[Condition],
         captures: &[Capture],
-        inspects: &Option<Pat>,
         ensures: &[PostCondition],
     ) -> Result<Block> {
         let mut statements: Vec<Stmt> = vec![];
@@ -174,7 +173,7 @@ impl Mode {
             let i = clauses.len();
             let name = Ident::new(&format!("__anodized_clause_{}", i + 1), Span::mixed_site());
             let expr = &postcond.expr;
-            if let Some(pat) = postcond.pat.as_ref().or(inspects.as_ref()) {
+            if let Some(pat) = &postcond.pat {
                 statements.push(
                     parse_quote! { let #name = (|#pat| -> bool { #expr })(__anodized_output); },
                 );
@@ -260,7 +259,7 @@ impl CheckSettings {
         for postcond in &spec.ensures {
             let expr = &postcond.expr;
             let repr = expr.to_token_stream().to_string();
-            let expr = if let Some(pat) = postcond.pat.as_ref().or(spec.inspects.as_ref()) {
+            let expr = if let Some(pat) = &postcond.pat {
                 parse_quote! {
                     __anodized_eval_post(|| -> bool { let #pat = #output_ident; #expr })
                 }

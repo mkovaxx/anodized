@@ -106,7 +106,6 @@ Instead, you likely need to place a `#[spec]` attribute on an enclosing trait or
                 block: Box::new(Self::build_postcondition_fn_body(
                     &spec.maintains,
                     &spec.captures,
-                    &spec.inspects,
                     &spec.ensures,
                 )?),
             };
