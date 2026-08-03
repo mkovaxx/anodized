@@ -60,14 +60,10 @@ fn embed_spec_item_fn() {
             let __anodized_clause_1 = (|| -> bool { COND_4 })();
             let __anodized_clause_2 = (|| -> bool { COND_5 })();
             let __anodized_clause_3 = (|| -> bool { COND_6 })();
-            let (PAT_1, ALIAS_1, (ALIAS_2, ALIAS_3)) = (
-                __anodized_output,
-                (|| EXPR_1)(),
-                (|| EXPR_2)(),
-            );
-            let __anodized_clause_4 = (|| -> bool { COND_7 })();
-            let __anodized_clause_5 = (|| -> bool { COND_8 })();
-            let __anodized_clause_6 = (|| -> bool { COND_9 })();
+            let (ALIAS_1, (ALIAS_2, ALIAS_3)) = ((|| EXPR_1)(), (|| EXPR_2)());
+            let __anodized_clause_4 = (|PAT_1| -> bool { COND_7 })(__anodized_output);
+            let __anodized_clause_5 = (|PAT_1| -> bool { COND_8 })(__anodized_output);
+            let __anodized_clause_6 = (|PAT_1| -> bool { COND_9 })(__anodized_output);
             __anodized_clause_1 && __anodized_clause_2 && __anodized_clause_3
                 && __anodized_clause_4 && __anodized_clause_5 && __anodized_clause_6
         }
@@ -113,13 +109,12 @@ fn default_instrument_item_fn() {
             if false {
                 fn __anodized_eval_post(c: impl Fn() -> bool) -> bool { c() }
                 let mut __anodized_errors = ::std::string::String::new();
-                let PAT_1 = __anodized_output;
                 let __anodized_postcond = __anodized_eval_post(|| -> bool { COND_4 })
                     & __anodized_eval_post(|| -> bool { COND_5 })
                     & __anodized_eval_post(|| -> bool { COND_6 })
-                    & __anodized_eval_post(|| -> bool { COND_7 })
-                    & __anodized_eval_post(|| -> bool { COND_8 })
-                    & __anodized_eval_post(|| -> bool { COND_9 });
+                    & __anodized_eval_post(|| -> bool { let PAT_1 = __anodized_output; COND_7 })
+                    & __anodized_eval_post(|| -> bool { let PAT_1 = __anodized_output; COND_8 })
+                    & __anodized_eval_post(|| -> bool { let PAT_1 = __anodized_output; COND_9 });
                 if !__anodized_postcond {}
             }
             __anodized_output
@@ -184,19 +179,18 @@ fn emit_try_fn_instrument_item_fn() {
             if true {
                 fn __anodized_eval_post(c: impl Fn() -> bool) -> bool { c() }
                 let mut __anodized_errors = ::std::string::String::new();
-                let PAT_1 = __anodized_output;
                 let __anodized_postcond = (__anodized_eval_post(|| -> bool { COND_4 })
                         || __anodized_errors.push_str("\n    COND_4") != ())
                     & (__anodized_eval_post(|| -> bool { COND_5 })
                         || __anodized_errors.push_str("\n    COND_5") != ())
                     & (!cfg!(META_2) || __anodized_eval_post(|| -> bool { COND_6 })
                         || __anodized_errors.push_str("\n    COND_6") != ())
-                    & (__anodized_eval_post(|| -> bool { COND_7 })
+                    & (__anodized_eval_post(|| -> bool { let PAT_1 = __anodized_output; COND_7 })
                         || __anodized_errors.push_str("\n    COND_7") != ())
                     & (!cfg!(META_3)
-                        || __anodized_eval_post(|| -> bool { COND_8 })
+                        || __anodized_eval_post(|| -> bool { let PAT_1 = __anodized_output; COND_8 })
                         || __anodized_errors.push_str("\n    COND_8") != ())
-                    & (!cfg!(META_3) || __anodized_eval_post(|| -> bool { COND_9 })
+                    & (!cfg!(META_3) || __anodized_eval_post(|| -> bool { let PAT_1 = __anodized_output; COND_9 })
                         || __anodized_errors.push_str("\n    COND_9") != ());
                 if !__anodized_postcond {
                     return ::anodized::result::post_err(__anodized_output, __anodized_errors);
@@ -711,8 +705,7 @@ fn binds_parameter() {
             if true {
                 fn __anodized_eval_post(c: impl Fn() -> bool) -> bool { c() }
                 let mut __anodized_errors = ::std::string::String::new();
-                let OUTPUT_PATTERN = __anodized_output;
-                let __anodized_postcond = (__anodized_eval_post(|| -> bool { CONDITION_1 })
+                let __anodized_postcond = (__anodized_eval_post(|| -> bool { let OUTPUT_PATTERN = __anodized_output; CONDITION_1 })
                     || __anodized_errors.push_str("\n    CONDITION_1") != ());
                 if !__anodized_postcond {
                     panic!("postcondition failed:{__anodized_errors}");
