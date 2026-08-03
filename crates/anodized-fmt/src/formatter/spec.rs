@@ -1,18 +1,15 @@
 use std::collections::HashMap;
 
-use anodized_core::annotate::syntax::{SpecArg, SpecArgValue, SpecArgs};
+use anodized_core::annotate::syntax::{Keyword, SpecArgs};
+use syn::FieldValue;
 use syn::spanned::Spanned;
 
 use crate::{collect::ParentIndent, config::Config};
 
 use super::Formatter;
 
-fn arg_end_line(arg: &SpecArg) -> usize {
-    match &arg.value {
-        SpecArgValue::None => arg.keyword_span.end().line.saturating_sub(1),
-        SpecArgValue::Expr(expr) => expr.span().end().line.saturating_sub(1),
-        SpecArgValue::Pat(pat) => pat.span().end().line.saturating_sub(1),
-    }
+fn arg_end_line(arg: &FieldValue) -> usize {
+    arg.expr.span().end().line.saturating_sub(1)
 }
 
 /// Format a complete #[spec(...)] attribute with comment preservation.
@@ -50,18 +47,18 @@ impl Formatter<'_> {
         self.set_indent(arg_indent);
 
         // Collect args with their original line numbers for comment association
-        let args_with_lines: Vec<(&SpecArg, usize)> = spec_args
+        let args_with_lines: Vec<(&FieldValue, usize)> = spec_args
             .args
             .iter()
             .map(|arg| {
-                let line = arg.keyword_span.start().line.saturating_sub(1);
+                let line = arg.member.span().start().line.saturating_sub(1);
                 (arg, line)
             })
             .collect();
 
         // Associate comments with their corresponding args before sorting
         // For each arg, find comments that appear between the previous arg's end and this arg's keyword
-        type ArgWithComments<'a> = (&'a SpecArg, usize, Vec<(usize, Option<String>)>);
+        type ArgWithComments<'a> = (&'a FieldValue, usize, Vec<(usize, Option<String>)>);
         let args_with_comments: Vec<ArgWithComments> = if self.settings.reorder_spec_items {
             args_with_lines
                 .iter()
@@ -95,7 +92,7 @@ impl Formatter<'_> {
         // Sort if reordering is enabled (comments are now bundled with args)
         let mut final_args = args_with_comments;
         if self.settings.reorder_spec_items {
-            final_args.sort_by_key(|(arg, _line, _comments)| &arg.keyword);
+            final_args.sort_by_key(|(arg, _line, _comments)| Keyword::from(&arg.member));
         }
 
         // Format each arg with its associated comments

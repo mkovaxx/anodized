@@ -1,5 +1,5 @@
 use quote::ToTokens;
-use syn::{Expr, Pat};
+use syn::Expr;
 
 /// Format an expression using prettyplease
 /// This properly formats Rust expressions without excessive whitespace
@@ -39,15 +39,6 @@ pub fn format_expr(expr: &Expr) -> String {
     remove_spaces_before_commas(&result)
 }
 
-/// Format a pattern (for inspects parameter)
-pub fn format_pattern(pat: &Pat) -> String {
-    // For patterns, quote works fine
-    let result = quote::quote!(#pat).to_string();
-
-    // Remove extra spaces before commas in patterns too
-    remove_spaces_before_commas(&result)
-}
-
 /// Remove spaces before commas in formatted output
 /// This handles prettyplease's formatting of arrays/tuples like `[a , b , c]` -> `[a, b, c]`
 fn remove_spaces_before_commas(s: &str) -> String {
@@ -72,21 +63,6 @@ mod tests {
         let formatted = format_expr(&expr);
         assert!(formatted.contains("x > 0"));
         assert!(formatted.contains("y < 100"));
-    }
-
-    #[test]
-    fn test_format_pattern() {
-        let pat: Pat = parse_quote!(output);
-        let formatted = format_pattern(&pat);
-        assert_eq!(formatted, "output");
-    }
-
-    #[test]
-    fn test_format_tuple_pattern() {
-        let pat: Pat = parse_quote!((a, b));
-        let formatted = format_pattern(&pat);
-        assert!(formatted.contains("a"));
-        assert!(formatted.contains("b"));
     }
 
     #[test]

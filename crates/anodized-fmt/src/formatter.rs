@@ -1,15 +1,15 @@
 use std::collections::HashMap;
 
-use anodized_core::annotate::syntax::{SpecArg, SpecArgValue};
-use syn::Meta;
+use quote::ToTokens;
 use syn::spanned::Spanned;
+use syn::{FieldValue, Meta};
 
 use crate::config::{Config, TrailingComma};
 
 mod expr;
 mod spec;
 
-use expr::{format_expr, format_pattern};
+use expr::format_expr;
 
 pub use spec::format_spec_attribute;
 
@@ -113,8 +113,8 @@ impl<'a> Formatter<'a> {
         self.output
     }
 
-    /// Format a SpecArg into the output.
-    pub fn format_spec_arg(&mut self, arg: &SpecArg) {
+    /// Format a spec field into the output.
+    pub fn format_spec_arg(&mut self, arg: &FieldValue) {
         // Add cfg attribute if present
         if let Some(cfg_attr) = Self::find_cfg_attribute(&arg.attrs)
             && let Ok(meta) = cfg_attr.parse_args::<Meta>()
@@ -124,36 +124,28 @@ impl<'a> Formatter<'a> {
             self.write_indent();
         }
 
-        // Format the value based on what it contains
-        let value_str = match &arg.value {
-            SpecArgValue::None => String::new(),
-            SpecArgValue::Expr(expr) => {
-                if let syn::Expr::Array(array) = expr {
-                    let elem_strs = Vec::from_iter(array.elems.iter().map(format_expr));
-                    let elem_lines: Vec<usize> = array
-                        .elems
-                        .iter()
-                        .map(|e| e.span().start().line.saturating_sub(1))
-                        .collect();
-                    let bracket_line = array
-                        .bracket_token
-                        .span
-                        .open()
-                        .start()
-                        .line
-                        .saturating_sub(1);
-                    self.format_array(&elem_strs, Some(&elem_lines), Some(bracket_line))
-                } else {
-                    format_expr(expr)
-                }
-            }
-            SpecArgValue::Pat(pat) => format_pattern(pat),
-        };
-
-        if value_str.is_empty() {
-            self.write(&format!("{},", arg.keyword));
+        if arg.colon_token.is_none() {
+            self.write(&format!("{},", arg.member.to_token_stream()));
         } else {
-            self.write(&format!("{}: {},", arg.keyword, value_str));
+            let value_str = if let syn::Expr::Array(array) = &arg.expr {
+                let elem_strs = Vec::from_iter(array.elems.iter().map(format_expr));
+                let elem_lines: Vec<usize> = array
+                    .elems
+                    .iter()
+                    .map(|e| e.span().start().line.saturating_sub(1))
+                    .collect();
+                let bracket_line = array
+                    .bracket_token
+                    .span
+                    .open()
+                    .start()
+                    .line
+                    .saturating_sub(1);
+                self.format_array(&elem_strs, Some(&elem_lines), Some(bracket_line))
+            } else {
+                format_expr(&arg.expr)
+            };
+            self.write(&format!("{}: {},", arg.member.to_token_stream(), value_str));
         }
     }
 
