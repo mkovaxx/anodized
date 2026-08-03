@@ -114,9 +114,9 @@ impl<'a> Formatter<'a> {
     }
 
     /// Format a spec field into the output.
-    pub fn format_spec_arg(&mut self, arg: &FieldValue) {
+    pub fn format_spec_field(&mut self, field: &FieldValue) {
         // Add cfg attribute if present
-        if let Some(cfg_attr) = Self::find_cfg_attribute(&arg.attrs)
+        if let Some(cfg_attr) = Self::find_cfg_attribute(&field.attrs)
             && let Ok(meta) = cfg_attr.parse_args::<Meta>()
         {
             self.write(&Self::format_cfg_attr(&meta));
@@ -124,10 +124,10 @@ impl<'a> Formatter<'a> {
             self.write_indent();
         }
 
-        if arg.colon_token.is_none() {
-            self.write(&format!("{},", arg.member.to_token_stream()));
+        if field.colon_token.is_none() {
+            self.write(&format!("{},", field.member.to_token_stream()));
         } else {
-            let value_str = if let syn::Expr::Array(array) = &arg.expr {
+            let value_str = if let syn::Expr::Array(array) = &field.expr {
                 let elem_strs = Vec::from_iter(array.elems.iter().map(format_expr));
                 let elem_lines: Vec<usize> = array
                     .elems
@@ -143,9 +143,13 @@ impl<'a> Formatter<'a> {
                     .saturating_sub(1);
                 self.format_array(&elem_strs, Some(&elem_lines), Some(bracket_line))
             } else {
-                format_expr(&arg.expr)
+                format_expr(&field.expr)
             };
-            self.write(&format!("{}: {},", arg.member.to_token_stream(), value_str));
+            self.write(&format!(
+                "{}: {},",
+                field.member.to_token_stream(),
+                value_str
+            ));
         }
     }
 

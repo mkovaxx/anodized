@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use anodized_core::annotate::syntax::{Keyword, SpecArgs};
+use anodized_core::annotate::syntax::{Keyword, SpecFields};
 use syn::FieldValue;
 use syn::spanned::Spanned;
 
@@ -8,66 +8,65 @@ use crate::{collect::ParentIndent, config::Config};
 
 use super::Formatter;
 
-fn arg_end_line(arg: &FieldValue) -> usize {
-    arg.expr.span().end().line.saturating_sub(1)
+fn field_end_line(field: &FieldValue) -> usize {
+    field.expr.span().end().line.saturating_sub(1)
 }
 
 /// Format a complete #[spec(...)] attribute with comment preservation.
 ///
 /// This is the main entry point for formatting a spec attribute. It:
 /// 1. Creates a formatter with the comment map and base indentation
-/// 2. Formats the spec args
+/// 2. Formats the spec fields
 /// 3. Returns the complete #[spec(...)] string
 pub fn format_spec_attribute(
-    spec_args: &SpecArgs,
+    spec_fields: &SpecFields,
     config: &Config,
     base_indent: &ParentIndent,
     comments: HashMap<usize, Option<String>>,
 ) -> String {
     let indent_spaces = base_indent.total_spaces(config.tab_spaces);
     let mut formatter = Formatter::new(config, indent_spaces, comments);
-    formatter.spec_args(spec_args);
+    formatter.spec_fields(spec_fields);
     formatter.finish()
 }
 
 impl Formatter<'_> {
-    /// Format SpecArgs into the output.
-    pub fn spec_args(&mut self, spec_args: &SpecArgs) {
+    /// Format SpecFields into the output.
+    pub fn spec_fields(&mut self, spec_fields: &SpecFields) {
         let base_indent = self.base_indent;
         self.write("#[spec(");
 
-        if spec_args.args.is_empty() {
+        if spec_fields.fields.is_empty() {
             self.write(")]");
             return;
         }
 
         // Use vertical layout
         self.newline();
-        let arg_indent = base_indent + self.settings.tab_spaces;
-        self.set_indent(arg_indent);
+        let field_indent = base_indent + self.settings.tab_spaces;
+        self.set_indent(field_indent);
 
-        // Collect args with their original line numbers for comment association
-        let args_with_lines: Vec<(&FieldValue, usize)> = spec_args
-            .args
+        // Collect fields with their original line numbers for comment association
+        let fields_with_lines: Vec<(&FieldValue, usize)> = spec_fields
+            .fields
             .iter()
-            .map(|arg| {
-                let line = arg.member.span().start().line.saturating_sub(1);
-                (arg, line)
+            .map(|field| {
+                let line = field.member.span().start().line.saturating_sub(1);
+                (field, line)
             })
             .collect();
 
-        // Associate comments with their corresponding args before sorting
-        // For each arg, find comments that appear between the previous arg's end and this arg's keyword
-        type ArgWithComments<'a> = (&'a FieldValue, usize, Vec<(usize, Option<String>)>);
-        let args_with_comments: Vec<ArgWithComments> = if self.settings.reorder_spec_items {
-            args_with_lines
+        // Associate comments with their corresponding fields before sorting.
+        type FieldWithComments<'a> = (&'a FieldValue, usize, Vec<(usize, Option<String>)>);
+        let fields_with_comments: Vec<FieldWithComments> = if self.settings.reorder_spec_items {
+            fields_with_lines
                 .iter()
                 .enumerate()
-                .map(|(idx, (arg, line))| {
+                .map(|(idx, (field, line))| {
                     let start_line = if idx == 0 {
                         0
                     } else {
-                        arg_end_line(args_with_lines[idx - 1].0) + 1
+                        field_end_line(fields_with_lines[idx - 1].0) + 1
                     };
                     let end_line = *line;
 
@@ -78,27 +77,27 @@ impl Formatter<'_> {
                         }
                     }
 
-                    (*arg, *line, comments)
+                    (*field, *line, comments)
                 })
                 .collect()
         } else {
             // No reordering, so no need to pre-collect comments
-            args_with_lines
+            fields_with_lines
                 .into_iter()
-                .map(|(arg, line)| (arg, line, Vec::new()))
+                .map(|(field, line)| (field, line, Vec::new()))
                 .collect()
         };
 
-        // Sort if reordering is enabled (comments are now bundled with args)
-        let mut final_args = args_with_comments;
+        // Sort if reordering is enabled (comments are now bundled with fields).
+        let mut final_fields = fields_with_comments;
         if self.settings.reorder_spec_items {
-            final_args.sort_by_key(|(arg, _line, _comments)| Keyword::from(&arg.member));
+            final_fields.sort_by_key(|(field, _line, _comments)| Keyword::from(&field.member));
         }
 
-        // Format each arg with its associated comments
-        for (arg, original_line, comments) in final_args {
+        // Format each field with its associated comments.
+        for (field, original_line, comments) in final_fields {
             if self.settings.reorder_spec_items {
-                // Write the pre-collected comments for this arg
+                // Write the pre-collected comments for this field.
                 for (_line, comment_opt) in comments {
                     if let Some(comment) = comment_opt {
                         self.write_indent();
@@ -113,7 +112,7 @@ impl Formatter<'_> {
             }
 
             self.write_indent();
-            self.format_spec_arg(arg);
+            self.format_spec_field(field);
             self.newline();
         }
 
@@ -131,24 +130,24 @@ mod tests {
 
     #[test]
     fn test_format_simple_spec() {
-        let spec_args: SpecArgs = parse_str("requires: x > 0").unwrap();
+        let spec_fields: SpecFields = parse_str("requires: x > 0").unwrap();
         let config = Config::default();
         let comments = HashMap::new();
         let indent = ParentIndent::default();
 
-        let formatted = format_spec_attribute(&spec_args, &config, &indent, comments);
+        let formatted = format_spec_attribute(&spec_fields, &config, &indent, comments);
 
         assert_eq!(formatted, "#[spec(\n    requires: x > 0,\n)]");
     }
 
     #[test]
     fn test_format_empty_spec() {
-        let spec_args: SpecArgs = parse_str("").unwrap();
+        let spec_fields: SpecFields = parse_str("").unwrap();
         let config = Config::default();
         let comments = HashMap::new();
         let indent = ParentIndent::default();
 
-        let formatted = format_spec_attribute(&spec_args, &config, &indent, comments);
+        let formatted = format_spec_attribute(&spec_fields, &config, &indent, comments);
 
         assert_eq!(formatted, "#[spec()]");
     }

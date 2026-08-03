@@ -1022,26 +1022,26 @@ fn captures_with_extra_semicolon() {
 
 #[test]
 fn field_value_supports_shorthand_expression() {
-    let spec_args: syntax::SpecFields = parse_quote! {
+    let spec_fields: syntax::SpecFields = parse_quote! {
         key_1,
         key_2: value,
         key_3: value as expr,
     };
 
-    let args: Vec<_> = spec_args.fields.into_iter().collect();
-    let [arg_1, arg_2, arg_3] = args.as_slice() else {
-        panic!("expected 3 args");
+    let fields: Vec<_> = spec_fields.fields.into_iter().collect();
+    let [field_1, field_2, field_3] = fields.as_slice() else {
+        panic!("expected 3 fields");
     };
 
-    assert_eq!(arg_1.member.to_token_stream().to_string(), "key_1");
-    assert!(arg_1.colon_token.is_none());
-    assert_eq!(arg_1.expr.to_token_stream().to_string(), "key_1");
+    assert_eq!(field_1.member.to_token_stream().to_string(), "key_1");
+    assert!(field_1.colon_token.is_none());
+    assert_eq!(field_1.expr.to_token_stream().to_string(), "key_1");
 
-    assert_eq!(arg_2.member.to_token_stream().to_string(), "key_2");
-    assert!(arg_2.colon_token.is_some());
-    assert_eq!(arg_2.expr.to_token_stream().to_string(), "value");
+    assert_eq!(field_2.member.to_token_stream().to_string(), "key_2");
+    assert!(field_2.colon_token.is_some());
+    assert_eq!(field_2.expr.to_token_stream().to_string(), "value");
 
-    assert_eq!(arg_3.member.to_token_stream().to_string(), "key_3");
-    assert!(arg_3.colon_token.is_some());
-    assert_eq!(arg_3.expr.to_token_stream().to_string(), "value as expr");
+    assert_eq!(field_3.member.to_token_stream().to_string(), "key_3");
+    assert!(field_3.colon_token.is_some());
+    assert_eq!(field_3.expr.to_token_stream().to_string(), "value as expr");
 }
