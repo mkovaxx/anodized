@@ -103,7 +103,7 @@ impl Parse for Spec {
                     if !captures.is_empty() {
                         errors.add(Error::new_spanned(
                             &field.member,
-                            "at most one `captures` parameter is allowed; to capture multiple values, use a list: `captures: [binding1 = expr1, binding2 = expr2, ...]`",
+                            "at most one `captures` field is allowed; to capture multiple values, use a list: `captures: [binding1 = expr1, binding2 = expr2, ...]`",
                         ));
                     }
                     if let Err(error) = parse_captures(field, &mut captures) {
@@ -125,7 +125,7 @@ impl Parse for Spec {
                     errors.add(Error::new_spanned(
                         &field.member,
                         format!(
-                            "`{}` parameter is not supported here",
+                            "`{}` field is not supported here",
                             field.member.to_token_stream(),
                         ),
                     ));
@@ -136,7 +136,7 @@ impl Parse for Spec {
         if !is_sorted {
             errors.add(Error::new(
                 input.span(),
-                " are out of order: the expected order is: `<QUALIFIERS>`, `requires`, `maintains`, `captures`, `inspects`, `ensures`, where `<QUALIFIERS>` are:\n
+                "fields are out of order: the expected order is: `<QUALIFIERS>`, `requires`, `maintains`, `captures`, `inspects`, `ensures`, where `<QUALIFIERS>` are:\n
 `functional` (`pure` and `total`),\n
 `pure` (`deterministic` and `effectfree`),\n
 `total` (`infallible` and `terminating`)",
@@ -183,7 +183,7 @@ impl Parse for DataSpec {
                     errors.add(Error::new_spanned(
                         &field.member,
                         format!(
-                            "`{}` parameter is not supported here",
+                            "`{}` field is not supported here",
                             field.member.to_token_stream(),
                         ),
                     ));
@@ -230,7 +230,7 @@ impl Parse for LoopSpec {
                     if decreases.is_some() {
                         errors.add(Error::new_spanned(
                             &field.member,
-                            "multiple `decreases` parameters are not allowed",
+                            "multiple `decreases` fields are not allowed",
                         ));
                     }
                     if let Err(error) = parse_decreases(field, &mut decreases) {
@@ -241,7 +241,7 @@ impl Parse for LoopSpec {
                     errors.add(Error::new_spanned(
                         &field.member,
                         format!(
-                            "`{}` parameter is not supported here",
+                            "`{}` field is not supported here",
                             field.member.to_token_stream(),
                         ),
                     ));
@@ -252,7 +252,7 @@ impl Parse for LoopSpec {
         if !is_sorted {
             errors.add(Error::new(
                 input.span(),
-                "parameters are out of order: the expected order is `maintains`, `decreases`",
+                "fields are out of order: the expected order is `maintains`, `decreases`",
             ));
         }
 

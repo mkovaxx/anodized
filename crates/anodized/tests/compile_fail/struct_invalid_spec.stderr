@@ -1,22 +1,22 @@
-error: `requires` parameter is not supported here
+error: `requires` field is not supported here
  --> tests/compile_fail/struct_invalid_spec.rs:6:5
   |
 6 |     requires: self.x > 0.0,
   |     ^^^^^^^^
 
-error: `captures` parameter is not supported here
+error: `captures` field is not supported here
  --> tests/compile_fail/struct_invalid_spec.rs:8:5
   |
 8 |     captures: old_x = self.x,
   |     ^^^^^^^^
 
-error: `inspects` parameter is not supported here
+error: `inspects` field is not supported here
  --> tests/compile_fail/struct_invalid_spec.rs:9:5
   |
 9 |     inspects: ret_val,
   |     ^^^^^^^^
 
-error: `ensures` parameter is not supported here
+error: `ensures` field is not supported here
   --> tests/compile_fail/struct_invalid_spec.rs:10:5
    |
 10 |     ensures: self.y > 0.0,

@@ -219,7 +219,7 @@ fn unknown_keyword() {
 }
 
 #[test]
-#[should_panic(expected = "parameters are out of order")]
+#[should_panic(expected = "fields are out of order")]
 fn out_of_order() {
     let _: Spec = parse_quote! {
         ensures: output == x,
@@ -238,7 +238,7 @@ fn multiple_binds() {
 
 #[test]
 #[should_panic(
-    expected = "at most one `captures` parameter is allowed; to capture multiple values, use a list"
+    expected = "at most one `captures` field is allowed; to capture multiple values, use a list"
 )]
 fn multiple_captures() {
     let _: Spec = parse_quote! {
@@ -757,7 +757,7 @@ fn captures_with_all_clauses() {
 }
 
 #[test]
-#[should_panic(expected = "parameters are out of order")]
+#[should_panic(expected = "fields are out of order")]
 fn captures_out_of_order() {
     let _: Spec = parse_quote! {
         captures: old_value = value,
