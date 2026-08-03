@@ -261,7 +261,7 @@ fn array_of_conditions() {
         ],
         ensures: [
             output != x,
-            output.is_some(),
+            |output| output.is_some(),
         ],
     };
 
@@ -287,7 +287,7 @@ fn array_of_conditions() {
                 cfg: None,
             },
             PostCondition {
-                pat: None,
+                pat: Some(parse_quote! { output }),
                 expr: parse_quote! { output.is_some() },
                 cfg: None,
             },
@@ -322,24 +322,24 @@ fn ensures_with_explicit_closure() {
 }
 
 #[test]
-fn precondition_expression_is_preserved() {
+fn condition_closure_explicit_return_type_is_preserved() {
     let spec: Spec = parse_quote! {
-        requires: x > 0,
-        ensures: result > x,
+        requires: || -> bool { x > 0 },
+        ensures: |result| -> bool { result > x },
     };
 
     let expected = Spec {
         qualifiers: FnQualifiers::empty(),
         requires: vec![Condition {
-            expr: parse_quote! { x > 0 },
+            expr: parse_quote! { || -> bool { x > 0 } },
             cfg: None,
         }],
         maintains: vec![],
         captures: vec![],
         inspects: None,
         ensures: vec![PostCondition {
-            pat: None,
-            expr: parse_quote! { result > x },
+            pat: Some(parse_quote! { result }),
+            expr: parse_quote! { { result > x } },
             cfg: None,
         }],
         span: Span::call_site(),
@@ -354,7 +354,7 @@ fn multiple_clauses_of_same_flavor() {
         requires: x > 0 || x < -10,
         requires: y.is_ascii(),
         ensures: output < x,
-        ensures: output.len() >= y.len(),
+        ensures: |output| output.len() >= y.len(),
     };
 
     let expected = Spec {
@@ -379,7 +379,7 @@ fn multiple_clauses_of_same_flavor() {
                 cfg: None,
             },
             PostCondition {
-                pat: None,
+                pat: Some(parse_quote! { output }),
                 expr: parse_quote! { output.len() >= y.len() },
                 cfg: None,
             },
@@ -400,7 +400,7 @@ fn mixed_single_and_array_clauses() {
         ],
         ensures: [
             output != y,
-            output.starts_with(z),
+            |output| output.starts_with(z),
         ],
         ensures: output.len() > x,
     };
@@ -431,7 +431,7 @@ fn mixed_single_and_array_clauses() {
                 cfg: None,
             },
             PostCondition {
-                pat: None,
+                pat: Some(parse_quote! { output }),
                 expr: parse_quote! { output.starts_with(z) },
                 cfg: None,
             },
@@ -615,7 +615,7 @@ fn rename_return_value() {
         inspects: result,
         ensures: [
             result > output,
-            val % 2 == 0,
+            |val| val % 2 == 0,
         ],
     };
 
@@ -632,7 +632,7 @@ fn rename_return_value() {
                 cfg: None,
             },
             PostCondition {
-                pat: None,
+                pat: Some(parse_quote! { val }),
                 expr: parse_quote! { val % 2 == 0 },
                 cfg: None,
             },
