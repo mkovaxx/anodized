@@ -24,7 +24,7 @@ error[E0308]: mismatched types
   --> tests/compile_fail/closure_form_errors.rs:31:9
    |
 27 | / #[spec(
-28 | |     // Should fail: cannot re-bind the postcondition's input.
+28 | |     // Should fail: cannot nest postcondition closures.
 29 | |     ensures: |output| [
 30 | |         output >= 42,
 31 | |         |answer| answer <= 42,

@@ -25,7 +25,7 @@ fn some_func() -> i32 {
 }
 
 #[spec(
-    // Should fail: cannot re-bind the postcondition's input.
+    // Should fail: cannot nest postcondition closures.
     ensures: |output| [
         output >= 42,
         |answer| answer <= 42,
