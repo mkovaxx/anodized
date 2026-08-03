@@ -261,7 +261,7 @@ fn array_of_conditions() {
         ],
         ensures: [
             output != x,
-            |output| output.is_some(),
+            |retval| retval.is_some(),
         ],
     };
 
@@ -287,8 +287,8 @@ fn array_of_conditions() {
                 cfg: None,
             },
             PostCondition {
-                pat: Some(parse_quote! { output }),
-                expr: parse_quote! { output.is_some() },
+                pat: Some(parse_quote! { retval }),
+                expr: parse_quote! { retval.is_some() },
                 cfg: None,
             },
         ],
@@ -322,38 +322,11 @@ fn ensures_with_explicit_closure() {
 }
 
 #[test]
-fn condition_closure_explicit_return_type_is_preserved() {
-    let spec: Spec = parse_quote! {
-        requires: || -> bool { x > 0 },
-        ensures: |result| -> bool { result > x },
-    };
-
-    let expected = Spec {
-        qualifiers: FnQualifiers::empty(),
-        requires: vec![Condition {
-            expr: parse_quote! { || -> bool { x > 0 } },
-            cfg: None,
-        }],
-        maintains: vec![],
-        captures: vec![],
-        inspects: None,
-        ensures: vec![PostCondition {
-            pat: Some(parse_quote! { result }),
-            expr: parse_quote! { { result > x } },
-            cfg: None,
-        }],
-        span: Span::call_site(),
-    };
-
-    assert_spec_eq(&spec, &expected);
-}
-
-#[test]
 fn multiple_clauses_of_same_flavor() {
     let spec: Spec = parse_quote! {
         requires: x > 0 || x < -10,
         requires: y.is_ascii(),
-        ensures: output < x,
+        ensures: retval < x,
         ensures: |output| output.len() >= y.len(),
     };
 
@@ -375,7 +348,7 @@ fn multiple_clauses_of_same_flavor() {
         ensures: vec![
             PostCondition {
                 pat: None,
-                expr: parse_quote! { output < x },
+                expr: parse_quote! { retval < x },
                 cfg: None,
             },
             PostCondition {
@@ -400,9 +373,9 @@ fn mixed_single_and_array_clauses() {
         ],
         ensures: [
             output != y,
-            |output| output.starts_with(z),
+            |val| output.starts_with(z),
         ],
-        ensures: output.len() > x,
+        ensures: retval.len() > x,
     };
 
     let expected = Spec {
@@ -431,13 +404,13 @@ fn mixed_single_and_array_clauses() {
                 cfg: None,
             },
             PostCondition {
-                pat: Some(parse_quote! { output }),
+                pat: Some(parse_quote! { val }),
                 expr: parse_quote! { output.starts_with(z) },
                 cfg: None,
             },
             PostCondition {
                 pat: None,
-                expr: parse_quote! { output.len() > x },
+                expr: parse_quote! { retval.len() > x },
                 cfg: None,
             },
         ],

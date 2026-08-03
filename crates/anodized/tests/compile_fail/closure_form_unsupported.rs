@@ -16,4 +16,12 @@ fn returns_something() -> i32 {
     42
 }
 
+#[spec(
+    // Should fail: postcondition closures must return `bool`.
+    ensures: |output| 42,
+)]
+fn some_func() -> i32 {
+    todo!()
+}
+
 fn main() {}
