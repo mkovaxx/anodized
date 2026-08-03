@@ -320,44 +320,56 @@ impl SpecArg {
             None
         };
         let expr = self.value.try_into_expr()?;
-        if let Expr::Array(items) = expr {
-            for expr in items.elems {
-                if let Expr::Closure(mut closure_form) = expr {
-                    if closure_form.inputs.len() != 1 {
-                        return Err(Error::new_spanned(
-                            closure_form,
-                            "postcondition closure must have exactly one input",
-                        ));
+        match expr {
+            Expr::Closure(mut closure) => {
+                if closure.inputs.len() != 1 {
+                    return Err(Error::new_spanned(
+                        closure,
+                        "postcondition closure must have exactly one input",
+                    ));
+                }
+                let (pat, _) = closure.inputs.pop().unwrap().into_tuple();
+                if let Expr::Array(array) = *closure.body {
+                    for expr in array.elems {
+                        postconds.push(PostCondition {
+                            pat: Some(pat.clone()),
+                            expr,
+                            cfg: cfg.clone(),
+                        });
                     }
-                    let (pat, _) = closure_form.inputs.pop().unwrap().into_tuple();
-                    postconds.push(PostCondition {
-                        pat: Some(pat),
-                        expr: *closure_form.body,
-                        cfg: cfg.clone(),
-                    });
                 } else {
                     postconds.push(PostCondition {
-                        pat: None,
-                        expr,
+                        pat: Some(pat),
+                        expr: *closure.body,
                         cfg: cfg.clone(),
                     });
                 }
             }
-        } else {
-            if let Expr::Closure(mut closure_form) = expr {
-                if closure_form.inputs.len() != 1 {
-                    return Err(Error::new_spanned(
-                        closure_form,
-                        "postcondition closure must have exactly one input",
-                    ));
+            Expr::Array(array) => {
+                for expr in array.elems {
+                    if let Expr::Closure(mut closure) = expr {
+                        if closure.inputs.len() != 1 {
+                            return Err(Error::new_spanned(
+                                closure,
+                                "postcondition closure must have exactly one input",
+                            ));
+                        }
+                        let (pat, _) = closure.inputs.pop().unwrap().into_tuple();
+                        postconds.push(PostCondition {
+                            pat: Some(pat),
+                            expr: *closure.body,
+                            cfg: cfg.clone(),
+                        });
+                    } else {
+                        postconds.push(PostCondition {
+                            pat: None,
+                            expr,
+                            cfg: cfg.clone(),
+                        });
+                    }
                 }
-                let (pat, _) = closure_form.inputs.pop().unwrap().into_tuple();
-                postconds.push(PostCondition {
-                    pat: Some(pat),
-                    expr: *closure_form.body,
-                    cfg: cfg.clone(),
-                });
-            } else {
+            }
+            _ => {
                 postconds.push(PostCondition {
                     pat: None,
                     expr,

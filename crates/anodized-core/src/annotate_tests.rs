@@ -376,6 +376,10 @@ fn mixed_single_and_array_clauses() {
             |val| output.starts_with(z),
         ],
         ensures: retval.len() > x,
+        ensures: |output| [
+            output >= x,
+            x != z,
+        ],
     };
 
     let expected = Spec {
@@ -411,6 +415,16 @@ fn mixed_single_and_array_clauses() {
             PostCondition {
                 pat: None,
                 expr: parse_quote! { retval.len() > x },
+                cfg: None,
+            },
+            PostCondition {
+                pat: Some(parse_quote! { output }),
+                expr: parse_quote! { output >= x },
+                cfg: None,
+            },
+            PostCondition {
+                pat: Some(parse_quote! { output }),
+                expr: parse_quote! { x != z },
                 cfg: None,
             },
         ],
