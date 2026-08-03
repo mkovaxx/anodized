@@ -997,7 +997,7 @@ fn captures_pattern_with_binding_modifier() {
 
 #[test]
 #[should_panic(expected = "expected an expression")]
-fn captures_missing_assignment_value_is_rejected_by_spec_args() {
+fn captures_missing_assignment_value_is_rejected_by_spec_fields() {
     let input = "captures: Person { name, age } =,";
     let _: syntax::SpecFields = parse_str(input).unwrap();
 }

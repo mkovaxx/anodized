@@ -25,7 +25,7 @@ impl Mode {
         spec: DataSpec,
         mut the_trait: syn::ItemTrait,
     ) -> syn::Result<syn::ItemTrait> {
-        // Currently we don't support any spec arguments for traits themselves.
+        // Currently we don't support any spec fields for traits themselves.
         if !spec.is_empty() {
             return Err(spec.spec_err(
                 "Unsupported spec element on trait. Try placing it on an item inside the trait",

@@ -24,26 +24,26 @@ This crate is the interoperability layer for tools connected to the [Anodized](h
 
 ## Specification Syntax
 
-The `#[spec]` attribute's parameters follow a specific grammar, which is formally defined using EBNF as follows.
+The `#[spec]` attribute's fields follow a specific grammar, which is formally defined using EBNF as follows.
 
 ```ebnf
-params = [ requires_params ]
-       , [ maintains_params ]
+fields = [ qualifiers ]
+         [ requires_fields ]
+       , [ maintains_fields ]
        (* not a typo: at most one `captures:` *)
-       , [ captures_param ]
-       (* not a typo: at most one `inspects:` *)
-       , [ inspects_param ]
-       , [ ensures_params ];
+       , [ captures_field ]
+       , [ ensures_fields ];
 
-requires_params  = { requires_param };
-maintains_params = { maintains_param };
-ensures_params   = { ensures_param };
+qualifiers = TODO
+requires_fields  = { requires_field };
+maintains_fields = { maintains_field };
+ensures_fields   = { ensures_field };
 
-requires_param  = [ cfg_attr ] , `requires:` , pre_conditions, `,`;
-maintains_param = [ cfg_attr ] , `maintains:` , pre_conditions, `,`;
-captures_param  = `captures:` , captures, `,`;
-inspects_param     = `inspects:` , pattern, `,`;
-ensures_param   = [ cfg_attr ] , `ensures:` , post_conditions, `,`;
+requires_field  = [ cfg_attr ] , `requires:` , pre_conditions, `,`;
+maintains_field = [ cfg_attr ] , `maintains:` , pre_conditions, `,`;
+captures_field  = `captures:` , captures, `,`;
+inspects_field  = `inspects:` , pattern, `,`;
+ensures_field   = [ cfg_attr ] , `ensures:` , post_conditions, `,`;
 
 pre_conditions = pre_condition_expr | pre_condition_list;
 pre_condition_list = `[` , pre_condition_expr , { `,` , pre_condition_expr } , [ `,` ] , `]`;
@@ -63,9 +63,9 @@ cfg_attr = `#[cfg(` , settings , `)]`;
 **Notes:**
 
 - The last `,` is optional.
-- The `params` rule defines a sequence of optional parameter groups that must appear in the specified order.
+- The `fields` rule defines a sequence of optional field groups that must appear in the specified order.
 - `expr` is a Rust [`expression`](https://doc.rust-lang.org/reference/expressions.html); type checking will fail if it does not evaluate to `bool`.
-- `pre_closure_expr` is a Rust [`closure`](https://doc.rust-lang.org/reference/expressions/closure-expr.html) that receives no inputs and returns `bool`; type checking will fail if it does not evaluate to `bool` and does not take no arguments.
+- `pre_closure_expr` is a Rust [`closure`](https://doc.rust-lang.org/reference/expressions/closure-expr.html) that receives no inputs and returns `bool`; type checking will fail if it does not evaluate to `bool`.
 - `post_closure_expr` is a Rust [`closure`](https://doc.rust-lang.org/reference/expressions/closure-expr.html) that receives the function's return value as a reference; type checking will fail if it does not evaluate to `bool`.
 - `pattern` is an irrefutable Rust [`pattern`](https://doc.rust-lang.org/reference/patterns.html); type checking will fail if its type does not match the function's return value.
 - `settings` is the content of the [`cfg`](https://doc.rust-lang.org/reference/conditional-compilation.html) attribute (e.g. `test`, `debug_assertions`).
@@ -83,7 +83,7 @@ Given an original function like this:
     captures: <ALIAS> = <CAPTURE_EXPR>,
     ensures: |<PATTERN>| <POSTCONDITION>,
 )]
-fn my_function(<ARGUMENTS>) -> <RETURN_TYPE> {
+fn my_function(<FUNCTION_INPUTS>) -> <RETURN_TYPE> {
     <BODY>
 }
 ```
@@ -91,7 +91,7 @@ fn my_function(<ARGUMENTS>) -> <RETURN_TYPE> {
 The macro rewrites the body to be conceptually equivalent to the following:
 
 ```rust,ignore
-fn my_function(<ARGUMENTS>) -> <RETURN_TYPE> {
+fn my_function(<FUNCTION_INPUTS>) -> <RETURN_TYPE> {
     // 1. Preconditions and invariants are checked
     check!((| | <PRECONDITION>)(), "Precondition failed: <PRECONDITION>");
     check!((| | <INVARIANT>)(), "Pre-invariant failed: <INVARIANT>");

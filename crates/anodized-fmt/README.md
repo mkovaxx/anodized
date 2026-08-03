@@ -72,7 +72,7 @@ Create an `anodized-fmt.toml` file in your project root:
 # Number of spaces for indentation
 tab_spaces = 4
 
-# Reorder spec arguments into recommended order
+# Reorder spec fields into recommended order
 # (requires, maintains, captures, inspects, ensures)
 reorder_spec_items = true,
 

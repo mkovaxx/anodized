@@ -681,7 +681,7 @@ fn multiple_conditions_in_clauses() {
 }
 
 #[test]
-fn binds_parameter() {
+fn postcond_closure_form() {
     let spec: Spec = parse_quote! {
         ensures: |OUTPUT_PATTERN| CONDITION_1,
     };

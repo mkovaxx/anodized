@@ -21,7 +21,7 @@ impl Parse for SpecFields {
 }
 
 impl SpecFields {
-    /// Check whether the spec arguments are sorted correctly, ignoring unknown keywords.
+    /// Check whether the spec fields are sorted correctly, ignoring unknown keywords.
     pub fn is_sorted(&self) -> bool {
         self.fields
             .iter()

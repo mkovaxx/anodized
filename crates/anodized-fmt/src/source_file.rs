@@ -49,7 +49,7 @@ fn format_source(
         let start = span.start();
         let end = span.end();
 
-        // Parse the spec arguments
+        // Parse the spec fields.
         let spec_fields = match attr.parse_args::<SpecFields>() {
             Ok(fields) => fields,
             Err(_) => continue, // Skip malformed specs
