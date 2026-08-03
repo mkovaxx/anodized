@@ -1,4 +1,3 @@
-use quote::ToTokens;
 use syn::{
     Attribute, Error, Expr, ExprAssign, FieldValue, Meta,
     parse::{Parse, ParseStream, Result},
@@ -34,11 +33,9 @@ impl Parse for Spec {
         for field in raw_spec.fields {
             let keyword = Keyword::from(&field.member);
             match keyword {
-                Keyword::Unknown(ident) => {
-                    errors.add(Error::new_spanned(
-                        &field.member,
-                        format!("unknown spec keyword `{ident}`"),
-                    ));
+                Keyword::Unknown(_) => {
+                    // TODO: Check if it seems like a typo of a known keyword.
+                    errors.add(Error::new_spanned(&field.member, "unknown spec field"));
                 }
                 Keyword::Functional => {
                     if let Err(error) =
@@ -122,13 +119,7 @@ impl Parse for Spec {
                     }
                 }
                 Keyword::Decreases => {
-                    errors.add(Error::new_spanned(
-                        &field.member,
-                        format!(
-                            "`{}` field is not supported here",
-                            field.member.to_token_stream(),
-                        ),
-                    ));
+                    errors.add(Error::new_spanned(&field.member, "not allowed here"));
                 }
             }
         }
@@ -168,11 +159,8 @@ impl Parse for DataSpec {
         for field in raw_spec.fields {
             let keyword = Keyword::from(&field.member);
             match keyword {
-                Keyword::Unknown(ident) => {
-                    errors.add(Error::new_spanned(
-                        &field.member,
-                        format!("unknown spec keyword `{ident}`"),
-                    ));
+                Keyword::Unknown(_) => {
+                    errors.add(Error::new_spanned(&field.member, "unknown spec field"));
                 }
                 Keyword::Maintains => {
                     if let Err(error) = parse_conditions(field, &mut maintains) {
@@ -180,13 +168,7 @@ impl Parse for DataSpec {
                     }
                 }
                 _ => {
-                    errors.add(Error::new_spanned(
-                        &field.member,
-                        format!(
-                            "`{}` field is not supported here",
-                            field.member.to_token_stream(),
-                        ),
-                    ));
+                    errors.add(Error::new_spanned(&field.member, "not allowed here"));
                 }
             }
         }
@@ -215,11 +197,8 @@ impl Parse for LoopSpec {
         for field in raw_spec.fields {
             let keyword = Keyword::from(&field.member);
             match keyword {
-                Keyword::Unknown(ident) => {
-                    errors.add(Error::new_spanned(
-                        &field.member,
-                        format!("unknown spec keyword `{ident}`"),
-                    ));
+                Keyword::Unknown(_) => {
+                    errors.add(Error::new_spanned(&field.member, "unknown spec field"));
                 }
                 Keyword::Maintains => {
                     if let Err(error) = parse_conditions(field, &mut maintains) {
@@ -238,13 +217,7 @@ impl Parse for LoopSpec {
                     }
                 }
                 _ => {
-                    errors.add(Error::new_spanned(
-                        &field.member,
-                        format!(
-                            "`{}` field is not supported here",
-                            field.member.to_token_stream(),
-                        ),
-                    ));
+                    errors.add(Error::new_spanned(&field.member, "not allowed here"));
                 }
             }
         }
@@ -276,24 +249,18 @@ fn parse_fn_qualifier(
     if let Some(first_attr) = field.attrs.first() {
         return Err(Error::new_spanned(
             first_attr,
-            format!(
-                "attributes are not supported on `{}`",
-                field.member.to_token_stream()
-            ),
+            "attributes are not supported here",
         ));
     }
     if field.colon_token.is_some() {
         return Err(Error::new_spanned(
-            &field.member,
-            format!(
-                "qualifier `{}` does not take a value",
-                field.member.to_token_stream()
-            ),
+            field.member,
+            "qualifier does not take a value",
         ));
     }
     if qualifiers.contains(value) {
         return Err(Error::new_spanned(
-            &field.member,
+            field.member,
             "this qualifier is redundant; remove it",
         ));
     }
@@ -402,7 +369,7 @@ fn parse_captures(field: FieldValue, captures: &mut Vec<Capture>) -> Result<()> 
     if cfg_attr.is_some() {
         return Err(Error::new(
             cfg_attr.span(),
-            "`cfg` attribute is not supported on `captures`",
+            "`cfg` attribute is not supported here",
         ));
     }
     if field.colon_token.is_none() {
