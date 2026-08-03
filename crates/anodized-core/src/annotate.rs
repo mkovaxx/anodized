@@ -1,5 +1,5 @@
 use syn::{
-    Attribute, Error, Expr, ExprAssign, Meta, Pat,
+    Attribute, Error, Expr, ExprAssign, Meta,
     parse::{Parse, ParseStream, Result},
     parse_quote,
     spanned::Spanned,
@@ -27,7 +27,6 @@ impl Parse for Spec {
         let mut requires: Vec<Condition> = vec![];
         let mut maintains: Vec<Condition> = vec![];
         let mut captures: Vec<Capture> = vec![];
-        let mut inspects: Option<Pat> = None;
         let mut ensures: Vec<PostCondition> = vec![];
 
         let is_sorted = raw_spec.is_sorted();
@@ -108,22 +107,11 @@ impl Parse for Spec {
                         errors.add(error);
                     }
                 }
-                Keyword::Binds => {
+                Keyword::Binds | Keyword::Inspects => {
                     errors.add(Error::new(
                         arg.keyword_span,
-                        "the `binds` parameter was renamed to `inspects`",
+                        "no longer supported, use the following form instead: `ensures: |PAT| [EXPR, EXPR, ...]`",
                     ));
-                }
-                Keyword::Inspects => {
-                    if inspects.is_some() {
-                        errors.add(Error::new(
-                            arg.keyword_span,
-                            "multiple `inspects` parameters are not allowed",
-                        ));
-                    }
-                    if let Err(error) = arg.parse_inspects(&mut inspects) {
-                        errors.add(error);
-                    }
                 }
                 Keyword::Ensures => {
                     if let Err(error) = arg.parse_postconds(&mut ensures) {
@@ -158,7 +146,6 @@ impl Parse for Spec {
             requires,
             maintains,
             captures,
-            inspects,
             ensures,
             span: input.span(),
         })
@@ -408,19 +395,6 @@ impl SpecArg {
                 ));
             }
         }
-        Ok(())
-    }
-
-    fn parse_inspects(self, pattern: &mut Option<Pat>) -> Result<()> {
-        let cfg_attr = find_cfg_attribute(&self.attrs)?;
-        if cfg_attr.is_some() {
-            return Err(Error::new(
-                cfg_attr.span(),
-                "`cfg` attribute is not supported on `inspects`",
-            ));
-        }
-        let inspects_pattern = self.value.try_into_pat()?;
-        *pattern = Some(inspects_pattern);
         Ok(())
     }
 

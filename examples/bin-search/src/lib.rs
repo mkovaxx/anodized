@@ -2,8 +2,7 @@ use anodized::spec;
 
 #[spec(
     requires: seq.is_sorted(),
-    inspects: output,
-    ensures: match output {
+    ensures: |output| match output {
         Some(index) => index < seq.len() && seq[index] == *value,
         None => seq.iter().all(|item| item != value),
     },

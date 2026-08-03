@@ -24,8 +24,6 @@ pub struct Spec {
     pub maintains: Vec<Condition>,
     /// Captures: expressions to snapshot at function entry for use in postconditions.
     pub captures: Vec<Capture>,
-    /// Inspects: pattern to bind the output of the function for postconditions.
-    pub inspects: Option<Pat>,
     /// Postconditions: conditions that must hold when the function returns.
     pub ensures: Vec<PostCondition>,
     /// The span in the source code, from which this spec was parsed.
@@ -40,7 +38,6 @@ impl Spec {
             requires: vec![],
             maintains: vec![],
             captures: vec![],
-            inspects: None,
             ensures: vec![],
             span: Span::call_site(),
         }

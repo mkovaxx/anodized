@@ -1,10 +1,9 @@
 use anodized::spec;
 
 #[spec(
-    inspects: result,
-    ensures: [
+    ensures: |result| [
         result > output,
-        |val| val % 2 == 0,
+        result % 2 == 0,
     ],
 )]
 fn calculate_even_result(output: i32) -> i32 {
@@ -22,8 +21,7 @@ fn rename_success() {
 }
 
 #[spec(
-    inspects: result,
-    ensures: result % 2 == 0,
+    ensures: |result| result % 2 == 0,
 )]
 #[allow(unused)]
 fn calculate_odd_result(output: i32) -> i32 {

@@ -3,8 +3,7 @@ use anodized::spec;
 
 #[spec(
     requires: n > 0,
-    inspects: ref output,
-    ensures: *output == 1,
+    ensures: |ref output| *output == 1,
 )]
 pub fn collatz(mut n: int) -> int {
     while n > 1 {

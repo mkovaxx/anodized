@@ -16,10 +16,9 @@ fn make_complex_spec() -> Spec {
             ALIAS_1 = EXPR_1,
             (ALIAS_2, ALIAS_3) = EXPR_2,
         ],
-        inspects: PAT_1,
-        ensures: COND_7,
+        ensures: |PAT_1| COND_7,
         #[cfg(META_3)]
-        ensures: [
+        ensures: |PAT_1| [
             COND_8,
             COND_9,
         ],
@@ -684,8 +683,7 @@ fn multiple_conditions_in_clauses() {
 #[test]
 fn binds_parameter() {
     let spec: Spec = parse_quote! {
-        inspects: OUTPUT_PATTERN,
-        ensures: CONDITION_1,
+        ensures: |OUTPUT_PATTERN| CONDITION_1,
     };
     let body = make_fn_body();
     let ret_type = make_return_type();

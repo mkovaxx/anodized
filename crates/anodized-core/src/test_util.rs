@@ -28,7 +28,6 @@ pub fn assert_spec_eq(left: &Spec, right: &Spec) {
         requires: left_requires,
         maintains: left_maintains,
         captures: left_captures,
-        inspects: left_inspects,
         ensures: left_ensures,
         span: _,
     } = left;
@@ -38,7 +37,6 @@ pub fn assert_spec_eq(left: &Spec, right: &Spec) {
         requires: right_requires,
         maintains: right_maintains,
         captures: right_captures,
-        inspects: right_inspects,
         ensures: right_ensures,
         span: _,
     } = right;
@@ -61,10 +59,6 @@ pub fn assert_spec_eq(left: &Spec, right: &Spec) {
         assert_condition_eq,
     );
     assert_slice_eq(left_captures, right_captures, "captures", assert_capture_eq);
-    assert_eq!(
-        left_inspects, right_inspects,
-        "inspects patterns do not match: {left_inspects:?} vs {right_inspects:?}"
-    );
     assert_slice_eq(
         left_ensures,
         right_ensures,

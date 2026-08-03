@@ -4,8 +4,7 @@ use anodized::spec;
 // Test simple identifier capturing.
 #[spec(
     captures: old_count = count,
-    inspects: output,
-    ensures: old_count <= output,
+    ensures: |output| old_count <= output,
 )]
 fn increment_counter(count: u32) -> u32 {
     count + 1
