@@ -1,7 +1,6 @@
-use proc_macro2::{Span, TokenStream};
-use quote::ToTokens;
+use proc_macro2::Span;
 use syn::{
-    Attribute, Expr, Ident, Pat, Token,
+    Attribute, Expr, Ident, Token,
     parse::{Parse, ParseStream, Result},
     punctuated::Punctuated,
 };
@@ -39,7 +38,7 @@ pub struct SpecArg {
     pub keyword: Keyword,
     pub keyword_span: Span,
     pub colon: Option<Token![:]>,
-    pub value: SpecArgValue,
+    pub value: Option<Expr>,
 }
 
 impl Parse for SpecArg {
@@ -48,15 +47,9 @@ impl Parse for SpecArg {
         let (keyword, keyword_span) = Keyword::parse(input)?;
 
         let (colon, value) = if input.peek(Token![:]) {
-            (
-                input.parse()?,
-                match keyword {
-                    Keyword::Binds | Keyword::Inspects => SpecArgValue::parse_pat_or_expr(input)?,
-                    _ => SpecArgValue::parse_expr_or_pat(input)?,
-                },
-            )
+            (input.parse()?, Some(input.parse()?))
         } else {
-            (None, SpecArgValue::None)
+            (None, None)
         };
 
         Ok(Self {
@@ -66,94 +59,6 @@ impl Parse for SpecArg {
             colon,
             value,
         })
-    }
-}
-/// Each [`SpecArg`]'s value needs to be parsed in a way that allows invalid specs, e.g.
-/// forms which do not correspond directly to an [`syn::Expr`] in standard Rust.
-///
-/// NOTE:
-/// a [`SpecArgValue`] may hold unrelated syntactic elements such as ['syn::Expr`], [`syn::Pat`],
-/// and even fragments that would never appear as part of a valid Rust program.
-#[derive(Debug, Clone, Eq, PartialEq)]
-pub enum SpecArgValue {
-    None,
-    Expr(Expr),
-    Pat(Pat),
-}
-
-impl SpecArgValue {
-    /// Return the `Expr` or fail.
-    pub fn try_into_expr(self) -> Result<Expr> {
-        if let Self::Expr(expr) = self {
-            return Ok(expr);
-        };
-        Err(syn::Error::new_spanned(self, "expected an expression"))
-    }
-
-    /// Return the `Pat` or fail.
-    pub fn try_into_pat(self) -> Result<Pat> {
-        if let Self::Pat(pat) = self {
-            return Ok(pat);
-        };
-        Err(syn::Error::new_spanned(self, "expected a pattern"))
-    }
-
-    /// Try to parse as `Expr` then as `Pat`.
-    fn parse_expr_or_pat(input: ParseStream) -> Result<Self> {
-        if let Ok(expr) = Self::parse_expr_or_nothing(input) {
-            Ok(Self::Expr(expr))
-        } else if let Ok(pat) = Self::parse_pat_or_nothing(input) {
-            Ok(Self::Pat(pat))
-        } else {
-            Err(input.error("expected an expression or a pattern"))
-        }
-    }
-
-    /// Try to parse as `Pat` then as `Expr`.
-    fn parse_pat_or_expr(input: ParseStream) -> Result<Self> {
-        if let Ok(pat) = Self::parse_pat_or_nothing(input) {
-            Ok(Self::Pat(pat))
-        } else if let Ok(expr) = Self::parse_expr_or_nothing(input) {
-            Ok(Self::Expr(expr))
-        } else {
-            Err(input.error("expected a pattern or an expression"))
-        }
-    }
-
-    /// Try to parse as `Expr` but consume no input on failure.
-    fn parse_expr_or_nothing(input: ParseStream<'_>) -> Result<Expr> {
-        use syn::parse::discouraged::Speculative;
-        let fork = input.fork();
-        match Expr::parse(&fork) {
-            Ok(expr) => {
-                input.advance_to(&fork);
-                Ok(expr)
-            }
-            Err(err) => Err(err),
-        }
-    }
-
-    /// Try to parse as `Pat` but consume no input on failure.
-    fn parse_pat_or_nothing(input: ParseStream<'_>) -> Result<Pat> {
-        use syn::parse::discouraged::Speculative;
-        let fork = input.fork();
-        match Pat::parse_single(&fork) {
-            Ok(pat) => {
-                input.advance_to(&fork);
-                Ok(pat)
-            }
-            Err(err) => Err(err),
-        }
-    }
-}
-
-impl ToTokens for SpecArgValue {
-    fn to_tokens(&self, tokens: &mut TokenStream) {
-        match self {
-            SpecArgValue::None => {}
-            SpecArgValue::Expr(expr) => expr.to_tokens(tokens),
-            SpecArgValue::Pat(pat) => pat.to_tokens(tokens),
-        }
     }
 }
 

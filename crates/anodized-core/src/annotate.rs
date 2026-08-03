@@ -7,8 +7,7 @@ use syn::{
 
 use crate::{
     Capture, Condition, DataSpec, LoopSpec, LoopVariant, PostCondition, Spec,
-    annotate::syntax::{SpecArg, SpecArgValue},
-    qualifiers::FnQualifiers,
+    annotate::syntax::SpecArg, qualifiers::FnQualifiers,
 };
 
 pub mod syntax;
@@ -262,7 +261,7 @@ impl SpecArg {
                 format!("attributes are not supported on `{}`", self.keyword),
             ));
         }
-        if !matches!(self.value, SpecArgValue::None) {
+        if !matches!(self.value, None) {
             return Err(Error::new_spanned(
                 self.value,
                 format!("qualifier `{}` does not take a value", self.keyword),
@@ -285,7 +284,9 @@ impl SpecArg {
         } else {
             None
         };
-        let expr = self.value.try_into_expr()?;
+        let Some(expr) = self.value else {
+            return Err(Error::new_spanned(self.value, "expected an expression"));
+        };
         if let Expr::Array(items) = expr {
             for expr in items.elems {
                 conditions.push(Condition {
@@ -306,7 +307,9 @@ impl SpecArg {
         } else {
             None
         };
-        let expr = self.value.try_into_expr()?;
+        let Some(expr) = self.value else {
+            return Err(Error::new_spanned(self.value, "expected an expression"));
+        };
         match expr {
             Expr::Closure(mut closure) => {
                 if closure.inputs.len() != 1 {
@@ -375,7 +378,9 @@ impl SpecArg {
                 "`cfg` attribute is not supported on `captures`",
             ));
         }
-        let capture_list = self.value.try_into_expr()?;
+        let Some(capture_list) = self.value else {
+            return Err(Error::new_spanned(self.value, "expected an expression"));
+        };
         match capture_list {
             Expr::Assign(assignment) => {
                 captures.push(interpret_assignment_as_capture(assignment)?);
@@ -406,7 +411,9 @@ impl SpecArg {
             None
         };
         let expr_span = self.value.span();
-        let expr = self.value.try_into_expr()?;
+        let Some(expr) = self.value else {
+            return Err(Error::new_spanned(self.value, "expected an expression"));
+        };
         if let Expr::Array(_) = expr {
             return Err(Error::new(expr_span, "expected a single expression"));
         } else {
