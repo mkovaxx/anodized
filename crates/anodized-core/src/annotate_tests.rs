@@ -301,7 +301,7 @@ fn array_of_conditions() {
 #[test]
 fn ensures_with_explicit_closure() {
     let spec: Spec = parse_quote! {
-        ensures: result.is_ok() || result.unwrap_err().kind() == ErrorKind::NotFound,
+        ensures: |result| result.is_ok() || result.unwrap_err().kind() == ErrorKind::NotFound,
     };
 
     let expected = Spec {
@@ -311,7 +311,7 @@ fn ensures_with_explicit_closure() {
         captures: vec![],
         inspects: None,
         ensures: vec![PostCondition {
-            pat: None,
+            pat: Some(parse_quote! { result }),
             expr: parse_quote! { result.is_ok() || result.unwrap_err().kind() == ErrorKind::NotFound },
             cfg: None,
         }],
