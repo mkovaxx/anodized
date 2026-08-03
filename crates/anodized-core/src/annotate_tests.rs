@@ -1021,7 +1021,7 @@ fn captures_with_extra_semicolon() {
 }
 
 #[test]
-fn spec_arg_can_omit_value() {
+fn field_value_supports_shorthand_expression() {
     let spec_args: syntax::SpecArgs = parse_quote! {
         key_1,
         key_2: value,
@@ -1033,21 +1033,15 @@ fn spec_arg_can_omit_value() {
         panic!("expected 3 args");
     };
 
-    assert!(arg_1.keyword.to_string() == "key_1");
-    assert!(arg_1.colon.is_none());
-    assert!(arg_1.value.is_none());
+    assert_eq!(arg_1.member.to_token_stream().to_string(), "key_1");
+    assert!(arg_1.colon_token.is_none());
+    assert_eq!(arg_1.expr.to_token_stream().to_string(), "key_1");
 
-    assert!(arg_2.keyword.to_string() == "key_2");
-    assert!(arg_2.colon.is_some());
-    assert_eq!(
-        arg_2.value.as_ref().unwrap().to_token_stream().to_string(),
-        "value"
-    );
+    assert_eq!(arg_2.member.to_token_stream().to_string(), "key_2");
+    assert!(arg_2.colon_token.is_some());
+    assert_eq!(arg_2.expr.to_token_stream().to_string(), "value");
 
-    assert!(arg_3.keyword.to_string() == "key_3");
-    assert!(arg_3.colon.is_some());
-    assert_eq!(
-        arg_3.value.as_ref().unwrap().to_token_stream().to_string(),
-        "value as expr"
-    );
+    assert_eq!(arg_3.member.to_token_stream().to_string(), "key_3");
+    assert!(arg_3.colon_token.is_some());
+    assert_eq!(arg_3.expr.to_token_stream().to_string(), "value as expr");
 }

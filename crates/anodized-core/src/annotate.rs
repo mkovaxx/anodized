@@ -275,13 +275,19 @@ fn parse_fn_qualifier(
     if let Some(first_attr) = field.attrs.first() {
         return Err(Error::new_spanned(
             first_attr,
-            format!("attributes are not supported on `{:?}`", field.member),
+            format!(
+                "attributes are not supported on `{}`",
+                field.member.to_token_stream()
+            ),
         ));
     }
     if !matches!(field.colon_token, None) {
         return Err(Error::new_spanned(
             &field.member,
-            format!("qualifier `{:?}` does not take a value", field.member),
+            format!(
+                "qualifier `{}` does not take a value",
+                field.member.to_token_stream()
+            ),
         ));
     }
     if qualifiers.contains(value) {
