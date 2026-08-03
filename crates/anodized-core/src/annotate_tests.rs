@@ -101,7 +101,7 @@ fn fn_qualifiers_typo_missing_comma() {
 }
 
 #[test]
-#[should_panic = "qualifier `pure` does not take a value"]
+#[should_panic = "qualifier does not take a value"]
 fn fn_qualifiers_typo_colon_instead_of_comma() {
     let _: Spec = parse_quote! {
         pure: total,
@@ -117,7 +117,7 @@ fn fn_qualifiers_invalid_colon() {
 }
 
 #[test]
-#[should_panic = "qualifier `functional` does not take a value"]
+#[should_panic = "qualifier does not take a value"]
 fn fn_qualifiers_invalid_value_expr() {
     let _: Spec = parse_quote! {
         functional: x == 42,
@@ -209,7 +209,7 @@ fn all_clauses() {
 }
 
 #[test]
-#[should_panic(expected = "unknown spec keyword `goat`")]
+#[should_panic(expected = "unknown spec field")]
 fn unknown_keyword() {
     let _: Spec = parse_quote! {
         ensures: output == x,
@@ -807,7 +807,7 @@ fn captures_complex_expressions() {
 }
 
 #[test]
-#[should_panic(expected = "`cfg` attribute is not supported on `captures`")]
+#[should_panic(expected = "`cfg` attribute is not supported here")]
 fn cfg_on_captures() {
     let _: Spec = parse_quote! {
         #[cfg(test)]
