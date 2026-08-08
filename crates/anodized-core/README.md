@@ -34,7 +34,10 @@ fields = [ qualifiers ]
        , [ captures_field ]
        , [ ensures_fields ];
 
-qualifiers = TODO
+qualifiers = { qualifier };
+qualifier = `functional` | `pure` | `total`
+          | `deterministic` | `effectfree` | `infallible` | `terminating`;
+
 requires_fields  = { requires_field };
 maintains_fields = { maintains_field };
 ensures_fields   = { ensures_field };
