@@ -5,6 +5,31 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.6.0 (2026 Aug 08)
+
+### Breaking Changes
+
+- **[anodized] Revised function-spec syntax** - `captures:` now uses assignments (`pattern = expression`) instead of `expression as pattern`; the automatic `old_` capture binding is removed. Postcondition output bindings now belong to each `ensures:` clause, for example `ensures: |result| [condition_a, condition_b]`; `binds:` and `inspects:` are no longer supported (#173, #178, #179, #180).
+- **[anodized] Tightened condition evaluation** - Preconditions and invariants are no longer written as closures, and condition evaluation must implement `Fn`, preventing mutations of captured state (#157, #163).
+- **[workspace] Raised the minimum supported Rust version to 1.95** (#158).
+- **[anodized-core] Reworked the public specification AST** - `PreCondition` is now `Condition`, postconditions store an optional pattern and expression, and parser terminology/types now use fields (`SpecFields` and `syn::FieldValue`) instead of arguments (`SpecArgs` and `SpecArg`) (#165, #178, #181).
+
+### Added
+
+- **[anodized] `try_call!` and `anodized::result`** - With `--cfg anodized_try` and `--cfg anodized_panic`, wrap a specified call to receive a `Result` that distinguishes precondition and postcondition failures. This enables fuzzing and property-based testing to discard invalid inputs without masking postcondition failures (#156, #158, #159, #160).
+- **[examples] Property-based and fuzzing examples for binary search** - Added QuickCheck, proptest, and cargo-fuzz demonstrations using `try_call!` (#166, #167).
+- **[anodized] Postcondition closure-array form** - A single output pattern can bind the return value for a group of postconditions, e.g. `ensures: |output| [first_check, second_check]` (#179).
+- **[anodized-fmt] Array formatting and comment preservation in arrays** (#140).
+
+### Changed
+
+- **[anodized-core] Improved runtime-check instrumentation and spec embedding** - Checks now enforce `bool` results and use mode-specific configuration internally (#143, #151, #153, #154).
+- **[workspace] Expanded CI coverage** - Added checks for test utilities and fuzz targets, including formatter fuzzing (#141, #142).
+
+### Documentation
+
+- **[anodized] Refined the README introduction and positioning** (#155).
+
 ## 0.5.1 (2026 May 29)
 
 ### Fixed

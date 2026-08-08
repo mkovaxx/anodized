@@ -14,7 +14,7 @@ exclude = [
 resolver = "2"
 
 [workspace.package]
-version = "0.5.1"
+version = "0.6.0"
 edition = "2024"
 rust-version = "1.95"
 license = "MIT OR Apache-2.0"
@@ -25,7 +25,7 @@ categories = [
     "development-tools::procedural-macro-helpers",
 ]
 keywords = [
-    "correctness",
+    "specification",
     "design-by-contract",
     "fuzzing",
     "testing",
@@ -33,10 +33,10 @@ keywords = [
 ]
 
 [workspace.dependencies]
-anodized-core = { version = "0.5.1", path = "crates/anodized-core" }
-anodized-fmt = { version = "0.5.1", path = "crates/anodized-fmt" }
-anodized-logic = { version = "0.5.1", path = "crates/anodized-logic" }
-anodized-macros = { version = "0.5.1", path = "crates/anodized-macros" }
+anodized-core = { version = "0.6.0", path = "crates/anodized-core" }
+anodized-fmt = { version = "0.6.0", path = "crates/anodized-fmt" }
+anodized-logic = { version = "0.6.0", path = "crates/anodized-logic" }
+anodized-macros = { version = "0.6.0", path = "crates/anodized-macros" }
 test-util = { path = "crates/test-util" }
 num-bigint = "0.4.6"
 pretty_assertions = "1"
