@@ -93,8 +93,8 @@ The macro rewrites the body to be conceptually equivalent to the following:
 ```rust,ignore
 fn my_function(<FUNCTION_INPUTS>) -> <RETURN_TYPE> {
     // 1. Preconditions and invariants are checked
-    check!((| | <PRECONDITION>)(), "Precondition failed: <PRECONDITION>");
-    check!((| | <INVARIANT>)(), "Pre-invariant failed: <INVARIANT>");
+    check!((|| <PRECONDITION>)(), "Precondition failed: <PRECONDITION>");
+    check!((|| <INVARIANT>)(), "Pre-invariant failed: <INVARIANT>");
 
     // 2. Values are captured and the original function body is executed
     // Note 1: captures and body execution happen in a single tuple assignment
@@ -110,10 +110,13 @@ fn my_function(<FUNCTION_INPUTS>) -> <RETURN_TYPE> {
     // Note 1: Captured values are in scope for postconditions
     // Note 2: `__anodized_output` is also in scope for postconditions,
     //         but referring to it is strongly discouraged
-    check!((| | <INVARIANT>)(), "Post-invariant failed: <INVARIANT>");
+    check!((|| <INVARIANT>)(), "Post-invariant failed: <INVARIANT>");
     // Postcondition is checked by invoking the closure with a reference to the return value
     check!(
-        (|<PATTERN>: &<RETURN_TYPE>| <POSTCONDITION>)(&__anodized_output),
+        {
+            let <PATTERN> = __anodized_output;
+            || <POSTCONDITION>)()
+        },
         "Postcondition failed: | <PATTERN> | <POSTCONDITION>",
     );
 
