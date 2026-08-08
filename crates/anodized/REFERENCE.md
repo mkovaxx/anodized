@@ -169,8 +169,8 @@ fn get_positive_value() -> i32 { todo!() }
 `output`. For the more general case where the function's return type is _not_ `Copy`, borrow it
 instead using a reference pattern: `|ref output|`.
 
-When you write a postcondition as a "naked" expression `<EXPR>`, it does not have access to the
-function's return value at all.
+When you write a postcondition as a "naked" expression instead of a closure, it does not have
+access to the function's return value at all.
 
 **1. Shared Binding**: Use the following shorthand form to share a binding across a group of postconditions in an `ensures` field.
 
@@ -228,7 +228,7 @@ fn withdraw(balance: &mut u64, amount: u64) -> (u64, u64) { todo!() }
 
 Anodized supports specs on loops to ensure correctness and bounded iteration.
 
-Loop specs support the following elements:
+Loop specs support the following fields:
 
 - `maintains`: Loop invariants that must hold both before and after each iteration.
 - `decreases`: A loop variant expression that shows strict progress toward termination.
