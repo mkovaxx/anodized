@@ -179,12 +179,12 @@ use anodized::spec;
 
 #[spec(
     // Bind the return value to `output` for the entire group of postconditions.
-    ensures: |result| [
+    ensures: |output| [
         output > input,
         output % 2 == 0,
     ],
 )]
-fn calculate_even_result(input: i32) -> i32 { todo!() }
+fn calculate_larger_even_result(input: i32) -> i32 { todo!() }
 ```
 
 **2. Beyond Names: Destructuring Return Values**
