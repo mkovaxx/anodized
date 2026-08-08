@@ -176,7 +176,7 @@ fn get_positive_value() -> i32 { todo!() }
 `output`. For the more general case where the function's return type is _not_ `Copy`, borrow it
 instead using a reference pattern: `|ref output|`.
 
-**1. Shared Binding**: Use the following shorthand form to share a binding across a group of postconditions in an `ensures` field.
+**1. Per-Group Binding**: Use the following shorthand form to set a binding for an entire group of postconditions.
 
 ```rust, no_run
 use anodized::spec;
@@ -191,7 +191,7 @@ use anodized::spec;
 fn calculate_larger_even_result(input: i32) -> i32 { todo!() }
 ```
 
-**2. Beyond Names: Destructuring Return Values**
+**2. Beyond Names: Destructure Return Values**
 
 Bindings also let you destructure return values, making complex postconditions easier to read and write. You can use any valid Rust pattern, including tuple patterns, struct patterns, or even more complex nested patterns.
 
