@@ -166,8 +166,8 @@ fn get_positive_value() -> i32 { todo!() }
 ```
 
 **Note** that due to Rust's default move semantics, the postcondition closure takes ownership of
-`output`. For the more general case where the function's return type is _not_ `Copy`, you can use
-borrow it using a reference pattern, i.e. `|ref output|` instead.
+`output`. For the more general case where the function's return type is _not_ `Copy`, borrow it
+instead using a reference pattern: `|ref output|`.
 
 When you write a postcondition as a "naked" expression `<EXPR>`, it does not have access to the
 function's return value at all.
