@@ -199,7 +199,7 @@ use anodized::spec;
     ensures: |(a, b)| [
         // Postconditions can now use the bound variables `a` and `b`.
         a <= b,
-        // They can also reference the arguments.
+        // They can also reference the inputs.
         (a, b) == pair || (b, a) == pair,
     ],
 )]
