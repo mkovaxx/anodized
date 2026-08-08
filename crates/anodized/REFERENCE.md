@@ -46,7 +46,8 @@ Reports each violation with `eprintln!`, so execution can continue. Useful for e
 
 ### `anodized_try`
 
-Check conditions but defer action to the caller by returning `Result`. See the `anodized::result` module for details.
+Enables the `try_call!` macro, which checks conditions but defers action to the caller by
+returning a `Result`. See the `anodized::result` module for details.
 
 Use `#[cfg]` attributes on individual conditions to control when checks run (see the [#[cfg] section](#cfg-configure-runtime-checks) below).
 
