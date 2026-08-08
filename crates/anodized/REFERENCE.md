@@ -159,7 +159,9 @@ fn match_tuple(triple: (bool, char, i32)) { todo!() }
 
 ### Bind the Return Value in `ensures` Closures
 
-In **postconditions** (`ensures`), you can refer to the function's return value by writing the condition as a closure.
+When you write a **postcondition** (`ensures`) as a plain `bool` expression, it does not have access to the function's return value.
+
+To give it access to the function's return value, write the condition as a closure.
 
 ```rust, no_run
 use anodized::spec;
@@ -173,9 +175,6 @@ fn get_positive_value() -> i32 { todo!() }
 **Note** that due to Rust's default move semantics, the postcondition closure takes ownership of
 `output`. For the more general case where the function's return type is _not_ `Copy`, borrow it
 instead using a reference pattern: `|ref output|`.
-
-When you write a postcondition as a "naked" expression instead of a closure, it does not have
-access to the function's return value at all.
 
 **1. Shared Binding**: Use the following shorthand form to share a binding across a group of postconditions in an `ensures` field.
 
