@@ -113,10 +113,7 @@ fn my_function(<FUNCTION_INPUTS>) -> <RETURN_TYPE> {
     check!((|| <INVARIANT>)(), "Post-invariant failed: <INVARIANT>");
     // Postcondition is checked by invoking the closure with a reference to the return value
     check!(
-        {
-            let <PATTERN> = __anodized_output;
-            || <POSTCONDITION>)()
-        },
+        { let <PATTERN> = __anodized_output; (|| <POSTCONDITION>)() },
         "Postcondition failed: | <PATTERN> | <POSTCONDITION>",
     );
 

@@ -93,13 +93,17 @@ Specifications are built from conditions, which come in three flavors:
 
 - **`maintains: <conditions>`: Invariants** must hold true both before and after the function runs. It's most useful for expressing properties of `self` that a method must preserve.
 
-For convenience, `<conditions>` can be either a single condition or a list (i.e. `[<condition>, <condition>, ...]`).
+You can include any number of each flavor. Multiple conditions of the same flavor are combined with a logical **AND** (`&&`).
 
-The conditions must be given in the following order: `requires`, `maintains`, and `ensures`. This order is enforced to mirror the logical flow of a function's execution: preconditions (`requires`) are checked upon entry, invariants (`maintains`) must hold true upon both entry and exit, and postconditions (`ensures`) are checked upon exit.
+For convenience, `<conditions>` can be either a single condition or a group (i.e. `[<condition>, <condition>, ...]`).
 
 A condition is a `bool`-valued Rust expression; as simple as that. This is a non-trivial design choice, so its benefits are explained in the section below: [Why Conditions Are Rust Expressions](#why-conditions-are-rust-expressions).
 
-You can include any number of each flavor. Multiple conditions of the same flavor are combined with a logical **AND** (`&&`).
+**Note** that each condition behaves as an [`Fn() -> bool`](https://doc.rust-lang.org/std/ops/trait.Fn.html)
+closure, which means that it _cannot_ mutate the function's inputs, captured values (see below),
+or the function's output (for a postcondition).
+
+The conditions must be given in the following order: `requires`, `maintains`, and `ensures`. This order is enforced to mirror the logical flow of a function's execution: preconditions (`requires`) are checked upon entry, invariants (`maintains`) must hold true upon both entry and exit, and postconditions (`ensures`) are checked upon exit.
 
 ```rust, no_run
 use anodized::spec;
