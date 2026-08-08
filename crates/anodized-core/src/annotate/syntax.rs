@@ -47,7 +47,7 @@ pub enum Keyword {
     Requires,
     Maintains,
     Captures,
-    // TODO: Remove `binds` and `inspects` before v0.6 is released.
+    // TODO: Remove `binds` and `inspects` before v0.7.0 is released.
     Binds,
     Inspects,
     Ensures,
