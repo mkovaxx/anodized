@@ -9,7 +9,8 @@ use syn::{
 /// Represents a syntactically well-formed but otherwise unvalidated set of `spec` fields.
 ///
 /// It reuses Rust's grammar of fields inside a `struct` expression. For reference, see:
-/// https://doc.rust-lang.org/reference/expressions/struct-expr.html#railroad-StructExprField
+///
+/// <https://doc.rust-lang.org/reference/expressions/struct-expr.html#railroad-StructExprField>
 #[derive(Debug, Clone)]
 pub struct SpecFields {
     pub fields: Punctuated<FieldValue, Token![,]>,
@@ -47,7 +48,7 @@ pub enum Keyword {
     Requires,
     Maintains,
     Captures,
-    // TODO: Remove `binds` and `inspects` before v0.6 is released.
+    // TODO: Remove `binds` and `inspects` before v0.7.0 is released.
     Binds,
     Inspects,
     Ensures,

@@ -34,28 +34,31 @@ fields = [ qualifiers ]
        , [ captures_field ]
        , [ ensures_fields ];
 
-qualifiers = TODO
+qualifiers = { qualifier };
+qualifier = `functional` | `pure` | `total`
+          | `deterministic` | `effectfree` | `infallible` | `terminating`;
+
 requires_fields  = { requires_field };
 maintains_fields = { maintains_field };
 ensures_fields   = { ensures_field };
 
-requires_field  = [ cfg_attr ] , `requires:` , pre_conditions, `,`;
-maintains_field = [ cfg_attr ] , `maintains:` , pre_conditions, `,`;
+requires_field  = [ cfg_attr ] , `requires:` , conditions, `,`;
+maintains_field = [ cfg_attr ] , `maintains:` , conditions, `,`;
 captures_field  = `captures:` , captures, `,`;
-inspects_field  = `inspects:` , pattern, `,`;
-ensures_field   = [ cfg_attr ] , `ensures:` , post_conditions, `,`;
+ensures_field   = [ cfg_attr ] , `ensures:` , postconds, `,`;
 
-pre_conditions = pre_condition_expr | pre_condition_list;
-pre_condition_list = `[` , pre_condition_expr , { `,` , pre_condition_expr } , [ `,` ] , `]`;
-pre_condition_expr = expr | pre_closure_expr;
+conditions = expr | condition_list;
+condition_list = `[` , expr , { `,` , expr } , [ `,` ] , `]`;
 
-captures = capture_assignment | capture_list;
-capture_list = `[` , capture_assignment , { `,` , capture_assignment } , [ `,` ] , `]`;
-capture_assignment = pattern , `=` , expr;
+captures = capture_stmt | capture_list;
+capture_list = `[` , capture_stmt , { `,` , capture_stmt } , [ `,` ] , `]`;
+capture_stmt = pattern , `=` , expr;
 
-post_conditions = post_condition_expr | post_condition_list;
-post_condition_list = `[` , post_condition_expr , { `,` , post_condition_expr } , [ `,` ] , `]`;
-post_condition_expr = expr | post_closure_expr;
+postconds = postcond_expr | postcond_list | postcond_list_closure;
+postcond_list = `[` , postcond_expr , { `,` , postcond_expr } , [ `,` ] , `]`;
+postcond_expr = expr | postcond_closure;
+postcond_closure = `|` , pattern , `|` , expr;
+postcond_list_closure = `|` , pattern , `|` , condition_list;
 
 cfg_attr = `#[cfg(` , settings , `)]`;
 ```
@@ -64,11 +67,10 @@ cfg_attr = `#[cfg(` , settings , `)]`;
 
 - The last `,` is optional.
 - The `fields` rule defines a sequence of optional field groups that must appear in the specified order.
-- `expr` is a Rust [`expression`](https://doc.rust-lang.org/reference/expressions.html); type checking will fail if it does not evaluate to `bool`.
-- `pre_closure_expr` is a Rust [`closure`](https://doc.rust-lang.org/reference/expressions/closure-expr.html) that receives no inputs and returns `bool`; type checking will fail if it does not evaluate to `bool`.
-- `post_closure_expr` is a Rust [`closure`](https://doc.rust-lang.org/reference/expressions/closure-expr.html) that receives the function's return value as a reference; type checking will fail if it does not evaluate to `bool`.
-- `pattern` is an irrefutable Rust [`pattern`](https://doc.rust-lang.org/reference/patterns.html); type checking will fail if its type does not match the function's return value.
+- `expr` is a Rust [`expression`](https://doc.rust-lang.org/reference/expressions.html).
+- `pattern` is an irrefutable Rust [`pattern`](https://doc.rust-lang.org/reference/patterns.html).
 - `settings` is the content of the [`cfg`](https://doc.rust-lang.org/reference/conditional-compilation.html) attribute (e.g. `test`, `debug_assertions`).
+- Every valid spec field can be parsed as a Rust [`struct` expression field](https://doc.rust-lang.org/reference/expressions/struct-expr.html#grammar-StructExprField).
 
 ## Instrumentation
 
@@ -93,8 +95,8 @@ The macro rewrites the body to be conceptually equivalent to the following:
 ```rust,ignore
 fn my_function(<FUNCTION_INPUTS>) -> <RETURN_TYPE> {
     // 1. Preconditions and invariants are checked
-    check!((| | <PRECONDITION>)(), "Precondition failed: <PRECONDITION>");
-    check!((| | <INVARIANT>)(), "Pre-invariant failed: <INVARIANT>");
+    check!((|| <PRECONDITION>)(), "Precondition failed: <PRECONDITION>");
+    check!((|| <INVARIANT>)(), "Pre-invariant failed: <INVARIANT>");
 
     // 2. Values are captured and the original function body is executed
     // Note 1: captures and body execution happen in a single tuple assignment
@@ -110,10 +112,10 @@ fn my_function(<FUNCTION_INPUTS>) -> <RETURN_TYPE> {
     // Note 1: Captured values are in scope for postconditions
     // Note 2: `__anodized_output` is also in scope for postconditions,
     //         but referring to it is strongly discouraged
-    check!((| | <INVARIANT>)(), "Post-invariant failed: <INVARIANT>");
+    check!((|| <INVARIANT>)(), "Post-invariant failed: <INVARIANT>");
     // Postcondition is checked by invoking the closure with a reference to the return value
     check!(
-        (|<PATTERN>: &<RETURN_TYPE>| <POSTCONDITION>)(&__anodized_output),
+        { let <PATTERN> = __anodized_output; (|| <POSTCONDITION>)() },
         "Postcondition failed: | <PATTERN> | <POSTCONDITION>",
     );
 
