@@ -13,11 +13,12 @@
 
 Anodized uses `cfg` options to control how each `#[spec]` changes the Rust code.
 
-| `--cfg` Setting                                     | Effect                 |
-| --------------------------------------------------- | ---------------------- |
-| [`anodized_discard_specs`](#anodized_discard_specs) | disable spec embedding |
-| [`anodized_panic`](#anodized_panic)                 | runtime check: panic   |
-| [`anodized_print`](#anodized_print)                 | runtime check: print   |
+| `--cfg` Setting                                     | Effect                  |
+| --------------------------------------------------- | ----------------------- |
+| [`anodized_discard_specs`](#anodized_discard_specs) | disable spec embedding  |
+| [`anodized_panic`](#anodized_panic)                 | runtime check: panic    |
+| [`anodized_print`](#anodized_print)                 | runtime check: print    |
+| [`anodized_try`](#anodized_try)                     | runtime check: `Result` |
 
 Select the desired options via compiler `cfg` flags, for example:
 
@@ -42,6 +43,10 @@ Checks each condition via an `assert!`, so a violation panics with a descriptive
 ### `anodized_print`
 
 Reports each violation with `eprintln!`, so execution can continue. Useful for experiments, logging, etc.
+
+### `anodized_try`
+
+Check conditions but defer action to the caller by returning `Result`. See the `anodized::result` module for details.
 
 Use `#[cfg]` attributes on individual conditions to control when checks run (see the [#[cfg] section](#cfg-configure-runtime-checks) below).
 
@@ -147,85 +152,55 @@ fn match_tuple(triple: (bool, char, i32)) { todo!() }
 - Capturing happens **after** preconditions are checked but **before** the function body executes.
 - The captured values are **only** available to postconditions, not to preconditions or the function body itself.
 
-### `inspects`: Bind the Return Value
+### Bind the Return Value in `ensures` Closures
 
-In **postconditions** (`ensures`), you can refer to the function's return value by the default name `output`.
+In **postconditions** (`ensures`), you can refer to the function's return value by writing the condition as a closure.
 
 ```rust, no_run
 use anodized::spec;
 
 #[spec(
-    ensures: *output > 0,
+    ensures: |output| output > 0,
 )]
 fn get_positive_value() -> i32 { todo!() }
 ```
 
-**Note** that a postcondition is a closure that takes the function's return value by reference. When you write a postcondition as a "naked" expression `<EXPR>`, that is shorthand for `|<PATTERN>| <EXPR>`, where `<PATTERN>` is the spec-wide binding. In error messages, a postcondition is always displayed as a closure to make it clear (e.g. `| output | *output > 0`).
+**Note** that due to Rust's default move semantics, the postcondition closure takes ownership of
+`output`. For the more general case where the function's return type is _not_ `Copy`, you can use
+borrow it using a reference pattern, i.e. `|ref output|` instead.
 
-The default spec-wide binding is `output`. If that collides with an existing identifier, you can choose a different name for it in two ways:
+When you write a postcondition as a "naked" expression `<EXPR>`, it does not have access to the
+function's return value at all.
 
-**1. Spec-Wide Binding**: Use the `inspects` field to set a new name for the return value across all postconditions in the specification. It must be placed immediately before any `ensures` conditions.
-
-```rust, no_run
-use anodized::spec;
-
-#[spec(
-    inspects: new_value,
-    ensures: *new_value > old_value,
-)]
-fn increment(old_value: i32) -> i32 { todo!() }
-```
-
-**2. Explicit Binding**: Write the postcondition with an explicit binding, i.e. as a closure `|<PATTERN>| <EXPR>`. This has the highest precedence and affects only that single condition.
+**1. Shared Binding**: Use the following shorthand form to share a binding across a group of postconditions in an `ensures` field.
 
 ```rust, no_run
 use anodized::spec;
 
 #[spec(
-    ensures: [
-        // This postcondition uses the default binding.
-        output.is_ascii(),
-        // This postcondition binds the output as `c`.
-        |c| c.is_digit(16),
+    // Bind the return value to `output` for the entire group of postconditions.
+    ensures: |result| [
+        output > input,
+        output % 2 == 0,
     ],
 )]
-fn create_data() -> char { todo!() }
+fn calculate_even_result(input: i32) -> i32 { todo!() }
 ```
 
-**3. Binding Precedence**: The explicit binding takes precedence; same as in Rust. Plain postconditions still use the spec-wide binding.
+**2. Beyond Names: Destructuring Return Values**
 
-```rust, no_run
-use anodized::spec;
-
-// A function where 'output' is an argument name, requiring a different name.
-#[spec(
-    // Set a spec-wide binding for the return value: `result`.
-    inspects: result,
-    ensures: [
-        // This postcondition uses the spec-wide binding: `result`.
-        *result > output,
-        // This postcondition uses an explicit binding: `val`.
-        |val| *val % 2 == 0,
-    ],
-)]
-fn calculate_even_result(output: i32) -> i32 { todo!() }
-```
-
-**4. Beyond Names: Destructuring Return Values**
-
-Bindings also lets you destructure return values, making complex postconditions easier to read and write. You can use any valid Rust pattern, including tuple patterns, struct patterns, or even more complex nested patterns.
+Bindings also let you destructure return values, making complex postconditions easier to read and write. You can use any valid Rust pattern, including tuple patterns, struct patterns, or even more complex nested patterns.
 
 ```rust, no_run
 use anodized::spec;
 
 #[spec(
     // Destructure the returned tuple into `(a, b)`.
-    inspects: (a, b),
-    // Postconditions can now use the bound variables `a` and `b`.
-    ensures: [
+    ensures: |(a, b)| [
+        // Postconditions can now use the bound variables `a` and `b`.
         a <= b,
         // They can also reference the arguments.
-        (*a, *b) == pair || (*b, *a) == pair,
+        (a, b) == pair || (b, a) == pair,
     ],
 )]
 fn sort_pair(pair: (i32, i32)) -> (i32, i32) { todo!() }
@@ -240,11 +215,10 @@ use anodized::spec;
     requires: *balance >= amount,
     maintains: *balance >= 0,
     captures: initial_balance = *balance,
-    inspects: (new_balance, receipt_amount),
-    ensures: [
-        *new_balance == initial_balance - amount,
-        *receipt_amount == amount,
-        *balance == *new_balance,
+    ensures: |(new_balance, receipt_amount)| [
+        new_balance == initial_balance - amount,
+        receipt_amount == amount,
+        *balance == new_balance,
     ],
 )]
 fn withdraw(balance: &mut u64, amount: u64) -> (u64, u64) { todo!() }
