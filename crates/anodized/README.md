@@ -34,7 +34,7 @@ Anodized specs are not comments but attributes, so they are checked by the Rust 
 
 ```toml
 [dependencies]
-anodized = "0.5.1"
+anodized = "0.6.0"
 ```
 
 **2. Extend your code with specs.**
