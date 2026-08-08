@@ -70,7 +70,7 @@ cfg_attr = `#[cfg(` , settings , `)]`;
 - `expr` is a Rust [`expression`](https://doc.rust-lang.org/reference/expressions.html).
 - `pattern` is an irrefutable Rust [`pattern`](https://doc.rust-lang.org/reference/patterns.html).
 - `settings` is the content of the [`cfg`](https://doc.rust-lang.org/reference/conditional-compilation.html) attribute (e.g. `test`, `debug_assertions`).
-- Every valid spec field can be parsed as a Rust `struct` field initializer.
+- Every valid spec field can be parsed as a Rust [`struct` expression field](https://doc.rust-lang.org/reference/expressions/struct-expr.html#grammar-StructExprField).
 
 ## Instrumentation
 
