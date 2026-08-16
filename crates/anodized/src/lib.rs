@@ -5,4 +5,5 @@ pub use anodized_logic::arithmetic;
 pub use anodized_macros::spec;
 
 pub mod __;
+pub mod refinement;
 pub mod result;
