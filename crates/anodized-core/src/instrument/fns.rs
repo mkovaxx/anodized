@@ -127,7 +127,8 @@ impl Mode {
             let i = clauses.len();
             let name = Ident::new(&format!("__anodized_clause_{}", i + 1), Span::mixed_site());
             let expr = &condition.expr;
-            statements.push(parse_quote! { let #name = (|| -> bool { #expr })(); });
+            statements
+                .push(parse_quote! { let #name = ::anodized::__::eval::<bool>(|| { #expr }); });
             clauses.push(parse_quote! { #name });
         }
 
@@ -155,7 +156,8 @@ impl Mode {
             let i = clauses.len();
             let name = Ident::new(&format!("__anodized_clause_{}", i + 1), Span::mixed_site());
             let expr = &condition.expr;
-            statements.push(parse_quote! { let #name = (|| -> bool { #expr })(); });
+            statements
+                .push(parse_quote! { let #name = ::anodized::__::eval::<bool>(|| { #expr }); });
             clauses.push(parse_quote! { #name });
         }
 
@@ -175,10 +177,11 @@ impl Mode {
             let expr = &postcond.expr;
             if let Some(pat) = &postcond.pat {
                 statements.push(
-                    parse_quote! { let #name = (|#pat| -> bool { #expr })(__anodized_output); },
+                    parse_quote! { let #name = ::anodized::__::eval::<bool>(|| { let #pat = __anodized_output; #expr }); },
                 );
             } else {
-                statements.push(parse_quote! { let #name = (|| -> bool { #expr })(); });
+                statements
+                    .push(parse_quote! { let #name = ::anodized::__::eval::<bool>(|| { #expr }); });
             }
             clauses.push(parse_quote! { #name });
         }
