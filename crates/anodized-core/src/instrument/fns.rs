@@ -127,8 +127,9 @@ impl Mode {
             let i = clauses.len();
             let name = Ident::new(&format!("__anodized_clause_{}", i + 1), Span::mixed_site());
             let expr = &condition.expr;
-            statements
-                .push(parse_quote! { let #name = ::anodized::__::eval::<bool>(|| { #expr }); });
+            statements.push(parse_quote! {
+                let #name = ::anodized::__::eval::<bool>(|| { #expr });
+            });
             clauses.push(parse_quote! { #name });
         }
 
@@ -156,8 +157,9 @@ impl Mode {
             let i = clauses.len();
             let name = Ident::new(&format!("__anodized_clause_{}", i + 1), Span::mixed_site());
             let expr = &condition.expr;
-            statements
-                .push(parse_quote! { let #name = ::anodized::__::eval::<bool>(|| { #expr }); });
+            statements.push(parse_quote! {
+                let #name = ::anodized::__::eval::<bool>(|| { #expr });
+            });
             clauses.push(parse_quote! { #name });
         }
 
@@ -176,12 +178,15 @@ impl Mode {
             let name = Ident::new(&format!("__anodized_clause_{}", i + 1), Span::mixed_site());
             let expr = &postcond.expr;
             if let Some(pat) = &postcond.pat {
-                statements.push(
-                    parse_quote! { let #name = ::anodized::__::eval::<bool>(|| { let #pat = __anodized_output; #expr }); },
-                );
+                statements.push(parse_quote! {
+                    let #name = ::anodized::__::eval::<bool>(|| {
+                        let #pat = __anodized_output; #expr
+                    });
+                });
             } else {
-                statements
-                    .push(parse_quote! { let #name = ::anodized::__::eval::<bool>(|| { #expr }); });
+                statements.push(parse_quote! {
+                    let #name = ::anodized::__::eval::<bool>(|| { #expr });
+                });
             }
             clauses.push(parse_quote! { #name });
         }
@@ -211,7 +216,9 @@ impl CheckSettings {
         let output_ident: Pat = parse_quote!(__anodized_output);
 
         // Generate precondition checks.
-        let mut precondition_checks: Vec<Stmt> = vec![parse_quote! { let __anodized_pre = true; }];
+        let mut precondition_checks: Vec<Stmt> = vec![parse_quote! {
+            let __anodized_pre = true;
+        }];
         for condition in spec.requires.iter().chain(&spec.maintains) {
             let expr = &condition.expr;
             let repr = expr.to_token_stream().to_string();
@@ -250,8 +257,9 @@ impl CheckSettings {
         };
 
         // Generate postcondition checks.
-        let mut postcondition_checks: Vec<Stmt> =
-            vec![parse_quote! { let __anodized_post = true; }];
+        let mut postcondition_checks: Vec<Stmt> = vec![parse_quote! {
+            let __anodized_post = true;
+        }];
         for condition in &spec.maintains {
             let expr = &condition.expr;
             let repr = expr.to_token_stream().to_string();
@@ -326,7 +334,9 @@ impl CheckSettings {
                 Some(meta) => quote! { !cfg!(#meta) || },
                 None => quote!(),
             };
-            parse_quote! { ( #cfg_guard #expr || eprintln!("precondition failed: {}", #repr) != () ) }
+            parse_quote! {
+                ( #cfg_guard #expr || eprintln!("precondition failed: {}", #repr) != () )
+            }
         } else {
             expr.clone()
         }
@@ -338,7 +348,9 @@ impl CheckSettings {
                 Some(meta) => quote! { !cfg!(#meta) || },
                 None => quote!(),
             };
-            parse_quote! { ( #cfg_guard #expr || eprintln!("postcondition failed: {}", #repr) != () ) }
+            parse_quote! {
+                ( #cfg_guard #expr || eprintln!("postcondition failed: {}", #repr) != () )
+            }
         } else {
             expr.clone()
         }
