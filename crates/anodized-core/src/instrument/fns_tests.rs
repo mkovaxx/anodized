@@ -90,7 +90,6 @@ fn default_instrument_item_fn() {
     let expected: TokenStream = parse_quote! {
         fn FUNC(&self, PARAM_1: TYPE_1, PARAM_2: TYPE_2) -> RET_TYPE {
             if false {
-                let mut __anodized_errors = ::std::string::String::new();
                 let __anodized_pre = true;
                 let __anodized_pre = __anodized_pre & ::anodized::__::eval::<bool>(|| { COND_1 });
                 #[cfg(META_1)]
@@ -109,7 +108,6 @@ fn default_instrument_item_fn() {
                 (|| -> RET_TYPE { BODY })(),
             );
             if false {
-                let mut __anodized_errors = ::std::string::String::new();
                 let __anodized_post = true;
                 let __anodized_post = __anodized_post & ::anodized::__::eval::<bool>(|| { COND_4 });
                 let __anodized_post = __anodized_post & ::anodized::__::eval::<bool>(|| { COND_5 });
@@ -158,7 +156,6 @@ fn emit_try_fn_instrument_item_fn() {
             -> ::anodized::result::Result<RET_TYPE>
         {
             if true {
-                let mut __anodized_errors = ::std::string::String::new();
                 let __anodized_pre = true;
                 let __anodized_pre = __anodized_pre & (::anodized::__::eval::<bool>(|| { COND_1 })
                         || eprintln!("precondition failed: {}", "COND_1") != ());
@@ -176,7 +173,7 @@ fn emit_try_fn_instrument_item_fn() {
                 let __anodized_pre = __anodized_pre & ( ::anodized::__::eval::<bool>(|| { COND_6 })
                         || eprintln!("precondition failed: {}", "COND_6") != ());
                 if !__anodized_pre {
-                    return ::anodized::result::pre_err(__anodized_errors);
+                    return ::anodized::result::pre_err();
                 }
             }
             let (ALIAS_1, (ALIAS_2, ALIAS_3), __anodized_output) = (
@@ -185,7 +182,6 @@ fn emit_try_fn_instrument_item_fn() {
                 (|| -> RET_TYPE { BODY })(),
             );
             if true {
-                let mut __anodized_errors = ::std::string::String::new();
                 let __anodized_post = true;
                 let __anodized_post = __anodized_post & (::anodized::__::eval::<bool>(|| { COND_4 })
                         || eprintln!("postcondition failed: {}", "COND_4") != ());
@@ -203,7 +199,7 @@ fn emit_try_fn_instrument_item_fn() {
                 let __anodized_post = __anodized_post & ( ::anodized::__::eval::<bool>(|| { let PAT_1 = __anodized_output; COND_9 })
                         || eprintln!("postcondition failed: {}", "COND_9") != ());
                 if !__anodized_post {
-                    return ::anodized::result::post_err(__anodized_output, __anodized_errors);
+                    return ::anodized::result::post_err(__anodized_output);
                 }
             }
             Ok(__anodized_output)
@@ -240,20 +236,18 @@ fn simple_requires() {
     let expected: Block = parse_quote! {
         {
             if true {
-                let mut __anodized_errors = ::std::string::String::new();
                 let __anodized_pre = true;
                 let __anodized_pre = __anodized_pre & (::anodized::__::eval::<bool>(|| { CONDITION_1 })
                     || eprintln!("precondition failed: {}", "CONDITION_1") != ());
                 if !__anodized_pre {
-                    panic!("precondition failed:{__anodized_errors}");
+                    panic!("precondition failed");
                 }
             }
             let (__anodized_output) = ((|| #ret_type #body)());
             if true {
-                let mut __anodized_errors = ::std::string::String::new();
                 let __anodized_post = true;
                 if !__anodized_post {
-                    panic!("postcondition failed:{__anodized_errors}");
+                    panic!("postcondition failed");
                 }
             }
             __anodized_output
@@ -281,14 +275,12 @@ fn requires_disable_runtime_checks() {
     let expected: Block = parse_quote! {
         {
             if false {
-                let mut __anodized_errors = ::std::string::String::new();
                 let __anodized_pre = true;
                 let __anodized_pre = __anodized_pre & ::anodized::__::eval::<bool>(|| { CONDITION_1 });
                 if !__anodized_pre {}
             }
             let (__anodized_output) = ((|| #ret_type #body)());
             if false {
-                let mut __anodized_errors = ::std::string::String::new();
                 let __anodized_post = true;
                 if !__anodized_post {}
             }
@@ -310,21 +302,15 @@ fn requires_no_panic_runtime() {
     let expected: Block = parse_quote! {
         {
             if true {
-                let mut __anodized_errors = ::std::string::String::new();
                 let __anodized_pre = true;
                 let __anodized_pre = __anodized_pre & (::anodized::__::eval::<bool>(|| { CONDITION_1 })
                     || eprintln!("precondition failed: {}", "CONDITION_1") != ());
-                if !__anodized_pre {
-                    eprintln!("precondition failed:{__anodized_errors}");
-                }
+                if !__anodized_pre {}
             }
             let (__anodized_output) = ((|| #ret_type #body)());
             if true {
-                let mut __anodized_errors = ::std::string::String::new();
                 let __anodized_post = true;
-                if !__anodized_post {
-                    eprintln!("postcondition failed:{__anodized_errors}");
-                }
+                if !__anodized_post {}
             }
             __anodized_output
         }
@@ -348,22 +334,20 @@ fn simple_maintains() {
     let expected: Block = parse_quote! {
         {
             if true {
-                let mut __anodized_errors = ::std::string::String::new();
                 let __anodized_pre = true;
                 let __anodized_pre = __anodized_pre & (::anodized::__::eval::<bool>(|| { CONDITION_1 })
                     || eprintln!("precondition failed: {}", "CONDITION_1") != ());
                 if !__anodized_pre {
-                    panic!("precondition failed:{__anodized_errors}");
+                    panic!("precondition failed");
                 }
             }
             let (__anodized_output) = ((|| #ret_type #body)());
             if true {
-                let mut __anodized_errors = ::std::string::String::new();
                 let __anodized_post = true;
                 let __anodized_post = __anodized_post & (::anodized::__::eval::<bool>(|| { CONDITION_1 })
                     || eprintln!("postcondition failed: {}", "CONDITION_1") != ());
                 if !__anodized_post {
-                    panic!("postcondition failed:{__anodized_errors}");
+                    panic!("postcondition failed");
                 }
             }
             __anodized_output
@@ -388,20 +372,18 @@ fn simple_ensures() {
     let expected: Block = parse_quote! {
         {
             if true {
-                let mut __anodized_errors = ::std::string::String::new();
                 let __anodized_pre = true;
                 if !__anodized_pre {
-                    panic!("precondition failed:{__anodized_errors}");
+                    panic!("precondition failed");
                 }
             }
             let (__anodized_output) = ((|| #ret_type #body)());
             if true {
-                let mut __anodized_errors = ::std::string::String::new();
                 let __anodized_post = true;
                 let __anodized_post = __anodized_post & (::anodized::__::eval::<bool>(|| { CONDITION_1 })
                     || eprintln!("postcondition failed: {}", "CONDITION_1") != ());
                 if !__anodized_post {
-                    panic!("postcondition failed:{__anodized_errors}");
+                    panic!("postcondition failed");
                 }
             }
             __anodized_output
@@ -427,24 +409,22 @@ fn simple_requires_and_maintains() {
     let expected: Block = parse_quote! {
         {
             if true {
-                let mut __anodized_errors = ::std::string::String::new();
                 let __anodized_pre = true;
                 let __anodized_pre = __anodized_pre & (::anodized::__::eval::<bool>(|| { CONDITION_1 })
                     || eprintln!("precondition failed: {}", "CONDITION_1") != ());
                 let __anodized_pre = __anodized_pre & (::anodized::__::eval::<bool>(|| { CONDITION_2 })
                         || eprintln!("precondition failed: {}", "CONDITION_2") != ());
                 if !__anodized_pre {
-                    panic!("precondition failed:{__anodized_errors}");
+                    panic!("precondition failed");
                 }
             }
             let (__anodized_output) = ((|| #ret_type #body)());
             if true {
-                let mut __anodized_errors = ::std::string::String::new();
                 let __anodized_post = true;
                 let __anodized_post = __anodized_post & (::anodized::__::eval::<bool>(|| { CONDITION_2 })
                     || eprintln!("postcondition failed: {}", "CONDITION_2") != ());
                 if !__anodized_post {
-                    panic!("postcondition failed:{__anodized_errors}");
+                    panic!("postcondition failed");
                 }
             }
             __anodized_output
@@ -470,22 +450,20 @@ fn simple_requires_and_ensures() {
     let expected: Block = parse_quote! {
         {
             if true {
-                let mut __anodized_errors = ::std::string::String::new();
                 let __anodized_pre = true;
                 let __anodized_pre = __anodized_pre & (::anodized::__::eval::<bool>(|| { CONDITION_1 })
                     || eprintln!("precondition failed: {}", "CONDITION_1") != ());
                 if !__anodized_pre {
-                    panic!("precondition failed:{__anodized_errors}");
+                    panic!("precondition failed");
                 }
             }
             let (__anodized_output) = ((|| #ret_type #body)());
             if true {
-                let mut __anodized_errors = ::std::string::String::new();
                 let __anodized_post = true;
                 let __anodized_post = __anodized_post & (::anodized::__::eval::<bool>(|| { CONDITION_2 })
                     || eprintln!("postcondition failed: {}", "CONDITION_2") != ());
                 if !__anodized_post {
-                    panic!("postcondition failed:{__anodized_errors}");
+                    panic!("postcondition failed");
                 }
             }
             __anodized_output
@@ -511,24 +489,22 @@ fn simple_maintains_and_ensures() {
     let expected: Block = parse_quote! {
         {
             if true {
-                let mut __anodized_errors = ::std::string::String::new();
                 let __anodized_pre = true;
                 let __anodized_pre = __anodized_pre & (::anodized::__::eval::<bool>(|| { CONDITION_1 })
                     || eprintln!("precondition failed: {}", "CONDITION_1") != ());
                 if !__anodized_pre {
-                    panic!("precondition failed:{__anodized_errors}");
+                    panic!("precondition failed");
                 }
             }
             let (__anodized_output) = ((|| #ret_type #body)());
             if true {
-                let mut __anodized_errors = ::std::string::String::new();
                 let __anodized_post = true;
                 let __anodized_post = __anodized_post & (::anodized::__::eval::<bool>(|| { CONDITION_1 })
                     || eprintln!("postcondition failed: {}", "CONDITION_1") != ());
                 let __anodized_post = __anodized_post & (::anodized::__::eval::<bool>(|| { CONDITION_2 })
                         || eprintln!("postcondition failed: {}", "CONDITION_2") != ());
                 if !__anodized_post {
-                    panic!("postcondition failed:{__anodized_errors}");
+                    panic!("postcondition failed");
                 }
             }
             __anodized_output
@@ -555,26 +531,24 @@ fn simple_requires_maintains_and_ensures() {
     let expected: Block = parse_quote! {
         {
             if true {
-                let mut __anodized_errors = ::std::string::String::new();
                 let __anodized_pre = true;
                 let __anodized_pre = __anodized_pre & (::anodized::__::eval::<bool>(|| { CONDITION_1 })
                     || eprintln!("precondition failed: {}", "CONDITION_1") != ());
                 let __anodized_pre = __anodized_pre & (::anodized::__::eval::<bool>(|| { CONDITION_2 })
                         || eprintln!("precondition failed: {}", "CONDITION_2") != ());
                 if !__anodized_pre {
-                    panic!("precondition failed:{__anodized_errors}");
+                    panic!("precondition failed");
                 }
             }
             let (__anodized_output) = ((|| #ret_type #body)());
             if true {
-                let mut __anodized_errors = ::std::string::String::new();
                 let __anodized_post = true;
                 let __anodized_post = __anodized_post & (::anodized::__::eval::<bool>(|| { CONDITION_2 })
                     || eprintln!("postcondition failed: {}", "CONDITION_2") != ());
                 let __anodized_post = __anodized_post & (::anodized::__::eval::<bool>(|| { CONDITION_3 })
                         || eprintln!("postcondition failed: {}", "CONDITION_3") != ());
                 if !__anodized_post {
-                    panic!("postcondition failed:{__anodized_errors}");
+                    panic!("postcondition failed");
                 }
             }
             __anodized_output
@@ -601,26 +575,24 @@ fn simple_async_requires_maintains_and_ensures() {
     let expected: Block = parse_quote! {
         {
             if true {
-                let mut __anodized_errors = ::std::string::String::new();
                 let __anodized_pre = true;
                 let __anodized_pre = __anodized_pre & (::anodized::__::eval::<bool>(|| { CONDITION_1 })
                     || eprintln!("precondition failed: {}", "CONDITION_1") != ());
                 let __anodized_pre = __anodized_pre & (::anodized::__::eval::<bool>(|| { CONDITION_2 })
                         || eprintln!("precondition failed: {}", "CONDITION_2") != ());
                 if !__anodized_pre {
-                    panic!("precondition failed:{__anodized_errors}");
+                    panic!("precondition failed");
                 }
             }
             let (__anodized_output) = ((async || #ret_type #body)().await);
             if true {
-                let mut __anodized_errors = ::std::string::String::new();
                 let __anodized_post = true;
                 let __anodized_post = __anodized_post & (::anodized::__::eval::<bool>(|| { CONDITION_2 })
                     || eprintln!("postcondition failed: {}", "CONDITION_2") != ());
                 let __anodized_post = __anodized_post & (::anodized::__::eval::<bool>(|| { CONDITION_3 })
                         || eprintln!("postcondition failed: {}", "CONDITION_3") != ());
                 if !__anodized_post {
-                    panic!("postcondition failed:{__anodized_errors}");
+                    panic!("postcondition failed");
                 }
             }
             __anodized_output
@@ -647,7 +619,6 @@ fn multiple_conditions_in_clauses() {
     let expected: Block = parse_quote! {
         {
             if true {
-                let mut __anodized_errors = ::std::string::String::new();
                 let __anodized_pre = true;
                 let __anodized_pre = __anodized_pre & (::anodized::__::eval::<bool>(|| { CONDITION_1 })
                     || eprintln!("precondition failed: {}", "CONDITION_1") != ());
@@ -658,12 +629,11 @@ fn multiple_conditions_in_clauses() {
                 let __anodized_pre = __anodized_pre & (::anodized::__::eval::<bool>(|| { CONDITION_4 })
                         || eprintln!("precondition failed: {}", "CONDITION_4") != ());
                 if !__anodized_pre {
-                    panic!("precondition failed:{__anodized_errors}");
+                    panic!("precondition failed");
                 }
             }
             let (__anodized_output) = ((|| #ret_type #body)());
             if true {
-                let mut __anodized_errors = ::std::string::String::new();
                 let __anodized_post = true;
                 let __anodized_post = __anodized_post & (::anodized::__::eval::<bool>(|| { CONDITION_3 })
                     || eprintln!("postcondition failed: {}", "CONDITION_3") != ());
@@ -674,7 +644,7 @@ fn multiple_conditions_in_clauses() {
                 let __anodized_post = __anodized_post & (::anodized::__::eval::<bool>(|| { CONDITION_6 })
                         || eprintln!("postcondition failed: {}", "CONDITION_6") != ());
                 if !__anodized_post {
-                    panic!("postcondition failed:{__anodized_errors}");
+                    panic!("postcondition failed");
                 }
             }
             __anodized_output
@@ -699,20 +669,18 @@ fn postcond_closure_form() {
     let expected: Block = parse_quote! {
         {
             if true {
-                let mut __anodized_errors = ::std::string::String::new();
                 let __anodized_pre = true;
                 if !__anodized_pre {
-                    panic!("precondition failed:{__anodized_errors}");
+                    panic!("precondition failed");
                 }
             }
             let (__anodized_output) = ((|| #ret_type #body)());
             if true {
-                let mut __anodized_errors = ::std::string::String::new();
                 let __anodized_post = true;
                 let __anodized_post = __anodized_post & (::anodized::__::eval::<bool>(|| { let OUTPUT_PATTERN = __anodized_output; CONDITION_1 })
                     || eprintln!("postcondition failed: {}", "CONDITION_1") != ());
                 if !__anodized_post {
-                    panic!("postcondition failed:{__anodized_errors}");
+                    panic!("postcondition failed");
                 }
             }
             __anodized_output
@@ -742,15 +710,13 @@ fn ensures_with_mixed_conditions() {
     let expected: Block = parse_quote! {
         {
             if true {
-                let mut __anodized_errors = ::std::string::String::new();
                 let __anodized_pre = true;
                 if !__anodized_pre {
-                    panic!("precondition failed:{__anodized_errors}");
+                    panic!("precondition failed");
                 }
             }
             let (__anodized_output) = ((|| #ret_type #body)());
             if true {
-                let mut __anodized_errors = ::std::string::String::new();
                 let __anodized_post = true;
                 let __anodized_post = __anodized_post & (::anodized::__::eval::<bool>(|| { CONDITION_1 })
                     || eprintln!("postcondition failed: {}", "CONDITION_1") != ());
@@ -761,7 +727,7 @@ fn ensures_with_mixed_conditions() {
                 let __anodized_post = __anodized_post & (::anodized::__::eval::<bool>(|| { CONDITION_4 })
                         || eprintln!("postcondition failed: {}", "CONDITION_4") != ());
                 if !__anodized_post {
-                    panic!("postcondition failed:{__anodized_errors}");
+                    panic!("postcondition failed");
                 }
             }
             __anodized_output
@@ -791,7 +757,6 @@ fn cfg_attributes() {
     let expected: Block = parse_quote! {
         {
             if true {
-                let mut __anodized_errors = ::std::string::String::new();
                 let __anodized_pre = true;
                 #[cfg(SETTING_1)]
                 let __anodized_pre = __anodized_pre & ( ::anodized::__::eval::<bool>(|| { CONDITION_1 })
@@ -800,12 +765,11 @@ fn cfg_attributes() {
                 let __anodized_pre = __anodized_pre & ( ::anodized::__::eval::<bool>(|| { CONDITION_2 })
                         || eprintln!("precondition failed: {}", "CONDITION_2") != ());
                 if !__anodized_pre {
-                    panic!("precondition failed:{__anodized_errors}");
+                    panic!("precondition failed");
                 }
             }
             let (__anodized_output) = ((|| #ret_type #body)());
             if true {
-                let mut __anodized_errors = ::std::string::String::new();
                 let __anodized_post = true;
                 #[cfg(SETTING_2)]
                 let __anodized_post = __anodized_post & ( ::anodized::__::eval::<bool>(|| { CONDITION_2 })
@@ -814,7 +778,7 @@ fn cfg_attributes() {
                 let __anodized_post = __anodized_post & ( ::anodized::__::eval::<bool>(|| { CONDITION_3 })
                         || eprintln!("postcondition failed: {}", "CONDITION_3") != ());
                 if !__anodized_post {
-                    panic!("postcondition failed:{__anodized_errors}");
+                    panic!("postcondition failed");
                 }
             }
             __anodized_output
@@ -843,7 +807,6 @@ fn cfg_on_single_and_list_conditions() {
     let expected: Block = parse_quote! {
         {
             if true {
-                let mut __anodized_errors = ::std::string::String::new();
                 let __anodized_pre = true;
                 #[cfg(SETTING_1)]
                 let __anodized_pre = __anodized_pre & ( ::anodized::__::eval::<bool>(|| { CONDITION_1 })
@@ -853,12 +816,11 @@ fn cfg_on_single_and_list_conditions() {
                 let __anodized_pre = __anodized_pre & (::anodized::__::eval::<bool>(|| { CONDITION_3 })
                         || eprintln!("precondition failed: {}", "CONDITION_3") != ());
                 if !__anodized_pre {
-                    panic!("precondition failed:{__anodized_errors}");
+                    panic!("precondition failed");
                 }
             }
             let (__anodized_output) = ((|| #ret_type #body)());
             if true {
-                let mut __anodized_errors = ::std::string::String::new();
                 let __anodized_post = true;
                 let __anodized_post = __anodized_post & (::anodized::__::eval::<bool>(|| { CONDITION_2 })
                     || eprintln!("postcondition failed: {}", "CONDITION_2") != ());
@@ -871,7 +833,7 @@ fn cfg_on_single_and_list_conditions() {
                 let __anodized_post = __anodized_post & ( ::anodized::__::eval::<bool>(|| { CONDITION_5 })
                         || eprintln!("postcondition failed: {}", "CONDITION_5") != ());
                 if !__anodized_post {
-                    panic!("postcondition failed:{__anodized_errors}");
+                    panic!("postcondition failed");
                 }
             }
             __anodized_output
@@ -904,7 +866,6 @@ fn complex_mixed_conditions() {
     let expected: Block = parse_quote! {
         {
             if true {
-                let mut __anodized_errors = ::std::string::String::new();
                 let __anodized_pre = true;
                 let __anodized_pre = __anodized_pre & (::anodized::__::eval::<bool>(|| { CONDITION_1 })
                     || eprintln!("precondition failed: {}", "CONDITION_1") != ());
@@ -922,12 +883,11 @@ fn complex_mixed_conditions() {
                 let __anodized_pre = __anodized_pre & ( ::anodized::__::eval::<bool>(|| { CONDITION_6 })
                         || eprintln!("precondition failed: {}", "CONDITION_6") != ());
                 if !__anodized_pre {
-                    panic!("precondition failed:{__anodized_errors}");
+                    panic!("precondition failed");
                 }
             }
             let (__anodized_output) = ((|| #ret_type #body)());
             if true {
-                let mut __anodized_errors = ::std::string::String::new();
                 let __anodized_post = true;
                 let __anodized_post = __anodized_post & (::anodized::__::eval::<bool>(|| { CONDITION_4 })
                     || eprintln!("postcondition failed: {}", "CONDITION_4") != ());
@@ -945,7 +905,7 @@ fn complex_mixed_conditions() {
                 let __anodized_post = __anodized_post & ( ::anodized::__::eval::<bool>(|| { CONDITION_9 })
                         || eprintln!("postcondition failed: {}", "CONDITION_9") != ());
                 if !__anodized_post {
-                    panic!("postcondition failed:{__anodized_errors}");
+                    panic!("postcondition failed");
                 }
             }
             __anodized_output
@@ -978,24 +938,22 @@ fn captures() {
     let expected: Block = parse_quote! {
         {
             if true {
-                let mut __anodized_errors = ::std::string::String::new();
                 let __anodized_pre = true;
                 let __anodized_pre = __anodized_pre & (::anodized::__::eval::<bool>(|| { CONDITION_1 })
                     || eprintln!("precondition failed: {}", "CONDITION_1") != ());
                 if !__anodized_pre {
-                    panic!("precondition failed:{__anodized_errors}");
+                    panic!("precondition failed");
                 }
             }
             let (ALIAS_1, ALIAS_2, __anodized_output) = ((|| EXPR_1) (), (|| EXPR_2) (), (|| #ret_type #body)());
             if true {
-                let mut __anodized_errors = ::std::string::String::new();
                 let __anodized_post = true;
                 let __anodized_post = __anodized_post & (::anodized::__::eval::<bool>(|| { CONDITION_2 })
                     || eprintln!("postcondition failed: {}", "CONDITION_2") != ());
                 let __anodized_post = __anodized_post & (::anodized::__::eval::<bool>(|| { CONDITION_3 })
                         || eprintln!("postcondition failed: {}", "CONDITION_3") != ());
                 if !__anodized_post {
-                    panic!("postcondition failed:{__anodized_errors}");
+                    panic!("postcondition failed");
                 }
             }
             __anodized_output
