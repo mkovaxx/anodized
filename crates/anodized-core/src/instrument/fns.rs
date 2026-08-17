@@ -212,7 +212,7 @@ impl CheckSettings {
         for condition in spec.requires.iter().chain(&spec.maintains) {
             let expr = &condition.expr;
             let repr = expr.to_token_stream().to_string();
-            let expr = parse_quote! { ::anodized::__::eval(|| -> bool { #expr }) };
+            let expr = parse_quote! { ::anodized::__::eval::<bool>(|| { #expr }) };
             let clause = self.build_clause_eval(&condition.cfg, &expr, &repr);
             precondition_clauses.push(clause);
         }
@@ -252,7 +252,7 @@ impl CheckSettings {
         for condition in &spec.maintains {
             let expr = &condition.expr;
             let repr = expr.to_token_stream().to_string();
-            let expr = parse_quote! { ::anodized::__::eval(|| -> bool { #expr }) };
+            let expr = parse_quote! { ::anodized::__::eval::<bool>(|| { #expr }) };
             let clause = self.build_clause_eval(&condition.cfg, &expr, &repr);
             postcondition_clauses.push(clause);
         }
@@ -261,10 +261,10 @@ impl CheckSettings {
             let repr = expr.to_token_stream().to_string();
             let expr = if let Some(pat) = &postcond.pat {
                 parse_quote! {
-                    ::anodized::__::eval(|| -> bool { let #pat = #output_ident; #expr })
+                    ::anodized::__::eval::<bool>(|| { let #pat = #output_ident; #expr })
                 }
             } else {
-                parse_quote! { ::anodized::__::eval(|| { #expr }) }
+                parse_quote! { ::anodized::__::eval::<bool>(|| { #expr }) }
             };
             let clause = self.build_clause_eval(&postcond.cfg, &expr, &repr);
             postcondition_clauses.push(clause);
