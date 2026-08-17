@@ -212,7 +212,7 @@ impl CheckSettings {
         for condition in spec.requires.iter().chain(&spec.maintains) {
             let expr = &condition.expr;
             let repr = expr.to_token_stream().to_string();
-            let expr = parse_quote! { __anodized_eval_pre(|| -> bool { #expr }) };
+            let expr = parse_quote! { ::anodized::__::eval(|| -> bool { #expr }) };
             let clause = self.build_clause_eval(&condition.cfg, &expr, &repr);
             precondition_clauses.push(clause);
         }
@@ -252,7 +252,7 @@ impl CheckSettings {
         for condition in &spec.maintains {
             let expr = &condition.expr;
             let repr = expr.to_token_stream().to_string();
-            let expr = parse_quote! { __anodized_eval_post(|| -> bool { #expr }) };
+            let expr = parse_quote! { ::anodized::__::eval(|| -> bool { #expr }) };
             let clause = self.build_clause_eval(&condition.cfg, &expr, &repr);
             postcondition_clauses.push(clause);
         }
@@ -261,10 +261,10 @@ impl CheckSettings {
             let repr = expr.to_token_stream().to_string();
             let expr = if let Some(pat) = &postcond.pat {
                 parse_quote! {
-                    __anodized_eval_post(|| -> bool { let #pat = #output_ident; #expr })
+                    ::anodized::__::eval(|| -> bool { let #pat = #output_ident; #expr })
                 }
             } else {
-                parse_quote! { __anodized_eval_post(|| -> bool { #expr }) }
+                parse_quote! { ::anodized::__::eval(|| { #expr }) }
             };
             let clause = self.build_clause_eval(&postcond.cfg, &expr, &repr);
             postcondition_clauses.push(clause);
@@ -299,7 +299,6 @@ impl CheckSettings {
         Ok(parse_quote! {
             {
                 if #do_run_checks {
-                    fn __anodized_eval_pre(c: impl Fn() -> bool) -> bool { c() }
                     let mut __anodized_errors = ::std::string::String::new();
                     let __anodized_precond = #(#precondition_clauses)&*;
                     if !__anodized_precond {
@@ -308,7 +307,6 @@ impl CheckSettings {
                 }
                 #captures_and_output
                 if #do_run_checks {
-                    fn __anodized_eval_post(c: impl Fn() -> bool) -> bool { c() }
                     let mut __anodized_errors = ::std::string::String::new();
                     let __anodized_postcond = #(#postcondition_clauses)&*;
                     if !__anodized_postcond {
