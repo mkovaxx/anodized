@@ -42,5 +42,3 @@ pub enum Error<T> {
     /// Postconditions failed.
     Post(T),
 }
-
-pub type Messages = String;
