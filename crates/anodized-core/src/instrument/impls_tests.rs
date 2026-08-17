@@ -30,17 +30,17 @@ fn embed_spec_item_impl() {
             #[doc(hidden)]
             #[allow(warnings)]
             fn __anodized_fn_requires_FUNC(&self, PARAM_1: TYPE_1, PARAM_2: TYPE_2) -> bool {
-                let __anodized_clause_1 = (|| -> bool { COND_1 })();
-                let __anodized_clause_2 = (|| -> bool { COND_2 })();
+                let __anodized_clause_1 = ::anodized::__::eval::<bool>(|| { COND_1 });
+                let __anodized_clause_2 = ::anodized::__::eval::<bool>(|| { COND_2 });
                 __anodized_clause_1 && __anodized_clause_2
             }
 
             #[doc(hidden)]
             #[allow(warnings)]
             fn __anodized_fn_ensures_FUNC(&self, PARAM_1: TYPE_1, PARAM_2: TYPE_2, __anodized_output: RET_TYPE) -> bool {
-                let __anodized_clause_1 = (|| -> bool { COND_2 })();
+                let __anodized_clause_1 = ::anodized::__::eval::<bool>(|| { COND_2 });
                 let () = ();
-                let __anodized_clause_2 = (|PAT_1| -> bool { COND_3 })(__anodized_output);
+                let __anodized_clause_2 = ::anodized::__::eval::<bool>(|| { let PAT_1 = __anodized_output; COND_3 });
                 __anodized_clause_1 && __anodized_clause_2
             }
 
@@ -122,11 +122,11 @@ fn emit_try_fn_instrument_item_impl() {
                 match Self::__anodized_fn_try_FUNC(input_0, input_1) {
                     ::anodized::result::Result::Ok(output) => output,
                     ::anodized::result::Result::Err(
-                        ::anodized::result::Error::Pre(errors)
-                    ) => panic!("precondition failed:{errors}"),
+                        ::anodized::result::Error::Pre
+                    ) => panic!("precondition failed"),
                     ::anodized::result::Result::Err(
-                        ::anodized::result::Error::Post(_, errors)
-                    ) => panic!("postcondition failed:{errors}"),
+                        ::anodized::result::Error::Post(_)
+                    ) => panic!("postcondition failed"),
                 }
             }
 
