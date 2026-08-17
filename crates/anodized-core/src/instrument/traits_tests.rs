@@ -94,18 +94,16 @@ fn default_instrument_item_trait() {
 
             fn FUNC(&self, PARAM_1: TYPE_1, PARAM_2: TYPE_2) -> RET_TYPE {
                 if false {
-                    fn __anodized_eval_pre(c: impl Fn() -> bool) -> bool { c() }
                     let mut __anodized_errors = ::std::string::String::new();
-                    let __anodized_precond = __anodized_eval_pre(|| -> bool { COND_1 })
-                        & __anodized_eval_pre(|| -> bool { COND_2 });
+                    let __anodized_precond = ::anodized::__::eval::<bool>(|| { COND_1 })
+                        & ::anodized::__::eval::<bool>(|| { COND_2 });
                     if !__anodized_precond {}
                 }
                 let (__anodized_output) = ((|| -> RET_TYPE { Self::__anodized_FUNC(self, PARAM_1, PARAM_2) })());
                 if false {
-                    fn __anodized_eval_post(c: impl Fn() -> bool) -> bool { c() }
                     let mut __anodized_errors = ::std::string::String::new();
-                    let __anodized_postcond = __anodized_eval_post(|| -> bool { COND_2 })
-                        & __anodized_eval_post(|| -> bool { let PAT_1 = __anodized_output; COND_3 });
+                    let __anodized_postcond = ::anodized::__::eval::<bool>(|| { COND_2 })
+                        & ::anodized::__::eval::<bool>(|| { let PAT_1 = __anodized_output; COND_3 });
                     if !__anodized_postcond {}
                 }
                 __anodized_output
@@ -169,11 +167,10 @@ fn emit_try_fn_instrument_item_trait() {
                 -> ::anodized::result::Result<RET_TYPE>
             {
                 if true {
-                    fn __anodized_eval_pre(c: impl Fn() -> bool) -> bool { c() }
                     let mut __anodized_errors = ::std::string::String::new();
-                    let __anodized_precond = (__anodized_eval_pre(|| -> bool { COND_1 })
+                    let __anodized_precond = (::anodized::__::eval::<bool>(|| { COND_1 })
                             || __anodized_errors.push_str("\n    COND_1") != ())
-                        & (__anodized_eval_pre(|| -> bool { COND_2 })
+                        & (::anodized::__::eval::<bool>(|| { COND_2 })
                             || __anodized_errors.push_str("\n    COND_2") != ());
                     if !__anodized_precond {
                         return ::anodized::result::pre_err(__anodized_errors);
@@ -181,11 +178,10 @@ fn emit_try_fn_instrument_item_trait() {
                 }
                 let (__anodized_output) = ((|| -> RET_TYPE { Self::__anodized_FUNC(self, PARAM_1, PARAM_2) })());
                 if true {
-                    fn __anodized_eval_post(c: impl Fn() -> bool) -> bool { c() }
                     let mut __anodized_errors = ::std::string::String::new();
-                    let __anodized_postcond = (__anodized_eval_post(|| -> bool { COND_2 })
+                    let __anodized_postcond = (::anodized::__::eval::<bool>(|| { COND_2 })
                             || __anodized_errors.push_str("\n    COND_2") != ())
-                        & (__anodized_eval_post(|| -> bool { let PAT_1 = __anodized_output; COND_3 })
+                        & (::anodized::__::eval::<bool>(|| { let PAT_1 = __anodized_output; COND_3 })
                             || __anodized_errors.push_str("\n    COND_3") != ());
                     if !__anodized_postcond {
                         return ::anodized::result::post_err(__anodized_output, __anodized_errors);
@@ -288,18 +284,16 @@ fn default_instrument_item_impl_trait() {
                     );
                 };
                 if false {
-                    fn __anodized_eval_pre(c: impl Fn() -> bool) -> bool { c() }
                     let mut __anodized_errors = ::std::string::String::new();
-                    let __anodized_precond = __anodized_eval_pre(|| -> bool { COND_1 })
-                        & __anodized_eval_pre(|| -> bool { COND_2 });
+                    let __anodized_precond = ::anodized::__::eval::<bool>(|| { COND_1 })
+                        & ::anodized::__::eval::<bool>(|| { COND_2 });
                     if !__anodized_precond {}
                 }
                 let (__anodized_output) = ((|| -> RET_TYPE { BODY })());
                 if false {
-                    fn __anodized_eval_post(c: impl Fn() -> bool) -> bool { c() }
                     let mut __anodized_errors = ::std::string::String::new();
-                    let __anodized_postcond = __anodized_eval_post(|| -> bool { COND_2 })
-                        & __anodized_eval_post(|| -> bool { let PAT_1 = __anodized_output; COND_3 });
+                    let __anodized_postcond = ::anodized::__::eval::<bool>(|| { COND_2 })
+                        & ::anodized::__::eval::<bool>(|| { let PAT_1 = __anodized_output; COND_3 });
                     if !__anodized_postcond {}
                 }
                 __anodized_output
@@ -347,11 +341,10 @@ fn emit_try_fn_instrument_item_impl_trait() {
                     );
                 };
                 if true {
-                    fn __anodized_eval_pre(c: impl Fn() -> bool) -> bool { c() }
                     let mut __anodized_errors = ::std::string::String::new();
-                    let __anodized_precond = (__anodized_eval_pre(|| -> bool { COND_1 })
+                    let __anodized_precond = (::anodized::__::eval::<bool>(|| { COND_1 })
                             || __anodized_errors.push_str("\n    COND_1") != ())
-                        & (__anodized_eval_pre(|| -> bool { COND_2 })
+                        & (::anodized::__::eval::<bool>(|| { COND_2 })
                             || __anodized_errors.push_str("\n    COND_2") != ());
                     if !__anodized_precond {
                         panic!("precondition failed:{__anodized_errors}");
@@ -359,11 +352,10 @@ fn emit_try_fn_instrument_item_impl_trait() {
                 }
                 let (__anodized_output) = ((|| -> RET_TYPE { BODY })());
                 if true {
-                    fn __anodized_eval_post(c: impl Fn() -> bool) -> bool { c() }
                     let mut __anodized_errors = ::std::string::String::new();
-                    let __anodized_postcond = (__anodized_eval_post(|| -> bool { COND_2 })
+                    let __anodized_postcond = (::anodized::__::eval::<bool>(|| { COND_2 })
                             || __anodized_errors.push_str("\n    COND_2") != ())
-                        & (__anodized_eval_post(|| -> bool { let PAT_1 = __anodized_output; COND_3 })
+                        & (::anodized::__::eval::<bool>(|| { let PAT_1 = __anodized_output; COND_3 })
                             || __anodized_errors.push_str("\n    COND_3") != ());
                     if !__anodized_postcond {
                         panic!("postcondition failed:{__anodized_errors}");
