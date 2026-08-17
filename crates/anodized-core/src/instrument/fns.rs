@@ -5,7 +5,7 @@ mod fns_tests;
 use proc_macro2::Span;
 use quote::{ToTokens, quote};
 use syn::{
-    Attribute, Block, Expr, Ident, Meta, Pat, Path, ReturnType, Signature, Stmt, Type,
+    Attribute, Block, Expr, Ident, Pat, Path, ReturnType, Signature, Stmt, Type,
     parse::{Parse, Result},
     parse_quote,
 };
@@ -213,8 +213,13 @@ impl CheckSettings {
             let expr = &condition.expr;
             let repr = expr.to_token_stream().to_string();
             let expr = parse_quote! { ::anodized::__::eval::<bool>(|| { #expr }) };
-            let eval = self.build_precond_eval(&condition.cfg, &expr, &repr);
+            let eval = self.build_precond_eval(&expr, &repr);
+            let cfg: Option<Attribute> = condition
+                .cfg
+                .as_ref()
+                .map(|meta| parse_quote! { #[cfg(#meta)] });
             precondition_checks.push(parse_quote! {
+                #cfg
                 let __anodized_pre = __anodized_pre & #eval;
             });
         }
@@ -253,8 +258,13 @@ impl CheckSettings {
             let expr = &condition.expr;
             let repr = expr.to_token_stream().to_string();
             let expr = parse_quote! { ::anodized::__::eval::<bool>(|| { #expr }) };
-            let eval = self.build_postcond_eval(&condition.cfg, &expr, &repr);
+            let eval = self.build_postcond_eval(&expr, &repr);
+            let cfg: Option<Attribute> = condition
+                .cfg
+                .as_ref()
+                .map(|meta| parse_quote! { #[cfg(#meta)] });
             postcondition_checks.push(parse_quote! {
+                #cfg
                 let __anodized_post = __anodized_post & #eval;
             });
         }
@@ -268,8 +278,13 @@ impl CheckSettings {
             } else {
                 parse_quote! { ::anodized::__::eval::<bool>(|| { #expr }) }
             };
-            let eval = self.build_postcond_eval(&postcond.cfg, &expr, &repr);
+            let eval = self.build_postcond_eval(&expr, &repr);
+            let cfg: Option<Attribute> = postcond
+                .cfg
+                .as_ref()
+                .map(|meta| parse_quote! { #[cfg(#meta)] });
             postcondition_checks.push(parse_quote! {
+                #cfg
                 let __anodized_post = __anodized_post & #eval;
             });
         }
@@ -319,25 +334,17 @@ impl CheckSettings {
         })
     }
 
-    fn build_precond_eval(&self, cfg: &Option<Meta>, expr: &Expr, repr: &str) -> Expr {
+    fn build_precond_eval(&self, expr: &Expr, repr: &str) -> Expr {
         if self.does_print {
-            let cfg_guard = match cfg {
-                Some(meta) => quote! { !cfg!(#meta) || },
-                None => quote!(),
-            };
-            parse_quote! { ( #cfg_guard #expr || eprintln!("precondition failed: {}", #repr) != () ) }
+            parse_quote! { ( #expr || eprintln!("precondition failed: {}", #repr) != () ) }
         } else {
             expr.clone()
         }
     }
 
-    fn build_postcond_eval(&self, cfg: &Option<Meta>, expr: &Expr, repr: &str) -> Expr {
+    fn build_postcond_eval(&self, expr: &Expr, repr: &str) -> Expr {
         if self.does_print {
-            let cfg_guard = match cfg {
-                Some(meta) => quote! { !cfg!(#meta) || },
-                None => quote!(),
-            };
-            parse_quote! { ( #cfg_guard #expr || eprintln!("postcondition failed: {}", #repr) != () ) }
+            parse_quote! { ( #expr || eprintln!("postcondition failed: {}", #repr) != () ) }
         } else {
             expr.clone()
         }
