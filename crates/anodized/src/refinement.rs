@@ -62,44 +62,22 @@ impl<T1: Refined, T2: Refined, T3: Refined> Refined for (T1, T2, T3) {
     }
 }
 
-impl Refined for bool {
-    fn is_valid(&self) -> bool {
-        true
-    }
+/// Implement `Refined` for concrete types, with `is_valid` always `true`.
+macro_rules! tautological_refinement {
+    ($($ty:ty),+ $(,)?) => {
+        $(
+            impl $crate::refinement::Refined for $ty {
+                fn is_valid(&self) -> bool { true }
+            }
+        )+
+    };
 }
 
-impl Refined for u32 {
-    fn is_valid(&self) -> bool {
-        true
-    }
-}
-
-impl Refined for i32 {
-    fn is_valid(&self) -> bool {
-        true
-    }
-}
-
-impl Refined for f32 {
-    fn is_valid(&self) -> bool {
-        true
-    }
-}
-
-impl Refined for char {
-    fn is_valid(&self) -> bool {
-        true
-    }
-}
-
-impl Refined for str {
-    fn is_valid(&self) -> bool {
-        true
-    }
-}
-
-impl Refined for String {
-    fn is_valid(&self) -> bool {
-        true
-    }
-}
+#[rustfmt::skip]
+tautological_refinement!(
+    bool,
+    u8, u16, u32, u64, u128, usize,
+    i8, i16, i32, i64, i128, isize,
+    f32, f64,
+    char, str, String,
+);
