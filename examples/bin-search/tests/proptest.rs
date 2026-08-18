@@ -1,4 +1,4 @@
-use anodized::result::{try_call, PostError, PreError};
+use anodized::result::{PostError, PreError, try_call};
 
 use proptest::prelude::*;
 use proptest_derive::Arbitrary;
