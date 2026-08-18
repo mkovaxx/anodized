@@ -1,4 +1,4 @@
-use anodized::result::{PostError, PreError, try_call};
+use anodized::result::{try_call, PostError, PreError};
 
 use proptest::prelude::*;
 use proptest_derive::Arbitrary;
@@ -20,9 +20,7 @@ proptest! {
             Err(PreError) => prop_assume!(false),
             // When postconditions are violated, panic to signal a counter-example.
             Err(PostError(output)) => {
-                eprintln!("inputs:");
-                dbg!(inputs.seq);
-                dbg!(inputs.value);
+                dbg!(inputs);
                 dbg!(output);
                 panic!("postcondition failed");
             }

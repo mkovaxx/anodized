@@ -1,4 +1,4 @@
-use anodized::result::{PostError, PreError, try_call};
+use anodized::result::{try_call, PostError, PreError};
 
 use quickcheck::{Arbitrary, Gen, QuickCheck, TestResult};
 
@@ -22,9 +22,7 @@ fn test_spec_property(inputs: Inputs<i32>) -> TestResult {
         Err(PreError) => TestResult::discard(),
         // When postconditions are violated, fail to signal a counter-example.
         Err(PostError(output)) => {
-            eprintln!("inputs:");
-            dbg!(inputs.seq);
-            dbg!(inputs.value);
+            dbg!(inputs);
             dbg!(output);
             TestResult::error("postcondition failed")
         }

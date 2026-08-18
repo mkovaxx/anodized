@@ -17,9 +17,7 @@ fuzz_target!(|inputs: Inputs<i32>| -> Corpus {
         Err(PreError) => Corpus::Reject,
         // When postconditions are violated, panic to signal a counter-example.
         Err(PostError(output)) => {
-            eprintln!("inputs:");
-            dbg!(inputs.seq);
-            dbg!(inputs.value);
+            dbg!(inputs);
             dbg!(output);
             panic!("postcondition failed");
         }
