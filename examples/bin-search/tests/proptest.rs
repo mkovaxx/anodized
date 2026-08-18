@@ -17,14 +17,12 @@ proptest! {
             // Successful call.
             Ok(_) => {},
             // When preconditions are violated, reject the input.
-            Err(PreError(_)) => prop_assume!(false),
+            Err(PreError) => prop_assume!(false),
             // When postconditions are violated, panic to signal a counter-example.
-            Err(PostError(output, errors)) => {
-                eprintln!("inputs:");
-                dbg!(inputs.seq);
-                dbg!(inputs.value);
+            Err(PostError(output)) => {
+                dbg!(inputs);
                 dbg!(output);
-                panic!("postcondition failed:{errors}");
+                panic!("postcondition failed");
             }
         }
     }

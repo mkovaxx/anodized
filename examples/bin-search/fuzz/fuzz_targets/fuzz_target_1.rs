@@ -14,14 +14,12 @@ fuzz_target!(|inputs: Inputs<i32>| -> Corpus {
         // Successful call.
         Ok(_) => Corpus::Keep,
         // When preconditions are violated, reject the input.
-        Err(PreError(_)) => Corpus::Reject,
+        Err(PreError) => Corpus::Reject,
         // When postconditions are violated, panic to signal a counter-example.
-        Err(PostError(output, errors)) => {
-            eprintln!("inputs:");
-            dbg!(inputs.seq);
-            dbg!(inputs.value);
+        Err(PostError(output)) => {
+            dbg!(inputs);
             dbg!(output);
-            panic!("postcondition failed:{errors}");
+            panic!("postcondition failed");
         }
     }
 });

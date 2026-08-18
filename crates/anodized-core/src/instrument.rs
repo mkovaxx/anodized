@@ -168,11 +168,11 @@ Instead, you likely need to place a `#[spec]` attribute on an enclosing trait or
                 match #maybe_self #mangled_ident(#(#args),*) #maybe_await {
                     ::anodized::result::Result::Ok(output) => output,
                     ::anodized::result::Result::Err(
-                        ::anodized::result::Error::Pre(errors)
-                    ) => panic!("precondition failed:{errors}"),
+                        ::anodized::result::Error::Pre
+                    ) => panic!("precondition failed"),
                     ::anodized::result::Result::Err(
-                        ::anodized::result::Error::Post(_, errors)
-                    ) => panic!("postcondition failed:{errors}"),
+                        ::anodized::result::Error::Post(_)
+                    ) => panic!("postcondition failed"),
                 }
             }
         };

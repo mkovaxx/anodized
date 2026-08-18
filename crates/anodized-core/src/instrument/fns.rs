@@ -126,8 +126,8 @@ impl Mode {
         for condition in requires.iter().chain(maintains) {
             let i = clauses.len();
             let name = Ident::new(&format!("__anodized_clause_{}", i + 1), Span::mixed_site());
-            let expr = &condition.expr;
-            statements.push(parse_quote! { let #name = (|| -> bool { #expr })(); });
+            let eval = build_cond_eval(&condition.expr);
+            statements.push(parse_quote! { let #name = #eval; });
             clauses.push(parse_quote! { #name });
         }
 
@@ -154,8 +154,8 @@ impl Mode {
         for condition in maintains {
             let i = clauses.len();
             let name = Ident::new(&format!("__anodized_clause_{}", i + 1), Span::mixed_site());
-            let expr = &condition.expr;
-            statements.push(parse_quote! { let #name = (|| -> bool { #expr })(); });
+            let eval = build_cond_eval(&condition.expr);
+            statements.push(parse_quote! { let #name = #eval; });
             clauses.push(parse_quote! { #name });
         }
 
@@ -173,13 +173,14 @@ impl Mode {
             let i = clauses.len();
             let name = Ident::new(&format!("__anodized_clause_{}", i + 1), Span::mixed_site());
             let expr = &postcond.expr;
-            if let Some(pat) = &postcond.pat {
-                statements.push(
-                    parse_quote! { let #name = (|#pat| -> bool { #expr })(__anodized_output); },
-                );
+            let eval = if let Some(pat) = &postcond.pat {
+                build_cond_eval(&parse_quote! {
+                    { let #pat = __anodized_output; #expr }
+                })
             } else {
-                statements.push(parse_quote! { let #name = (|| -> bool { #expr })(); });
-            }
+                build_cond_eval(expr)
+            };
+            statements.push(parse_quote! { let #name = #eval; });
             clauses.push(parse_quote! { #name });
         }
 
@@ -208,16 +209,14 @@ impl CheckSettings {
         let output_ident: Pat = parse_quote!(__anodized_output);
 
         // Generate precondition checks.
-        let mut precondition_clauses: Vec<Expr> = vec![];
+        let mut precond_checks: Vec<Stmt> = vec![parse_quote! {
+            let __anodized_pre = true;
+        }];
         for condition in spec.requires.iter().chain(&spec.maintains) {
-            let expr = &condition.expr;
-            let repr = expr.to_token_stream().to_string();
-            let expr = parse_quote! { __anodized_eval_pre(|| -> bool { #expr }) };
-            let clause = self.build_clause_eval(&condition.cfg, &expr, &repr);
-            precondition_clauses.push(clause);
-        }
-        if precondition_clauses.is_empty() {
-            precondition_clauses.push(parse_quote!(true));
+            let check = self.build_precond_check(&condition.cfg, &condition.expr);
+            precond_checks.push(parse_quote! {
+                let __anodized_pre = __anodized_pre & #check;
+            });
         }
 
         // Bind capture values and function output in a single tuple assignment.
@@ -248,29 +247,20 @@ impl CheckSettings {
         };
 
         // Generate postcondition checks.
-        let mut postcondition_clauses: Vec<Expr> = vec![];
+        let mut postcond_checks: Vec<Stmt> = vec![parse_quote! {
+            let __anodized_post = true;
+        }];
         for condition in &spec.maintains {
-            let expr = &condition.expr;
-            let repr = expr.to_token_stream().to_string();
-            let expr = parse_quote! { __anodized_eval_post(|| -> bool { #expr }) };
-            let clause = self.build_clause_eval(&condition.cfg, &expr, &repr);
-            postcondition_clauses.push(clause);
+            let check = self.build_postcond_check(&condition.cfg, &None, &condition.expr);
+            postcond_checks.push(parse_quote! {
+                let __anodized_post = __anodized_post & #check;
+            });
         }
         for postcond in &spec.ensures {
-            let expr = &postcond.expr;
-            let repr = expr.to_token_stream().to_string();
-            let expr = if let Some(pat) = &postcond.pat {
-                parse_quote! {
-                    __anodized_eval_post(|| -> bool { let #pat = #output_ident; #expr })
-                }
-            } else {
-                parse_quote! { __anodized_eval_post(|| -> bool { #expr }) }
-            };
-            let clause = self.build_clause_eval(&postcond.cfg, &expr, &repr);
-            postcondition_clauses.push(clause);
-        }
-        if postcondition_clauses.is_empty() {
-            postcondition_clauses.push(parse_quote!(true));
+            let check = self.build_postcond_check(&postcond.cfg, &postcond.pat, &postcond.expr);
+            postcond_checks.push(parse_quote! {
+                let __anodized_post = __anodized_post & #check;
+            });
         }
 
         let do_run_checks = self.does_print || self.does_panic.is_some();
@@ -281,12 +271,8 @@ impl CheckSettings {
             {
                 (
                     quote! { Ok(#output_ident) },
-                    Some(parse_quote! {
-                        return ::anodized::result::pre_err(__anodized_errors);
-                    }),
-                    Some(parse_quote! {
-                        return ::anodized::result::post_err(#output_ident, __anodized_errors);
-                    }),
+                    Some(parse_quote! { return ::anodized::result::pre_err(); }),
+                    Some(parse_quote! { return ::anodized::result::post_err(#output_ident); }),
                 )
             } else {
                 (
@@ -299,19 +285,15 @@ impl CheckSettings {
         Ok(parse_quote! {
             {
                 if #do_run_checks {
-                    fn __anodized_eval_pre(c: impl Fn() -> bool) -> bool { c() }
-                    let mut __anodized_errors = ::std::string::String::new();
-                    let __anodized_precond = #(#precondition_clauses)&*;
-                    if !__anodized_precond {
+                    #(#precond_checks)*
+                    if !__anodized_pre {
                         #precond_fail_action
                     }
                 }
                 #captures_and_output
                 if #do_run_checks {
-                    fn __anodized_eval_post(c: impl Fn() -> bool) -> bool { c() }
-                    let mut __anodized_errors = ::std::string::String::new();
-                    let __anodized_postcond = #(#postcondition_clauses)&*;
-                    if !__anodized_postcond {
+                    #(#postcond_checks)*
+                    if !__anodized_post {
                         #postcond_fail_action
                     }
                 }
@@ -320,28 +302,47 @@ impl CheckSettings {
         })
     }
 
-    fn build_clause_eval(&self, cfg: &Option<Meta>, expr: &Expr, repr: &str) -> Expr {
+    fn build_precond_check(&self, cfg: &Option<Meta>, expr: &Expr) -> Expr {
+        let repr = expr.to_token_stream().to_string();
+        let eval = build_cond_eval(expr);
+        self.build_cond_check("precondition failed: {}", cfg, &eval, &repr)
+    }
+
+    fn build_postcond_check(&self, cfg: &Option<Meta>, pat: &Option<Pat>, expr: &Expr) -> Expr {
+        let repr = expr.to_token_stream().to_string();
+        let eval = if let Some(pat) = pat {
+            build_cond_eval(&parse_quote! {
+                { let #pat = __anodized_output; #expr }
+            })
+        } else {
+            build_cond_eval(expr)
+        };
+        self.build_cond_check("postcondition failed: {}", cfg, &eval, &repr)
+    }
+
+    fn build_cond_check(&self, msg: &str, cfg: &Option<Meta>, expr: &Expr, repr: &str) -> Expr {
         if self.does_print {
-            let br_and_repr = format!("\n    {repr}");
             let cfg_guard = match cfg {
                 Some(meta) => quote! { !cfg!(#meta) || },
                 None => quote!(),
             };
-            parse_quote! { ( #cfg_guard #expr || __anodized_errors.push_str(#br_and_repr) != () ) }
+            parse_quote! {
+                ( #cfg_guard #expr || eprintln!(#msg, #repr) != () )
+            }
         } else {
             expr.clone()
         }
     }
 
     fn build_fail_action(&self, message: &str) -> Option<Stmt> {
-        let message_and_errors = format!("{message}:{{__anodized_errors}}");
-        match (self.does_print, self.does_panic.is_some()) {
-            (true, true) => Some(parse_quote! { panic!(#message_and_errors); }),
-            (true, false) => Some(parse_quote! { eprintln!(#message_and_errors); }),
-            (false, true) => Some(parse_quote! { panic!(#message); }),
-            (false, false) => None,
-        }
+        self.does_panic
+            .as_ref()
+            .map(|_| parse_quote! { panic!(#message); })
     }
+}
+
+fn build_cond_eval(expr: &Expr) -> Expr {
+    parse_quote! { ::anodized::__::eval::<bool>(|| #expr) }
 }
 
 pub(crate) fn make_try_fn_ident(ident: &Ident) -> Ident {

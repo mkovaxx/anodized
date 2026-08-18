@@ -23,13 +23,13 @@ pub use anodized_macros::try_call;
 pub type Result<T> = std::result::Result<T, Error<T>>;
 
 /// Construct a precondition failure.
-pub fn pre_err<T>(messages: Messages) -> Result<T> {
-    Result::Err(Error::Pre(messages))
+pub fn pre_err<T>() -> Result<T> {
+    Result::Err(Error::Pre)
 }
 
 /// Construct a postcondition failure.
-pub fn post_err<T>(output: T, messages: Messages) -> Result<T> {
-    Result::Err(Error::Post(output, messages))
+pub fn post_err<T>(output: T) -> Result<T> {
+    Result::Err(Error::Post(output))
 }
 
 pub use Error::Post as PostError;
@@ -38,9 +38,7 @@ pub use Error::Pre as PreError;
 /// Error that represents a pre/postcondition failure.
 pub enum Error<T> {
     /// Preconditions failed.
-    Pre(Messages),
+    Pre,
     /// Postconditions failed.
-    Post(T, Messages),
+    Post(T),
 }
-
-pub type Messages = String;

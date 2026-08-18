@@ -19,14 +19,12 @@ fn test_spec_property(inputs: Inputs<i32>) -> TestResult {
         // Successful call.
         Ok(_) => TestResult::passed(),
         // When preconditions are violated, reject the input.
-        Err(PreError(_)) => TestResult::discard(),
+        Err(PreError) => TestResult::discard(),
         // When postconditions are violated, fail to signal a counter-example.
-        Err(PostError(output, errors)) => {
-            eprintln!("inputs:");
-            dbg!(inputs.seq);
-            dbg!(inputs.value);
+        Err(PostError(output)) => {
+            dbg!(inputs);
             dbg!(output);
-            TestResult::error(format!("postcondition failed:{errors}"))
+            TestResult::error("postcondition failed")
         }
     }
 }
