@@ -126,10 +126,8 @@ impl Mode {
         for condition in requires.iter().chain(maintains) {
             let i = clauses.len();
             let name = Ident::new(&format!("__anodized_clause_{}", i + 1), Span::mixed_site());
-            let expr = &condition.expr;
-            statements.push(parse_quote! {
-                let #name = ::anodized::__::eval::<bool>(|| { #expr });
-            });
+            let eval = build_cond_eval(&condition.expr);
+            statements.push(parse_quote! { let #name = #eval; });
             clauses.push(parse_quote! { #name });
         }
 
@@ -156,10 +154,8 @@ impl Mode {
         for condition in maintains {
             let i = clauses.len();
             let name = Ident::new(&format!("__anodized_clause_{}", i + 1), Span::mixed_site());
-            let expr = &condition.expr;
-            statements.push(parse_quote! {
-                let #name = ::anodized::__::eval::<bool>(|| { #expr });
-            });
+            let eval = build_cond_eval(&condition.expr);
+            statements.push(parse_quote! { let #name = #eval; });
             clauses.push(parse_quote! { #name });
         }
 
@@ -177,17 +173,14 @@ impl Mode {
             let i = clauses.len();
             let name = Ident::new(&format!("__anodized_clause_{}", i + 1), Span::mixed_site());
             let expr = &postcond.expr;
-            if let Some(pat) = &postcond.pat {
-                statements.push(parse_quote! {
-                    let #name = ::anodized::__::eval::<bool>(|| {
-                        let #pat = __anodized_output; #expr
-                    });
-                });
+            let eval = if let Some(pat) = &postcond.pat {
+                build_cond_eval(&parse_quote! {
+                    { let #pat = __anodized_output; #expr }
+                })
             } else {
-                statements.push(parse_quote! {
-                    let #name = ::anodized::__::eval::<bool>(|| { #expr });
-                });
-            }
+                build_cond_eval(expr)
+            };
+            statements.push(parse_quote! { let #name = #eval; });
             clauses.push(parse_quote! { #name });
         }
 
@@ -222,10 +215,10 @@ impl CheckSettings {
         for condition in spec.requires.iter().chain(&spec.maintains) {
             let expr = &condition.expr;
             let repr = expr.to_token_stream().to_string();
-            let expr = parse_quote! { ::anodized::__::eval::<bool>(|| { #expr }) };
-            let eval = self.build_precond_eval(&condition.cfg, &expr, &repr);
+            let eval = build_cond_eval(expr);
+            let check = self.build_precond_check(&condition.cfg, &eval, &repr);
             precondition_checks.push(parse_quote! {
-                let __anodized_pre = __anodized_pre & #eval;
+                let __anodized_pre = __anodized_pre & #check;
             });
         }
 
@@ -263,25 +256,25 @@ impl CheckSettings {
         for condition in &spec.maintains {
             let expr = &condition.expr;
             let repr = expr.to_token_stream().to_string();
-            let expr = parse_quote! { ::anodized::__::eval::<bool>(|| { #expr }) };
-            let eval = self.build_postcond_eval(&condition.cfg, &expr, &repr);
+            let eval = build_cond_eval(expr);
+            let check = self.build_postcond_check(&condition.cfg, &eval, &repr);
             postcondition_checks.push(parse_quote! {
-                let __anodized_post = __anodized_post & #eval;
+                let __anodized_post = __anodized_post & #check;
             });
         }
         for postcond in &spec.ensures {
             let expr = &postcond.expr;
             let repr = expr.to_token_stream().to_string();
-            let expr = if let Some(pat) = &postcond.pat {
-                parse_quote! {
-                    ::anodized::__::eval::<bool>(|| { let #pat = #output_ident; #expr })
-                }
+            let eval = if let Some(pat) = &postcond.pat {
+                build_cond_eval(&parse_quote! {
+                    { let #pat = #output_ident; #expr }
+                })
             } else {
-                parse_quote! { ::anodized::__::eval::<bool>(|| { #expr }) }
+                build_cond_eval(expr)
             };
-            let eval = self.build_postcond_eval(&postcond.cfg, &expr, &repr);
+            let check = self.build_postcond_check(&postcond.cfg, &eval, &repr);
             postcondition_checks.push(parse_quote! {
-                let __anodized_post = __anodized_post & #eval;
+                let __anodized_post = __anodized_post & #check;
             });
         }
 
@@ -293,12 +286,8 @@ impl CheckSettings {
             {
                 (
                     quote! { Ok(#output_ident) },
-                    Some(parse_quote! {
-                        return ::anodized::result::pre_err();
-                    }),
-                    Some(parse_quote! {
-                        return ::anodized::result::post_err(#output_ident);
-                    }),
+                    Some(parse_quote! { return ::anodized::result::pre_err(); }),
+                    Some(parse_quote! { return ::anodized::result::post_err(#output_ident); }),
                 )
             } else {
                 (
@@ -328,15 +317,15 @@ impl CheckSettings {
         })
     }
 
-    fn build_precond_eval(&self, cfg: &Option<Meta>, expr: &Expr, repr: &str) -> Expr {
-        self.build_cond_eval("precondition failed: {}", cfg, expr, repr)
+    fn build_precond_check(&self, cfg: &Option<Meta>, expr: &Expr, repr: &str) -> Expr {
+        self.build_cond_check("precondition failed: {}", cfg, expr, repr)
     }
 
-    fn build_postcond_eval(&self, cfg: &Option<Meta>, expr: &Expr, repr: &str) -> Expr {
-        self.build_cond_eval("postcondition failed: {}", cfg, expr, repr)
+    fn build_postcond_check(&self, cfg: &Option<Meta>, expr: &Expr, repr: &str) -> Expr {
+        self.build_cond_check("postcondition failed: {}", cfg, expr, repr)
     }
 
-    fn build_cond_eval(&self, msg: &str, cfg: &Option<Meta>, expr: &Expr, repr: &str) -> Expr {
+    fn build_cond_check(&self, msg: &str, cfg: &Option<Meta>, expr: &Expr, repr: &str) -> Expr {
         if self.does_print {
             let cfg_guard = match cfg {
                 Some(meta) => quote! { !cfg!(#meta) || },
@@ -355,6 +344,10 @@ impl CheckSettings {
             .as_ref()
             .map(|_| parse_quote! { panic!(#message); })
     }
+}
+
+fn build_cond_eval(expr: &Expr) -> Expr {
+    parse_quote! { ::anodized::__::eval::<bool>(|| #expr) }
 }
 
 pub(crate) fn make_try_fn_ident(ident: &Ident) -> Ident {
