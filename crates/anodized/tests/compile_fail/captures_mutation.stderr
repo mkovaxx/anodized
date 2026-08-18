@@ -1,0 +1,11 @@
+error[E0596]: cannot borrow value as mutable, as it is a captured variable in a `Fn` closure
+  --> tests/compile_fail/captures_mutation.rs:8:23
+   |
+ 7 | / #[spec(
+ 8 | |     captures: first = input.pop(),
+   | |                       ^^^^^ cannot borrow as mutable
+ 9 | |     ensures: |output| output == first,
+10 | | )]
+   | |__- in this closure
+11 |   fn head(input: &mut Vec<i32>) -> Option<i32> {
+   |           ----- `*input` declared here, outside the closure
