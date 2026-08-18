@@ -209,7 +209,7 @@ impl CheckSettings {
         let output_ident: Pat = parse_quote!(__anodized_output);
 
         // Generate precondition checks.
-        let mut precondition_checks: Vec<Stmt> = vec![parse_quote! {
+        let mut precond_checks: Vec<Stmt> = vec![parse_quote! {
             let __anodized_pre = true;
         }];
         for condition in spec.requires.iter().chain(&spec.maintains) {
@@ -217,7 +217,7 @@ impl CheckSettings {
             let repr = expr.to_token_stream().to_string();
             let eval = build_cond_eval(expr);
             let check = self.build_precond_check(&condition.cfg, &eval, &repr);
-            precondition_checks.push(parse_quote! {
+            precond_checks.push(parse_quote! {
                 let __anodized_pre = __anodized_pre & #check;
             });
         }
@@ -250,7 +250,7 @@ impl CheckSettings {
         };
 
         // Generate postcondition checks.
-        let mut postcondition_checks: Vec<Stmt> = vec![parse_quote! {
+        let mut postcond_checks: Vec<Stmt> = vec![parse_quote! {
             let __anodized_post = true;
         }];
         for condition in &spec.maintains {
@@ -258,7 +258,7 @@ impl CheckSettings {
             let repr = expr.to_token_stream().to_string();
             let eval = build_cond_eval(expr);
             let check = self.build_postcond_check(&condition.cfg, &eval, &repr);
-            postcondition_checks.push(parse_quote! {
+            postcond_checks.push(parse_quote! {
                 let __anodized_post = __anodized_post & #check;
             });
         }
@@ -273,7 +273,7 @@ impl CheckSettings {
                 build_cond_eval(expr)
             };
             let check = self.build_postcond_check(&postcond.cfg, &eval, &repr);
-            postcondition_checks.push(parse_quote! {
+            postcond_checks.push(parse_quote! {
                 let __anodized_post = __anodized_post & #check;
             });
         }
@@ -300,14 +300,14 @@ impl CheckSettings {
         Ok(parse_quote! {
             {
                 if #do_run_checks {
-                    #(#precondition_checks)*
+                    #(#precond_checks)*
                     if !__anodized_pre {
                         #precond_fail_action
                     }
                 }
                 #captures_and_output
                 if #do_run_checks {
-                    #(#postcondition_checks)*
+                    #(#postcond_checks)*
                     if !__anodized_post {
                         #postcond_fail_action
                     }
