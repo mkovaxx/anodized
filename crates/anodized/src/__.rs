@@ -1,5 +1,6 @@
 //! Module for the internal use of `anodized_macros`.
 
-pub fn eval<T>(cond: impl Fn() -> T) -> T {
-    cond()
+/// Make the evaluated closure mutation-free by coercing it to `Fn`.
+pub fn eval<T>(closure: impl Fn() -> T) -> T {
+    closure()
 }
