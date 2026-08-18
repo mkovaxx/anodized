@@ -329,27 +329,21 @@ impl CheckSettings {
     }
 
     fn build_precond_eval(&self, cfg: &Option<Meta>, expr: &Expr, repr: &str) -> Expr {
-        if self.does_print {
-            let cfg_guard = match cfg {
-                Some(meta) => quote! { !cfg!(#meta) || },
-                None => quote!(),
-            };
-            parse_quote! {
-                ( #cfg_guard #expr || eprintln!("precondition failed: {}", #repr) != () )
-            }
-        } else {
-            expr.clone()
-        }
+        self.build_cond_eval("precondition failed: {}", cfg, expr, repr)
     }
 
     fn build_postcond_eval(&self, cfg: &Option<Meta>, expr: &Expr, repr: &str) -> Expr {
+        self.build_cond_eval("postcondition failed: {}", cfg, expr, repr)
+    }
+
+    fn build_cond_eval(&self, msg: &str, cfg: &Option<Meta>, expr: &Expr, repr: &str) -> Expr {
         if self.does_print {
             let cfg_guard = match cfg {
                 Some(meta) => quote! { !cfg!(#meta) || },
                 None => quote!(),
             };
             parse_quote! {
-                ( #cfg_guard #expr || eprintln!("postcondition failed: {}", #repr) != () )
+                ( #cfg_guard #expr || eprintln!(#msg, #repr) != () )
             }
         } else {
             expr.clone()
