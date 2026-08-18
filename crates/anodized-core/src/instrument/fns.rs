@@ -213,10 +213,7 @@ impl CheckSettings {
             let __anodized_pre = true;
         }];
         for condition in spec.requires.iter().chain(&spec.maintains) {
-            let expr = &condition.expr;
-            let repr = expr.to_token_stream().to_string();
-            let eval = build_cond_eval(expr);
-            let check = self.build_precond_check(&condition.cfg, &eval, &repr);
+            let check = self.build_precond_check(&condition.cfg, &condition.expr);
             precond_checks.push(parse_quote! {
                 let __anodized_pre = __anodized_pre & #check;
             });
@@ -254,25 +251,13 @@ impl CheckSettings {
             let __anodized_post = true;
         }];
         for condition in &spec.maintains {
-            let expr = &condition.expr;
-            let repr = expr.to_token_stream().to_string();
-            let eval = build_cond_eval(expr);
-            let check = self.build_postcond_check(&condition.cfg, &eval, &repr);
+            let check = self.build_postcond_check(&condition.cfg, &None, &condition.expr);
             postcond_checks.push(parse_quote! {
                 let __anodized_post = __anodized_post & #check;
             });
         }
         for postcond in &spec.ensures {
-            let expr = &postcond.expr;
-            let repr = expr.to_token_stream().to_string();
-            let eval = if let Some(pat) = &postcond.pat {
-                build_cond_eval(&parse_quote! {
-                    { let #pat = #output_ident; #expr }
-                })
-            } else {
-                build_cond_eval(expr)
-            };
-            let check = self.build_postcond_check(&postcond.cfg, &eval, &repr);
+            let check = self.build_postcond_check(&postcond.cfg, &postcond.pat, &postcond.expr);
             postcond_checks.push(parse_quote! {
                 let __anodized_post = __anodized_post & #check;
             });
@@ -317,12 +302,22 @@ impl CheckSettings {
         })
     }
 
-    fn build_precond_check(&self, cfg: &Option<Meta>, expr: &Expr, repr: &str) -> Expr {
-        self.build_cond_check("precondition failed: {}", cfg, expr, repr)
+    fn build_precond_check(&self, cfg: &Option<Meta>, expr: &Expr) -> Expr {
+        let repr = expr.to_token_stream().to_string();
+        let eval = build_cond_eval(expr);
+        self.build_cond_check("precondition failed: {}", cfg, &eval, &repr)
     }
 
-    fn build_postcond_check(&self, cfg: &Option<Meta>, expr: &Expr, repr: &str) -> Expr {
-        self.build_cond_check("postcondition failed: {}", cfg, expr, repr)
+    fn build_postcond_check(&self, cfg: &Option<Meta>, pat: &Option<Pat>, expr: &Expr) -> Expr {
+        let repr = expr.to_token_stream().to_string();
+        let eval = if let Some(pat) = pat {
+            build_cond_eval(&parse_quote! {
+                { let #pat = __anodized_output; #expr }
+            })
+        } else {
+            build_cond_eval(expr)
+        };
+        self.build_cond_check("postcondition failed: {}", cfg, &eval, &repr)
     }
 
     fn build_cond_check(&self, msg: &str, cfg: &Option<Meta>, expr: &Expr, repr: &str) -> Expr {
