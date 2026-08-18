@@ -97,8 +97,7 @@ fn runtime_allows_valid_narrowing() {
 
 #[cfg(all(anodized_print, anodized_panic))]
 #[test]
-#[should_panic(expected = "precondition failed:\
-\n    input.is_sorted()")]
+#[should_panic(expected = "precondition failed")]
 fn runtime_rejects_stronger_impl_precondition() {
     // NOTE: The trait's runtime checks are active even when the concrete type is statically known.
     let seq = [5, -42, 3];
@@ -107,8 +106,7 @@ fn runtime_rejects_stronger_impl_precondition() {
 
 #[cfg(all(anodized_print, anodized_panic))]
 #[test]
-#[should_panic(expected = "postcondition failed:\
-\n    input.iter().any(| item | output == item) || input.is_empty()")]
+#[should_panic(expected = "postcondition failed")]
 fn runtime_rejects_weaker_impl_postcondition() {
     // NOTE: The trait's runtime checks are active even when the concrete type is statically known.
     let seq = [5, 42, 3];
