@@ -59,7 +59,10 @@ fn embed_spec_item_fn() {
             let __anodized_clause_1 = ::anodized::__::eval::<bool>(|| COND_4);
             let __anodized_clause_2 = ::anodized::__::eval::<bool>(|| COND_5);
             let __anodized_clause_3 = ::anodized::__::eval::<bool>(|| COND_6);
-            let (ALIAS_1, (ALIAS_2, ALIAS_3)) = ((|| EXPR_1)(), (|| EXPR_2)());
+            let (ALIAS_1, (ALIAS_2, ALIAS_3)) = (
+                ::anodized::__::eval(|| EXPR_1),
+                ::anodized::__::eval(|| EXPR_2),
+            );
             let __anodized_clause_4 = ::anodized::__::eval::<bool>(|| { let PAT_1 = __anodized_output; COND_7 });
             let __anodized_clause_5 = ::anodized::__::eval::<bool>(|| { let PAT_1 = __anodized_output; COND_8 });
             let __anodized_clause_6 = ::anodized::__::eval::<bool>(|| { let PAT_1 = __anodized_output; COND_9 });
@@ -100,8 +103,8 @@ fn default_instrument_item_fn() {
                 if !__anodized_pre {}
             }
             let (ALIAS_1, (ALIAS_2, ALIAS_3), __anodized_output) = (
-                (|| EXPR_1)(),
-                (|| EXPR_2)(),
+                ::anodized::__::eval(|| EXPR_1),
+                ::anodized::__::eval(|| EXPR_2),
                 (|| -> RET_TYPE { BODY })(),
             );
             if false {
@@ -168,8 +171,8 @@ fn emit_try_fn_instrument_item_fn() {
                 }
             }
             let (ALIAS_1, (ALIAS_2, ALIAS_3), __anodized_output) = (
-                (|| EXPR_1)(),
-                (|| EXPR_2)(),
+                ::anodized::__::eval(|| EXPR_1),
+                ::anodized::__::eval(|| EXPR_2),
                 (|| -> RET_TYPE { BODY })(),
             );
             if true {
@@ -920,7 +923,11 @@ fn captures() {
                     panic!("precondition failed");
                 }
             }
-            let (ALIAS_1, ALIAS_2, __anodized_output) = ((|| EXPR_1) (), (|| EXPR_2) (), (|| #ret_type #body)());
+            let (ALIAS_1, ALIAS_2, __anodized_output) = (
+                ::anodized::__::eval(|| EXPR_1),
+                ::anodized::__::eval(|| EXPR_2),
+                (|| #ret_type #body)(),
+            );
             if true {
                 let __anodized_post = true;
                 let __anodized_post = __anodized_post & (::anodized::__::eval::<bool>(|| CONDITION_2)
