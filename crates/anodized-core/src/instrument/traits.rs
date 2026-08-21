@@ -2,10 +2,10 @@
 #[path = "traits_tests.rs"]
 mod traits_tests;
 
-use quote::quote;
 use syn::{
-    Attribute, Block, FnArg, ImplItem, ImplItemFn, Pat, ReturnType, TraitItem, TraitItemFn,
-    Visibility, parse_quote,
+    Attribute, Block, FnArg, ImplItem, ImplItemFn, Pat, PatConst, PatIdent, PatLit, PatParen,
+    PatPath, PatRange, PatSlice, PatStruct, PatTuple, PatTupleStruct, ReturnType, TraitItem,
+    TraitItemFn, Visibility, parse_quote,
 };
 
 use crate::{
@@ -353,39 +353,32 @@ Instead, ensure that both the trait and the impl fn have a `#[spec]` annotation.
 /// Build argument tokens for calling the mangled trait method from the wrapper.
 ///
 /// Purpose: the wrapper method needs to forward its arguments to the mangled
-/// implementation, so this extracts a usable token for each input.
+/// implementation, so this constructs a usable expression for each input.
 ///
-/// Examples (inputs -> output tokens):
-/// - `fn f(&self, x: i32)` -> `self, x`
-/// - `fn f(self, a: u8, b: u8)` -> `self, a, b`
+/// Examples (inputs -> argument expressions):
+/// - `fn f(&self, x: i32)` -> `self`, `x`
+/// - `fn f(self, a: u8, b: u8)` -> `self`, `a`, `b`
+/// - `fn f(input @ (left, right): (i32, i32))` -> `input`
+/// - `fn f(Bounds { lower, upper }: Bounds)` -> `Bounds { lower, upper }`
 ///
-/// The caller is responsible for ensuring these tokens are used in a call
-/// expression like `Self::__anodized_f(#(#args),*)`.
+/// The caller is responsible for ensuring these expressions are used in a call
+/// like `Self::__anodized_f(#(#args),*)`.
 ///
 /// Callers: only `instrument_trait` in this module should use this; it is not
 /// part of the public API.
 fn build_call_args(
     inputs: &syn::punctuated::Punctuated<FnArg, syn::Token![,]>,
-) -> syn::Result<Vec<proc_macro2::TokenStream>> {
-    let mut args = Vec::new();
-    for input in inputs.iter() {
-        match input {
-            FnArg::Receiver(_) => {
-                args.push(quote! { self });
+) -> syn::Result<Vec<syn::Expr>> {
+    let mut args = vec![];
+    for input in inputs {
+        let expr = match input {
+            FnArg::Receiver(_) => parse_quote!(self),
+            FnArg::Typed(pat_type) => {
+                let pat = sanitize_pat_as_expr(&pat_type.pat)?;
+                parse_quote!(#pat)
             }
-            FnArg::Typed(pat) => match pat.pat.as_ref() {
-                Pat::Ident(pat_ident) => {
-                    let ident = &pat_ident.ident;
-                    args.push(quote! { #ident });
-                }
-                _ => {
-                    return Err(syn::Error::new_spanned(
-                        &pat.pat,
-                        "unsupported pattern in trait method arguments",
-                    ));
-                }
-            },
-        }
+        };
+        args.push(expr);
     }
     Ok(args)
 }
@@ -402,4 +395,137 @@ fn mangle_ident(original_ident: &syn::Ident) -> syn::Ident {
 /// Checks to see if any `#[inline]` (with or without arg) exists in the function's attribs.
 fn has_inline_attr(attrs: &[syn::Attribute]) -> bool {
     attrs.iter().any(|attr| attr.path().is_ident("inline"))
+}
+
+/// Sanitize a pattern to be valid as an expression that reconstructs the matched value.
+fn sanitize_pat_as_expr(pat: &Pat) -> syn::Result<Pat> {
+    match pat {
+        Pat::Const(pat_const) => Ok(Pat::Const(PatConst {
+            attrs: vec![],
+            const_token: pat_const.const_token,
+            block: pat_const.block.clone(),
+        })),
+        Pat::Ident(pat_ident) if pat_ident.by_ref.is_none() => {
+            let None = pat_ident.by_ref else {
+                return Err(syn::Error::new_spanned(
+                    pat_ident.by_ref,
+                    "not allowed here due to `#[spec]`",
+                ));
+            };
+            Ok(Pat::Ident(PatIdent {
+                attrs: vec![],
+                by_ref: None,
+                mutability: None,
+                ident: pat_ident.ident.clone(),
+                subpat: None,
+            }))
+        }
+        Pat::Lit(pat_lit) => Ok(Pat::Lit(PatLit {
+            attrs: vec![],
+            lit: pat_lit.lit.clone(),
+        })),
+        Pat::Path(pat_path) => Ok(Pat::Path(PatPath {
+            attrs: vec![],
+            qself: pat_path.qself.clone(),
+            path: pat_path.path.clone(),
+        })),
+        Pat::Range(pat_range) => Ok(Pat::Range(PatRange {
+            attrs: vec![],
+            start: pat_range.start.clone(),
+            limits: pat_range.limits,
+            end: pat_range.end.clone(),
+        })),
+        Pat::Paren(pat_paren) => Ok(Pat::Paren(PatParen {
+            attrs: vec![],
+            paren_token: pat_paren.paren_token,
+            pat: sanitize_pat_as_expr(&pat_paren.pat)?.into(),
+        })),
+        Pat::Reference(pat_reference) => sanitize_pat_as_expr(&pat_reference.pat),
+        Pat::Type(pat_type) => sanitize_pat_as_expr(&pat_type.pat),
+        Pat::Struct(pat_struct) => {
+            let None = pat_struct.rest else {
+                return Err(syn::Error::new_spanned(
+                    &pat_struct.rest,
+                    "not allowed here due to `#[spec]`",
+                ));
+            };
+            let mut fields = syn::punctuated::Punctuated::<syn::FieldPat, syn::token::Comma>::new();
+            for field_pat in &pat_struct.fields {
+                let field_value = syn::FieldPat {
+                    attrs: vec![],
+                    member: field_pat.member.clone(),
+                    colon_token: field_pat.colon_token,
+                    pat: sanitize_pat_as_expr(&field_pat.pat)?.into(),
+                };
+                fields.push(field_value);
+            }
+            Ok(Pat::Struct(PatStruct {
+                attrs: vec![],
+                qself: pat_struct.qself.clone(),
+                path: pat_struct.path.clone(),
+                brace_token: pat_struct.brace_token,
+                fields,
+                rest: None,
+            }))
+        }
+        Pat::Tuple(pat_tuple) => {
+            let mut elems = syn::punctuated::Punctuated::<syn::Pat, syn::token::Comma>::new();
+            for elem_pat in &pat_tuple.elems {
+                let elem_value = sanitize_pat_as_expr(elem_pat)?;
+                elems.push(elem_value);
+            }
+            Ok(Pat::Tuple(PatTuple {
+                attrs: vec![],
+                paren_token: pat_tuple.paren_token,
+                elems,
+            }))
+        }
+        Pat::TupleStruct(pat_tuple_struct) => {
+            let mut elems = syn::punctuated::Punctuated::<syn::Pat, syn::token::Comma>::new();
+            for elem_pat in &pat_tuple_struct.elems {
+                let elem_value = sanitize_pat_as_expr(elem_pat)?;
+                elems.push(elem_value);
+            }
+            Ok(Pat::TupleStruct(PatTupleStruct {
+                attrs: vec![],
+                qself: pat_tuple_struct.qself.clone(),
+                path: pat_tuple_struct.path.clone(),
+                paren_token: pat_tuple_struct.paren_token,
+                elems,
+            }))
+        }
+        Pat::Slice(pat_slice) => {
+            let mut elems = syn::punctuated::Punctuated::<syn::Pat, syn::token::Comma>::new();
+            for elem_pat in &pat_slice.elems {
+                let elem_value = sanitize_pat_as_expr(elem_pat)?;
+                elems.push(elem_value);
+            }
+            Ok(Pat::Slice(PatSlice {
+                attrs: vec![],
+                bracket_token: pat_slice.bracket_token,
+                elems,
+            }))
+        }
+        Pat::Verbatim(token_stream) => Ok(Pat::Verbatim(token_stream.clone())),
+        Pat::Macro(pat_macro) => Err(syn::Error::new_spanned(
+            pat_macro,
+            "not allowed here due to `#[spec]`",
+        )),
+        Pat::Or(pat_or) => Err(syn::Error::new_spanned(
+            pat_or,
+            "or-pattern not allowed here due to `#[spec]`",
+        )),
+        Pat::Rest(pat_rest) => Err(syn::Error::new_spanned(
+            pat_rest,
+            "not allowed here due to `#[spec]`",
+        )),
+        Pat::Wild(pat_wild) => Err(syn::Error::new_spanned(
+            pat_wild,
+            "not allowed here due to `#[spec]`",
+        )),
+        _ => Err(syn::Error::new_spanned(
+            pat,
+            "not allowed here due to `#[spec]`",
+        )),
+    }
 }
