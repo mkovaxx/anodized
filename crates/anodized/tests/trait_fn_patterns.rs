@@ -17,9 +17,9 @@ trait Trait<T: Ord + Copy> {
     #[spec(
         requires: lower < upper,
         // NOTE: `T: Copy` is needed for this to work at the moment.
-        ensures: [
-            *output >= lower,
-            *output < upper,
+        ensures: |output| [
+            output >= lower,
+            output < upper,
         ],
     )]
     fn func_3((input, Bounds { lower, upper }): (T, Bounds<T>)) -> T {
