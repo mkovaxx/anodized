@@ -161,9 +161,11 @@ impl Mode {
 
         {
             let patterns = captures.iter().map(|capture| &capture.pat);
-            let values = captures
-                .iter()
-                .map(|capture| build_capture_eval(&capture.expr));
+            let values = captures.iter().map(|capture| -> Expr {
+                let expr = &capture.expr;
+                // Wrap in closure to guard against `return`.
+                parse_quote! { (|| #expr)() }
+            });
             statements.push(parse_quote! { let (#(#patterns),*) = (#(#values),*); });
         }
 
@@ -225,15 +227,19 @@ impl CheckSettings {
             .map(|cb| &cb.pat)
             .chain(std::iter::once(&output_ident));
 
-        let body_expr: Expr = if is_async {
-            parse_quote! { (async || #return_type #original_body)().await }
+        let body_expr = if is_async {
+            quote! { (async || #return_type #original_body)().await }
         } else {
-            parse_quote! { (|| #return_type #original_body)() }
+            quote! { (|| #return_type #original_body)() }
         };
         let values = spec
             .captures
             .iter()
-            .map(|cb| build_capture_eval(&cb.expr))
+            .map(|cb| {
+                let expr = &cb.expr;
+                // Evaluate expression in a closure to prevent early return.
+                quote! { (|| #expr)() }
+            })
             .chain(std::iter::once(body_expr));
 
         let captures_and_output = quote! {
@@ -337,10 +343,6 @@ impl CheckSettings {
 
 fn build_cond_eval(expr: &Expr) -> Expr {
     parse_quote! { ::anodized::__::eval::<bool>(|| #expr) }
-}
-
-fn build_capture_eval(expr: &Expr) -> Expr {
-    parse_quote! { ::anodized::__::eval(|| #expr) }
 }
 
 pub(crate) fn make_try_fn_ident(ident: &Ident) -> Ident {
