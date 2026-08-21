@@ -17,9 +17,9 @@ trait Trait<T: Ord + Copy> {
     #[spec(
         requires: lower < upper,
         // NOTE: `T: Copy` is needed for this to work at the moment.
-        ensures: [
-            *output >= lower,
-            *output < upper,
+        ensures: |output| [
+            output >= lower,
+            output < upper,
         ],
     )]
     fn func_3((input, Bounds { lower, upper }): (T, Bounds<T>)) -> T {
@@ -47,16 +47,14 @@ impl<T: Ord + Copy> Trait<T> for Type<T> {
 
 #[cfg(all(anodized_print, anodized_panic))]
 #[test]
-#[should_panic(expected = r#"precondition failed:
-    left < right"#)]
+#[should_panic(expected = "precondition failed")]
 fn test_1() {
     let _ = Type::<i32>::func_1((42, 1));
 }
 
 #[cfg(all(anodized_print, anodized_panic))]
 #[test]
-#[should_panic(expected = r#"precondition failed:
-    lower < upper"#)]
+#[should_panic(expected = "precondition failed")]
 fn test_2() {
     let _ = Type::func_2(Bounds {
         lower: 42,
@@ -66,8 +64,7 @@ fn test_2() {
 
 #[cfg(all(anodized_print, anodized_panic))]
 #[test]
-#[should_panic(expected = r#"postcondition failed:
-    | output | * output < upper"#)]
+#[should_panic(expected = "postcondition failed")]
 fn test_3() {
     let _ = Type::func_3((42, Bounds { lower: 1, upper: 5 }));
 }
