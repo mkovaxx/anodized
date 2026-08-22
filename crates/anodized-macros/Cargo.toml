@@ -14,8 +14,15 @@ license.workspace = true
 [lib]
 proc-macro = true
 
-[lints.rust]
-unexpected_cfgs = { level = "warn", check-cfg = ["cfg(anodized_discard_specs)", "cfg(anodized_panic)", "cfg(anodized_print)", "cfg(anodized_try)"] }
+[lints.rust.unexpected_cfgs]
+level = "warn"
+check-cfg = [
+    "cfg(anodized_check_data)",
+    "cfg(anodized_discard_specs)",
+    "cfg(anodized_panic)",
+    "cfg(anodized_print)",
+    "cfg(anodized_try)",
+]
 
 [dependencies]
 anodized-core.workspace = true

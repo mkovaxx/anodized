@@ -165,3 +165,40 @@ fn async_execution_order() {
         ]
     );
 }
+
+#[spec(maintains: { self.log.push(self.label); true })]
+struct TypeWithSpec<'a> {
+    label: &'static str,
+    log: &'a ExecLog,
+}
+
+#[spec]
+fn func_io<'a>(i1: TypeWithSpec<'a>, _: &mut TypeWithSpec, _: &TypeWithSpec) -> TypeWithSpec<'a> {
+    let o1 = TypeWithSpec {
+        label: "o1",
+        log: i1.log,
+    };
+    o1
+}
+
+#[cfg(any(anodized_panic, anodized_check_data))]
+#[test]
+fn data_check_execution_order() {
+    let log = ExecLog::new();
+
+    let i1 = TypeWithSpec {
+        label: "i1",
+        log: &log,
+    };
+    let mut i2 = TypeWithSpec {
+        label: "i2",
+        log: &log,
+    };
+    let i3 = TypeWithSpec {
+        label: "i3",
+        log: &log,
+    };
+    let _ = func_io(i1, &mut i2, &i3);
+
+    assert_eq!(log.into_vec(), ["i1", "i2", "i3", "i2", "o1"]);
+}
