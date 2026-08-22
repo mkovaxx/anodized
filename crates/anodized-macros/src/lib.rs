@@ -22,6 +22,7 @@ const CONFIG: Mode = if cfg!(anodized_discard_specs) {
         } else {
             None
         },
+        check_data: cfg!(anodized_check_data),
     })
 };
 

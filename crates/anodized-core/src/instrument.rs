@@ -29,6 +29,8 @@ pub struct CheckSettings {
     pub does_print: bool,
     /// Panic on a violated pre/postcondition or invariant.
     pub does_panic: Option<PanicSettings>,
+    /// Validate data type specs at function boundaries.
+    pub check_data: bool,
 }
 
 #[derive(Debug, Clone)]
@@ -227,21 +229,25 @@ impl CheckSettings {
     pub(crate) const DEFAULT: Self = Self {
         does_print: false,
         does_panic: None,
+        check_data: false,
     };
 
     pub(crate) const PRINT: Self = Self {
         does_print: true,
         does_panic: None,
+        check_data: false,
     };
 
     pub(crate) const PRINT_AND_PANIC: Self = Self {
         does_print: true,
         does_panic: Some(PanicSettings { has_try_fn: false }),
+        check_data: false,
     };
 
     pub(crate) const PRINT_AND_TRY: Self = Self {
         does_print: true,
         does_panic: Some(PanicSettings { has_try_fn: true }),
+        check_data: false,
     };
 }
 
