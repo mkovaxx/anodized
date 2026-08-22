@@ -108,11 +108,11 @@ impl<T1: Validated, T2: Validated, T3: Validated> Validated for (T1, T2, T3) {
     }
 }
 
-/// Implement `Refined` for concrete types, with `check_pre/post` always `true`.
-macro_rules! tautological_refinement {
+/// Implement `Validated` for concrete types, with `check_pre/post` always `true`.
+macro_rules! trivial_validation {
     ($($ty:ty),+ $(,)?) => {
         $(
-            impl $crate::refinement::Refined for $ty {
+            impl $crate::validate::Validated for $ty {
                 fn check_pre(&self) -> bool { true }
                 fn check_post(&self) -> bool { true }
             }
@@ -121,7 +121,7 @@ macro_rules! tautological_refinement {
 }
 
 #[rustfmt::skip]
-tautological_refinement!(
+trivial_validation!(
     bool,
     u8, u16, u32, u64, u128, usize,
     i8, i16, i32, i64, i128, isize,
