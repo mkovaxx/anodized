@@ -1,31 +1,32 @@
-pub trait Refined {
-    /// Called to validate
+pub trait Validated {
+    /// Called to validate an input on entry or the output on exit.
     fn check_pre(&self) -> bool;
+    /// Called to validate an input on exit.
     fn check_post(&self) -> bool;
 }
 
-impl<T: Refined> Refined for &T {
+impl<T: Validated> Validated for &T {
     fn check_pre(&self) -> bool {
-        <T as Refined>::check_pre(self)
+        <T as Validated>::check_pre(self)
     }
 
     fn check_post(&self) -> bool {
-        <T as Refined>::check_post(self)
+        <T as Validated>::check_post(self)
     }
 }
 
-impl<T: Refined> Refined for &mut T {
+impl<T: Validated> Validated for &mut T {
     fn check_pre(&self) -> bool {
-        <T as Refined>::check_pre(self)
+        <T as Validated>::check_pre(self)
     }
 
     fn check_post(&self) -> bool {
         // This is intentional, not a mistake. On `&mut T`, `check_post` forwards to `check_pre`.
-        <T as Refined>::check_pre(self)
+        <T as Validated>::check_pre(self)
     }
 }
 
-impl<T: Refined> Refined for Option<T> {
+impl<T: Validated> Validated for Option<T> {
     fn check_pre(&self) -> bool {
         match self {
             Some(inner) => inner.check_pre(),
@@ -41,7 +42,7 @@ impl<T: Refined> Refined for Option<T> {
     }
 }
 
-impl<T: Refined, E: Refined> Refined for Result<T, E> {
+impl<T: Validated, E: Validated> Validated for Result<T, E> {
     fn check_pre(&self) -> bool {
         match self {
             Ok(okay) => okay.check_pre(),
@@ -57,7 +58,7 @@ impl<T: Refined, E: Refined> Refined for Result<T, E> {
     }
 }
 
-impl<T: Refined> Refined for Box<T> {
+impl<T: Validated> Validated for Box<T> {
     fn check_pre(&self) -> bool {
         self.as_ref().check_pre()
     }
@@ -67,7 +68,7 @@ impl<T: Refined> Refined for Box<T> {
     }
 }
 
-impl Refined for () {
+impl Validated for () {
     fn check_pre(&self) -> bool {
         true
     }
@@ -77,7 +78,7 @@ impl Refined for () {
     }
 }
 
-impl<T1: Refined> Refined for (T1,) {
+impl<T1: Validated> Validated for (T1,) {
     fn check_pre(&self) -> bool {
         self.0.check_pre()
     }
@@ -87,7 +88,7 @@ impl<T1: Refined> Refined for (T1,) {
     }
 }
 
-impl<T1: Refined, T2: Refined> Refined for (T1, T2) {
+impl<T1: Validated, T2: Validated> Validated for (T1, T2) {
     fn check_pre(&self) -> bool {
         self.0.check_pre() && self.1.check_pre()
     }
@@ -97,7 +98,7 @@ impl<T1: Refined, T2: Refined> Refined for (T1, T2) {
     }
 }
 
-impl<T1: Refined, T2: Refined, T3: Refined> Refined for (T1, T2, T3) {
+impl<T1: Validated, T2: Validated, T3: Validated> Validated for (T1, T2, T3) {
     fn check_pre(&self) -> bool {
         self.0.check_pre() && self.1.check_pre() && self.2.check_pre()
     }
