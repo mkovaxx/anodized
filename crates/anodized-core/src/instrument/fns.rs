@@ -315,14 +315,18 @@ impl CheckSettings {
     }
 
     fn build_cond_check(&self, msg: &str, cfg: &Option<Meta>, expr: &Expr, repr: &str) -> Expr {
+        // The guard belongs to the condition, not to reporting: without it here, a
+        // `#[cfg]`-gated condition would still be checked whenever printing is disabled.
+        let cfg_guard = match cfg {
+            Some(meta) => quote! { !cfg!(#meta) || },
+            None => quote!(),
+        };
         if self.does_print {
-            let cfg_guard = match cfg {
-                Some(meta) => quote! { !cfg!(#meta) || },
-                None => quote!(),
-            };
             parse_quote! {
                 ( #cfg_guard #expr || eprintln!(#msg, #repr) != () )
             }
+        } else if cfg.is_some() {
+            parse_quote! { ( #cfg_guard #expr ) }
         } else {
             expr.clone()
         }

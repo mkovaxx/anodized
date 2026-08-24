@@ -95,11 +95,11 @@ fn default_instrument_item_fn() {
             if false {
                 let __anodized_pre = true;
                 let __anodized_pre = __anodized_pre & ::anodized::__::eval::<bool>(|| COND_1);
-                let __anodized_pre = __anodized_pre & ::anodized::__::eval::<bool>(|| COND_2);
-                let __anodized_pre = __anodized_pre & ::anodized::__::eval::<bool>(|| COND_3);
+                let __anodized_pre = __anodized_pre & (!cfg!(META_1) || ::anodized::__::eval::<bool>(|| COND_2));
+                let __anodized_pre = __anodized_pre & (!cfg!(META_1) || ::anodized::__::eval::<bool>(|| COND_3));
                 let __anodized_pre = __anodized_pre & ::anodized::__::eval::<bool>(|| COND_4);
                 let __anodized_pre = __anodized_pre & ::anodized::__::eval::<bool>(|| COND_5);
-                let __anodized_pre = __anodized_pre & ::anodized::__::eval::<bool>(|| COND_6);
+                let __anodized_pre = __anodized_pre & (!cfg!(META_2) || ::anodized::__::eval::<bool>(|| COND_6));
                 if !__anodized_pre {}
             }
             let (ALIAS_1, (ALIAS_2, ALIAS_3), __anodized_output) = (
@@ -111,10 +111,10 @@ fn default_instrument_item_fn() {
                 let __anodized_post = true;
                 let __anodized_post = __anodized_post & ::anodized::__::eval::<bool>(|| COND_4);
                 let __anodized_post = __anodized_post & ::anodized::__::eval::<bool>(|| COND_5);
-                let __anodized_post = __anodized_post & ::anodized::__::eval::<bool>(|| COND_6);
+                let __anodized_post = __anodized_post & (!cfg!(META_2) || ::anodized::__::eval::<bool>(|| COND_6));
                 let __anodized_post = __anodized_post & ::anodized::__::eval::<bool>(|| { let PAT_1 = __anodized_output; COND_7 });
-                let __anodized_post = __anodized_post & ::anodized::__::eval::<bool>(|| { let PAT_1 = __anodized_output; COND_8 });
-                let __anodized_post = __anodized_post & ::anodized::__::eval::<bool>(|| { let PAT_1 = __anodized_output; COND_9 });
+                let __anodized_post = __anodized_post & (!cfg!(META_3) || ::anodized::__::eval::<bool>(|| { let PAT_1 = __anodized_output; COND_8 }));
+                let __anodized_post = __anodized_post & (!cfg!(META_3) || ::anodized::__::eval::<bool>(|| { let PAT_1 = __anodized_output; COND_9 }));
                 if !__anodized_post {}
             }
             __anodized_output
