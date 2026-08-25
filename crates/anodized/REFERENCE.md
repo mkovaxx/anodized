@@ -30,7 +30,7 @@ RUSTFLAGS="--cfg anodized_print" cargo test
 
 Disable embedding the specs as Rust code.
 
-**Important:** This has **no effect on runtime performance** because the embedded specs are always dead code. On the other hand, it **prevents syntax/type checking** specs, so it may decrease compilation time.
+**Important:** This is the only configuration in which a spec costs exactly nothing. Conditions are dead code whenever checks are disabled, but `captures` expressions are bound alongside the body and so are evaluated on every call regardless — a `.clone()` in a capture is a real clone. Discarding specs also **prevents syntax/type checking** them, so it may decrease compilation time.
 
 ## Runtime Checks
 
@@ -67,12 +67,12 @@ use anodized::spec;
 
     // Runtime checks only in debug builds (like `debug_assert!`)
     #[cfg(debug_assertions)]
-    ensures: output.is_ok(),
+    ensures: |ref output| output.is_ok(),
 )]
 fn perform_complex_operation(input: i32) -> Result<i32, String> { todo!() }
 ```
 
-The `#[cfg]` attribute follows standard Rust semantics: when the configuration predicate is false, the runtime check for the condition is completely omitted.
+The `#[cfg]` attribute follows standard Rust semantics: when the configuration predicate is false, the runtime check for the condition is completely omitted. This holds in every build configuration that runs checks, whether or not `anodized_print` is enabled.
 
 **Important:** Anodized guarantees that each condition remains syntactically valid and type-correct regardless of its `#[cfg]` settings. This prevents conditions from becoming invalid between different build configurations, and keeps the entire spec always visible to analysis tools.
 
@@ -115,7 +115,7 @@ use anodized::spec;
     // Invariant: length never exceeds capacity
     maintains: vec.len() <= vec.capacity(),
 )]
-fn push_checked<T>(vec: &mut Vec<T>, value: T) { todo!() }
+fn push_checked<T>(vec: &mut Vec<T>, value: T) { vec.push(value) }
 ```
 
 ### `captures`: Capture Entry-Time Values
@@ -126,6 +126,7 @@ Sometimes postconditions need to compare the function's final state with its ini
 use anodized::spec;
 
 #[spec(
+    requires: !items.is_empty(),
     captures: [
         // Copy types: captured directly
         orig_len = items.len(),
@@ -187,6 +188,7 @@ reconstructed.
 use anodized::spec;
 
 #[spec(
+    requires: input < i32::MAX - 1,
     // Bind the return value to `output` for the entire group of postconditions.
     ensures: |output| [
         output > input,
@@ -223,7 +225,7 @@ fn sort_pair(pair: (i32, i32)) -> (i32, i32) { todo!() }
 use anodized::spec;
 
 #[spec(
-    requires: *balance >= amount,
+    requires: amount >= 0 && *balance >= amount,
     maintains: *balance >= 0,
     captures: initial_balance = *balance,
     ensures: |(new_balance, receipt_amount)| [
@@ -232,7 +234,7 @@ use anodized::spec;
         *balance == new_balance,
     ],
 )]
-fn withdraw(balance: &mut u64, amount: u64) -> (u64, u64) { todo!() }
+fn withdraw(balance: &mut i64, amount: i64) -> (i64, i64) { todo!() }
 ```
 
 ### Loop Specs
@@ -250,9 +252,10 @@ Loop specs support the following fields:
 use anodized::spec;
 
 #[spec(
-    ensures: [
-        seq.iter().any(|elem| elem == output),
-        seq.iter().all(|elem| elem <= output),
+    requires: !seq.is_empty(),
+    ensures: |output| [
+        seq.iter().any(|elem| *elem == output),
+        seq.iter().all(|elem| *elem <= output),
     ],
 )]
 fn find_maximum(seq: &[u8]) -> u8 {
@@ -278,10 +281,10 @@ use anodized::spec;
 
 #[spec(
     requires: seq.is_sorted(),
-    ensures: [
-        *output <= seq.len(),
-        seq[0..*output].iter().all(|item| item < value),
-        seq[*output..].iter().all(|item| item >= value),
+    ensures: |output| [
+        output <= seq.len(),
+        seq[0..output].iter().all(|item| item < value),
+        seq[output..].iter().all(|item| item >= value),
     ],
 )]
 fn find_insert_position<T: Ord>(seq: &[T], value: &T) -> usize {
@@ -323,6 +326,7 @@ trait MonotonicGenerator {
     fn current(&self) -> i32;
 
     #[spec(
+        requires: self.current() < i32::MAX,
         captures: old_val = self.current(),
         ensures: self.current() > old_val,
     )]
@@ -386,7 +390,6 @@ use anodized::spec;
         Descending(vec) => vec.iter().rev().is_sorted(),
     }
 )]
-#[allow(unused)]
 enum MonotonicVec<T: Ord> {
     Ascending(Vec<T>),
     Descending(Vec<T>),
