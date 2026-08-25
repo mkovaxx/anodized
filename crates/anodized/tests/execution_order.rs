@@ -174,11 +174,10 @@ struct TypeWithSpec<'a> {
 
 #[spec]
 fn func_io<'a>(i1: TypeWithSpec<'a>, _: &mut TypeWithSpec, _: &TypeWithSpec) -> TypeWithSpec<'a> {
-    let o1 = TypeWithSpec {
+    TypeWithSpec {
         label: "o1",
         log: i1.log,
-    };
-    o1
+    }
 }
 
 #[cfg(any(anodized_panic, anodized_check_data))]
