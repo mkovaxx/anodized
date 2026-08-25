@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## Unreleased
+
+### Fixed
+
+- **[anodized-core] `#[cfg]` on a condition is honored in every check mode** - The guard was
+  emitted only alongside the printing path, so a condition gated off by its `#[cfg]` was still
+  checked under `--cfg anodized_panic` without `--cfg anodized_print`.
+
 ## 0.6.0 (2026 Aug 08)
 
 ### Breaking Changes
