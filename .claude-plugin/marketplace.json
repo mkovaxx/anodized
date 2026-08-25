@@ -1,0 +1,32 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "anodized",
+  "owner": {
+    "name": "anodized-rs"
+  },
+  "metadata": {
+    "description": "The Anodized agent skill: write and review `#[spec]` specifications in Rust."
+  },
+  "plugins": [
+    {
+      "name": "anodized",
+      "source": "./plugins/anodized",
+      "description": "Write, review, and debug Anodized `#[spec]` specifications on Rust functions, traits, loops, structs, and enums, and run the runtime-check build configurations.",
+      "version": "0.6.0",
+      "author": {
+        "name": "anodized-rs"
+      },
+      "homepage": "https://github.com/anodized-rs/anodized",
+      "repository": "https://github.com/anodized-rs/anodized",
+      "license": "MIT OR Apache-2.0",
+      "category": "development",
+      "keywords": [
+        "anodized",
+        "rust",
+        "specification",
+        "design-by-contract",
+        "verification"
+      ]
+    }
+  ]
+}
