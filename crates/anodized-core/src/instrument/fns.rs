@@ -315,16 +315,21 @@ impl CheckSettings {
     }
 
     fn build_cond_check(&self, msg: &str, cfg: &Option<Meta>, expr: &Expr, repr: &str) -> Expr {
-        if self.does_print {
-            let cfg_guard = match cfg {
-                Some(meta) => quote! { !cfg!(#meta) || },
-                None => quote!(),
-            };
-            parse_quote! {
-                ( #cfg_guard #expr || eprintln!(#msg, #repr) != () )
-            }
+        let cfg_guard = match cfg {
+            Some(meta) => quote! { !cfg!(#meta) || },
+            None => quote!(),
+        };
+        let report_expr = if self.does_print {
+            quote! { || eprintln!(#msg, #repr) != () }
         } else {
+            quote!()
+        };
+        if cfg_guard.is_empty() && report_expr.is_empty() {
             expr.clone()
+        } else {
+            parse_quote! {
+                ( #cfg_guard #expr #report_expr )
+            }
         }
     }
 
