@@ -110,6 +110,25 @@ jobs:
       - name: Integration test anodized-logic
         run: cargo test -p anodized-logic --tests --no-fail-fast
 
+  test-skill-tools:
+    name: Lint and test skill-tools
+    runs-on: ubuntu-latest
+    needs: fmt
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@1.95.0
+        with:
+          components: clippy
+
+      - name: Lint skill-tools
+        run: cargo clippy -p skill-tools --all-targets -- -D warnings
+
+      - name: Validate the agent skill and plugin manifests
+        run: cargo test -p skill-tools --tests --no-fail-fast
+
   test-test-util:
     name: Lint test-util
     runs-on: ubuntu-latest

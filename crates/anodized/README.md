@@ -80,19 +80,44 @@ fn percentage_10_over_0() {
 }
 ```
 
-Use the `anodized_panic` setting to instrument the code with runtime checks.
+Use the `anodized_panic` setting to instrument the code with runtime checks. Add
+`anodized_print` to have the failing condition named as well.
 
 ```bash
-RUSTFLAGS="--cfg anodized_panic" cargo test
+RUSTFLAGS="--cfg anodized_print --cfg anodized_panic" cargo test
 ```
 
-A spec violation will cause a panic with a descriptive error message:
+A spec violation reports the condition, then panics:
 
 ```text
-thread 'main' panicked at 'Precondition failed: part <= whole', src/main.rs:17:5
+precondition failed: part <= whole
+precondition failed: whole > 0.0
+thread 'main' panicked at src/main.rs:3:1:
+precondition failed
 ```
 
+Conditions are checked independently rather than short-circuiting, so every violated one is
+reported before the panic.
+
 For more details and other approaches, see [The Anodized Reference](https://github.com/anodized-rs/anodized/blob/main/crates/anodized/REFERENCE.md).
+
+## Using Anodized with a Coding Agent
+
+Anodized ships an agent skill, so an assistant writes current `#[spec]` syntax instead of guessing from other contract systems.
+
+```sh
+# Claude Code
+claude plugin marketplace add anodized-rs/anodized
+claude plugin install anodized@anodized
+
+# Codex
+codex plugin marketplace add anodized-rs/anodized
+codex plugin add anodized@anodized
+```
+
+The skill loads by itself when you mention Anodized or `#[spec]`. It also adds two commands: `/anodized:spec` to add specs to code you point it at, and `/anodized:check` to run your tests under every build configuration.
+
+Using an agent with no plugin support? Point it at [the skill directory](https://github.com/anodized-rs/anodized/tree/main/plugins/anodized/skills/anodized).
 
 ## Why Anodized
 
