@@ -143,9 +143,9 @@ fn check_data_instrument_item_fn() {
             if false {
                 let __anodized_pre = true;
                 let __anodized_pre = __anodized_pre &
-                    <TYPE_1 as ::anodized::validate::Validated>::check_pre(IN_PAT_1);
+                    <TYPE_1 as ::anodized::refine::Refined>::predicate(IN_PAT_1);
                 let __anodized_pre = __anodized_pre &
-                    <TYPE_2 as ::anodized::validate::Validated>::check_pre(IN_PAT_2);
+                    <TYPE_2 as ::anodized::refine::Refined>::predicate(IN_PAT_2);
                 let __anodized_pre = __anodized_pre & ::anodized::__::eval::<bool>(|| COND_1);
                 let __anodized_pre = __anodized_pre & ::anodized::__::eval::<bool>(|| COND_2);
                 if !__anodized_pre {}
@@ -154,11 +154,11 @@ fn check_data_instrument_item_fn() {
             if false {
                 let __anodized_post = true;
                 let __anodized_post = __anodized_post &
-                    <TYPE_1 as ::anodized::validate::Validated>::check_post(IN_PAT_1);
+                    <TYPE_1 as ::anodized::refine::Refined>::predicate(IN_PAT_1);
                 let __anodized_post = __anodized_post &
-                    <TYPE_2 as ::anodized::validate::Validated>::check_post(IN_PAT_2);
+                    <TYPE_2 as ::anodized::refine::Refined>::predicate(IN_PAT_2);
                 let __anodized_post = __anodized_post &
-                    <RET_TYPE as ::anodized::validate::Validated>::check_pre(__anodized_output);
+                    <RET_TYPE as ::anodized::refine::Refined>::predicate(__anodized_output);
                 let __anodized_post = __anodized_post & ::anodized::__::eval::<bool>(|| COND_2);
                 let __anodized_post = __anodized_post &
                     ::anodized::__::eval::<bool>(|| { let OUT_PAT = __anodized_output; COND_3 });
