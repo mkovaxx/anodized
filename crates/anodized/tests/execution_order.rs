@@ -199,5 +199,5 @@ fn data_check_execution_order() {
     };
     let _ = func_io(i1, &mut i2, &i3);
 
-    assert_eq!(log.into_vec(), ["i1", "i2", "i3", "i2", "o1"]);
+    assert_eq!(log.into_vec(), ["i1", "i2", "i3", "o1", "i1", "i2", "i3"]);
 }
