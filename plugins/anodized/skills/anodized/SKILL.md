@@ -372,27 +372,16 @@ Check it compiles with `cargo check`, then run the suite with checks live
 (`RUSTFLAGS="--cfg anodized_panic" cargo test`). Format with `anodized-fmt` if available.
 Finally re-read: delete any clause that only repeats the type.
 
-If a check fires, fix the side that is wrong — the caller for a precondition, the body for a
-postcondition. Edit the spec only when it was genuinely wrong, and mind which direction.
+When a check fires, never edit a clause just to make it pass. Three things can be wrong — the
+call site, the spec, or the body — and a repair names exactly one of them as wrong, taking the
+other two as correct. A `precondition failed` usually points at the call site or the `requires`
+and a `postcondition failed` at the body or the spec, but neither rules its third candidate out
+entirely. Edit the spec only when the spec is what is wrong, and say which you decided it was.
 
-A postcondition that overclaimed may be weakened, or the precondition strengthened to exclude
-the inputs where the guarantee fails; both keep the spec true of the code. A precondition that
-was too strong may be weakened, but only once you have checked that the body really handles
-the inputs it was rejecting — that is a new claim, not a relaxation. Weakening a precondition
-cannot break an existing caller; the other two edits can.
-
-First check which clause actually failed, because the message does not say. A `maintains`
-clause is checked on entry and again on exit, and it reports as `precondition failed` on the
-way in and `postcondition failed` on the way out. So a `precondition failed` naming a
-`maintains` clause is not a precondition at all, and weakening it is not the safe edit —
-it relaxes the exit guarantee too.
-
-Only `anodized_print` puts the failing expression in the message; under `anodized_panic` alone
-you get the bare text and a location pointing at the attribute, which names the function but
-not the clause. Reproduce with both flags before deciding what failed. Matching the quoted
-expression usually identifies the clause, though it cannot when two clauses are textually
-identical, and the message reprints the tokens with normalized spacing. Say what you changed
-and why.
+Read `diagnostics.md` before acting on a failure: it carries the full model, and the message
+alone is not enough to act on — it does not name the kind of clause that broke, only
+`anodized_print` names the expression at all, and under that flag execution continues, so later
+failures may be fallout from the first.
 
 ## Reference files
 

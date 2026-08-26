@@ -31,36 +31,20 @@ What each pass proves:
 | `print` + `panic` | both, the usual configuration for a test suite |
 | `print` + `panic` + `try` | additionally enables `try_call!` |
 
-Report the results as a table of pass versus outcome. For any failure:
+Report the results as a table of pass versus outcome. A compile error only under
+`anodized_discard_specs` means real code depends on something a spec brought into scope.
 
-- `precondition failed: <expr>` — the **caller** violated the contract. Fix the call site, or
-  the precondition if it was wrong.
-- `postcondition failed: <expr>` — the **implementation** violated its own contract. Fix the
-  body, or the postcondition if it was wrong.
-- A compile error only under `anodized_discard_specs` means real code depends on something a
-  spec brought into scope.
+Never edit a clause just to make a pass go green. Which of three things is wrong — the call
+site, the spec, or the body — decides the repair, and a repair names exactly one of them,
+taking the other two as correct. A `precondition failed` points at the call site or a
+too-strong `requires`; a `postcondition failed` points at the body or an overclaiming spec.
 
-Never edit a clause just to make a pass go green. Which edit is legitimate depends on which
-kind of check fired.
+Two things the message does not tell you. A `maintains` clause is checked on entry and exit
+and reports as `precondition failed` one way and `postcondition failed` the other, so a
+`precondition failed` may name an invariant. And only the `anodized_print` passes name the
+failing expression, so reproduce with both flags before diagnosing — under `anodized_print`
+execution also continues, so trust the first failure and presume the rest is fallout.
 
-A **postcondition** failure means the spec is false of the code. If the clause overclaimed,
-weaken the postcondition, or strengthen the precondition so it no longer covers the inputs
-where the guarantee does not hold. Either keeps the spec true without re-examining the body.
-
-A **precondition** failure means a caller broke an obligation; the spec is not thereby false
-of the code, so the usual repair is at the call site. Weaken the precondition only when the
-body demonstrably handles the input it rejected — that is a new claim about the body, so
-verify it rather than assuming it.
-
-Only the passes with `anodized_print` name the failing expression; `anodized_panic` alone
-reports the bare text, so reproduce with both before diagnosing.
-
-Before applying any of that, check which clause failed, because the message does not say. A
-`maintains` clause is checked twice and reports as `precondition failed` on entry and
-`postcondition failed` on exit, so a `precondition failed` may name an invariant rather than a
-`requires`. Weakening a `maintains` relaxes the exit guarantee as well as the entry condition,
-so it is not the safe edit that weakening a true precondition is.
-
-Note who each edit can hurt: weakening a genuine precondition cannot break an existing caller,
-while strengthening a precondition, weakening a postcondition, or weakening an invariant can.
-Say what you changed and why.
+The skill's `diagnostics.md` carries the full model, including which candidate each failure
+rarely but genuinely admits, and which edits can break an existing caller. Read it before
+changing a clause, and say what you changed and why.

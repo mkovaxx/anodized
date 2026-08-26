@@ -136,9 +136,58 @@ which kind of clause you are looking at — bearing in mind that the expression 
 under `anodized_print`; `anodized_panic` alone reports the bare text with a location pointing
 at the attribute, which identifies the function but not the clause.
 
-One consequence worth knowing under `anodized_print`, which continues after a violation: an
-invariant already false on entry is reported again on exit, so a `postcondition failed` does
-not always mean the body misbehaved — the body may never have had a valid starting state.
+Match it by reading, not by searching. The message reprints the condition from the parsed
+tokens, so spacing is normalized and rarely matches your source — `!data.is_empty()` is
+reported as `! data.is_empty()`. And when two clauses are textually identical, the expression
+cannot tell them apart at all.
+
+`anodized_print` continues after a violation, which makes the reports after the first
+unreliable. Trust the first and presume the rest is fallout until it is fixed. A violated
+`requires` lets the body run on input it was meant to exclude, so whatever fails next is
+usually downstream of that rather than an independent defect; and an invariant already false on
+entry is simply reported a second time on exit. Either way a `postcondition failed` does not
+always mean the body misbehaved — it may never have had a valid starting state.
+
+## Repairing what failed
+
+Never edit a clause just to make a check pass. Three things can be wrong — the call site, the
+spec, or the body — and a repair names exactly one of them as wrong, taking the other two as
+correct. Diagnosing two at once is how a spec stops describing the code and starts restating
+it. Edits may still cascade: strengthening a `requires` obliges you to fix the callers that
+relied on the looser contract, but each of those takes the corrected spec as ground truth.
+
+The failure narrows three candidates to two:
+
+| Failure | Either | Rarely |
+| --- | --- | --- |
+| `precondition failed` | the call site broke a correct obligation, or `requires` is too strong | the body |
+| `postcondition failed` | the body is wrong, or the spec overclaims | the call site |
+
+The last column is rare rather than impossible. An entry-side `maintains` failure reports as
+`precondition failed`, and the state it objects to may have been left there by an earlier call
+into the same code; under `anodized_print` a later report may be fallout from any of that.
+
+Reach for the call site or the body first. Edit the spec only when the spec is the thing that
+is wrong, and say which one you decided it was. Weakening a `requires` asserts that the body
+handles inputs it used to reject — a new claim about the body, to be verified rather than
+assumed. Where a postcondition overclaims, the alternative to weakening it is strengthening
+`requires` so the guarantee no longer covers the failing inputs.
+
+Of every edit named here, weakening a genuine precondition is the only one that cannot break an
+existing caller.
+
+Deciding which of the three is wrong is the hard part, and the message alone rarely settles it.
+What usually does is context around the failure:
+
+- Several call sites break the same clause, and each looked reasonable — suspect the spec. A
+  contract nobody can satisfy is usually the contract's fault.
+- One call site breaks it while others honor it — suspect that call site.
+- The clause contradicts what the function's name or documentation promises — suspect the
+  clause; one of the two was written later and they have drifted apart.
+- The spec is older than the last change to the body — suspect the body, and check whether the
+  change was meant to alter the contract.
+- The failure appeared with no change to any of the three — suspect state reached through a
+  reference, which makes the culprit some earlier call rather than this one.
 
 Under `--cfg anodized_print` the message goes to stderr and execution continues. Under
 `--cfg anodized_panic` it panics. Enabling both — the usual choice for a test suite — gives
