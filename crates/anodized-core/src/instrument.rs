@@ -232,6 +232,12 @@ impl CheckSettings {
         check_data: false,
     };
 
+    pub(crate) const CHECK_DATA: Self = Self {
+        does_print: false,
+        does_panic: None,
+        check_data: true,
+    };
+
     pub(crate) const PRINT: Self = Self {
         does_print: true,
         does_panic: None,

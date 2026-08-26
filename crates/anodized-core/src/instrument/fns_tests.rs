@@ -126,6 +126,55 @@ fn default_instrument_item_fn() {
 }
 
 #[test]
+fn check_data_instrument_item_fn() {
+    let fn_spec: Spec = parse_quote! {
+        requires: COND_1,
+        maintains: COND_2,
+        ensures: |OUT_PAT| COND_3,
+    };
+    let item_fn: ItemFn = parse_quote! {
+        fn FUNC(IN_PAT_1: TYPE_1, IN_PAT_2: TYPE_2) -> RET_TYPE {
+            BODY
+        }
+    };
+
+    let expected: TokenStream = parse_quote! {
+        fn FUNC(IN_PAT_1: TYPE_1, IN_PAT_2: TYPE_2) -> RET_TYPE {
+            if false {
+                let __anodized_pre = true;
+                let __anodized_pre = __anodized_pre &
+                    <TYPE_1 as ::anodized::validate::Validated>::check_pre(IN_PAT_1);
+                let __anodized_pre = __anodized_pre &
+                    <TYPE_2 as ::anodized::validate::Validated>::check_pre(IN_PAT_2);
+                let __anodized_pre = __anodized_pre & ::anodized::__::eval::<bool>(|| COND_1);
+                let __anodized_pre = __anodized_pre & ::anodized::__::eval::<bool>(|| COND_2);
+                if !__anodized_pre {}
+            }
+            let (__anodized_output) = ((|| -> RET_TYPE { BODY })());
+            if false {
+                let __anodized_post = true;
+                let __anodized_post = __anodized_post &
+                    <TYPE_1 as ::anodized::validate::Validated>::check_post(IN_PAT_1);
+                let __anodized_post = __anodized_post &
+                    <TYPE_2 as ::anodized::validate::Validated>::check_post(IN_PAT_2);
+                let __anodized_post = __anodized_post &
+                    <RET_TYPE as ::anodized::validate::Validated>::check_pre(__anodized_output);
+                let __anodized_post = __anodized_post & ::anodized::__::eval::<bool>(|| COND_2);
+                let __anodized_post = __anodized_post &
+                    ::anodized::__::eval::<bool>(|| { let OUT_PAT = __anodized_output; COND_3 });
+                if !__anodized_post {}
+            }
+            __anodized_output
+        }
+    };
+
+    let observed = Mode::InjectChecks(CheckSettings::CHECK_DATA)
+        .instrument_item_fn(fn_spec, item_fn)
+        .unwrap();
+    assert_tokens_eq(&observed, &expected);
+}
+
+#[test]
 fn emit_try_fn_instrument_item_fn() {
     let fn_spec = make_complex_spec();
     let item_fn: ItemFn = parse_quote! {
