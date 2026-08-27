@@ -131,6 +131,64 @@ fn struct_with_ref_and_move_is_err() {
 }
 
 #[test]
+fn tuple_struct_with_move_and_wild_is_inv() {
+    let pat: Pat = parse_quote! { Point(x, _) };
+    let expected = Ok(TamePat::Invertible(
+        parse_quote! { Point(x, __anodized_ident_1) },
+    ));
+
+    let mut id_gen = IdentGenerator::new();
+    let observed = tame_pattern(&mut id_gen, pat);
+    assert_tame_pat_eq(&observed, &expected);
+}
+
+#[test]
+fn tuple_struct_with_ref_and_wild_is_brw() {
+    let pat: Pat = parse_quote! { Point(ref x, _) };
+    let expected = Ok(TamePat::Borrowing(parse_quote! { Point(ref x, _) }));
+
+    let mut id_gen = IdentGenerator::new();
+    let observed = tame_pattern(&mut id_gen, pat);
+    assert_tame_pat_eq(&observed, &expected);
+}
+
+#[test]
+fn tuple_struct_with_ref_and_rest_is_brw() {
+    let pat: Pat = parse_quote! { Point(ref x, ..) };
+    let expected = Ok(TamePat::Borrowing(parse_quote! { Point(ref x, ..) }));
+
+    let mut id_gen = IdentGenerator::new();
+    let observed = tame_pattern(&mut id_gen, pat);
+    assert_tame_pat_eq(&observed, &expected);
+}
+
+#[test]
+fn tuple_struct_with_move_and_rest_is_err() {
+    let pat: Pat = parse_quote! { Point(x, ..) };
+    let expected = Err(syn::Error::new_spanned(
+        &pat,
+        "unsupported inside `#[spec]`",
+    ));
+
+    let mut id_gen = IdentGenerator::new();
+    let observed = tame_pattern(&mut id_gen, pat);
+    assert_tame_pat_eq(&observed, &expected);
+}
+
+#[test]
+fn tuple_struct_with_ref_and_move_is_err() {
+    let pat: Pat = parse_quote! { Point(ref x, y) };
+    let expected = Err(syn::Error::new_spanned(
+        &pat,
+        "unsupported inside `#[spec]`",
+    ));
+
+    let mut id_gen = IdentGenerator::new();
+    let observed = tame_pattern(&mut id_gen, pat);
+    assert_tame_pat_eq(&observed, &expected);
+}
+
+#[test]
 fn slice_with_move_and_wild_is_inv() {
     let pat: Pat = parse_quote! { [first, _] };
     let expected = Ok(TamePat::Invertible(
