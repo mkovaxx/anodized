@@ -1,1 +1,71 @@
+use syn::{Pat, parse_quote};
 
+use crate::{
+    instrument::patterns::{IdentGenerator, TamePat, tame_pattern},
+    test_util::assert_tame_pat_eq,
+};
+
+#[test]
+fn ident_is_inv() {
+    let pat: Pat = parse_quote! { ident };
+    let expected = Ok(TamePat::Invertible(parse_quote! { ident }));
+
+    let mut id_gen = IdentGenerator::new();
+    let observed = tame_pattern(&mut id_gen, pat);
+    assert_tame_pat_eq(&observed, &expected);
+}
+
+#[test]
+fn ref_ident_is_brw() {
+    let pat: Pat = parse_quote! { ref ident };
+    let expected = Ok(TamePat::Borrowing(parse_quote! { ref ident }));
+
+    let mut id_gen = IdentGenerator::new();
+    let observed = tame_pattern(&mut id_gen, pat);
+    assert_tame_pat_eq(&observed, &expected);
+}
+
+#[test]
+fn only_wild_is_brw() {
+    let pat: Pat = parse_quote! { _ };
+    let expected = Ok(TamePat::Borrowing(parse_quote! { _ }));
+
+    let mut id_gen = IdentGenerator::new();
+    let observed = tame_pattern(&mut id_gen, pat);
+    assert_tame_pat_eq(&observed, &expected);
+}
+
+#[test]
+fn pair_of_ref_and_move_is_err() {
+    let pat: Pat = parse_quote! { (ref a, b) };
+    let expected = Err(syn::Error::new_spanned(
+        &pat,
+        "unsupported inside `#[spec]`",
+    ));
+
+    let mut id_gen = IdentGenerator::new();
+    let observed = tame_pattern(&mut id_gen, pat);
+    assert_tame_pat_eq(&observed, &expected);
+}
+
+#[test]
+fn pair_of_ref_and_wild_is_brw() {
+    let pat: Pat = parse_quote! { (ref a, _) };
+    let expected = Ok(TamePat::Borrowing(parse_quote! { (ref a, _) }));
+
+    let mut id_gen = IdentGenerator::new();
+    let observed = tame_pattern(&mut id_gen, pat);
+    assert_tame_pat_eq(&observed, &expected);
+}
+
+#[test]
+fn pair_of_move_and_wild_is_inv() {
+    let pat: Pat = parse_quote! { (a, _) };
+    let expected = Ok(TamePat::Invertible(
+        parse_quote! { (a, __anodized_ident_1) },
+    ));
+
+    let mut id_gen = IdentGenerator::new();
+    let observed = tame_pattern(&mut id_gen, pat);
+    assert_tame_pat_eq(&observed, &expected);
+}

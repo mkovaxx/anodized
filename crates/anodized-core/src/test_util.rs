@@ -1,4 +1,4 @@
-use crate::{Capture, Condition, PostCondition, Spec};
+use crate::{Capture, Condition, PostCondition, Spec, instrument::patterns::TamePat};
 use pretty_assertions::assert_eq;
 use quote::{ToTokens, quote};
 
@@ -163,4 +163,24 @@ fn assert_capture_eq(left: &Capture, right: &Capture, msg_prefix: &str) {
         "{}`alias` does not match",
         msg_prefix
     );
+}
+
+pub fn assert_tame_pat_eq(left: &syn::Result<TamePat>, right: &syn::Result<TamePat>) {
+    assert_eq!(
+        stringify_tame_pat(left),
+        stringify_tame_pat(right),
+        "tame patterns does not match"
+    );
+}
+
+fn stringify_tame_pat(tame_pat: &syn::Result<TamePat>) -> String {
+    let tokens = match tame_pat {
+        Ok(TamePat::Borrowing(brw_pat)) => quote! { brw #brw_pat },
+        Ok(TamePat::Invertible(inv_pat)) => quote! { inv #inv_pat },
+        Err(err) => {
+            let msg = err.to_string();
+            quote! { err #msg }
+        }
+    };
+    tokens.to_string()
 }

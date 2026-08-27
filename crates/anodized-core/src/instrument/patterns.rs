@@ -6,6 +6,7 @@ use syn::{Ident, Pat, PatIdent, visit_mut::VisitMut};
 mod patterns_tests;
 
 /// A 'tame' pattern can be used inside a `#[spec]`.
+#[derive(Debug, PartialEq, Eq)]
 pub enum TamePat {
     /// The pattern binds only references. It may contain wildcard patterns (`_`).
     Borrowing(Pat),
@@ -19,8 +20,8 @@ pub enum TamePat {
 /// 2. If the pattern binds *any* references or contains the rest pattern (`..`), return `Err`.
 /// 3. Replace each wildcard pattern with fresh identifiers, then classify as `Invertible`.
 pub fn tame_pattern(id_gen: &mut IdentGenerator, mut pat: Pat) -> syn::Result<TamePat> {
-    let mut ident_count = 0;
-    let mut ref_count = 0;
+    let mut ident_count: u32 = 0;
+    let mut ref_count: u32 = 0;
     let mut has_rest = false;
     ForEachMutPattern::with(|subpat| match subpat {
         Pat::Ident(subpat_ident) => {
@@ -34,14 +35,13 @@ pub fn tame_pattern(id_gen: &mut IdentGenerator, mut pat: Pat) -> syn::Result<Ta
     })
     .visit_pat_mut(&mut pat);
 
+    dbg!(ident_count);
+    dbg!(ref_count);
+    dbg!(has_rest);
+
     if ident_count == ref_count {
         Ok(TamePat::Borrowing(pat))
-    } else if has_rest {
-        Err(syn::Error::new_spanned(
-            pat,
-            "`..` not allowed in pattern inside `#[spec]`",
-        ))
-    } else {
+    } else if ref_count == 0 && !has_rest {
         ForEachMutPattern::with(|subpat| {
             if let Pat::Wild(subpat_wild) = subpat {
                 *subpat = Pat::Ident(PatIdent {
@@ -56,6 +56,8 @@ pub fn tame_pattern(id_gen: &mut IdentGenerator, mut pat: Pat) -> syn::Result<Ta
         .visit_pat_mut(&mut pat);
 
         Ok(TamePat::Invertible(pat))
+    } else {
+        Err(syn::Error::new_spanned(pat, "unsupported inside `#[spec]`"))
     }
 }
 
@@ -65,7 +67,7 @@ pub struct IdentGenerator {
 
 impl IdentGenerator {
     pub fn new() -> Self {
-        Self { index: 1 }
+        Self { index: 0 }
     }
 
     pub fn generate_next(&mut self) -> Ident {
