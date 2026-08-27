@@ -169,7 +169,7 @@ pub fn assert_tame_pat_eq(left: &syn::Result<TamePat>, right: &syn::Result<TameP
     assert_eq!(
         stringify_tame_pat(left),
         stringify_tame_pat(right),
-        "tame patterns does not match"
+        "tame patterns do not match"
     );
 }
 
