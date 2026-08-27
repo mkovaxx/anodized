@@ -21,39 +21,44 @@ pub enum PatClass {
 /// 2. If the pattern binds *any* references or contains the rest pattern (`..`), return `Err`.
 /// 3. Replace each wildcard pattern with fresh identifiers, then classify as `Invertible`.
 pub fn classify_pattern(id_gen: &mut IdentGenerator, mut pat: Pat) -> syn::Result<PatClass> {
-    let mut collector = BindingCollector::new();
-    collector.visit_pat_mut(&mut pat);
+    let mut ident_count = 0;
+    let mut ref_count = 0;
+    let mut has_rest = false;
+    ForEachMutPattern::with(|subpat| match subpat {
+        Pat::Ident(subpat_ident) => {
+            ident_count += 1;
+            if subpat_ident.by_ref.is_some() {
+                ref_count += 1;
+            }
+        }
+        Pat::Rest(_) => has_rest = true,
+        _ => {}
+    })
+    .visit_pat_mut(&mut pat);
 
-    let has_only_refs = collector.bindings.iter().all(|binding| match binding {
-        Pat::Ident(pat_ident) => pat_ident.by_ref.is_some(),
-        _ => true,
-    });
-    if has_only_refs {
-        return Ok(PatClass::Borrowing(pat));
-    }
-
-    for binding in collector.bindings {
-        match binding {
-            Pat::Ident(pat_ident) if pat_ident.by_ref.is_none() => todo!(),
-            Pat::Wild(pat_wild) => {
-                *binding = Pat::Ident(PatIdent {
-                    attrs: pat_wild.attrs.clone(),
+    if ident_count == ref_count {
+        Ok(PatClass::Borrowing(pat))
+    } else if has_rest {
+        Err(syn::Error::new_spanned(
+            pat,
+            "`..` not allowed in pattern inside `#[spec]`",
+        ))
+    } else {
+        ForEachMutPattern::with(|subpat| {
+            if let Pat::Wild(subpat_wild) = subpat {
+                *subpat = Pat::Ident(PatIdent {
+                    attrs: subpat_wild.attrs.clone(),
                     by_ref: None,
                     mutability: None,
                     ident: id_gen.next(),
                     subpat: None,
-                })
+                });
             }
-            _ => {
-                return Err(syn::Error::new_spanned(
-                    binding,
-                    "not supported inside `#[spec]`",
-                ));
-            }
-        }
-    }
+        })
+        .visit_pat_mut(&mut pat);
 
-    Ok(PatClass::Invertible(pat))
+        Ok(PatClass::Invertible(pat))
+    }
 }
 
 pub struct IdentGenerator {
@@ -74,17 +79,28 @@ impl IdentGenerator {
     }
 }
 
-struct BindingCollector<'a> {
-    pub bindings: Vec<&'a mut Pat>,
+struct ForEachMutPattern<F> {
+    body: F,
 }
 
-impl BindingCollector<'_> {
-    pub fn new() -> Self {
-        Self { bindings: vec![] }
+impl<F> ForEachMutPattern<F>
+where
+    F: FnMut(&mut Pat),
+{
+    pub fn with(body: F) -> Self {
+        Self { body }
     }
 }
 
-impl<'a> VisitMut for BindingCollector<'a> {}
+impl<F> VisitMut for ForEachMutPattern<F>
+where
+    F: FnMut(&mut Pat),
+{
+    fn visit_pat_mut(&mut self, pat: &mut syn::Pat) {
+        (self.body)(pat);
+        syn::visit_mut::visit_pat_mut(self, pat);
+    }
+}
 
 /// Sanitize a pattern to be valid as an expression that reconstructs the matched value.
 pub fn sanitize_pat_as_expr(pat: &Pat) -> syn::Result<Pat> {
