@@ -14,7 +14,7 @@ use crate::{
     Capture, Condition, PostCondition, Spec,
     instrument::{
         CheckSettings, Mode,
-        patterns::{IdentGenerator, PatClass, classify_pattern},
+        patterns::{IdentGenerator, TamePat, tame_pattern},
     },
     qualifiers::FnQualifiers,
 };
@@ -254,12 +254,12 @@ impl CheckSettings {
             postcond_checks.push(check);
         }
         for postcond in &spec.ensures {
-            let classified_pat = if let Some(pat) = &postcond.pat {
-                Some(classify_pattern(&mut id_gen, pat.clone())?)
+            let tame_pat = if let Some(pat) = &postcond.pat {
+                Some(tame_pattern(&mut id_gen, pat.clone())?)
             } else {
                 None
             };
-            let check = self.build_postcond_check(&postcond.cfg, &classified_pat, &postcond.expr);
+            let check = self.build_postcond_check(&postcond.cfg, &tame_pat, &postcond.expr);
             postcond_checks.push(check);
         }
 
@@ -311,12 +311,12 @@ impl CheckSettings {
     fn build_postcond_check(
         &self,
         cfg: &Option<Meta>,
-        pat: &Option<PatClass>,
+        tame_pat: &Option<TamePat>,
         expr: &Expr,
     ) -> Stmt {
         let repr = expr.to_token_stream().to_string();
-        match pat {
-            Some(PatClass::Borrowing(brw_pat)) => {
+        match tame_pat {
+            Some(TamePat::Borrowing(brw_pat)) => {
                 let eval = build_cond_eval(&parse_quote! {
                     { let #brw_pat = __anodized_output; #expr }
                 });
@@ -325,7 +325,7 @@ impl CheckSettings {
                     __anodized_post = __anodized_post & #check;
                 }
             }
-            Some(PatClass::Invertible(inv_pat)) => {
+            Some(TamePat::Invertible(inv_pat)) => {
                 let eval = build_cond_eval(expr);
                 let check = self.build_cond_check("postcondition failed: {}", cfg, &eval, &repr);
                 parse_quote! {

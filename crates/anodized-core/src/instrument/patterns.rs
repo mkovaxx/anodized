@@ -5,19 +5,20 @@ use syn::{Ident, Pat, PatIdent, visit_mut::VisitMut};
 #[path = "patterns_tests.rs"]
 mod patterns_tests;
 
-pub enum PatClass {
+/// A 'tame' pattern can be used inside a `#[spec]`.
+pub enum TamePat {
     /// The pattern binds only references. It may contain wildcard patterns (`_`).
     Borrowing(Pat),
     /// The deconstructed value can be reconstructed from the pattern's bindings.
     Invertible(Pat),
 }
 
-/// Preprocess an irrefutable pattern, so that it may be used inside a `#[spec]`.
+/// Tame an irrefutable pattern, so that it may be used inside a `#[spec]`.
 ///
 /// 1. If the pattern binds *only* references, classify as `Borrowing`.
 /// 2. If the pattern binds *any* references or contains the rest pattern (`..`), return `Err`.
 /// 3. Replace each wildcard pattern with fresh identifiers, then classify as `Invertible`.
-pub fn classify_pattern(id_gen: &mut IdentGenerator, mut pat: Pat) -> syn::Result<PatClass> {
+pub fn tame_pattern(id_gen: &mut IdentGenerator, mut pat: Pat) -> syn::Result<TamePat> {
     let mut ident_count = 0;
     let mut ref_count = 0;
     let mut has_rest = false;
@@ -34,7 +35,7 @@ pub fn classify_pattern(id_gen: &mut IdentGenerator, mut pat: Pat) -> syn::Resul
     .visit_pat_mut(&mut pat);
 
     if ident_count == ref_count {
-        Ok(PatClass::Borrowing(pat))
+        Ok(TamePat::Borrowing(pat))
     } else if has_rest {
         Err(syn::Error::new_spanned(
             pat,
@@ -54,7 +55,7 @@ pub fn classify_pattern(id_gen: &mut IdentGenerator, mut pat: Pat) -> syn::Resul
         })
         .visit_pat_mut(&mut pat);
 
-        Ok(PatClass::Invertible(pat))
+        Ok(TamePat::Invertible(pat))
     }
 }
 
