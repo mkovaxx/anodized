@@ -102,10 +102,10 @@ fn default_instrument_item_trait() {
                 let (mut __anodized_output) = ((|| -> RET_TYPE { Self::__anodized_FUNC(self, PARAM_1, PARAM_2) })());
                 if false {
                     let mut __anodized_post = true;
-                    __anodized_post = __anodized_post & ::anodized::__::eval::<bool>(|| COND_2);
+                    __anodized_post &= ::anodized::__::eval::<bool>(|| COND_2);
                     {
                         let PAT_1 = __anodized_output;
-                        __anodized_post = __anodized_post & ::anodized::__::eval::<bool>(|| COND_3);
+                        __anodized_post &= ::anodized::__::eval::<bool>(|| COND_3);
                         __anodized_output = PAT_1;
                     }
                     if !__anodized_post {}
@@ -183,11 +183,11 @@ fn emit_try_fn_instrument_item_trait() {
                 let (mut __anodized_output) = ((|| -> RET_TYPE { Self::__anodized_FUNC(self, PARAM_1, PARAM_2) })());
                 if true {
                     let mut __anodized_post = true;
-                    __anodized_post = __anodized_post & (::anodized::__::eval::<bool>(|| COND_2)
+                    __anodized_post &= (::anodized::__::eval::<bool>(|| COND_2)
                             || eprintln!("postcondition failed: {}", "COND_2") != ());
                     {
                         let PAT_1 = __anodized_output;
-                        __anodized_post = __anodized_post & (::anodized::__::eval::<bool>(|| COND_3)
+                        __anodized_post &= (::anodized::__::eval::<bool>(|| COND_3)
                             || eprintln!("postcondition failed: {}", "COND_3") != ());
                         __anodized_output = PAT_1;
                     }
@@ -300,10 +300,10 @@ fn default_instrument_item_impl_trait() {
                 let (mut __anodized_output) = ((|| -> RET_TYPE { BODY })());
                 if false {
                     let mut __anodized_post = true;
-                    __anodized_post = __anodized_post & ::anodized::__::eval::<bool>(|| COND_2);
+                    __anodized_post &= ::anodized::__::eval::<bool>(|| COND_2);
                     {
                         let PAT_1 = __anodized_output;
-                        __anodized_post = __anodized_post & ::anodized::__::eval::<bool>(|| COND_3);
+                        __anodized_post &= ::anodized::__::eval::<bool>(|| COND_3);
                         __anodized_output = PAT_1;
                     }
                     if !__anodized_post {}
@@ -365,11 +365,11 @@ fn emit_try_fn_instrument_item_impl_trait() {
                 let (mut __anodized_output) = ((|| -> RET_TYPE { BODY })());
                 if true {
                     let mut __anodized_post = true;
-                    __anodized_post = __anodized_post & (::anodized::__::eval::<bool>(|| COND_2)
+                    __anodized_post &= (::anodized::__::eval::<bool>(|| COND_2)
                             || eprintln!("postcondition failed: {}", "COND_2") != ());
                     {
                         let PAT_1 = __anodized_output;
-                        __anodized_post = __anodized_post & (::anodized::__::eval::<bool>(|| COND_3)
+                        __anodized_post &= (::anodized::__::eval::<bool>(|| COND_3)
                             || eprintln!("postcondition failed: {}", "COND_3") != ());
                         __anodized_output = PAT_1;
                     }
