@@ -1,11 +1,90 @@
+use proc_macro2::Span;
 use syn::{
-    Pat, PatConst, PatIdent, PatLit, PatParen, PatPath, PatRange, PatSlice, PatStruct, PatTuple,
-    PatTupleStruct,
+    Ident, Pat, PatConst, PatIdent, PatLit, PatParen, PatPath, PatRange, PatSlice, PatStruct,
+    PatTuple, PatTupleStruct, visit_mut::VisitMut,
 };
 
 #[cfg(test)]
 #[path = "patterns_tests.rs"]
 mod patterns_tests;
+
+pub enum PatClass {
+    /// The pattern binds only references. It may contain wildcard patterns (`_`).
+    Borrowing(Pat),
+    /// The deconstructed value can be reconstructed from the pattern's bindings.
+    Invertible(Pat),
+}
+
+/// Preprocess an irrefutable pattern, so that it may be used inside a `#[spec]`.
+///
+/// 1. If the pattern binds *only* references, classify as `Borrowing`.
+/// 2. If the pattern binds *any* references or contains the rest pattern (`..`), return `Err`.
+/// 3. Replace each wildcard pattern with fresh identifiers, then classify as `Invertible`.
+pub fn classify_pattern(id_gen: &mut IdentGenerator, mut pat: Pat) -> syn::Result<PatClass> {
+    let mut collector = BindingCollector::new();
+    collector.visit_pat_mut(&mut pat);
+
+    let has_only_refs = collector.bindings.iter().all(|binding| match binding {
+        Pat::Ident(pat_ident) => pat_ident.by_ref.is_some(),
+        _ => true,
+    });
+    if has_only_refs {
+        return Ok(PatClass::Borrowing(pat));
+    }
+
+    for binding in collector.bindings {
+        match binding {
+            Pat::Ident(pat_ident) if pat_ident.by_ref.is_none() => todo!(),
+            Pat::Wild(pat_wild) => {
+                *binding = Pat::Ident(PatIdent {
+                    attrs: pat_wild.attrs.clone(),
+                    by_ref: None,
+                    mutability: None,
+                    ident: id_gen.next(),
+                    subpat: None,
+                })
+            }
+            _ => {
+                return Err(syn::Error::new_spanned(
+                    binding,
+                    "not supported inside `#[spec]`",
+                ));
+            }
+        }
+    }
+
+    Ok(PatClass::Invertible(pat))
+}
+
+pub struct IdentGenerator {
+    index: usize,
+}
+
+impl IdentGenerator {
+    pub fn new() -> Self {
+        Self { index: 1 }
+    }
+
+    pub fn next(&mut self) -> Ident {
+        self.index += 1;
+        syn::Ident::new(
+            &format!("__anodized_ident_{}", self.index),
+            Span::mixed_site(),
+        )
+    }
+}
+
+struct BindingCollector<'a> {
+    pub bindings: Vec<&'a mut Pat>,
+}
+
+impl BindingCollector<'_> {
+    pub fn new() -> Self {
+        Self { bindings: vec![] }
+    }
+}
+
+impl<'a> VisitMut for BindingCollector<'a> {}
 
 /// Sanitize a pattern to be valid as an expression that reconstructs the matched value.
 pub fn sanitize_pat_as_expr(pat: &Pat) -> syn::Result<Pat> {
