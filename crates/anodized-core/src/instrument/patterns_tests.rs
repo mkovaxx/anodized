@@ -211,6 +211,51 @@ fn slice_with_ref_and_wild_is_brw() {
 }
 
 #[test]
+fn slice_with_ref_and_rest_is_brw() {
+    let pat: Pat = parse_quote! { [.., ref last] };
+    let expected = Ok(TamePat::Borrowing(parse_quote! { [.., ref last] }));
+
+    let mut id_gen = IdentGenerator::new();
+    let observed = tame_pattern(&mut id_gen, pat);
+    assert_tame_pat_eq(&observed, &expected);
+}
+
+#[test]
+fn slice_with_move_and_rest_is_err() {
+    let pat: Pat = parse_quote! { [first, ..] };
+    let expected = Err(syn::Error::new_spanned(
+        &pat,
+        "unsupported inside `#[spec]`",
+    ));
+
+    let mut id_gen = IdentGenerator::new();
+    let observed = tame_pattern(&mut id_gen, pat);
+    assert_tame_pat_eq(&observed, &expected);
+}
+
+#[test]
+fn slice_with_refs_on_both_sides_of_rest_is_brw() {
+    let pat: Pat = parse_quote! { [ref first, ref inside @ .., ref last] };
+    let expected = Ok(TamePat::Borrowing(
+        parse_quote! { [ref first, ref inside @ .., ref last] },
+    ));
+
+    let mut id_gen = IdentGenerator::new();
+    let observed = tame_pattern(&mut id_gen, pat);
+    assert_tame_pat_eq(&observed, &expected);
+}
+
+#[test]
+fn slice_with_only_rest_is_brw() {
+    let pat: Pat = parse_quote! { [..] };
+    let expected = Ok(TamePat::Borrowing(parse_quote! { [..] }));
+
+    let mut id_gen = IdentGenerator::new();
+    let observed = tame_pattern(&mut id_gen, pat);
+    assert_tame_pat_eq(&observed, &expected);
+}
+
+#[test]
 fn slice_with_ref_and_move_is_err() {
     let pat: Pat = parse_quote! { [ref first, second] };
     let expected = Err(syn::Error::new_spanned(
