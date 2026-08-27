@@ -71,6 +71,41 @@ fn pair_of_move_and_wild_is_inv() {
 }
 
 #[test]
+fn tuple_with_refs_on_both_sides_of_rest_is_brw() {
+    let pat: Pat = parse_quote! { (ref first, .., ref last) };
+    let expected = Ok(TamePat::Borrowing(
+        parse_quote! { (ref first, .., ref last) },
+    ));
+
+    let mut id_gen = IdentGenerator::new();
+    let observed = tame_pattern(&mut id_gen, pat);
+    assert_tame_pat_eq(&observed, &expected);
+}
+
+#[test]
+fn tuple_with_moves_on_both_sides_of_rest_is_err() {
+    let pat: Pat = parse_quote! { (first, .., last) };
+    let expected = Err(syn::Error::new_spanned(
+        &pat,
+        "unsupported inside `#[spec]`",
+    ));
+
+    let mut id_gen = IdentGenerator::new();
+    let observed = tame_pattern(&mut id_gen, pat);
+    assert_tame_pat_eq(&observed, &expected);
+}
+
+#[test]
+fn tuple_with_only_rest_is_brw() {
+    let pat: Pat = parse_quote! { (..) };
+    let expected = Ok(TamePat::Borrowing(parse_quote! { (..) }));
+
+    let mut id_gen = IdentGenerator::new();
+    let observed = tame_pattern(&mut id_gen, pat);
+    assert_tame_pat_eq(&observed, &expected);
+}
+
+#[test]
 fn struct_with_move_and_wild_is_inv() {
     let pat: Pat = parse_quote! { Point { x, y: _ } };
     let expected = Ok(TamePat::Invertible(
