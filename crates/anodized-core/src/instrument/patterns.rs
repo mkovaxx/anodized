@@ -35,10 +35,6 @@ pub fn tame_pattern(id_gen: &mut IdentGenerator, mut pat: Pat) -> syn::Result<Ta
     })
     .visit_pat_mut(&mut pat);
 
-    dbg!(ident_count);
-    dbg!(ref_count);
-    dbg!(has_rest);
-
     if ident_count == ref_count {
         Ok(TamePat::Borrowing(pat))
     } else if ref_count == 0 && !has_rest {
