@@ -84,9 +84,9 @@ fn struct_with_move_and_wild_is_inv() {
 
 #[test]
 fn struct_with_ref_and_wild_is_brw() {
-    let pat: Pat = parse_quote! { Point { x: ref x, y: _ } };
+    let pat: Pat = parse_quote! { Point { x: _, y: ref y } };
     let expected = Ok(TamePat::Borrowing(
-        parse_quote! { Point { x: ref x, y: _ } },
+        parse_quote! { Point { x: _, y: ref y } },
     ));
 
     let mut id_gen = IdentGenerator::new();
@@ -119,7 +119,7 @@ fn struct_with_move_and_rest_is_err() {
 
 #[test]
 fn struct_with_ref_and_move_is_err() {
-    let pat: Pat = parse_quote! { Point { ref x, y } };
+    let pat: Pat = parse_quote! { Point { x: ref x, y } };
     let expected = Err(syn::Error::new_spanned(
         &pat,
         "unsupported inside `#[spec]`",
@@ -132,9 +132,9 @@ fn struct_with_ref_and_move_is_err() {
 
 #[test]
 fn tuple_struct_with_move_and_wild_is_inv() {
-    let pat: Pat = parse_quote! { Point(x, _) };
+    let pat: Pat = parse_quote! { Point(_, x) };
     let expected = Ok(TamePat::Invertible(
-        parse_quote! { Point(x, __anodized_ident_1) },
+        parse_quote! { Point(__anodized_ident_1, x) },
     ));
 
     let mut id_gen = IdentGenerator::new();
@@ -154,8 +154,8 @@ fn tuple_struct_with_ref_and_wild_is_brw() {
 
 #[test]
 fn tuple_struct_with_ref_and_rest_is_brw() {
-    let pat: Pat = parse_quote! { Point(ref x, ..) };
-    let expected = Ok(TamePat::Borrowing(parse_quote! { Point(ref x, ..) }));
+    let pat: Pat = parse_quote! { Point(.., ref x) };
+    let expected = Ok(TamePat::Borrowing(parse_quote! { Point(.., ref x) }));
 
     let mut id_gen = IdentGenerator::new();
     let observed = tame_pattern(&mut id_gen, pat);
@@ -177,7 +177,7 @@ fn tuple_struct_with_move_and_rest_is_err() {
 
 #[test]
 fn tuple_struct_with_ref_and_move_is_err() {
-    let pat: Pat = parse_quote! { Point(ref x, y) };
+    let pat: Pat = parse_quote! { Point(x, ref y) };
     let expected = Err(syn::Error::new_spanned(
         &pat,
         "unsupported inside `#[spec]`",
@@ -202,8 +202,8 @@ fn slice_with_move_and_wild_is_inv() {
 
 #[test]
 fn slice_with_ref_and_wild_is_brw() {
-    let pat: Pat = parse_quote! { [ref first, _] };
-    let expected = Ok(TamePat::Borrowing(parse_quote! { [ref first, _] }));
+    let pat: Pat = parse_quote! { [_, ref last] };
+    let expected = Ok(TamePat::Borrowing(parse_quote! { [_, ref last] }));
 
     let mut id_gen = IdentGenerator::new();
     let observed = tame_pattern(&mut id_gen, pat);
