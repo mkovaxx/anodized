@@ -50,7 +50,7 @@ pub fn classify_pattern(id_gen: &mut IdentGenerator, mut pat: Pat) -> syn::Resul
                     attrs: subpat_wild.attrs.clone(),
                     by_ref: None,
                     mutability: None,
-                    ident: id_gen.next(),
+                    ident: id_gen.generate_next(),
                     subpat: None,
                 });
             }
@@ -70,12 +70,18 @@ impl IdentGenerator {
         Self { index: 1 }
     }
 
-    pub fn next(&mut self) -> Ident {
+    pub fn generate_next(&mut self) -> Ident {
         self.index += 1;
         syn::Ident::new(
             &format!("__anodized_ident_{}", self.index),
             Span::mixed_site(),
         )
+    }
+}
+
+impl Default for IdentGenerator {
+    fn default() -> Self {
+        Self::new()
     }
 }
 
