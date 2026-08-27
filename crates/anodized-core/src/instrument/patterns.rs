@@ -31,6 +31,7 @@ pub fn tame_pattern(id_gen: &mut IdentGenerator, mut pat: Pat) -> syn::Result<Ta
             }
         }
         Pat::Rest(_) => has_rest = true,
+        Pat::Struct(subpat_struct) if subpat_struct.rest.is_some() => has_rest = true,
         _ => {}
     })
     .visit_pat_mut(&mut pat);

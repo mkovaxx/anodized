@@ -105,6 +105,19 @@ fn struct_with_ref_and_rest_is_brw() {
 }
 
 #[test]
+fn struct_with_move_and_rest_is_err() {
+    let pat: Pat = parse_quote! { Point { x, .. } };
+    let expected = Err(syn::Error::new_spanned(
+        &pat,
+        "unsupported inside `#[spec]`",
+    ));
+
+    let mut id_gen = IdentGenerator::new();
+    let observed = tame_pattern(&mut id_gen, pat);
+    assert_tame_pat_eq(&observed, &expected);
+}
+
+#[test]
 fn struct_with_ref_and_move_is_err() {
     let pat: Pat = parse_quote! { Point { ref x, y } };
     let expected = Err(syn::Error::new_spanned(
