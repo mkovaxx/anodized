@@ -12,7 +12,10 @@ use syn::{
 
 use crate::{
     Capture, Condition, PostCondition, Spec,
-    instrument::{CheckSettings, Mode},
+    instrument::{
+        CheckSettings, Mode,
+        patterns::{IdentGenerator, PatClass, classify_pattern},
+    },
     qualifiers::FnQualifiers,
 };
 
@@ -205,6 +208,7 @@ impl CheckSettings {
     ) -> Result<Block> {
         // The identifier for the return value binding.
         let output_ident: Pat = parse_quote!(__anodized_output);
+        let output_binder: Pat = parse_quote! { mut #output_ident };
 
         // Generate precondition checks.
         let mut precond_checks: Vec<Stmt> = vec![parse_quote! {
@@ -223,7 +227,7 @@ impl CheckSettings {
             .captures
             .iter()
             .map(|cb| &cb.pat)
-            .chain(std::iter::once(&output_ident));
+            .chain(std::iter::once(&output_binder));
 
         let body_expr: Expr = if is_async {
             parse_quote! { (async || #return_type #original_body)().await }
@@ -240,21 +244,23 @@ impl CheckSettings {
             let (#(#patterns),*) = (#(#values),*);
         };
 
+        let mut id_gen = IdentGenerator::new();
         // Generate postcondition checks.
         let mut postcond_checks: Vec<Stmt> = vec![parse_quote! {
-            let __anodized_post = true;
+            let mut __anodized_post = true;
         }];
         for condition in &spec.maintains {
             let check = self.build_postcond_check(&condition.cfg, &None, &condition.expr);
-            postcond_checks.push(parse_quote! {
-                let __anodized_post = __anodized_post & #check;
-            });
+            postcond_checks.push(check);
         }
         for postcond in &spec.ensures {
-            let check = self.build_postcond_check(&postcond.cfg, &postcond.pat, &postcond.expr);
-            postcond_checks.push(parse_quote! {
-                let __anodized_post = __anodized_post & #check;
-            });
+            let classified_pat = if let Some(pat) = &postcond.pat {
+                Some(classify_pattern(&mut id_gen, pat.clone())?)
+            } else {
+                None
+            };
+            let check = self.build_postcond_check(&postcond.cfg, &classified_pat, &postcond.expr);
+            postcond_checks.push(check);
         }
 
         let do_run_checks = self.does_print || self.does_panic.is_some();
@@ -302,16 +308,42 @@ impl CheckSettings {
         self.build_cond_check("precondition failed: {}", cfg, &eval, &repr)
     }
 
-    fn build_postcond_check(&self, cfg: &Option<Meta>, pat: &Option<Pat>, expr: &Expr) -> Expr {
+    fn build_postcond_check(
+        &self,
+        cfg: &Option<Meta>,
+        pat: &Option<PatClass>,
+        expr: &Expr,
+    ) -> Stmt {
         let repr = expr.to_token_stream().to_string();
-        let eval = if let Some(pat) = pat {
-            build_cond_eval(&parse_quote! {
-                { let #pat = __anodized_output; #expr }
-            })
-        } else {
-            build_cond_eval(expr)
-        };
-        self.build_cond_check("postcondition failed: {}", cfg, &eval, &repr)
+        match pat {
+            Some(PatClass::Borrowing(brw_pat)) => {
+                let eval = build_cond_eval(&parse_quote! {
+                    { let #brw_pat = __anodized_output; #expr }
+                });
+                let check = self.build_cond_check("postcondition failed: {}", cfg, &eval, &repr);
+                parse_quote! {
+                    __anodized_post = __anodized_post & #check;
+                }
+            }
+            Some(PatClass::Invertible(inv_pat)) => {
+                let eval = build_cond_eval(expr);
+                let check = self.build_cond_check("postcondition failed: {}", cfg, &eval, &repr);
+                parse_quote! {
+                    {
+                        let #inv_pat = __anodized_output;
+                        __anodized_post = __anodized_post & #check;
+                        __anodized_output = #inv_pat;
+                    }
+                }
+            }
+            None => {
+                let eval = build_cond_eval(expr);
+                let check = self.build_cond_check("postcondition failed: {}", cfg, &eval, &repr);
+                parse_quote! {
+                    __anodized_post = __anodized_post & #check;
+                }
+            }
+        }
     }
 
     fn build_cond_check(&self, msg: &str, cfg: &Option<Meta>, expr: &Expr, repr: &str) -> Expr {
