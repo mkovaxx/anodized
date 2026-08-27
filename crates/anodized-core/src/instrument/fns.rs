@@ -322,7 +322,7 @@ impl CheckSettings {
                 });
                 let check = self.build_cond_check("postcondition failed: {}", cfg, &eval, &repr);
                 parse_quote! {
-                    __anodized_post = __anodized_post & #check;
+                    __anodized_post &= #check;
                 }
             }
             Some(TamePat::Invertible(inv_pat)) => {
@@ -331,7 +331,7 @@ impl CheckSettings {
                 parse_quote! {
                     {
                         let #inv_pat = __anodized_output;
-                        __anodized_post = __anodized_post & #check;
+                        __anodized_post &= #check;
                         __anodized_output = #inv_pat;
                     }
                 }
@@ -340,7 +340,7 @@ impl CheckSettings {
                 let eval = build_cond_eval(expr);
                 let check = self.build_cond_check("postcondition failed: {}", cfg, &eval, &repr);
                 parse_quote! {
-                    __anodized_post = __anodized_post & #check;
+                    __anodized_post &= #check;
                 }
             }
         }
