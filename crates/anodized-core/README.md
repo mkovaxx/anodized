@@ -103,7 +103,7 @@ fn my_function(<FUNCTION_INPUTS>) -> <RETURN_TYPE> {
     //         to ensure captured values aren't accessible to the function body
     // Note 2: the body is evaluated in a closure, so returns inside the body
     //         do not bypass postcondition checks
-    let (<ALIAS>, mut __anodized_output): (_, <RETURN_TYPE>) = (
+    let (<ALIAS>, __anodized_output): (_, <RETURN_TYPE>) = (
         <CAPTURE_EXPR>,
         (|| { <BODY> })(),
     );

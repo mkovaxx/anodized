@@ -208,7 +208,6 @@ impl CheckSettings {
     ) -> Result<Block> {
         // The identifier for the return value binding.
         let output_ident: Pat = parse_quote!(__anodized_output);
-        let output_binder: Pat = parse_quote! { mut #output_ident };
 
         // Generate precondition checks.
         let mut precond_checks: Vec<Stmt> = vec![parse_quote! {
@@ -237,7 +236,7 @@ impl CheckSettings {
             .captures
             .iter()
             .map(|cb| &cb.pat)
-            .chain(std::iter::once(&output_binder));
+            .chain(std::iter::once(&output_ident));
 
         let body_expr: Expr = if is_async {
             parse_quote! { (async || #return_type #original_body)().await }
