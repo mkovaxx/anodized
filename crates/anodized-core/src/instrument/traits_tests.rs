@@ -93,9 +93,9 @@ fn default_instrument_item_trait() {
             }
 
             fn FUNC(&self, PARAM_1: TYPE_1, PARAM_2: TYPE_2) -> RET_TYPE {
-                let mut __anodized_pre = true;
-                __anodized_pre &= (true || ::anodized::__::eval::<bool>(|| COND_1));
-                __anodized_pre &= (true || ::anodized::__::eval::<bool>(|| COND_2));
+                let __anodized_pre = true;
+                let __anodized_pre = __anodized_pre & (true || ::anodized::__::eval::<bool>(|| COND_1));
+                let __anodized_pre = __anodized_pre & (true || ::anodized::__::eval::<bool>(|| COND_2));
                 if !__anodized_pre {}
                 let (mut __anodized_output) = ((|| -> RET_TYPE { Self::__anodized_FUNC(self, PARAM_1, PARAM_2) })());
                 let mut __anodized_post = true;
@@ -166,10 +166,10 @@ fn emit_try_fn_instrument_item_trait() {
             fn __anodized_fn_try_FUNC(&self, PARAM_1: TYPE_1, PARAM_2: TYPE_2)
                 -> ::anodized::result::Result<RET_TYPE>
             {
-                let mut __anodized_pre = true;
-                __anodized_pre &= (::anodized::__::eval::<bool>(|| COND_1)
+                let __anodized_pre = true;
+                let __anodized_pre = __anodized_pre & (::anodized::__::eval::<bool>(|| COND_1)
                     || eprintln!("precondition failed: {}", "COND_1") != ());
-                __anodized_pre &= (::anodized::__::eval::<bool>(|| COND_2)
+                let __anodized_pre = __anodized_pre & (::anodized::__::eval::<bool>(|| COND_2)
                     || eprintln!("preinvariant failed: {}", "COND_2") != ());
                 if !__anodized_pre {
                     return ::anodized::result::pre_err();
@@ -283,9 +283,9 @@ fn default_instrument_item_impl_trait() {
                         "the qualifiers on the impl `IMPL_TYPE::FUNC` cannot be weaker than the qualifiers on the trait `TRAIT::FUNC`",
                     );
                 };
-                let mut __anodized_pre = true;
-                __anodized_pre &= (true || ::anodized::__::eval::<bool>(|| COND_1));
-                __anodized_pre &= (true || ::anodized::__::eval::<bool>(|| COND_2));
+                let __anodized_pre = true;
+                let __anodized_pre = __anodized_pre & (true || ::anodized::__::eval::<bool>(|| COND_1));
+                let __anodized_pre = __anodized_pre & (true || ::anodized::__::eval::<bool>(|| COND_2));
                 if !__anodized_pre {}
                 let (mut __anodized_output) = ((|| -> RET_TYPE { BODY })());
                 let mut __anodized_post = true;
@@ -340,10 +340,10 @@ fn emit_try_fn_instrument_item_impl_trait() {
                         "the qualifiers on the impl `IMPL_TYPE::FUNC` cannot be weaker than the qualifiers on the trait `TRAIT::FUNC`",
                     );
                 };
-                let mut __anodized_pre = true;
-                __anodized_pre &= (::anodized::__::eval::<bool>(|| COND_1)
+                let __anodized_pre = true;
+                let __anodized_pre = __anodized_pre & (::anodized::__::eval::<bool>(|| COND_1)
                     || eprintln!("precondition failed: {}", "COND_1") != ());
-                __anodized_pre &= (::anodized::__::eval::<bool>(|| COND_2)
+                let __anodized_pre = __anodized_pre & (::anodized::__::eval::<bool>(|| COND_2)
                     || eprintln!("preinvariant failed: {}", "COND_2") != ());
                 if !__anodized_pre {
                     panic!("precondition failed");
