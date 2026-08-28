@@ -119,7 +119,7 @@ Instead, you likely need to place a `#[spec]` attribute on an enclosing trait or
         }
 
         // Instrument function body.
-        self.instrument_fn(&spec, &item_fn.sig, &mut item_fn.block)?;
+        self.instrument_fn(&spec, &mut item_fn.sig, &mut item_fn.block)?;
 
         if let Self::InjectChecks(check_settings) = self
             && let Some(ref panic_settings) = check_settings.does_panic

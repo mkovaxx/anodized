@@ -20,7 +20,12 @@ use crate::{
 };
 
 impl Mode {
-    pub fn instrument_fn(&self, spec: &Spec, sig: &Signature, body: &mut Block) -> syn::Result<()> {
+    pub fn instrument_fn(
+        &self,
+        spec: &Spec,
+        sig: &mut Signature,
+        body: &mut Block,
+    ) -> syn::Result<()> {
         self.instrument_loops_in_fn_body(body)?;
 
         let Mode::InjectChecks(check_config) = self else {

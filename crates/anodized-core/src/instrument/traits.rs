@@ -124,7 +124,7 @@ impl Mode {
                             Self::#mangled_ident(#(#call_args),*)
                         });
 
-                        self.instrument_fn(&fn_spec, &func.sig, &mut forwarding_body)?;
+                        self.instrument_fn(&fn_spec, &mut func.sig, &mut forwarding_body)?;
 
                         func.default = Some(forwarding_body);
                         func.semi_token = None;
@@ -289,7 +289,7 @@ Instead, ensure that both the trait and the impl fn have a `#[spec]` annotation.
                     if let Mode::InjectChecks(_) = self {
                         self.with_try_fn(false).instrument_fn(
                             &fn_spec,
-                            &func.sig,
+                            &mut func.sig,
                             &mut func.block,
                         )?;
 
