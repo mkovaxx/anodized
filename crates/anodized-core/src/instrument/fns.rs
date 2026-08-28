@@ -283,8 +283,6 @@ impl CheckSettings {
             postcond_checks.push(check);
         }
 
-        let do_run_checks = self.does_print || self.does_panic.is_some();
-
         let (output_expr, precond_fail_action, postcond_fail_action) =
             if let Some(ref panic_settings) = self.does_panic
                 && panic_settings.has_try_fn
@@ -304,18 +302,14 @@ impl CheckSettings {
 
         Ok(parse_quote! {
             {
-                if #do_run_checks {
-                    #(#precond_checks)*
-                    if !__anodized_pre {
-                        #precond_fail_action
-                    }
+                #(#precond_checks)*
+                if !__anodized_pre {
+                    #precond_fail_action
                 }
                 #captures_and_output
-                if #do_run_checks {
-                    #(#postcond_checks)*
-                    if !__anodized_post {
-                        #postcond_fail_action
-                    }
+                #(#postcond_checks)*
+                if !__anodized_post {
+                    #postcond_fail_action
                 }
                 #output_expr
             }
