@@ -93,23 +93,18 @@ fn default_instrument_item_trait() {
             }
 
             fn FUNC(&self, PARAM_1: TYPE_1, PARAM_2: TYPE_2) -> RET_TYPE {
-                if false {
-                    let __anodized_pre = true;
-                    let __anodized_pre = __anodized_pre & ::anodized::__::eval::<bool>(|| COND_1);
-                    let __anodized_pre = __anodized_pre & ::anodized::__::eval::<bool>(|| COND_2);
-                    if !__anodized_pre {}
-                }
-                let (mut __anodized_output) = ((|| -> RET_TYPE { Self::__anodized_FUNC(self, PARAM_1, PARAM_2) })());
-                if false {
-                    let mut __anodized_post = true;
-                    __anodized_post &= ::anodized::__::eval::<bool>(|| COND_2);
-                    {
-                        let PAT_1 = __anodized_output;
-                        __anodized_post &= ::anodized::__::eval::<bool>(|| COND_3);
-                        __anodized_output = PAT_1;
-                    }
-                    if !__anodized_post {}
-                }
+                let __anodized_pre = true;
+                let __anodized_pre = __anodized_pre & (true || ::anodized::__::eval::<bool>(|| COND_1));
+                let __anodized_pre = __anodized_pre & (true || ::anodized::__::eval::<bool>(|| COND_2));
+                if !__anodized_pre {}
+                let (__anodized_output) = ((|| -> RET_TYPE { Self::__anodized_FUNC(self, PARAM_1, PARAM_2) })());
+                let __anodized_post = true;
+                let __anodized_post = __anodized_post & (true || ::anodized::__::eval::<bool>(|| COND_2));
+                let (__anodized_post, __anodized_output) = {
+                    let PAT_1 = __anodized_output;
+                    (__anodized_post & (true || ::anodized::__::eval::<bool>(|| COND_3)), PAT_1)
+                };
+                if !__anodized_post {}
                 __anodized_output
             }
         }
@@ -170,30 +165,25 @@ fn emit_try_fn_instrument_item_trait() {
             fn __anodized_fn_try_FUNC(&self, PARAM_1: TYPE_1, PARAM_2: TYPE_2)
                 -> ::anodized::result::Result<RET_TYPE>
             {
-                if true {
-                    let __anodized_pre = true;
-                    let __anodized_pre = __anodized_pre & (::anodized::__::eval::<bool>(|| COND_1)
-                            || eprintln!("precondition failed: {}", "COND_1") != ());
-                    let __anodized_pre = __anodized_pre & (::anodized::__::eval::<bool>(|| COND_2)
-                            || eprintln!("preinvariant failed: {}", "COND_2") != ());
-                    if !__anodized_pre {
-                        return ::anodized::result::pre_err();
-                    }
+                let __anodized_pre = true;
+                let __anodized_pre = __anodized_pre & (::anodized::__::eval::<bool>(|| COND_1)
+                    || eprintln!("precondition failed: {}", "COND_1") != ());
+                let __anodized_pre = __anodized_pre & (::anodized::__::eval::<bool>(|| COND_2)
+                    || eprintln!("preinvariant failed: {}", "COND_2") != ());
+                if !__anodized_pre {
+                    return ::anodized::result::pre_err();
                 }
-                let (mut __anodized_output) = ((|| -> RET_TYPE { Self::__anodized_FUNC(self, PARAM_1, PARAM_2) })());
-                if true {
-                    let mut __anodized_post = true;
-                    __anodized_post &= (::anodized::__::eval::<bool>(|| COND_2)
-                            || eprintln!("postinvariant failed: {}", "COND_2") != ());
-                    {
-                        let PAT_1 = __anodized_output;
-                        __anodized_post &= (::anodized::__::eval::<bool>(|| COND_3)
-                            || eprintln!("postcondition failed: {}", "COND_3") != ());
-                        __anodized_output = PAT_1;
-                    }
-                    if !__anodized_post {
-                        return ::anodized::result::post_err(__anodized_output);
-                    }
+                let (__anodized_output) = ((|| -> RET_TYPE { Self::__anodized_FUNC(self, PARAM_1, PARAM_2) })());
+                let __anodized_post = true;
+                let __anodized_post = __anodized_post & (::anodized::__::eval::<bool>(|| COND_2)
+                        || eprintln!("postinvariant failed: {}", "COND_2") != ());
+                let (__anodized_post, __anodized_output) = {
+                    let PAT_1 = __anodized_output;
+                    (__anodized_post & (::anodized::__::eval::<bool>(|| COND_3)
+                        || eprintln!("postcondition failed: {}", "COND_3") != ()), PAT_1)
+                };
+                if !__anodized_post {
+                    return ::anodized::result::post_err(__anodized_output);
                 }
                 Ok(__anodized_output)
             }
@@ -291,23 +281,18 @@ fn default_instrument_item_impl_trait() {
                         "the qualifiers on the impl `IMPL_TYPE::FUNC` cannot be weaker than the qualifiers on the trait `TRAIT::FUNC`",
                     );
                 };
-                if false {
-                    let __anodized_pre = true;
-                    let __anodized_pre = __anodized_pre & ::anodized::__::eval::<bool>(|| COND_1);
-                    let __anodized_pre = __anodized_pre & ::anodized::__::eval::<bool>(|| COND_2);
-                    if !__anodized_pre {}
-                }
-                let (mut __anodized_output) = ((|| -> RET_TYPE { BODY })());
-                if false {
-                    let mut __anodized_post = true;
-                    __anodized_post &= ::anodized::__::eval::<bool>(|| COND_2);
-                    {
-                        let PAT_1 = __anodized_output;
-                        __anodized_post &= ::anodized::__::eval::<bool>(|| COND_3);
-                        __anodized_output = PAT_1;
-                    }
-                    if !__anodized_post {}
-                }
+                let __anodized_pre = true;
+                let __anodized_pre = __anodized_pre & (true || ::anodized::__::eval::<bool>(|| COND_1));
+                let __anodized_pre = __anodized_pre & (true || ::anodized::__::eval::<bool>(|| COND_2));
+                if !__anodized_pre {}
+                let (__anodized_output) = ((|| -> RET_TYPE { BODY })());
+                let __anodized_post = true;
+                let __anodized_post = __anodized_post & (true || ::anodized::__::eval::<bool>(|| COND_2));
+                let (__anodized_post, __anodized_output) = {
+                    let PAT_1 = __anodized_output;
+                    (__anodized_post & (true || ::anodized::__::eval::<bool>(|| COND_3)), PAT_1)
+                };
+                if !__anodized_post {}
                 __anodized_output
             }
         }
@@ -352,30 +337,25 @@ fn emit_try_fn_instrument_item_impl_trait() {
                         "the qualifiers on the impl `IMPL_TYPE::FUNC` cannot be weaker than the qualifiers on the trait `TRAIT::FUNC`",
                     );
                 };
-                if true {
-                    let __anodized_pre = true;
-                    let __anodized_pre = __anodized_pre & (::anodized::__::eval::<bool>(|| COND_1)
-                            || eprintln!("precondition failed: {}", "COND_1") != ());
-                    let __anodized_pre = __anodized_pre & (::anodized::__::eval::<bool>(|| COND_2)
-                            || eprintln!("preinvariant failed: {}", "COND_2") != ());
-                    if !__anodized_pre {
-                        panic!("precondition failed");
-                    }
+                let __anodized_pre = true;
+                let __anodized_pre = __anodized_pre & (::anodized::__::eval::<bool>(|| COND_1)
+                    || eprintln!("precondition failed: {}", "COND_1") != ());
+                let __anodized_pre = __anodized_pre & (::anodized::__::eval::<bool>(|| COND_2)
+                    || eprintln!("preinvariant failed: {}", "COND_2") != ());
+                if !__anodized_pre {
+                    panic!("precondition failed");
                 }
-                let (mut __anodized_output) = ((|| -> RET_TYPE { BODY })());
-                if true {
-                    let mut __anodized_post = true;
-                    __anodized_post &= (::anodized::__::eval::<bool>(|| COND_2)
-                            || eprintln!("postinvariant failed: {}", "COND_2") != ());
-                    {
-                        let PAT_1 = __anodized_output;
-                        __anodized_post &= (::anodized::__::eval::<bool>(|| COND_3)
-                            || eprintln!("postcondition failed: {}", "COND_3") != ());
-                        __anodized_output = PAT_1;
-                    }
-                    if !__anodized_post {
-                        panic!("postcondition failed");
-                    }
+                let (__anodized_output) = ((|| -> RET_TYPE { BODY })());
+                let __anodized_post = true;
+                let __anodized_post = __anodized_post & (::anodized::__::eval::<bool>(|| COND_2)
+                        || eprintln!("postinvariant failed: {}", "COND_2") != ());
+                let (__anodized_post, __anodized_output) = {
+                    let PAT_1 = __anodized_output;
+                    (__anodized_post & (::anodized::__::eval::<bool>(|| COND_3)
+                        || eprintln!("postcondition failed: {}", "COND_3") != ()), PAT_1)
+                };
+                if !__anodized_post {
+                    panic!("postcondition failed");
                 }
                 __anodized_output
             }
