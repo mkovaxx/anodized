@@ -144,31 +144,40 @@ fn check_data_instrument_item_fn() {
     };
 
     let expected: TokenStream = parse_quote! {
-        fn FUNC(INPUT_1: TYPE_1, INPUT_2: TYPE_2) -> RET_TYPE {
-            if false {
-                let __anodized_pre = true;
-                let __anodized_pre = __anodized_pre &
-                    <TYPE_1 as ::anodized::refine::Refined>::predicate(&INPUT_1);
-                let __anodized_pre = __anodized_pre &
-                    <TYPE_2 as ::anodized::refine::Refined>::predicate(&INPUT_2);
-                let __anodized_pre = __anodized_pre & ::anodized::__::eval::<bool>(|| COND_1);
-                let __anodized_pre = __anodized_pre & ::anodized::__::eval::<bool>(|| COND_2);
-                if !__anodized_pre {}
-            }
-            let (__anodized_output) = ((|| -> RET_TYPE { BODY })());
-            if false {
-                let __anodized_post = true;
-                let __anodized_post = __anodized_post &
-                    <RET_TYPE as ::anodized::refine::Refined>::predicate(&__anodized_output);
-                let __anodized_post = __anodized_post &
-                    <TYPE_1 as ::anodized::refine::Refined>::predicate(&INPUT_1);
-                let __anodized_post = __anodized_post &
-                    <TYPE_2 as ::anodized::refine::Refined>::predicate(&INPUT_2);
-                let __anodized_post = __anodized_post & ::anodized::__::eval::<bool>(|| COND_2);
-                let __anodized_post = __anodized_post &
-                    ::anodized::__::eval::<bool>(|| { let OUT_PAT = __anodized_output; COND_3 });
-                if !__anodized_post {}
-            }
+        fn FUNC(__anodized_input_1: TYPE_1, __anodized_input_2: TYPE_2) -> RET_TYPE {
+            let __anodized_pre = true;
+            let __anodized_pre = __anodized_pre &
+                (true || <TYPE_1 as ::anodized::refine::Refined>::predicate(&__anodized_input_1));
+            let __anodized_pre = __anodized_pre &
+                (true || <TYPE_2 as ::anodized::refine::Refined>::predicate(&__anodized_input_2));
+
+            let (IN_PAT_1, IN_PAT_2) = (__anodized_input_1, __anodized_input_2);
+
+            let __anodized_pre = __anodized_pre & (true || ::anodized::__::eval::<bool>(|| COND_1));
+            let __anodized_pre = __anodized_pre & (true || ::anodized::__::eval::<bool>(|| COND_2));
+            if !__anodized_pre {}
+
+            let (__anodized_output, __anodized_input_1, __anodized_input_2) =
+                ((|| -> RET_TYPE { BODY })(), IN_PAT_1, IN_PAT_2);
+
+            let __anodized_post = true;
+            let __anodized_post = __anodized_post &
+                (true || <RET_TYPE as ::anodized::refine::Refined>::predicate(&__anodized_output));
+            let __anodized_post = __anodized_post &
+                (true || <TYPE_1 as ::anodized::refine::Refined>::predicate(&__anodized_input_1));
+            let __anodized_post = __anodized_post &
+                (true || <TYPE_2 as ::anodized::refine::Refined>::predicate(&__anodized_input_2));
+
+            let (IN_PAT_1, IN_PAT_2) = (__anodized_input_1, __anodized_input_2);
+
+            let __anodized_post = __anodized_post &
+                (true || ::anodized::__::eval::<bool>(|| COND_2));
+            let (__anodized_post, __anodized_output) = {
+                let OUT_PAT = __anodized_output;
+                (__anodized_post & (true || ::anodized::__::eval::<bool>(|| COND_3)), OUT_PAT)
+            };
+            if !__anodized_post {}
+
             __anodized_output
         }
     };
