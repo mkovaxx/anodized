@@ -54,7 +54,12 @@ pub fn tame_pattern(id_gen: &mut IdentGenerator, mut pat: Pat) -> syn::Result<Ta
 
         Ok(TamePat::Invertible(pat))
     } else {
-        Err(syn::Error::new_spanned(pat, "unsupported inside `#[spec]`"))
+        let message = if has_rest {
+            "inside `#[spec]`, patterns containing `..` must bind only by `ref`"
+        } else {
+            "inside `#[spec]`, patterns cannot mix `move` and `ref` bindings"
+        };
+        Err(syn::Error::new_spanned(pat, message))
     }
 }
 
