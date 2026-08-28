@@ -83,7 +83,7 @@ Given an original function like this:
     requires: <PRECONDITION>,
     maintains: <INVARIANT>,
     captures: <ALIAS> = <CAPTURE_EXPR>,
-    ensures: |<PATTERN>| <POSTCONDITION>,
+    ensures: |<OUTPUT_BINDING>| <POSTCONDITION>,
 )]
 fn my_function(<FUNCTION_INPUTS>) -> <RETURN_TYPE> {
     <BODY>
@@ -94,37 +94,56 @@ The macro rewrites the body to be conceptually equivalent to the following:
 
 ```rust,ignore
 fn my_function(<FUNCTION_INPUTS>) -> <RETURN_TYPE> {
-    // 1. Preconditions and invariants are checked
-    check!((|| <PRECONDITION>)(), "precondition failed: <PRECONDITION>");
-    check!((|| <INVARIANT>)(), "pre-invariant failed: <INVARIANT>");
+    // 1. Preconditions and invariants are checked.
+    let __anodized_pre = true;
+    let __anodized_pre = __anodized_pre & check_condition!(
+        <PRECONDITION>,
+        "precondition failed: <PRECONDITION>",
+    );
+    let __anodized_pre = __anodized_pre & check_condition!(
+        <INVARIANT>,
+        "preinvariant failed: <INVARIANT>",
+    );
+    if !__anodized_pre {
+        handle_failure!();
+    }
 
-    // 2. Values are captured and the original function body is executed
-    // Note 1: captures and body execution happen in a single tuple assignment
-    //         to ensure captured values aren't accessible to the function body
-    // Note 2: the body is evaluated in a closure, so returns inside the body
-    //         do not bypass postcondition checks
+    // 2. Values are captured and the original function body is executed.
+    // Note 1: Captures and body execution happen in a single tuple assignment
+    //         to ensure captured values aren't accessible to the function body.
+    // Note 2: The body is evaluated in a closure, so returns inside the body
+    //         do not bypass postcondition checks.
     let (<ALIAS>, __anodized_output): (_, <RETURN_TYPE>) = (
         <CAPTURE_EXPR>,
         (|| { <BODY> })(),
     );
 
-    // 3. Invariants and postconditions are checked
-    // Note 1: Captured values are in scope for postconditions
+    // 3. Invariants and postconditions are checked.
+    // Note 1: Captured values are in scope for postconditions.
     // Note 2: `__anodized_output` is also in scope for postconditions,
-    //         but referring to it is strongly discouraged
-    check!((|| <INVARIANT>)(), "post-invariant failed: <INVARIANT>");
-    // Each postcondition runs against `__anodized_output` through its output pattern.
-    // Borrowing patterns borrow it; move patterns reconstruct it after the check.
-    check_postcondition!(
-        <PATTERN>,
-        __anodized_output,
-        <POSTCONDITION>,
-        "postcondition failed: | <PATTERN> | <POSTCONDITION>",
+    //         but referring to it is strongly discouraged.
+    let __anodized_post = true;
+    let __anodized_post = __anodized_post & check_condition!(
+        <INVARIANT>,
+        "postinvariant failed: <INVARIANT>",
     );
+    // Each postcondition is evaluated with its output bindings in scope.
+    // Note 1: Details of pattern handling are omitted for brevity.
+    let __anodized_post = __anodized_post & check_condition!(
+        { let <OUTPUT_BINDING> = __anodized_output; <POSTCONDITION> },
+        "postcondition failed: | <OUTPUT_BINDING> | <POSTCONDITION>",
+    );
+    if !__anodized_post {
+        handle_failure!();
+    }
+
+    // `check_condition!` represents the generated condition expression. Depending on
+    // enabled settings, it evaluates the condition, prints a diagnostic, or short-circuits
+    // to `true` when no runtime action is enabled.
 
     // 4. The result is returned
     __anodized_output
 }
 ```
 
-When a condition has a `#[cfg(...)]` attribute, the corresponding `check!` is wrapped in an `if cfg!(...)` block. This follows standard Rust `#[cfg]` semantics: the check only runs when the configuration predicate is true. Details of the injected code are determined by `cfg` settings.
+When a condition has a `#[cfg(...)]` attribute, its individual generated condition is guarded with `!cfg!(...) || ...`. This follows standard Rust `#[cfg]` semantics: the condition is evaluated only when the configuration predicate is true. The condition remains type-checked in every build configuration, and details of diagnostics and failure handling are determined by the enabled `anodized_*` settings.
