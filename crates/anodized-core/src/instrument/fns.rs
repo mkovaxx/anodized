@@ -212,7 +212,7 @@ impl CheckSettings {
 
         // Generate precondition checks.
         let mut precond_checks: Vec<Stmt> = vec![parse_quote! {
-            let mut __anodized_pre = true;
+            let __anodized_pre = true;
         }];
         for precondition in &spec.requires {
             let check = self.build_precond_check(
@@ -321,7 +321,7 @@ impl CheckSettings {
         let eval = build_cond_eval(expr);
         let check = self.build_cond_check(msg, cfg, &eval, &repr);
         parse_quote! {
-            __anodized_pre &= #check;
+            let __anodized_pre = __anodized_pre & #check;
         }
     }
 
