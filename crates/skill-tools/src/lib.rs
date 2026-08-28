@@ -107,11 +107,13 @@ pub const DIAGNOSTICS: &[&str] = &[
     "`try_call` needs the `anodized_try` build `cfg` to be enabled",
     "precondition failed",
     "postcondition failed",
+    "preinvariant failed",
+    "postinvariant failed",
 ];
 
 /// Rustc errors reached indirectly through a spec, which `diagnostics.md` must document.
 pub const RUSTC_ERRORS: &[&str] = &[
-    "E0015", "E0046", "E0308", "E0425", "E0507", "E0562", "E0596",
+    "E0005", "E0015", "E0046", "E0308", "E0425", "E0562", "E0596",
 ];
 
 /// How a [`Keyword`] is presented to the reader of the skill.

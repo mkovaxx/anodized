@@ -213,13 +213,25 @@ pub const DIAGNOSTIC_DOCS: &[(&str, &str, &str)] = &[
     ),
     (
         "precondition failed",
-        "At runtime: the caller broke the contract.",
+        "At runtime: a `requires` was false on entry. The panic raised without \
+         `anodized_print` also uses this for the whole entry group, invariants included.",
         "Fix the call site, or the precondition if it was wrong.",
     ),
     (
         "postcondition failed",
-        "At runtime: the implementation broke its own contract.",
+        "At runtime: an `ensures` was false on exit. The panic raised without \
+         `anodized_print` also uses this for the whole exit group, invariants included.",
         "Fix the body, or the postcondition if it was wrong.",
+    ),
+    (
+        "preinvariant failed",
+        "At runtime under `anodized_print`: a `maintains` was already false on entry.",
+        "The state was wrong before the call; look at whoever produced it.",
+    ),
+    (
+        "postinvariant failed",
+        "At runtime under `anodized_print`: a `maintains` was false on exit.",
+        "The body broke an invariant it was required to preserve.",
     ),
 ];
 

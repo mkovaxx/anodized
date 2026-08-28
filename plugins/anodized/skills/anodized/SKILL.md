@@ -216,8 +216,14 @@ Four forms are accepted:
 | `ensures: \|pat\| [a, b]` | bound by `pat` for the whole group |
 | `ensures: [a, \|pat\| b]` | bound only inside that element |
 
-The closure takes the return value by move, so use `|ref output|` for a non-`Copy` type. The
-pattern must be irrefutable: `|Ok(v)|` is not allowed, so test with `|ref out| out.is_ok()`.
+A pattern may bind or destructure the return value directly, non-`Copy` included: a move
+pattern is reconstructed after each postcondition, so the value still reaches the caller.
+`|ref output|` is for when the condition reads more naturally as a borrow, not a workaround.
+
+Three rules the pattern must satisfy. It must be irrefutable — `|Ok(v)|` is rejected, so
+inspect a `Result` with `|output| output.is_ok()`. It may not mix move and `ref` bindings. And
+a pattern containing `..` may bind the rest only by `ref`, since what it omits cannot be
+reconstructed.
 
 ## Qualifiers
 

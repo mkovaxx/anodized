@@ -37,8 +37,10 @@ The macro accumulates errors, so several clause problems surface at once.
 | ``cannot be weaker than the qualifiers on the trait`` | An impl claiming fewer guarantees than the trait promised. | An impl may only narrow; restore the trait's qualifiers. |
 | ``The #[spec] attribute doesn't yet support this item`` | `#[spec]` on an item kind with no support, such as `mod` or `type`. | Move it to a supported item. |
 | ```try_call` needs the `anodized_try` build `cfg` to be enabled`` | `try_call!` without the build configuration that generates its entry points. | Build with `--cfg anodized_try` and `--cfg anodized_panic`. |
-| ``precondition failed`` | At runtime: the caller broke the contract. | Fix the call site, or the precondition if it was wrong. |
-| ``postcondition failed`` | At runtime: the implementation broke its own contract. | Fix the body, or the postcondition if it was wrong. |
+| ``precondition failed`` | At runtime: a `requires` was false on entry. The panic raised without `anodized_print` also uses this for the whole entry group, invariants included. | Fix the call site, or the precondition if it was wrong. |
+| ``postcondition failed`` | At runtime: an `ensures` was false on exit. The panic raised without `anodized_print` also uses this for the whole exit group, invariants included. | Fix the body, or the postcondition if it was wrong. |
+| ``preinvariant failed`` | At runtime under `anodized_print`: a `maintains` was already false on entry. | The state was wrong before the call; look at whoever produced it. |
+| ``postinvariant failed`` | At runtime under `anodized_print`: a `maintains` was false on exit. | The body broke an invariant it was required to preserve. |
 <!-- /anodized:generated:diagnostics -->
 
 One wording to be aware of: the out-of-order message for function fields still lists
@@ -116,8 +118,18 @@ fn first_mut(values: &mut Vec<u8>) -> &mut u8 {
 impl is expected to supply, so the fix is to add `#[spec]` to the impl, never to implement the
 named item yourself.
 
-**`E0507: cannot move out`** — an `ensures` closure took a non-`Copy` return value by move and
-then used it in a way that needs ownership elsewhere. Bind by reference: `|ref output|`.
+**`E0005: refutable pattern`** — an output pattern that does not match every value, such as
+`|Ok(v)|`. Bind the whole value and inspect it in the condition: `|output| output.is_ok()`.
+
+```rust,compile_fail
+// EXPECT: E0005
+use anodized::spec;
+
+#[spec(ensures: |Ok(value)| value > 0)]
+fn parse() -> Result<u32, String> {
+    Ok(1)
+}
+```
 
 ## Runtime failures
 
@@ -129,17 +141,17 @@ unless the precondition was wrong.
 `postcondition failed: <expr>` means the **implementation** broke its own contract. Fix the
 body, unless the postcondition was wrong.
 
-Neither message names the clause kind, and a `maintains` clause borrows both: it is checked on
-entry, where a violation reports as `precondition failed`, and again on exit, where it reports
-as `postcondition failed`. Match the quoted expression against the spec before concluding
-which kind of clause you are looking at — bearing in mind that the expression appears only
-under `anodized_print`; `anodized_panic` alone reports the bare text with a location pointing
-at the attribute, which identifies the function but not the clause.
+Under `anodized_print`, `maintains` reports separately at each end: `preinvariant failed` when
+it is already false on entry, `postinvariant failed` when the body broke it. The distinction
+matters, because an invariant false on entry is not this call's fault. The panic raised without
+`anodized_print` makes no such distinction — it covers the whole entry or exit group, so an
+invariant reads there as `precondition failed` or `postcondition failed`, and the location
+points at the attribute, naming the function but not the clause.
 
-Match it by reading, not by searching. The message reprints the condition from the parsed
-tokens, so spacing is normalized and rarely matches your source — `!data.is_empty()` is
-reported as `! data.is_empty()`. And when two clauses are textually identical, the expression
-cannot tell them apart at all.
+To tell two clauses of the same kind apart you still have only the expression, and only under
+`anodized_print`. Match it by reading rather than searching: the message reprints from the
+parsed tokens, so spacing is normalized and rarely matches your source — `!data.is_empty()` is
+reported as `! data.is_empty()`. Two textually identical clauses cannot be told apart at all.
 
 `anodized_print` continues after a violation, which makes the reports after the first
 unreliable. Trust the first and presume the rest is fallout until it is fixed. A violated
