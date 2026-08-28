@@ -173,11 +173,11 @@ fn emit_try_fn_instrument_item_fn() {
                 let __anodized_pre = __anodized_pre & (!cfg!(META_1) || ::anodized::__::eval::<bool>(|| COND_3)
                         || eprintln!("precondition failed: {}", "COND_3") != ());
                 let __anodized_pre = __anodized_pre & (::anodized::__::eval::<bool>(|| COND_4)
-                        || eprintln!("precondition failed: {}", "COND_4") != ());
+                        || eprintln!("preinvariant failed: {}", "COND_4") != ());
                 let __anodized_pre = __anodized_pre & (::anodized::__::eval::<bool>(|| COND_5)
-                        || eprintln!("precondition failed: {}", "COND_5") != ());
+                        || eprintln!("preinvariant failed: {}", "COND_5") != ());
                 let __anodized_pre = __anodized_pre & (!cfg!(META_2) || ::anodized::__::eval::<bool>(|| COND_6)
-                        || eprintln!("precondition failed: {}", "COND_6") != ());
+                        || eprintln!("preinvariant failed: {}", "COND_6") != ());
                 if !__anodized_pre {
                     return ::anodized::result::pre_err();
                 }
@@ -190,11 +190,11 @@ fn emit_try_fn_instrument_item_fn() {
             if true {
                 let mut __anodized_post = true;
                 __anodized_post &= (::anodized::__::eval::<bool>(|| COND_4)
-                        || eprintln!("postcondition failed: {}", "COND_4") != ());
+                        || eprintln!("postinvariant failed: {}", "COND_4") != ());
                 __anodized_post &= (::anodized::__::eval::<bool>(|| COND_5)
-                        || eprintln!("postcondition failed: {}", "COND_5") != ());
+                        || eprintln!("postinvariant failed: {}", "COND_5") != ());
                 __anodized_post &= (!cfg!(META_2) || ::anodized::__::eval::<bool>(|| COND_6)
-                        || eprintln!("postcondition failed: {}", "COND_6") != ());
+                        || eprintln!("postinvariant failed: {}", "COND_6") != ());
                 {
                     let PAT_1 = __anodized_output;
                     __anodized_post &= (::anodized::__::eval::<bool>(|| COND_7)
@@ -351,7 +351,7 @@ fn simple_maintains() {
             if true {
                 let __anodized_pre = true;
                 let __anodized_pre = __anodized_pre & (::anodized::__::eval::<bool>(|| CONDITION_1)
-                    || eprintln!("precondition failed: {}", "CONDITION_1") != ());
+                    || eprintln!("preinvariant failed: {}", "CONDITION_1") != ());
                 if !__anodized_pre {
                     panic!("precondition failed");
                 }
@@ -360,7 +360,7 @@ fn simple_maintains() {
             if true {
                 let mut __anodized_post = true;
                 __anodized_post &= (::anodized::__::eval::<bool>(|| CONDITION_1)
-                    || eprintln!("postcondition failed: {}", "CONDITION_1") != ());
+                    || eprintln!("postinvariant failed: {}", "CONDITION_1") != ());
                 if !__anodized_post {
                     panic!("postcondition failed");
                 }
@@ -428,7 +428,7 @@ fn simple_requires_and_maintains() {
                 let __anodized_pre = __anodized_pre & (::anodized::__::eval::<bool>(|| CONDITION_1)
                     || eprintln!("precondition failed: {}", "CONDITION_1") != ());
                 let __anodized_pre = __anodized_pre & (::anodized::__::eval::<bool>(|| CONDITION_2)
-                        || eprintln!("precondition failed: {}", "CONDITION_2") != ());
+                        || eprintln!("preinvariant failed: {}", "CONDITION_2") != ());
                 if !__anodized_pre {
                     panic!("precondition failed");
                 }
@@ -437,7 +437,7 @@ fn simple_requires_and_maintains() {
             if true {
                 let mut __anodized_post = true;
                 __anodized_post &= (::anodized::__::eval::<bool>(|| CONDITION_2)
-                    || eprintln!("postcondition failed: {}", "CONDITION_2") != ());
+                    || eprintln!("postinvariant failed: {}", "CONDITION_2") != ());
                 if !__anodized_post {
                     panic!("postcondition failed");
                 }
@@ -506,7 +506,7 @@ fn simple_maintains_and_ensures() {
             if true {
                 let __anodized_pre = true;
                 let __anodized_pre = __anodized_pre & (::anodized::__::eval::<bool>(|| CONDITION_1)
-                    || eprintln!("precondition failed: {}", "CONDITION_1") != ());
+                    || eprintln!("preinvariant failed: {}", "CONDITION_1") != ());
                 if !__anodized_pre {
                     panic!("precondition failed");
                 }
@@ -515,7 +515,7 @@ fn simple_maintains_and_ensures() {
             if true {
                 let mut __anodized_post = true;
                 __anodized_post &= (::anodized::__::eval::<bool>(|| CONDITION_1)
-                    || eprintln!("postcondition failed: {}", "CONDITION_1") != ());
+                    || eprintln!("postinvariant failed: {}", "CONDITION_1") != ());
                 __anodized_post &= (::anodized::__::eval::<bool>(|| CONDITION_2)
                         || eprintln!("postcondition failed: {}", "CONDITION_2") != ());
                 if !__anodized_post {
@@ -550,7 +550,7 @@ fn simple_requires_maintains_and_ensures() {
                 let __anodized_pre = __anodized_pre & (::anodized::__::eval::<bool>(|| CONDITION_1)
                     || eprintln!("precondition failed: {}", "CONDITION_1") != ());
                 let __anodized_pre = __anodized_pre & (::anodized::__::eval::<bool>(|| CONDITION_2)
-                        || eprintln!("precondition failed: {}", "CONDITION_2") != ());
+                        || eprintln!("preinvariant failed: {}", "CONDITION_2") != ());
                 if !__anodized_pre {
                     panic!("precondition failed");
                 }
@@ -559,7 +559,7 @@ fn simple_requires_maintains_and_ensures() {
             if true {
                 let mut __anodized_post = true;
                 __anodized_post &= (::anodized::__::eval::<bool>(|| CONDITION_2)
-                    || eprintln!("postcondition failed: {}", "CONDITION_2") != ());
+                    || eprintln!("postinvariant failed: {}", "CONDITION_2") != ());
                 __anodized_post &= (::anodized::__::eval::<bool>(|| CONDITION_3)
                         || eprintln!("postcondition failed: {}", "CONDITION_3") != ());
                 if !__anodized_post {
@@ -594,7 +594,7 @@ fn simple_async_requires_maintains_and_ensures() {
                 let __anodized_pre = __anodized_pre & (::anodized::__::eval::<bool>(|| CONDITION_1)
                     || eprintln!("precondition failed: {}", "CONDITION_1") != ());
                 let __anodized_pre = __anodized_pre & (::anodized::__::eval::<bool>(|| CONDITION_2)
-                        || eprintln!("precondition failed: {}", "CONDITION_2") != ());
+                        || eprintln!("preinvariant failed: {}", "CONDITION_2") != ());
                 if !__anodized_pre {
                     panic!("precondition failed");
                 }
@@ -603,7 +603,7 @@ fn simple_async_requires_maintains_and_ensures() {
             if true {
                 let mut __anodized_post = true;
                 __anodized_post &= (::anodized::__::eval::<bool>(|| CONDITION_2)
-                    || eprintln!("postcondition failed: {}", "CONDITION_2") != ());
+                    || eprintln!("postinvariant failed: {}", "CONDITION_2") != ());
                 __anodized_post &= (::anodized::__::eval::<bool>(|| CONDITION_3)
                         || eprintln!("postcondition failed: {}", "CONDITION_3") != ());
                 if !__anodized_post {
@@ -640,9 +640,9 @@ fn multiple_conditions_in_clauses() {
                 let __anodized_pre = __anodized_pre & (::anodized::__::eval::<bool>(|| CONDITION_2)
                         || eprintln!("precondition failed: {}", "CONDITION_2") != ());
                 let __anodized_pre = __anodized_pre & (::anodized::__::eval::<bool>(|| CONDITION_3)
-                        || eprintln!("precondition failed: {}", "CONDITION_3") != ());
+                        || eprintln!("preinvariant failed: {}", "CONDITION_3") != ());
                 let __anodized_pre = __anodized_pre & (::anodized::__::eval::<bool>(|| CONDITION_4)
-                        || eprintln!("precondition failed: {}", "CONDITION_4") != ());
+                        || eprintln!("preinvariant failed: {}", "CONDITION_4") != ());
                 if !__anodized_pre {
                     panic!("precondition failed");
                 }
@@ -651,9 +651,9 @@ fn multiple_conditions_in_clauses() {
             if true {
                 let mut __anodized_post = true;
                 __anodized_post &= (::anodized::__::eval::<bool>(|| CONDITION_3)
-                    || eprintln!("postcondition failed: {}", "CONDITION_3") != ());
+                    || eprintln!("postinvariant failed: {}", "CONDITION_3") != ());
                 __anodized_post &= (::anodized::__::eval::<bool>(|| CONDITION_4)
-                        || eprintln!("postcondition failed: {}", "CONDITION_4") != ());
+                        || eprintln!("postinvariant failed: {}", "CONDITION_4") != ());
                 __anodized_post &= (::anodized::__::eval::<bool>(|| CONDITION_5)
                         || eprintln!("postcondition failed: {}", "CONDITION_5") != ());
                 __anodized_post &= (::anodized::__::eval::<bool>(|| CONDITION_6)
@@ -780,7 +780,7 @@ fn cfg_attributes() {
                 let __anodized_pre = __anodized_pre & (!cfg!(SETTING_1) || ::anodized::__::eval::<bool>(|| CONDITION_1)
                     || eprintln!("precondition failed: {}", "CONDITION_1") != ());
                 let __anodized_pre = __anodized_pre & (!cfg!(SETTING_2) || ::anodized::__::eval::<bool>(|| CONDITION_2)
-                        || eprintln!("precondition failed: {}", "CONDITION_2") != ());
+                        || eprintln!("preinvariant failed: {}", "CONDITION_2") != ());
                 if !__anodized_pre {
                     panic!("precondition failed");
                 }
@@ -789,7 +789,7 @@ fn cfg_attributes() {
             if true {
                 let mut __anodized_post = true;
                 __anodized_post &= (!cfg!(SETTING_2) || ::anodized::__::eval::<bool>(|| CONDITION_2)
-                    || eprintln!("postcondition failed: {}", "CONDITION_2") != ());
+                    || eprintln!("postinvariant failed: {}", "CONDITION_2") != ());
                 __anodized_post &= (!cfg!(SETTING_3) || ::anodized::__::eval::<bool>(|| CONDITION_3)
                         || eprintln!("postcondition failed: {}", "CONDITION_3") != ());
                 if !__anodized_post {
@@ -826,9 +826,9 @@ fn cfg_on_single_and_list_conditions() {
                 let __anodized_pre = __anodized_pre & (!cfg!(SETTING_1) || ::anodized::__::eval::<bool>(|| CONDITION_1)
                     || eprintln!("precondition failed: {}", "CONDITION_1") != ());
                 let __anodized_pre = __anodized_pre & (::anodized::__::eval::<bool>(|| CONDITION_2)
-                        || eprintln!("precondition failed: {}", "CONDITION_2") != ());
+                        || eprintln!("preinvariant failed: {}", "CONDITION_2") != ());
                 let __anodized_pre = __anodized_pre & (::anodized::__::eval::<bool>(|| CONDITION_3)
-                        || eprintln!("precondition failed: {}", "CONDITION_3") != ());
+                        || eprintln!("preinvariant failed: {}", "CONDITION_3") != ());
                 if !__anodized_pre {
                     panic!("precondition failed");
                 }
@@ -837,9 +837,9 @@ fn cfg_on_single_and_list_conditions() {
             if true {
                 let mut __anodized_post = true;
                 __anodized_post &= (::anodized::__::eval::<bool>(|| CONDITION_2)
-                    || eprintln!("postcondition failed: {}", "CONDITION_2") != ());
+                    || eprintln!("postinvariant failed: {}", "CONDITION_2") != ());
                 __anodized_post &= (::anodized::__::eval::<bool>(|| CONDITION_3)
-                        || eprintln!("postcondition failed: {}", "CONDITION_3") != ());
+                        || eprintln!("postinvariant failed: {}", "CONDITION_3") != ());
                 __anodized_post &= (!cfg!(SETTING_2) || ::anodized::__::eval::<bool>(|| CONDITION_4)
                         || eprintln!("postcondition failed: {}", "CONDITION_4") != ());
                 __anodized_post &= (!cfg!(SETTING_2) || ::anodized::__::eval::<bool>(|| CONDITION_5)
@@ -886,11 +886,11 @@ fn complex_mixed_conditions() {
                 let __anodized_pre = __anodized_pre & (!cfg!(SETTING_1) || ::anodized::__::eval::<bool>(|| CONDITION_3)
                         || eprintln!("precondition failed: {}", "CONDITION_3") != ());
                 let __anodized_pre = __anodized_pre & (::anodized::__::eval::<bool>(|| CONDITION_4)
-                        || eprintln!("precondition failed: {}", "CONDITION_4") != ());
+                        || eprintln!("preinvariant failed: {}", "CONDITION_4") != ());
                 let __anodized_pre = __anodized_pre & (::anodized::__::eval::<bool>(|| CONDITION_5)
-                        || eprintln!("precondition failed: {}", "CONDITION_5") != ());
+                        || eprintln!("preinvariant failed: {}", "CONDITION_5") != ());
                 let __anodized_pre = __anodized_pre & (!cfg!(SETTING_2) || ::anodized::__::eval::<bool>(|| CONDITION_6)
-                        || eprintln!("precondition failed: {}", "CONDITION_6") != ());
+                        || eprintln!("preinvariant failed: {}", "CONDITION_6") != ());
                 if !__anodized_pre {
                     panic!("precondition failed");
                 }
@@ -899,11 +899,11 @@ fn complex_mixed_conditions() {
             if true {
                 let mut __anodized_post = true;
                 __anodized_post &= (::anodized::__::eval::<bool>(|| CONDITION_4)
-                    || eprintln!("postcondition failed: {}", "CONDITION_4") != ());
+                    || eprintln!("postinvariant failed: {}", "CONDITION_4") != ());
                 __anodized_post &= (::anodized::__::eval::<bool>(|| CONDITION_5)
-                        || eprintln!("postcondition failed: {}", "CONDITION_5") != ());
+                        || eprintln!("postinvariant failed: {}", "CONDITION_5") != ());
                 __anodized_post &= (!cfg!(SETTING_2) || ::anodized::__::eval::<bool>(|| CONDITION_6)
-                        || eprintln!("postcondition failed: {}", "CONDITION_6") != ());
+                        || eprintln!("postinvariant failed: {}", "CONDITION_6") != ());
                 __anodized_post &= (::anodized::__::eval::<bool>(|| CONDITION_7)
                         || eprintln!("postcondition failed: {}", "CONDITION_7") != ());
                 __anodized_post &= (!cfg!(SETTING_3) || ::anodized::__::eval::<bool>(|| CONDITION_8)

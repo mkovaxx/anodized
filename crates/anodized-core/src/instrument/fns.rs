@@ -214,8 +214,22 @@ impl CheckSettings {
         let mut precond_checks: Vec<Stmt> = vec![parse_quote! {
             let __anodized_pre = true;
         }];
-        for condition in spec.requires.iter().chain(&spec.maintains) {
-            let check = self.build_precond_check(&condition.cfg, &condition.expr);
+        for precondition in &spec.requires {
+            let check = self.build_precond_check(
+                "precondition failed: {}",
+                &precondition.cfg,
+                &precondition.expr,
+            );
+            precond_checks.push(parse_quote! {
+                let __anodized_pre = __anodized_pre & #check;
+            });
+        }
+        for preinvariant in &spec.maintains {
+            let check = self.build_precond_check(
+                "preinvariant failed: {}",
+                &preinvariant.cfg,
+                &preinvariant.expr,
+            );
             precond_checks.push(parse_quote! {
                 let __anodized_pre = __anodized_pre & #check;
             });
@@ -249,17 +263,27 @@ impl CheckSettings {
         let mut postcond_checks: Vec<Stmt> = vec![parse_quote! {
             let mut __anodized_post = true;
         }];
-        for condition in &spec.maintains {
-            let check = self.build_postcond_check(&condition.cfg, &None, &condition.expr);
+        for postinvariant in &spec.maintains {
+            let check = self.build_postcond_check(
+                "postinvariant failed: {}",
+                &postinvariant.cfg,
+                &None,
+                &postinvariant.expr,
+            );
             postcond_checks.push(check);
         }
-        for postcond in &spec.ensures {
-            let tame_pat = if let Some(pat) = &postcond.pat {
+        for postcondition in &spec.ensures {
+            let tame_pat = if let Some(pat) = &postcondition.pat {
                 Some(tame_pattern(&mut id_gen, pat.clone())?)
             } else {
                 None
             };
-            let check = self.build_postcond_check(&postcond.cfg, &tame_pat, &postcond.expr);
+            let check = self.build_postcond_check(
+                "postcondition failed: {}",
+                &postcondition.cfg,
+                &tame_pat,
+                &postcondition.expr,
+            );
             postcond_checks.push(check);
         }
 
@@ -302,14 +326,15 @@ impl CheckSettings {
         })
     }
 
-    fn build_precond_check(&self, cfg: &Option<Meta>, expr: &Expr) -> Expr {
+    fn build_precond_check(&self, msg: &str, cfg: &Option<Meta>, expr: &Expr) -> Expr {
         let repr = expr.to_token_stream().to_string();
         let eval = build_cond_eval(expr);
-        self.build_cond_check("precondition failed: {}", cfg, &eval, &repr)
+        self.build_cond_check(msg, cfg, &eval, &repr)
     }
 
     fn build_postcond_check(
         &self,
+        msg: &str,
         cfg: &Option<Meta>,
         tame_pat: &Option<TamePat>,
         expr: &Expr,
@@ -320,14 +345,14 @@ impl CheckSettings {
                 let eval = build_cond_eval(&parse_quote! {
                     { let #brw_pat = __anodized_output; #expr }
                 });
-                let check = self.build_cond_check("postcondition failed: {}", cfg, &eval, &repr);
+                let check = self.build_cond_check(msg, cfg, &eval, &repr);
                 parse_quote! {
                     __anodized_post &= #check;
                 }
             }
             Some(TamePat::Invertible(inv_pat)) => {
                 let eval = build_cond_eval(expr);
-                let check = self.build_cond_check("postcondition failed: {}", cfg, &eval, &repr);
+                let check = self.build_cond_check(msg, cfg, &eval, &repr);
                 parse_quote! {
                     {
                         let #inv_pat = __anodized_output;
@@ -338,7 +363,7 @@ impl CheckSettings {
             }
             None => {
                 let eval = build_cond_eval(expr);
-                let check = self.build_cond_check("postcondition failed: {}", cfg, &eval, &repr);
+                let check = self.build_cond_check(msg, cfg, &eval, &repr);
                 parse_quote! {
                     __anodized_post &= #check;
                 }
