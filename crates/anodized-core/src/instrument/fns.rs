@@ -257,7 +257,7 @@ impl CheckSettings {
         let mut id_gen = IdentGenerator::new();
         // Generate postcondition checks.
         let mut postcond_checks: Vec<Stmt> = vec![parse_quote! {
-            let mut __anodized_post = true;
+            let __anodized_post = true;
         }];
         for postinvariant in &spec.maintains {
             let check = self.build_postcond_check(
@@ -340,25 +340,24 @@ impl CheckSettings {
                 });
                 let check = self.build_cond_check(msg, cfg, &eval, &repr);
                 parse_quote! {
-                    __anodized_post &= #check;
+                    let __anodized_post = __anodized_post & #check;
                 }
             }
             Some(TamePat::Invertible(inv_pat)) => {
                 let eval = build_cond_eval(expr);
                 let check = self.build_cond_check(msg, cfg, &eval, &repr);
                 parse_quote! {
-                    {
+                    let (__anodized_post, __anodized_output) = {
                         let #inv_pat = __anodized_output;
-                        __anodized_post &= #check;
-                        __anodized_output = #inv_pat;
-                    }
+                        (__anodized_post & #check, #inv_pat)
+                    };
                 }
             }
             None => {
                 let eval = build_cond_eval(expr);
                 let check = self.build_cond_check(msg, cfg, &eval, &repr);
                 parse_quote! {
-                    __anodized_post &= #check;
+                    let __anodized_post = __anodized_post & #check;
                 }
             }
         }
