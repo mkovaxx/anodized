@@ -318,7 +318,7 @@ impl CheckSettings {
     fn build_precond_check(&self, msg: &str, cfg: &Option<Meta>, expr: &Expr) -> Stmt {
         let repr = expr.to_token_stream().to_string();
         let eval = build_cond_eval(expr);
-        let check = self.build_cond_check(msg, cfg, &eval, &repr);
+        let check = self.build_cond_check(msg, cfg, eval, &repr);
         parse_quote! {
             let __anodized_pre = __anodized_pre & #check;
         }
@@ -337,14 +337,14 @@ impl CheckSettings {
                 let eval = build_cond_eval(&parse_quote! {
                     { let #brw_pat = __anodized_output; #expr }
                 });
-                let check = self.build_cond_check(msg, cfg, &eval, &repr);
+                let check = self.build_cond_check(msg, cfg, eval, &repr);
                 parse_quote! {
                     let __anodized_post = __anodized_post & #check;
                 }
             }
             Some(TamePat::Invertible(inv_pat)) => {
                 let eval = build_cond_eval(expr);
-                let check = self.build_cond_check(msg, cfg, &eval, &repr);
+                let check = self.build_cond_check(msg, cfg, eval, &repr);
                 parse_quote! {
                     let (__anodized_post, __anodized_output) = {
                         let #inv_pat = __anodized_output;
@@ -354,7 +354,7 @@ impl CheckSettings {
             }
             None => {
                 let eval = build_cond_eval(expr);
-                let check = self.build_cond_check(msg, cfg, &eval, &repr);
+                let check = self.build_cond_check(msg, cfg, eval, &repr);
                 parse_quote! {
                     let __anodized_post = __anodized_post & #check;
                 }
@@ -362,7 +362,7 @@ impl CheckSettings {
         }
     }
 
-    fn build_cond_check(&self, msg: &str, cfg: &Option<Meta>, cond: &Expr, repr: &str) -> Expr {
+    fn build_cond_check(&self, msg: &str, cfg: &Option<Meta>, cond: Expr, repr: &str) -> Expr {
         let guard: Option<Expr> = if self.does_print || self.does_panic.is_some() {
             cfg.as_ref().map(|meta| parse_quote! { !cfg!(#meta) })
         } else {
@@ -375,16 +375,13 @@ impl CheckSettings {
             None
         };
 
-        let exprs: Vec<Expr> = guard
-            .into_iter()
-            .chain(std::iter::once(cond.clone()))
-            .chain(printer)
-            .collect();
+        let maybe_exprs = [guard, Some(cond), printer];
+        let exprs = maybe_exprs.iter().flatten();
 
-        if let [expr] = exprs.as_slice() {
-            expr.clone()
-        } else {
+        if exprs.clone().count() > 1 {
             parse_quote! { ( #(#exprs)||* ) }
+        } else {
+            parse_quote! { #(#exprs)||* }
         }
     }
 
