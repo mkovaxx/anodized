@@ -370,22 +370,29 @@ impl CheckSettings {
         }
     }
 
-    fn build_cond_check(&self, msg: &str, cfg: &Option<Meta>, expr: &Expr, repr: &str) -> Expr {
-        let cfg_guard = match cfg {
-            Some(meta) => quote! { !cfg!(#meta) || },
-            None => quote!(),
-        };
-        let report_expr = if self.does_print {
-            quote! { || eprintln!(#msg, #repr) != () }
+    fn build_cond_check(&self, msg: &str, cfg: &Option<Meta>, cond: &Expr, repr: &str) -> Expr {
+        let guard: Option<Expr> = if self.does_print || self.does_panic.is_some() {
+            cfg.as_ref().map(|meta| parse_quote! { !cfg!(#meta) })
         } else {
-            quote!()
+            Some(parse_quote! { true })
         };
-        if cfg_guard.is_empty() && report_expr.is_empty() {
+
+        let printer: Option<Expr> = if self.does_print {
+            Some(parse_quote! { eprintln!(#msg, #repr) != () })
+        } else {
+            None
+        };
+
+        let exprs: Vec<Expr> = guard
+            .into_iter()
+            .chain(std::iter::once(cond.clone()))
+            .chain(printer)
+            .collect();
+
+        if let [expr] = exprs.as_slice() {
             expr.clone()
         } else {
-            parse_quote! {
-                ( #cfg_guard #expr #report_expr )
-            }
+            parse_quote! { ( #(#exprs)||* ) }
         }
     }
 
