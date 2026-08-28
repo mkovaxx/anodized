@@ -5,9 +5,10 @@ mod fns_tests;
 use proc_macro2::Span;
 use quote::{ToTokens, quote};
 use syn::{
-    Attribute, Block, Expr, Ident, Meta, Pat, Path, ReturnType, Signature, Stmt, Type,
+    Attribute, Block, Expr, FnArg, Ident, Meta, Pat, Path, ReturnType, Signature, Stmt, Type,
     parse::{Parse, Result},
     parse_quote,
+    spanned::Spanned,
 };
 
 use crate::{
@@ -211,10 +212,39 @@ impl CheckSettings {
         // The identifier for the return value binding.
         let output_ident: Pat = parse_quote!(__anodized_output);
 
+        let mut checked_inputs: Vec<(Ident, TamePat, &Type)> = vec![];
+
+        let mut id_gen = IdentGenerator::new();
+        if self.check_data {
+            for (i, input) in sig.inputs.iter_mut().enumerate() {
+                match input {
+                    FnArg::Receiver(_) => {
+                        todo!()
+                    }
+                    FnArg::Typed(arg) => {
+                        let ident =
+                            Ident::new(&format!("__anodized_input_{}", i + 1), arg.pat.span());
+                        let new_pat: Pat = parse_quote! { #ident };
+                        let pat: Pat = std::mem::replace(&mut arg.pat, new_pat);
+                        let tame_pat = tame_pattern(&mut id_gen, pat)?;
+                        checked_inputs.push((ident, tame_pat, arg.ty.as_ref()));
+                    }
+                }
+            }
+        }
+
         // Generate precondition checks.
         let mut precond_checks: Vec<Stmt> = vec![parse_quote! {
             let __anodized_pre = true;
         }];
+        for (i, (ident, _, ty)) in checked_inputs.iter().enumerate() {
+            let message = format!("input check failed: input {}", i + 1);
+            let expr = parse_quote! {
+                <#ty as ::anodized::data::Refine>::predicate(&#ident)
+            };
+            let check = self.build_precond_check(&message, &None, &expr);
+            precond_checks.push(check);
+        }
         for precondition in &spec.requires {
             let check = self.build_precond_check(
                 "precondition failed: {}",
@@ -256,7 +286,6 @@ impl CheckSettings {
             let (#(#patterns),*) = (#(#values),*);
         };
 
-        let mut id_gen = IdentGenerator::new();
         // Generate postcondition checks.
         let mut postcond_checks: Vec<Stmt> = vec![parse_quote! {
             let __anodized_post = true;
