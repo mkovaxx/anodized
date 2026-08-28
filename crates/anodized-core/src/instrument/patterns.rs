@@ -57,7 +57,7 @@ pub fn tame_pattern(id_gen: &mut IdentGenerator, mut pat: Pat) -> syn::Result<Ta
         let message = if has_rest {
             "inside `#[spec]`, patterns containing `..` must bind only by `ref`"
         } else {
-            "inside `#[spec]`, patterns cannot mix `move` and `ref` bindings"
+            "inside `#[spec]`, patterns cannot mix moving and `ref` bindings"
         };
         Err(syn::Error::new_spanned(pat, message))
     }
