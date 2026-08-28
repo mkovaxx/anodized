@@ -148,9 +148,9 @@ fn check_data_instrument_item_fn() {
             // Check data specs of inputs.
             let __anodized_pre = true;
             let __anodized_pre = __anodized_pre &
-                (true || <TYPE_1 as ::anodized::refine::Refined>::predicate(&__anodized_input_1));
+                (true || <TYPE_1 as ::anodized::data::Refine>::predicate(&__anodized_input_1));
             let __anodized_pre = __anodized_pre &
-                (true || <TYPE_2 as ::anodized::refine::Refined>::predicate(&__anodized_input_2));
+                (true || <TYPE_2 as ::anodized::data::Refine>::predicate(&__anodized_input_2));
             // Bind inputs to patterns.
             let (IN_PAT_1, IN_PAT_2) = (__anodized_input_1, __anodized_input_2);
             // Check preconditions.
@@ -163,11 +163,11 @@ fn check_data_instrument_item_fn() {
             // Check data specs of inputs again. Needed to correctly handle e.g. `&mut T` inputs.
             let __anodized_post = true;
             let __anodized_post = __anodized_post &
-                (true || <RET_TYPE as ::anodized::refine::Refined>::predicate(&__anodized_output));
+                (true || <RET_TYPE as ::anodized::data::Refine>::predicate(&__anodized_output));
             let __anodized_post = __anodized_post &
-                (true || <TYPE_1 as ::anodized::refine::Refined>::predicate(&__anodized_input_1));
+                (true || <TYPE_1 as ::anodized::data::Refine>::predicate(&__anodized_input_1));
             let __anodized_post = __anodized_post &
-                (true || <TYPE_2 as ::anodized::refine::Refined>::predicate(&__anodized_input_2));
+                (true || <TYPE_2 as ::anodized::data::Refine>::predicate(&__anodized_input_2));
             // Re-bind inputs to invertible patterns.
             let (IN_PAT_1, IN_PAT_2) = (__anodized_input_1, __anodized_input_2);
             // Check postconditions.

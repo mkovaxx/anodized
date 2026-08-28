@@ -1,20 +1,20 @@
-pub trait Refined {
+pub trait Refine {
     fn predicate(&self) -> bool;
 }
 
-impl<T: Refined> Refined for &T {
+impl<T: Refine> Refine for &T {
     fn predicate(&self) -> bool {
-        <T as Refined>::predicate(self)
+        <T as Refine>::predicate(self)
     }
 }
 
-impl<T: Refined> Refined for &mut T {
+impl<T: Refine> Refine for &mut T {
     fn predicate(&self) -> bool {
-        <T as Refined>::predicate(self)
+        <T as Refine>::predicate(self)
     }
 }
 
-impl<T: Refined> Refined for Option<T> {
+impl<T: Refine> Refine for Option<T> {
     fn predicate(&self) -> bool {
         match self {
             Some(inner) => inner.predicate(),
@@ -23,7 +23,7 @@ impl<T: Refined> Refined for Option<T> {
     }
 }
 
-impl<T: Refined, E: Refined> Refined for Result<T, E> {
+impl<T: Refine, E: Refine> Refine for Result<T, E> {
     fn predicate(&self) -> bool {
         match self {
             Ok(okay) => okay.predicate(),
@@ -32,41 +32,41 @@ impl<T: Refined, E: Refined> Refined for Result<T, E> {
     }
 }
 
-impl<T: Refined> Refined for Box<T> {
+impl<T: Refine> Refine for Box<T> {
     fn predicate(&self) -> bool {
         self.as_ref().predicate()
     }
 }
 
-impl Refined for () {
+impl Refine for () {
     fn predicate(&self) -> bool {
         true
     }
 }
 
-impl<T1: Refined> Refined for (T1,) {
+impl<T1: Refine> Refine for (T1,) {
     fn predicate(&self) -> bool {
         self.0.predicate()
     }
 }
 
-impl<T1: Refined, T2: Refined> Refined for (T1, T2) {
+impl<T1: Refine, T2: Refine> Refine for (T1, T2) {
     fn predicate(&self) -> bool {
         self.0.predicate() && self.1.predicate()
     }
 }
 
-impl<T1: Refined, T2: Refined, T3: Refined> Refined for (T1, T2, T3) {
+impl<T1: Refine, T2: Refine, T3: Refine> Refine for (T1, T2, T3) {
     fn predicate(&self) -> bool {
         self.0.predicate() && self.1.predicate() && self.2.predicate()
     }
 }
 
-/// Implement `Refined` for concrete types, with `predicate` always `true`.
+/// Implement `Refine` for concrete types, with `predicate` always `true`.
 macro_rules! trivial_refinement {
     ($($ty:ty),+ $(,)?) => {
         $(
-            impl $crate::refine::Refined for $ty {
+            impl $crate::data::Refine for $ty {
                 fn predicate(&self) -> bool { true }
             }
         )+
