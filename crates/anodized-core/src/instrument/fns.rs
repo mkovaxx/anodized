@@ -226,7 +226,7 @@ impl CheckSettings {
         }
         for preinvariant in &spec.maintains {
             let check = self.build_precond_check(
-                "precondition failed: {}",
+                "preinvariant failed: {}",
                 &preinvariant.cfg,
                 &preinvariant.expr,
             );
@@ -265,7 +265,7 @@ impl CheckSettings {
         }];
         for postinvariant in &spec.maintains {
             let check = self.build_postcond_check(
-                "postcondition failed: {}",
+                "postinvariant failed: {}",
                 &postinvariant.cfg,
                 &None,
                 &postinvariant.expr,
