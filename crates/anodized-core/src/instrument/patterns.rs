@@ -17,8 +17,8 @@ pub enum TamePat {
 /// Tame an irrefutable pattern, so that it may be used inside a `#[spec]`.
 ///
 /// 1. If the pattern binds *only* references, classify as `Borrowing`.
-/// 2. If the pattern binds *any* references or contains the rest pattern (`..`), return `Err`.
-/// 3. Replace each wildcard pattern with fresh identifiers, then classify as `Invertible`.
+/// 2. If the pattern binds *any* references or contains the rest (`..`) pattern, return `Err`.
+/// 3. Replace wildcard (`_`) patterns with fresh identifiers, then classify as `Invertible`.
 pub fn tame_pattern(id_gen: &mut IdentGenerator, mut pat: Pat) -> syn::Result<TamePat> {
     let mut ident_count: u32 = 0;
     let mut ref_count: u32 = 0;
