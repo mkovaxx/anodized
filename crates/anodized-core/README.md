@@ -146,4 +146,8 @@ fn my_function(<FUNCTION_INPUTS>) -> <RETURN_TYPE> {
 }
 ```
 
-When a condition has a `#[cfg(...)]` attribute, its individual generated condition is guarded with `!cfg!(...) || ...`. This follows standard Rust `#[cfg]` semantics: the condition is evaluated only when the configuration predicate is true. The condition remains type-checked in every build configuration, and details of diagnostics and failure handling are determined by the enabled `anodized_*` settings.
+When a condition has a `#[cfg(...)]` attribute, its generated evaluator is individually guarded
+with `!cfg!(...) || ...`. This follows standard Rust `#[cfg]` semantics: the condition is evaluated
+only when the configuration predicate is true, but the condition remains type-checked in every build
+configuration, with details of diagnostics and failure handling determined by the `anodized_*`
+settings.
