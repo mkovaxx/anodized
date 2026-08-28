@@ -220,9 +220,7 @@ impl CheckSettings {
                 &precondition.cfg,
                 &precondition.expr,
             );
-            precond_checks.push(parse_quote! {
-                __anodized_pre &= #check;
-            });
+            precond_checks.push(check);
         }
         for preinvariant in &spec.maintains {
             let check = self.build_precond_check(
@@ -230,9 +228,7 @@ impl CheckSettings {
                 &preinvariant.cfg,
                 &preinvariant.expr,
             );
-            precond_checks.push(parse_quote! {
-                __anodized_pre &= #check;
-            });
+            precond_checks.push(check);
         }
 
         // Bind capture values and function output in a single tuple assignment.
@@ -326,10 +322,13 @@ impl CheckSettings {
         })
     }
 
-    fn build_precond_check(&self, msg: &str, cfg: &Option<Meta>, expr: &Expr) -> Expr {
+    fn build_precond_check(&self, msg: &str, cfg: &Option<Meta>, expr: &Expr) -> Stmt {
         let repr = expr.to_token_stream().to_string();
         let eval = build_cond_eval(expr);
-        self.build_cond_check(msg, cfg, &eval, &repr)
+        let check = self.build_cond_check(msg, cfg, &eval, &repr);
+        parse_quote! {
+            __anodized_pre &= #check;
+        }
     }
 
     fn build_postcond_check(
