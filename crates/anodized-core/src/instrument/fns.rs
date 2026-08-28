@@ -32,10 +32,8 @@ impl Mode {
             return Ok(());
         };
 
-        let is_async = sig.asyncness.is_some();
-
         // Generate the new, instrumented function body.
-        let new_body = check_config.instrument_fn_body(spec, body, is_async, &sig.output)?;
+        let new_body = check_config.instrument_fn_body(spec, sig, body)?;
 
         // Replace the old function body with the new one.
         *body = new_body;
@@ -207,9 +205,8 @@ impl CheckSettings {
     fn instrument_fn_body(
         &self,
         spec: &Spec,
+        sig: &mut Signature,
         original_body: &Block,
-        is_async: bool,
-        return_type: &ReturnType,
     ) -> Result<Block> {
         // The identifier for the return value binding.
         let output_ident: Pat = parse_quote!(__anodized_output);
@@ -243,7 +240,8 @@ impl CheckSettings {
             .map(|cb| &cb.pat)
             .chain(std::iter::once(&output_ident));
 
-        let body_expr: Expr = if is_async {
+        let return_type = &sig.output;
+        let body_expr: Expr = if sig.asyncness.is_some() {
             parse_quote! { (async || #return_type #original_body)().await }
         } else {
             parse_quote! { (|| #return_type #original_body)() }
