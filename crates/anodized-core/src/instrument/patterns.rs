@@ -8,7 +8,7 @@ mod patterns_tests;
 /// A 'tame' pattern can be used inside a `#[spec]`.
 #[derive(Debug, PartialEq, Eq)]
 pub enum TamePat {
-    /// The pattern binds only references. It may contain wildcard patterns (`_`).
+    /// The pattern binds only by `ref`. It may contain wildcard (`_`) and rest (`..`) patterns.
     Borrowing(Pat),
     /// The deconstructed value can be reconstructed from the pattern's bindings.
     Invertible(Pat),
