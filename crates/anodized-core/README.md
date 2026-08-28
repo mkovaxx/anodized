@@ -95,15 +95,15 @@ The macro rewrites the body to be conceptually equivalent to the following:
 ```rust,ignore
 fn my_function(<FUNCTION_INPUTS>) -> <RETURN_TYPE> {
     // 1. Preconditions and invariants are checked
-    check!((|| <PRECONDITION>)(), "Precondition failed: <PRECONDITION>");
-    check!((|| <INVARIANT>)(), "Pre-invariant failed: <INVARIANT>");
+    check!((|| <PRECONDITION>)(), "precondition failed: <PRECONDITION>");
+    check!((|| <INVARIANT>)(), "pre-invariant failed: <INVARIANT>");
 
     // 2. Values are captured and the original function body is executed
     // Note 1: captures and body execution happen in a single tuple assignment
     //         to ensure captured values aren't accessible to the function body
     // Note 2: the body is evaluated in a closure, so returns inside the body
     //         do not bypass postcondition checks
-    let (<ALIAS>, __anodized_output): (_, <RETURN_TYPE>) = (
+    let (<ALIAS>, mut __anodized_output): (_, <RETURN_TYPE>) = (
         <CAPTURE_EXPR>,
         (|| { <BODY> })(),
     );
@@ -112,11 +112,14 @@ fn my_function(<FUNCTION_INPUTS>) -> <RETURN_TYPE> {
     // Note 1: Captured values are in scope for postconditions
     // Note 2: `__anodized_output` is also in scope for postconditions,
     //         but referring to it is strongly discouraged
-    check!((|| <INVARIANT>)(), "Post-invariant failed: <INVARIANT>");
-    // Postcondition is checked by invoking the closure with a reference to the return value
-    check!(
-        { let <PATTERN> = __anodized_output; (|| <POSTCONDITION>)() },
-        "Postcondition failed: | <PATTERN> | <POSTCONDITION>",
+    check!((|| <INVARIANT>)(), "post-invariant failed: <INVARIANT>");
+    // Each postcondition runs against `__anodized_output` through its output pattern.
+    // Borrowing patterns borrow it; move patterns reconstruct it after the check.
+    check_postcondition!(
+        <PATTERN>,
+        __anodized_output,
+        <POSTCONDITION>,
+        "postcondition failed: | <PATTERN> | <POSTCONDITION>",
     );
 
     // 4. The result is returned

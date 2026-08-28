@@ -119,46 +119,40 @@ fn runtime_rejects_weaker_impl_postcondition() {
 
 #[spec]
 pub trait Matrix<T> {
-    fn count_rows(&self) -> usize;
-    fn count_cols(&self) -> usize;
+    fn shape(&self) -> MatrixShape;
 
     #[spec(
-        requires: [
-            input.count_rows() == self.count_cols(),
-        ],
-        ensures: |ref output| [
-            output.count_rows() == self.count_rows(),
-            output.count_cols() == input.count_cols(),
+        requires: rhs.shape().rows == self.shape().cols,
+        ensures: |output| [
+            output.shape().rows == self.shape().rows,
+            output.shape().cols == rhs.shape().cols,
         ],
     )]
-    fn mul<Input: Matrix<T>, Output: Matrix<T>>(&self, input: &Input) -> Output;
+    fn mul<Input: Matrix<T>, Output: Matrix<T>>(&self, rhs: &Input) -> Output;
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct MatrixShape {
+    pub rows: usize,
+    pub cols: usize,
 }
 
 pub struct DiagonalMatrix<T>(Vec<T>);
 
 #[spec]
 impl<T> Matrix<T> for DiagonalMatrix<T> {
-    #[spec(ensures: |output| output == self.count_cols())]
-    fn count_rows(&self) -> usize {
-        self.0.len()
-    }
-
-    #[spec(ensures: |output| output == self.count_rows())]
-    fn count_cols(&self) -> usize {
-        self.0.len()
+    #[spec(ensures: |MatrixShape { rows, cols }| rows == cols)]
+    fn shape(&self) -> MatrixShape {
+        let n = self.0.len();
+        MatrixShape { rows: n, cols: n }
     }
 
     #[spec(
-        requires: [
-            input.count_rows() == self.count_cols(),
-        ],
-        ensures: |ref output| [
-            output.count_rows() == input.count_rows(),
-            output.count_cols() == input.count_cols(),
-        ],
+        requires: rhs.shape().rows == self.shape().cols,
+        ensures: |output| output.shape() == rhs.shape(),
     )]
-    fn mul<Input: Matrix<T>, Output: Matrix<T>>(&self, input: &Input) -> Output {
-        let _ = input;
+    fn mul<Input: Matrix<T>, Output: Matrix<T>>(&self, rhs: &Input) -> Output {
+        let _ = rhs;
         todo!()
     }
 }

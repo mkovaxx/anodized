@@ -134,7 +134,7 @@ pub struct Condition {
 /// A postcondition represented by a pattern to bind the output and a `bool`-valued expression.
 #[derive(Debug)]
 pub struct PostCondition {
-    /// The pattern to bind/destructure the function's output, e.g. `ref answer`.
+    /// The pattern to bind or destructure the function's output, e.g. `answer` or `(left, right)`.
     pub pat: Option<Pat>,
     /// The expression that validates the postcondition, e.g. `answer == "forty-two"`.
     pub expr: Expr,

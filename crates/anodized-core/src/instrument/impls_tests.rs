@@ -81,11 +81,15 @@ fn default_instrument_item_impl() {
                     let __anodized_pre = __anodized_pre & ::anodized::__::eval::<bool>(|| COND_2);
                     if !__anodized_pre {}
                 }
-                let (__anodized_output) = ((|| -> RET_TYPE { BODY })());
+                let (mut __anodized_output) = ((|| -> RET_TYPE { BODY })());
                 if false {
-                    let __anodized_post = true;
-                    let __anodized_post = __anodized_post & ::anodized::__::eval::<bool>(|| COND_2);
-                    let __anodized_post = __anodized_post & ::anodized::__::eval::<bool>(|| { let PAT_1 = __anodized_output; COND_3 });
+                    let mut __anodized_post = true;
+                    __anodized_post &= ::anodized::__::eval::<bool>(|| COND_2);
+                    {
+                        let PAT_1 = __anodized_output;
+                        __anodized_post &= ::anodized::__::eval::<bool>(|| COND_3);
+                        __anodized_output = PAT_1;
+                    }
                     if !__anodized_post {}
                 }
                 __anodized_output
@@ -145,13 +149,17 @@ fn emit_try_fn_instrument_item_impl() {
                         return ::anodized::result::pre_err();
                     }
                 }
-                let (__anodized_output) = ((|| -> RET_TYPE { BODY })());
+                let (mut __anodized_output) = ((|| -> RET_TYPE { BODY })());
                 if true {
-                    let __anodized_post = true;
-                    let __anodized_post = __anodized_post & (::anodized::__::eval::<bool>(|| COND_2)
+                    let mut __anodized_post = true;
+                    __anodized_post &= (::anodized::__::eval::<bool>(|| COND_2)
                             || eprintln!("postcondition failed: {}", "COND_2") != ());
-                    let __anodized_post = __anodized_post & (::anodized::__::eval::<bool>(|| { let PAT_1 = __anodized_output; COND_3 })
+                    {
+                        let PAT_1 = __anodized_output;
+                        __anodized_post &= (::anodized::__::eval::<bool>(|| COND_3)
                             || eprintln!("postcondition failed: {}", "COND_3") != ());
+                        __anodized_output = PAT_1;
+                    }
                     if !__anodized_post {
                         return ::anodized::result::post_err(__anodized_output);
                     }
