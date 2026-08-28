@@ -30,7 +30,7 @@ pub struct CheckSettings {
     pub does_print: bool,
     /// Panic on a violated pre/postcondition or invariant.
     pub does_panic: Option<PanicSettings>,
-    /// Validate data type specs at function boundaries.
+    /// Check data type refinements at function boundaries.
     pub check_data: bool,
 }
 
