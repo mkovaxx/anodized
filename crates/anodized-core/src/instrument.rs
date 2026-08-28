@@ -11,6 +11,7 @@ pub mod data;
 pub mod fns;
 pub mod impls;
 pub mod loops;
+pub mod patterns;
 pub mod traits;
 
 #[derive(Debug, Clone)]

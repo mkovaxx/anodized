@@ -172,9 +172,14 @@ use anodized::spec;
 fn get_positive_value() -> i32 { todo!() }
 ```
 
-**Note** that due to Rust's default move semantics, the postcondition closure takes ownership of
-`output`. For the more general case where the function's return type is _not_ `Copy`, borrow it
-instead using a reference pattern: `|ref output|`.
+An output pattern can bind or destructure a return value directly, including a non-`Copy` value.
+For move patterns, Anodized reconstructs the return value after each postcondition, so it can still
+be returned to the caller. Use a reference pattern such as `|ref output|` when the postcondition
+is naturally expressed in terms of a borrow.
+
+Output patterns must be irrefutable. A pattern cannot mix move and `ref` bindings. A pattern that
+contains `..` may bind other values only by `ref`, because the omitted values cannot be
+reconstructed.
 
 **1. Per-Group Binding**: Use the following shorthand form to set a binding for an entire group of postconditions.
 
@@ -193,7 +198,9 @@ fn calculate_larger_even_result(input: i32) -> i32 { todo!() }
 
 **2. Beyond Names: Destructure Return Values**
 
-Bindings also let you destructure return values, making complex postconditions easier to read and write. You can use any valid Rust pattern, including tuple patterns, struct patterns, or even more complex nested patterns.
+Bindings also let you destructure return values, making complex postconditions easier to read and
+write. You can use irrefutable tuple, struct, slice, and nested patterns, subject to the pattern
+rules above.
 
 ```rust, no_run
 use anodized::spec;
