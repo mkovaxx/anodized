@@ -126,7 +126,7 @@ pub trait Matrix<T> {
         requires: [
             input.count_rows() == self.count_cols(),
         ],
-        ensures: |ref output| [
+        ensures: |output| [
             output.count_rows() == self.count_rows(),
             output.count_cols() == input.count_cols(),
         ],
@@ -152,7 +152,7 @@ impl<T> Matrix<T> for DiagonalMatrix<T> {
         requires: [
             input.count_rows() == self.count_cols(),
         ],
-        ensures: |ref output| [
+        ensures: |output| [
             output.count_rows() == input.count_rows(),
             output.count_cols() == input.count_cols(),
         ],
