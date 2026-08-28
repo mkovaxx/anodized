@@ -33,11 +33,8 @@ impl Mode {
             return Ok(());
         };
 
-        // Generate the new, instrumented function body.
-        let new_body = check_config.instrument_fn_body(spec, sig, body)?;
-
-        // Replace the old function body with the new one.
-        *body = new_body;
+        // Instrument the function.
+        check_config.instrument_fn_sig_and_body(spec, sig, body)?;
 
         Ok(())
     }
@@ -203,11 +200,11 @@ impl Mode {
 }
 
 impl CheckSettings {
-    fn instrument_fn_body(
+    fn instrument_fn_sig_and_body(
         &self,
         spec: &Spec,
         sig: &mut Signature,
-        original_body: &Block,
+        body: &mut Block,
     ) -> Result<Block> {
         // The identifier for the return value binding.
         let output_ident: Pat = parse_quote!(__anodized_output);
@@ -272,9 +269,9 @@ impl CheckSettings {
 
         let return_type = &sig.output;
         let body_expr: Expr = if sig.asyncness.is_some() {
-            parse_quote! { (async || #return_type #original_body)().await }
+            parse_quote! { (async || #return_type #body)().await }
         } else {
-            parse_quote! { (|| #return_type #original_body)() }
+            parse_quote! { (|| #return_type #body)() }
         };
         let values = spec
             .captures
@@ -331,7 +328,7 @@ impl CheckSettings {
                 )
             };
 
-        Ok(parse_quote! {
+        *body = parse_quote! {
             {
                 #(#precond_checks)*
                 if !__anodized_pre {
@@ -344,7 +341,9 @@ impl CheckSettings {
                 }
                 #output_expr
             }
-        })
+        };
+
+        Ok(())
     }
 
     fn build_precond_check(&self, msg: &str, cfg: &Option<Meta>, expr: &Expr) -> Stmt {
