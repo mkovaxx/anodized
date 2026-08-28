@@ -205,7 +205,7 @@ impl CheckSettings {
         spec: &Spec,
         sig: &mut Signature,
         body: &mut Block,
-    ) -> Result<Block> {
+    ) -> Result<()> {
         // The identifier for the return value binding.
         let output_ident: Pat = parse_quote!(__anodized_output);
 
@@ -235,26 +235,30 @@ impl CheckSettings {
             let __anodized_pre = true;
         }];
         for (i, (ident, _, ty)) in checked_inputs.iter().enumerate() {
-            let message = format!("input check failed: input {}", i + 1);
+            let message = format!("precondition failed: check input {}", i + 1);
             let expr = parse_quote! {
                 <#ty as ::anodized::data::Refine>::predicate(&#ident)
             };
-            let check = self.build_precond_check(&message, &None, &expr);
+            let check = self.build_precond_check("{}", &None, expr, &message);
             precond_checks.push(check);
         }
         for precondition in &spec.requires {
+            let eval = build_cond_eval(&precondition.expr);
             let check = self.build_precond_check(
                 "precondition failed: {}",
                 &precondition.cfg,
-                &precondition.expr,
+                eval,
+                &precondition.expr.to_token_stream().to_string(),
             );
             precond_checks.push(check);
         }
         for preinvariant in &spec.maintains {
+            let eval = build_cond_eval(&preinvariant.expr);
             let check = self.build_precond_check(
                 "preinvariant failed: {}",
                 &preinvariant.cfg,
-                &preinvariant.expr,
+                eval,
+                &preinvariant.expr.to_token_stream().to_string(),
             );
             precond_checks.push(check);
         }
@@ -288,25 +292,30 @@ impl CheckSettings {
             let __anodized_post = true;
         }];
         for postinvariant in &spec.maintains {
+            let eval = build_cond_eval(&postinvariant.expr);
             let check = self.build_postcond_check(
                 "postinvariant failed: {}",
                 &postinvariant.cfg,
                 &None,
-                &postinvariant.expr,
+                eval,
+                &postinvariant.expr.to_token_stream().to_string(),
             );
             postcond_checks.push(check);
         }
         for postcondition in &spec.ensures {
+            let expr = &postcondition.expr;
             let tame_pat = if let Some(pat) = &postcondition.pat {
                 Some(tame_pattern(&mut id_gen, pat.clone())?)
             } else {
                 None
             };
+            let eval = build_cond_eval(&postcondition.expr);
             let check = self.build_postcond_check(
                 "postcondition failed: {}",
                 &postcondition.cfg,
                 &tame_pat,
-                &postcondition.expr,
+                eval,
+                &expr.to_token_stream().to_string(),
             );
             postcond_checks.push(check);
         }
@@ -346,10 +355,8 @@ impl CheckSettings {
         Ok(())
     }
 
-    fn build_precond_check(&self, msg: &str, cfg: &Option<Meta>, expr: &Expr) -> Stmt {
-        let repr = expr.to_token_stream().to_string();
-        let eval = build_cond_eval(expr);
-        let check = self.build_cond_check(msg, cfg, eval, &repr);
+    fn build_precond_check(&self, msg: &str, cfg: &Option<Meta>, eval: Expr, repr: &str) -> Stmt {
+        let check = self.build_cond_check(msg, cfg, eval, repr);
         parse_quote! {
             let __anodized_pre = __anodized_pre & #check;
         }
@@ -360,22 +367,21 @@ impl CheckSettings {
         msg: &str,
         cfg: &Option<Meta>,
         tame_pat: &Option<TamePat>,
-        expr: &Expr,
+        expr: Expr,
+        repr: &str,
     ) -> Stmt {
-        let repr = expr.to_token_stream().to_string();
         match tame_pat {
             Some(TamePat::Borrowing(brw_pat)) => {
-                let eval = build_cond_eval(&parse_quote! {
+                let eval = parse_quote! {
                     { let #brw_pat = __anodized_output; #expr }
-                });
-                let check = self.build_cond_check(msg, cfg, eval, &repr);
+                };
+                let check = self.build_cond_check(msg, cfg, eval, repr);
                 parse_quote! {
                     let __anodized_post = __anodized_post & #check;
                 }
             }
             Some(TamePat::Invertible(inv_pat)) => {
-                let eval = build_cond_eval(expr);
-                let check = self.build_cond_check(msg, cfg, eval, &repr);
+                let check = self.build_cond_check(msg, cfg, expr.clone(), repr);
                 parse_quote! {
                     let (__anodized_post, __anodized_output) = {
                         let #inv_pat = __anodized_output;
@@ -384,8 +390,7 @@ impl CheckSettings {
                 }
             }
             None => {
-                let eval = build_cond_eval(expr);
-                let check = self.build_cond_check(msg, cfg, eval, &repr);
+                let check = self.build_cond_check(msg, cfg, expr.clone(), repr);
                 parse_quote! {
                     let __anodized_post = __anodized_post & #check;
                 }

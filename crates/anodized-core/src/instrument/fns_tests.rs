@@ -315,7 +315,7 @@ fn simple_requires() {
     CheckSettings::PRINT_AND_PANIC
         .instrument_fn_sig_and_body(&spec, &mut func.sig, &mut func.block)
         .unwrap();
-    assert_tokens_eq(&func, &expected);
+    assert_tokens_eq(&func.block, &expected);
 }
 
 #[test]
@@ -340,7 +340,7 @@ fn requires_disable_runtime_checks() {
     CheckSettings::DEFAULT
         .instrument_fn_sig_and_body(&spec, &mut func.sig, &mut func.block)
         .unwrap();
-    assert_tokens_eq(&func, &expected);
+    assert_tokens_eq(&func.block, &expected);
 }
 
 #[test]
@@ -366,7 +366,7 @@ fn requires_no_panic_runtime() {
     CheckSettings::PRINT
         .instrument_fn_sig_and_body(&spec, &mut func.sig, &mut func.block)
         .unwrap();
-    assert_tokens_eq(&func, &expected);
+    assert_tokens_eq(&func.block, &expected);
 }
 
 #[test]
@@ -395,10 +395,10 @@ fn simple_maintains() {
         }
     };
 
-    let observed = CheckSettings::PRINT_AND_PANIC
-        .instrument_fn_sig_and_body(&spec, &mut func.sig, &func.block)
+    CheckSettings::PRINT_AND_PANIC
+        .instrument_fn_sig_and_body(&spec, &mut func.sig, &mut func.block)
         .unwrap();
-    assert_tokens_eq(&observed, &expected);
+    assert_tokens_eq(&func.block, &expected);
 }
 
 #[test]
@@ -425,10 +425,10 @@ fn simple_ensures() {
         }
     };
 
-    let observed = CheckSettings::PRINT_AND_PANIC
-        .instrument_fn_sig_and_body(&spec, &mut func.sig, &func.block)
+    CheckSettings::PRINT_AND_PANIC
+        .instrument_fn_sig_and_body(&spec, &mut func.sig, &mut func.block)
         .unwrap();
-    assert_tokens_eq(&observed, &expected);
+    assert_tokens_eq(&func.block, &expected);
 }
 
 #[test]
@@ -460,10 +460,10 @@ fn simple_requires_and_maintains() {
         }
     };
 
-    let observed = CheckSettings::PRINT_AND_PANIC
-        .instrument_fn_sig_and_body(&spec, &mut func.sig, &func.block)
+    CheckSettings::PRINT_AND_PANIC
+        .instrument_fn_sig_and_body(&spec, &mut func.sig, &mut func.block)
         .unwrap();
-    assert_tokens_eq(&observed, &expected);
+    assert_tokens_eq(&func.block, &expected);
 }
 
 #[test]
@@ -493,10 +493,10 @@ fn simple_requires_and_ensures() {
         }
     };
 
-    let observed = CheckSettings::PRINT_AND_PANIC
-        .instrument_fn_sig_and_body(&spec, &mut func.sig, &func.block)
+    CheckSettings::PRINT_AND_PANIC
+        .instrument_fn_sig_and_body(&spec, &mut func.sig, &mut func.block)
         .unwrap();
-    assert_tokens_eq(&observed, &expected);
+    assert_tokens_eq(&func.block, &expected);
 }
 
 #[test]
@@ -528,10 +528,10 @@ fn simple_maintains_and_ensures() {
         }
     };
 
-    let observed = CheckSettings::PRINT_AND_PANIC
-        .instrument_fn_sig_and_body(&spec, &mut func.sig, &func.block)
+    CheckSettings::PRINT_AND_PANIC
+        .instrument_fn_sig_and_body(&spec, &mut func.sig, &mut func.block)
         .unwrap();
-    assert_tokens_eq(&observed, &expected);
+    assert_tokens_eq(&func.block, &expected);
 }
 
 #[test]
@@ -566,10 +566,10 @@ fn simple_requires_maintains_and_ensures() {
         }
     };
 
-    let observed = CheckSettings::PRINT_AND_PANIC
-        .instrument_fn_sig_and_body(&spec, &mut func.sig, &func.block)
+    CheckSettings::PRINT_AND_PANIC
+        .instrument_fn_sig_and_body(&spec, &mut func.sig, &mut func.block)
         .unwrap();
-    assert_tokens_eq(&observed, &expected);
+    assert_tokens_eq(&func.block, &expected);
 }
 
 #[test]
@@ -604,10 +604,10 @@ fn simple_async_requires_maintains_and_ensures() {
         }
     };
 
-    let observed = CheckSettings::PRINT_AND_PANIC
-        .instrument_fn_sig_and_body(&spec, &mut func.sig, &func.block)
+    CheckSettings::PRINT_AND_PANIC
+        .instrument_fn_sig_and_body(&spec, &mut func.sig, &mut func.block)
         .unwrap();
-    assert_tokens_eq(&observed, &expected);
+    assert_tokens_eq(&func.block, &expected);
 }
 
 #[test]
@@ -650,10 +650,10 @@ fn multiple_conditions_in_clauses() {
         }
     };
 
-    let observed = CheckSettings::PRINT_AND_PANIC
-        .instrument_fn_sig_and_body(&spec, &mut func.sig, &func.block)
+    CheckSettings::PRINT_AND_PANIC
+        .instrument_fn_sig_and_body(&spec, &mut func.sig, &mut func.block)
         .unwrap();
-    assert_tokens_eq(&observed, &expected);
+    assert_tokens_eq(&func.block, &expected);
 }
 
 #[test]
@@ -683,10 +683,10 @@ fn postcond_closure_form() {
         }
     };
 
-    let observed = CheckSettings::PRINT_AND_PANIC
-        .instrument_fn_sig_and_body(&spec, &mut func.sig, &func.block)
+    CheckSettings::PRINT_AND_PANIC
+        .instrument_fn_sig_and_body(&spec, &mut func.sig, &mut func.block)
         .unwrap();
-    assert_tokens_eq(&observed, &expected);
+    assert_tokens_eq(&func.block, &expected);
 }
 
 #[test]
@@ -724,10 +724,10 @@ fn ensures_with_mixed_conditions() {
         }
     };
 
-    let observed = CheckSettings::PRINT_AND_PANIC
-        .instrument_fn_sig_and_body(&spec, &mut func.sig, &func.block)
+    CheckSettings::PRINT_AND_PANIC
+        .instrument_fn_sig_and_body(&spec, &mut func.sig, &mut func.block)
         .unwrap();
-    assert_tokens_eq(&observed, &expected);
+    assert_tokens_eq(&func.block, &expected);
 }
 
 #[test]
@@ -765,10 +765,10 @@ fn cfg_attributes() {
         }
     };
 
-    let observed = CheckSettings::PRINT_AND_PANIC
-        .instrument_fn_sig_and_body(&spec, &mut func.sig, &func.block)
+    CheckSettings::PRINT_AND_PANIC
+        .instrument_fn_sig_and_body(&spec, &mut func.sig, &mut func.block)
         .unwrap();
-    assert_tokens_eq(&observed, &expected);
+    assert_tokens_eq(&func.block, &expected);
 }
 
 #[test]
@@ -811,10 +811,10 @@ fn cfg_on_single_and_list_conditions() {
         }
     };
 
-    let observed = CheckSettings::PRINT_AND_PANIC
-        .instrument_fn_sig_and_body(&spec, &mut func.sig, &func.block)
+    CheckSettings::PRINT_AND_PANIC
+        .instrument_fn_sig_and_body(&spec, &mut func.sig, &mut func.block)
         .unwrap();
-    assert_tokens_eq(&observed, &expected);
+    assert_tokens_eq(&func.block, &expected);
 }
 
 #[test]
@@ -871,10 +871,10 @@ fn complex_mixed_conditions() {
         }
     };
 
-    let observed = CheckSettings::PRINT_AND_PANIC
-        .instrument_fn_sig_and_body(&spec, &mut func.sig, &func.block)
+    CheckSettings::PRINT_AND_PANIC
+        .instrument_fn_sig_and_body(&spec, &mut func.sig, &mut func.block)
         .unwrap();
-    assert_tokens_eq(&observed, &expected);
+    assert_tokens_eq(&func.block, &expected);
 }
 
 #[test]
@@ -917,10 +917,10 @@ fn captures() {
         }
     };
 
-    let observed = CheckSettings::PRINT_AND_PANIC
-        .instrument_fn_sig_and_body(&spec, &mut func.sig, &func.block)
+    CheckSettings::PRINT_AND_PANIC
+        .instrument_fn_sig_and_body(&spec, &mut func.sig, &mut func.block)
         .unwrap();
-    assert_tokens_eq(&observed, &expected);
+    assert_tokens_eq(&func.block, &expected);
 }
 
 #[test]
