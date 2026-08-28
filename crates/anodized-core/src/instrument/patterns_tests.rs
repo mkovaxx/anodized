@@ -40,7 +40,7 @@ fn pair_of_ref_and_move_is_err() {
     let pat: Pat = parse_quote! { (ref a, b) };
     let expected = Err(syn::Error::new_spanned(
         &pat,
-        "inside `#[spec]`, patterns cannot mix moving and `ref` bindings",
+        "inside `#[spec]`, patterns cannot mix move and `ref` bindings",
     ));
 
     let mut id_gen = IdentGenerator::new();
@@ -157,7 +157,7 @@ fn struct_with_ref_and_move_is_err() {
     let pat: Pat = parse_quote! { Point { x: ref x, y } };
     let expected = Err(syn::Error::new_spanned(
         &pat,
-        "inside `#[spec]`, patterns cannot mix moving and `ref` bindings",
+        "inside `#[spec]`, patterns cannot mix move and `ref` bindings",
     ));
 
     let mut id_gen = IdentGenerator::new();
@@ -215,7 +215,7 @@ fn tuple_struct_with_ref_and_move_is_err() {
     let pat: Pat = parse_quote! { Point(x, ref y) };
     let expected = Err(syn::Error::new_spanned(
         &pat,
-        "inside `#[spec]`, patterns cannot mix moving and `ref` bindings",
+        "inside `#[spec]`, patterns cannot mix move and `ref` bindings",
     ));
 
     let mut id_gen = IdentGenerator::new();
@@ -295,7 +295,7 @@ fn slice_with_ref_and_move_is_err() {
     let pat: Pat = parse_quote! { [ref first, second] };
     let expected = Err(syn::Error::new_spanned(
         &pat,
-        "inside `#[spec]`, patterns cannot mix moving and `ref` bindings",
+        "inside `#[spec]`, patterns cannot mix move and `ref` bindings",
     ));
 
     let mut id_gen = IdentGenerator::new();
