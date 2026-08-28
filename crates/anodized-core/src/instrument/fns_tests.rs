@@ -94,12 +94,12 @@ fn default_instrument_item_fn() {
         fn FUNC(&self, PARAM_1: TYPE_1, PARAM_2: TYPE_2) -> RET_TYPE {
             if false {
                 let mut __anodized_pre = true;
-                __anodized_pre &= ::anodized::__::eval::<bool>(|| COND_1);
-                __anodized_pre &= (!cfg!(META_1) || ::anodized::__::eval::<bool>(|| COND_2));
-                __anodized_pre &= (!cfg!(META_1) || ::anodized::__::eval::<bool>(|| COND_3));
-                __anodized_pre &= ::anodized::__::eval::<bool>(|| COND_4);
-                __anodized_pre &= ::anodized::__::eval::<bool>(|| COND_5);
-                __anodized_pre &= (!cfg!(META_2) || ::anodized::__::eval::<bool>(|| COND_6));
+                __anodized_pre &= (true || ::anodized::__::eval::<bool>(|| COND_1));
+                __anodized_pre &= (true || ::anodized::__::eval::<bool>(|| COND_2));
+                __anodized_pre &= (true || ::anodized::__::eval::<bool>(|| COND_3));
+                __anodized_pre &= (true || ::anodized::__::eval::<bool>(|| COND_4));
+                __anodized_pre &= (true || ::anodized::__::eval::<bool>(|| COND_5));
+                __anodized_pre &= (true || ::anodized::__::eval::<bool>(|| COND_6));
                 if !__anodized_pre {}
             }
             let (ALIAS_1, (ALIAS_2, ALIAS_3), mut __anodized_output) = (
@@ -109,22 +109,22 @@ fn default_instrument_item_fn() {
             );
             if false {
                 let mut __anodized_post = true;
-                __anodized_post &= ::anodized::__::eval::<bool>(|| COND_4);
-                __anodized_post &= ::anodized::__::eval::<bool>(|| COND_5);
-                __anodized_post &= (!cfg!(META_2) || ::anodized::__::eval::<bool>(|| COND_6));
+                __anodized_post &= (true || ::anodized::__::eval::<bool>(|| COND_4));
+                __anodized_post &= (true || ::anodized::__::eval::<bool>(|| COND_5));
+                __anodized_post &= (true || ::anodized::__::eval::<bool>(|| COND_6));
                 {
                     let PAT_1 = __anodized_output;
-                    __anodized_post &= ::anodized::__::eval::<bool>(|| COND_7);
+                    __anodized_post &= (true || ::anodized::__::eval::<bool>(|| COND_7));
                     __anodized_output = PAT_1;
                 }
                 {
                     let PAT_1 = __anodized_output;
-                    __anodized_post &= (!cfg!(META_3) || ::anodized::__::eval::<bool>(|| COND_8));
+                    __anodized_post &= (true || ::anodized::__::eval::<bool>(|| COND_8));
                     __anodized_output = PAT_1;
                 }
                 {
                     let PAT_1 = __anodized_output;
-                    __anodized_post &= (!cfg!(META_3) || ::anodized::__::eval::<bool>(|| COND_9));
+                    __anodized_post &= (true || ::anodized::__::eval::<bool>(|| COND_9));
                     __anodized_output = PAT_1;
                 }
                 if !__anodized_post {}
@@ -291,7 +291,7 @@ fn requires_disable_runtime_checks() {
         {
             if false {
                 let mut __anodized_pre = true;
-                __anodized_pre &= ::anodized::__::eval::<bool>(|| CONDITION_1);
+                __anodized_pre &= (true || ::anodized::__::eval::<bool>(|| CONDITION_1));
                 if !__anodized_pre {}
             }
             let (mut __anodized_output) = ((|| #ret_type #body)());

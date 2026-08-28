@@ -95,17 +95,17 @@ fn default_instrument_item_trait() {
             fn FUNC(&self, PARAM_1: TYPE_1, PARAM_2: TYPE_2) -> RET_TYPE {
                 if false {
                     let mut __anodized_pre = true;
-                    __anodized_pre &= ::anodized::__::eval::<bool>(|| COND_1);
-                    __anodized_pre &= ::anodized::__::eval::<bool>(|| COND_2);
+                    __anodized_pre &= (true || ::anodized::__::eval::<bool>(|| COND_1));
+                    __anodized_pre &= (true || ::anodized::__::eval::<bool>(|| COND_2));
                     if !__anodized_pre {}
                 }
                 let (mut __anodized_output) = ((|| -> RET_TYPE { Self::__anodized_FUNC(self, PARAM_1, PARAM_2) })());
                 if false {
                     let mut __anodized_post = true;
-                    __anodized_post &= ::anodized::__::eval::<bool>(|| COND_2);
+                    __anodized_post &= (true || ::anodized::__::eval::<bool>(|| COND_2));
                     {
                         let PAT_1 = __anodized_output;
-                        __anodized_post &= ::anodized::__::eval::<bool>(|| COND_3);
+                        __anodized_post &= (true || ::anodized::__::eval::<bool>(|| COND_3));
                         __anodized_output = PAT_1;
                     }
                     if !__anodized_post {}
@@ -293,17 +293,17 @@ fn default_instrument_item_impl_trait() {
                 };
                 if false {
                     let mut __anodized_pre = true;
-                    __anodized_pre &= ::anodized::__::eval::<bool>(|| COND_1);
-                    __anodized_pre &= ::anodized::__::eval::<bool>(|| COND_2);
+                    __anodized_pre &= (true || ::anodized::__::eval::<bool>(|| COND_1));
+                    __anodized_pre &= (true || ::anodized::__::eval::<bool>(|| COND_2));
                     if !__anodized_pre {}
                 }
                 let (mut __anodized_output) = ((|| -> RET_TYPE { BODY })());
                 if false {
                     let mut __anodized_post = true;
-                    __anodized_post &= ::anodized::__::eval::<bool>(|| COND_2);
+                    __anodized_post &= (true || ::anodized::__::eval::<bool>(|| COND_2));
                     {
                         let PAT_1 = __anodized_output;
-                        __anodized_post &= ::anodized::__::eval::<bool>(|| COND_3);
+                        __anodized_post &= (true || ::anodized::__::eval::<bool>(|| COND_3));
                         __anodized_output = PAT_1;
                     }
                     if !__anodized_post {}
