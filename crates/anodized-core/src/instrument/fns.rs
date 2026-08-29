@@ -350,10 +350,9 @@ impl CheckSettings {
                 let eval = build_cond_eval(expr);
                 let check = self.build_cond_check(msg, cfg, eval, &repr);
                 parse_quote! {
-                    let (__anodized_post, __anodized_output) = {
-                        let #inv_pat = __anodized_output;
+                    let (__anodized_post, __anodized_output) = (|#inv_pat| {
                         (__anodized_post & #check, #inv_expr)
-                    };
+                    })(__anodized_output);
                 }
             }
             None => {
