@@ -668,7 +668,7 @@ fn postcond_borrowing_closure_form() {
             let (__anodized_output) = (::anodized::__::eval_once(|| #ret_type #body));
             let __anodized_post = true;
             let __anodized_post = __anodized_post & ::anodized::__::apply(
-                |&(ref OUTPUT_PATTERN)| (::anodized::__::eval::<bool>(|| CONDITION_1)
+                |&ref OUTPUT_PATTERN| (::anodized::__::eval::<bool>(|| CONDITION_1)
                     || eprintln!("postcondition failed: {}", "CONDITION_1") != ()),
                 &__anodized_output,
             );

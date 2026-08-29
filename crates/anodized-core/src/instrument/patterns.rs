@@ -14,7 +14,7 @@ pub fn make_reference_pattern(pat: &Pat) -> Pat {
     match pat {
         #[rustfmt::skip]
         Pat::Type(PatType { attrs, pat, colon_token, ty }) =>
-            parse_quote_spanned! { span => #(#attrs)* &#pat #colon_token &#ty },
+            Pat::Type(parse_quote_spanned! { span => #(#attrs)* &#pat #colon_token &#ty }),
         non_typed_pat => parse_quote_spanned! { span => &#non_typed_pat },
     }
 }

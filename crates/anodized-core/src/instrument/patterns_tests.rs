@@ -6,25 +6,33 @@ use crate::{
 };
 
 #[test]
-fn make_reference_pattern_wraps_a_simple_pattern() {
-    let pat: Pat = parse_quote! { ref value };
-    let expected: Pat = parse_quote! { &(ref value) };
+fn make_reference_simple_pattern() {
+    let pat: Pat = parse_quote! { value };
+    let expected: Pat = parse_quote! { &value };
     let observed = make_reference_pattern(&pat);
     assert_tokens_eq(&observed, &expected);
 }
 
 #[test]
-fn make_reference_pattern_wraps_a_composite_pattern() {
-    let pat: Pat = parse_quote! { (ref first, _) };
-    let expected: Pat = parse_quote! { &((ref first, _)) };
+fn make_reference_composite_pattern() {
+    let pat: Pat = parse_quote! { (a, b) };
+    let expected: Pat = parse_quote! { &(a, b) };
     let observed = make_reference_pattern(&pat);
     assert_tokens_eq(&observed, &expected);
 }
 
 #[test]
-fn make_reference_pattern_references_both_sides_of_a_type_ascription() {
-    let pat = Pat::Type(parse_quote! { ref value: String });
-    let expected = Pat::Type(parse_quote! { &(ref value): &(String) });
+fn make_reference_wildcard_pattern() {
+    let pat: Pat = parse_quote! { _ };
+    let expected: Pat = parse_quote! { &_ };
+    let observed = make_reference_pattern(&pat);
+    assert_tokens_eq(&observed, &expected);
+}
+
+#[test]
+fn make_reference_typed_pattern() {
+    let pat = Pat::Type(parse_quote! { key: String });
+    let expected = Pat::Type(parse_quote! { &key: &String });
     let observed = make_reference_pattern(&pat);
     assert_tokens_eq(&observed, &expected);
 }
