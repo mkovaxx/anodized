@@ -342,8 +342,8 @@ impl CheckSettings {
                 let check = self.build_cond_check(msg, cfg, eval, &repr);
                 let reference_pat = make_reference_pattern(brw_pat);
                 parse_quote! {
-                    let __anodized_post = ::anodized::__::apply(
-                        |#reference_pat| { __anodized_post & #check },
+                    let __anodized_post = __anodized_post & ::anodized::__::apply(
+                        |#reference_pat| #check,
                         &__anodized_output,
                     );
                 }
