@@ -1,5 +1,3 @@
-// Tests attempting to mutate return value in a postcondition should give a sensible error
-// Current behavior is bad: The macro panics with a confusing error.
 use anodized::spec;
 
 #[spec(ensures: |mut a| {
