@@ -7,7 +7,8 @@ use quote::{ToTokens, quote};
 use syn::{
     Attribute, Block, Expr, Ident, Meta, Pat, Path, ReturnType, Signature, Stmt, Type,
     parse::{Parse, Result},
-    parse_quote,
+    parse_quote, parse_quote_spanned,
+    spanned::Spanned,
 };
 
 use crate::{
@@ -399,7 +400,8 @@ impl CheckSettings {
 }
 
 fn build_cond_eval(expr: &Expr) -> Expr {
-    parse_quote! { ::anodized::__::eval::<bool>(|| #expr) }
+    let span = expr.span();
+    parse_quote_spanned! { span => ::anodized::__::eval::<bool>(|| #expr) }
 }
 
 fn build_capture_eval(expr: &Expr) -> Expr {

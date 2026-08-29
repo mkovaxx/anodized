@@ -1,12 +1,13 @@
-error[E0594]: cannot assign to value, as it is a captured variable in a `Fn` closure
+error[E0594]: cannot assign to `*a`, as it is a captured variable in a `Fn` closure
  --> tests/compile_fail/output_pattern_mutation_attempt.rs:6:5
   |
-5 | / #[spec(ensures: |mut a| {
+5 |   #[spec(ensures: |mut a| {
+  |  _________________________-
 6 | |     *a = 999;
   | |     ^^^^^^^^ cannot assign
 7 | |     true
 8 | | })]
-  | |___- in this closure
+  | |_- in this closure
 9 |   fn sort_pair(val: &mut i32) -> &mut i32 {
   |      ---------                   -------- change this to return `FnMut` instead of `Fn`
 
