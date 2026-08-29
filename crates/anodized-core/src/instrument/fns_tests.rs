@@ -651,6 +651,41 @@ fn postcond_closure_form() {
 }
 
 #[test]
+fn postcond_borrowing_closure_form() {
+    let spec: Spec = parse_quote! {
+        ensures: |ref OUTPUT_PATTERN| CONDITION_1,
+    };
+    let body = make_fn_body();
+    let ret_type = make_return_type();
+    let is_async = false;
+
+    let expected: Block = parse_quote! {
+        {
+            let __anodized_pre = true;
+            if !__anodized_pre {
+                panic!("precondition failed");
+            }
+            let (__anodized_output) = (::anodized::__::eval_once(|| #ret_type #body));
+            let __anodized_post = true;
+            let __anodized_post = __anodized_post & ::anodized::__::apply(
+                |&(ref OUTPUT_PATTERN)| (::anodized::__::eval::<bool>(|| CONDITION_1)
+                    || eprintln!("postcondition failed: {}", "CONDITION_1") != ()),
+                &__anodized_output,
+            );
+            if !__anodized_post {
+                panic!("postcondition failed");
+            }
+            __anodized_output
+        }
+    };
+
+    let observed = CheckSettings::PRINT_AND_PANIC
+        .instrument_fn_body(&spec, &body, is_async, &ret_type)
+        .unwrap();
+    assert_tokens_eq(&observed, &expected);
+}
+
+#[test]
 fn ensures_with_mixed_conditions() {
     let spec: Spec = parse_quote! {
         ensures: [
