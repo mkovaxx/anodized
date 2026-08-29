@@ -176,7 +176,7 @@ pub fn assert_tame_pat_eq(left: &syn::Result<TamePat>, right: &syn::Result<TameP
 fn stringify_tame_pat(tame_pat: &syn::Result<TamePat>) -> String {
     let tokens = match tame_pat {
         Ok(TamePat::Borrowing(brw_pat)) => quote! { brw #brw_pat },
-        Ok(TamePat::Invertible(inv_pat)) => quote! { inv #inv_pat },
+        Ok(TamePat::Invertible(inv_pat, inv_expr)) => quote! { inv #inv_pat => #inv_expr },
         Err(err) => {
             let msg = err.to_string();
             quote! { err #msg }

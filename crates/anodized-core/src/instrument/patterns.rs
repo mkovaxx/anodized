@@ -1,5 +1,5 @@
 use proc_macro2::Span;
-use syn::{Ident, Pat, PatIdent, visit_mut::VisitMut};
+use syn::{Expr, Ident, Pat, PatIdent, parse_quote, visit_mut::VisitMut};
 
 #[cfg(test)]
 #[path = "patterns_tests.rs"]
@@ -11,7 +11,7 @@ pub enum TamePat {
     /// The pattern binds only by `ref`. It may contain wildcard (`_`) and rest (`..`) patterns.
     Borrowing(Pat),
     /// The deconstructed value can be reconstructed from the pattern's bindings.
-    Invertible(Pat),
+    Invertible(Pat, Expr),
 }
 
 /// Tame an irrefutable pattern, so that it may be used inside a `#[spec]`.
@@ -52,7 +52,11 @@ pub fn tame_pattern(id_gen: &mut IdentGenerator, mut pat: Pat) -> syn::Result<Ta
         })
         .visit_pat_mut(&mut pat);
 
-        Ok(TamePat::Invertible(pat))
+        let clean_pat = pat.clone();
+        // TODO: Transform `clean_pat` to eliminate `mut` and `@`.
+        let expr = parse_quote! { #clean_pat };
+
+        Ok(TamePat::Invertible(pat, expr))
     } else {
         let message = if has_rest {
             "inside `#[spec]`, patterns containing `..` must bind only by `ref`"

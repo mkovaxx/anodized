@@ -342,13 +342,13 @@ impl CheckSettings {
                     let __anodized_post = __anodized_post & #check;
                 }
             }
-            Some(TamePat::Invertible(inv_pat)) => {
+            Some(TamePat::Invertible(inv_pat, inv_expr)) => {
                 let eval = build_cond_eval(expr);
                 let check = self.build_cond_check(msg, cfg, eval, &repr);
                 parse_quote! {
                     let (__anodized_post, __anodized_output) = {
                         let #inv_pat = __anodized_output;
-                        (__anodized_post & #check, #inv_pat)
+                        (__anodized_post & #check, #inv_expr)
                     };
                 }
             }
