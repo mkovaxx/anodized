@@ -52,8 +52,19 @@ pub fn tame_pattern(id_gen: &mut IdentGenerator, mut pat: Pat) -> syn::Result<Ta
         })
         .visit_pat_mut(&mut pat);
 
-        let clean_pat = pat.clone();
-        // TODO: Transform `clean_pat` to eliminate `mut` and `@`.
+        let mut clean_pat = pat.clone();
+        // Transform `clean_pat` to eliminate `mut` and `@`.
+        ForEachMutPattern::with(|subpat| {
+            // TODO: Remove attributes.
+            match subpat {
+                Pat::Ident(subpat_ident) => {
+                    subpat_ident.mutability = None;
+                    subpat_ident.subpat = None;
+                }
+                _ => {}
+            }
+        })
+        .visit_pat_mut(&mut clean_pat);
         let expr = parse_quote! { #clean_pat };
 
         Ok(TamePat::Invertible(pat, expr))
