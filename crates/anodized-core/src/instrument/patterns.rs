@@ -53,13 +53,16 @@ pub fn tame_pattern(id_gen: &mut IdentGenerator, mut pat: Pat) -> syn::Result<Ta
         .visit_pat_mut(&mut pat);
 
         let mut clean_pat = pat.clone();
-        // Transform `clean_pat` to eliminate `mut` and `@`.
+        // Transform `clean_pat` to eliminate `mut`, `@`, and type ascriptions.
         ForEachMutPattern::with(|subpat| {
             // TODO: Remove attributes.
             match subpat {
                 Pat::Ident(subpat_ident) => {
                     subpat_ident.mutability = None;
                     subpat_ident.subpat = None;
+                }
+                Pat::Type(subpat_typed) => {
+                    *subpat = std::mem::replace(&mut *subpat_typed.pat, parse_quote! { _ });
                 }
                 _ => {}
             }
