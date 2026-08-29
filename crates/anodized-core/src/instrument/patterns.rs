@@ -8,7 +8,7 @@ mod patterns_tests;
 /// A 'tame' pattern can be used inside a `#[spec]`.
 #[derive(Debug, PartialEq, Eq)]
 pub enum TamePat {
-    /// The pattern binds only references. It may contain wildcard patterns (`_`).
+    /// The pattern binds only by `ref`. It may contain wildcard (`_`) and rest (`..`) patterns.
     Borrowing(Pat),
     /// The deconstructed value can be reconstructed from the pattern's bindings.
     Invertible(Pat),
@@ -17,8 +17,8 @@ pub enum TamePat {
 /// Tame an irrefutable pattern, so that it may be used inside a `#[spec]`.
 ///
 /// 1. If the pattern binds *only* references, classify as `Borrowing`.
-/// 2. If the pattern binds *any* references or contains the rest pattern (`..`), return `Err`.
-/// 3. Replace each wildcard pattern with fresh identifiers, then classify as `Invertible`.
+/// 2. If the pattern binds *any* references or contains the rest (`..`) pattern, return `Err`.
+/// 3. Replace wildcard (`_`) patterns with fresh identifiers, then classify as `Invertible`.
 pub fn tame_pattern(id_gen: &mut IdentGenerator, mut pat: Pat) -> syn::Result<TamePat> {
     let mut ident_count: u32 = 0;
     let mut ref_count: u32 = 0;
@@ -54,7 +54,12 @@ pub fn tame_pattern(id_gen: &mut IdentGenerator, mut pat: Pat) -> syn::Result<Ta
 
         Ok(TamePat::Invertible(pat))
     } else {
-        Err(syn::Error::new_spanned(pat, "unsupported inside `#[spec]`"))
+        let message = if has_rest {
+            "inside `#[spec]`, patterns containing `..` must bind only by `ref`"
+        } else {
+            "inside `#[spec]`, patterns cannot mix move and `ref` bindings"
+        };
+        Err(syn::Error::new_spanned(pat, message))
     }
 }
 
