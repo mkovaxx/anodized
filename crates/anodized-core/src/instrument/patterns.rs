@@ -1,5 +1,8 @@
 use proc_macro2::Span;
-use syn::{Expr, Ident, Pat, PatIdent, PatType, parse_quote, visit_mut::VisitMut};
+use syn::{
+    Expr, Ident, Pat, PatIdent, PatType, parse_quote, parse_quote_spanned, spanned::Spanned,
+    visit_mut::VisitMut,
+};
 
 #[cfg(test)]
 #[path = "patterns_tests.rs"]
@@ -7,15 +10,12 @@ mod patterns_tests;
 
 /// Turn a pattern into its `&`-equivalent.
 pub fn make_reference_pattern(pat: &Pat) -> Pat {
+    let span = pat.span();
     match pat {
         #[rustfmt::skip]
-        Pat::Type(PatType { attrs, pat, colon_token, ty }) => Pat::Type(PatType {
-            attrs: attrs.clone(),
-            pat: Box::new(parse_quote! { &(#pat) }),
-            colon_token: *colon_token,
-            ty: Box::new(parse_quote! { &(#ty) }),
-        }),
-        non_typed_pat => parse_quote! { &(#non_typed_pat) },
+        Pat::Type(PatType { attrs, pat, colon_token, ty }) =>
+            parse_quote_spanned! { span => #(#attrs)* &#pat #colon_token &#ty },
+        non_typed_pat => parse_quote_spanned! { span => &#non_typed_pat },
     }
 }
 
