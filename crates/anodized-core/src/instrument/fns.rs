@@ -15,7 +15,7 @@ use crate::{
     Capture, Condition, PostCondition, Spec,
     instrument::{
         CheckSettings, Mode,
-        patterns::{IdentGenerator, TamePat, make_reference_pattern, tame_pattern},
+        patterns::{IdentGenerator, TamePat, tame_pattern},
     },
     qualifiers::FnQualifiers,
 };
@@ -339,24 +339,28 @@ impl CheckSettings {
         let repr = expr.to_token_stream().to_string();
         match tame_pat {
             Some(TamePat::Borrowing(brw_pat)) => {
-                let eval = build_cond_eval(expr);
+                let eval = build_cond_eval(&parse_quote! {
+                    { let #brw_pat = __anodized_output else { unreachable!() }; #expr }
+                });
                 let check = self.build_cond_check(msg, cfg, eval, &repr);
-                let reference_pat = make_reference_pattern(brw_pat);
                 parse_quote! {
-                    let __anodized_post = __anodized_post & ::anodized::__::apply(
-                        |#reference_pat| #check,
-                        &__anodized_output,
-                    );
+                    let __anodized_post = __anodized_post & {
+                        ::anodized::__::coerce_input(
+                            #[allow(warnings)] |#brw_pat| (), &__anodized_output);
+                        #check
+                    };
                 }
             }
             Some(TamePat::Invertible(inv_pat, inv_expr)) => {
                 let eval = build_cond_eval(expr);
                 let check = self.build_cond_check(msg, cfg, eval, &repr);
                 parse_quote! {
-                    let (__anodized_post, __anodized_output) = ::anodized::__::apply(
-                        |#inv_pat| (__anodized_post & #check, #inv_expr),
-                        __anodized_output,
-                    );
+                    let (__anodized_post, __anodized_output) = {
+                        ::anodized::__::coerce_input(
+                            #[allow(warnings)] |#inv_pat| (), &__anodized_output);
+                        let #inv_pat = __anodized_output else { unreachable!() };
+                        (__anodized_post & #check, #inv_expr)
+                    };
                 }
             }
             None => {

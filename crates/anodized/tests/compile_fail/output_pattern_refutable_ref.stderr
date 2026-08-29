@@ -2,6 +2,6 @@ error[E0005]: refutable pattern in closure argument
  --> tests/compile_fail/output_pattern_refutable_ref.rs:5:18
   |
 5 | #[spec(ensures: |Some(ref key)| !key.is_empty())]
-  |                  ^^^^^^^^^^^^^ pattern `&None` not covered
+  |                  ^^^^^^^^^^^^^ pattern `None` not covered
   |
-  = note: the matched value is of type `&Option<String>`
+  = note: the matched value is of type `Option<String>`
