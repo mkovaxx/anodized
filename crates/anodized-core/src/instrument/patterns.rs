@@ -25,7 +25,7 @@ pub enum TamePat {
     /// The pattern binds only by `ref`. It may contain wildcard (`_`) and rest (`..`) patterns.
     Borrowing(Pat),
     /// The deconstructed value can be reconstructed from the pattern's bindings.
-    Invertible(Pat, Expr),
+    Invertible(Pat, Box<Expr>),
 }
 
 /// Tame an irrefutable pattern, so that it may be used inside a `#[spec]`.
