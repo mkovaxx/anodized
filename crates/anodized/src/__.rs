@@ -1,5 +1,10 @@
 //! Module for the internal use of `anodized_macros`.
 
+/// Make the applied closure mutation-free by coercing it to `Fn`.
+pub fn apply<T, U>(closure: impl Fn(T) -> U, value: T) -> U {
+    closure(value)
+}
+
 /// Make the evaluated closure mutation-free by coercing it to `Fn`.
 pub fn eval<T>(closure: impl Fn() -> T) -> T {
     closure()
