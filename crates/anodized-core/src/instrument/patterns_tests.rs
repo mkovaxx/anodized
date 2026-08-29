@@ -19,6 +19,58 @@ fn ident_is_inv() {
 }
 
 #[test]
+fn mut_ident_is_inv() {
+    let pat: Pat = parse_quote! { mut a };
+    let expected = Ok(TamePat::Invertible(
+        parse_quote! { mut a },
+        parse_quote! { a },
+    ));
+
+    let mut id_gen = IdentGenerator::new();
+    let observed = tame_pattern(&mut id_gen, pat);
+    assert_tame_pat_eq(&observed, &expected);
+}
+
+#[test]
+fn tuple_with_mut_ident_is_inv() {
+    let pat: Pat = parse_quote! { (mut a, b) };
+    let expected = Ok(TamePat::Invertible(
+        parse_quote! { (mut a, b) },
+        parse_quote! { (a, b) },
+    ));
+
+    let mut id_gen = IdentGenerator::new();
+    let observed = tame_pattern(&mut id_gen, pat);
+    assert_tame_pat_eq(&observed, &expected);
+}
+
+#[test]
+fn ident_at_subpat_is_inv() {
+    let pat: Pat = parse_quote! { x @ (a, b) };
+    let expected = Ok(TamePat::Invertible(
+        parse_quote! { x @ (a, b) },
+        parse_quote! { x },
+    ));
+
+    let mut id_gen = IdentGenerator::new();
+    let observed = tame_pattern(&mut id_gen, pat);
+    assert_tame_pat_eq(&observed, &expected);
+}
+
+#[test]
+fn wild_at_subpat_is_inv() {
+    let pat: Pat = parse_quote! { _ @ (a, b) };
+    let expected = Ok(TamePat::Invertible(
+        parse_quote! { _ @ (a, b) },
+        parse_quote! { __anodized_ident_1 },
+    ));
+
+    let mut id_gen = IdentGenerator::new();
+    let observed = tame_pattern(&mut id_gen, pat);
+    assert_tame_pat_eq(&observed, &expected);
+}
+
+#[test]
 fn ref_ident_is_brw() {
     let pat: Pat = parse_quote! { ref ident };
     let expected = Ok(TamePat::Borrowing(parse_quote! { ref ident }));
