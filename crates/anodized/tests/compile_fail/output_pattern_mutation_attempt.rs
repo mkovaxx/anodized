@@ -1,3 +1,5 @@
+#![no_main]
+
 use anodized::spec;
 
 #[spec(ensures: |mut a| {
@@ -7,5 +9,3 @@ use anodized::spec;
 fn sort_pair(val: &mut i32) -> &mut i32 {
     val
 }
-
-fn main() {}
