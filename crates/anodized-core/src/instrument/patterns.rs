@@ -1,9 +1,23 @@
 use proc_macro2::Span;
-use syn::{Expr, Ident, Pat, PatIdent, parse_quote, visit_mut::VisitMut};
+use syn::{Expr, Ident, Pat, PatIdent, PatType, parse_quote, visit_mut::VisitMut};
 
 #[cfg(test)]
 #[path = "patterns_tests.rs"]
 mod patterns_tests;
+
+/// Turn a pattern into its `&`-equivalent.
+pub fn make_reference_pattern(pat: &Pat) -> Pat {
+    match pat {
+        #[rustfmt::skip]
+        Pat::Type(PatType { attrs, pat, colon_token, ty }) => Pat::Type(PatType {
+            attrs: attrs.clone(),
+            pat: Box::new(parse_quote! { &(#pat) }),
+            colon_token: *colon_token,
+            ty: Box::new(parse_quote! { &(#ty) }),
+        }),
+        non_typed_pat => parse_quote! { &(#non_typed_pat) },
+    }
+}
 
 /// A 'tame' pattern can be used inside a `#[spec]`.
 #[derive(Debug, PartialEq, Eq)]

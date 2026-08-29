@@ -14,7 +14,7 @@ use crate::{
     Capture, Condition, PostCondition, Spec,
     instrument::{
         CheckSettings, Mode,
-        patterns::{IdentGenerator, TamePat, tame_pattern},
+        patterns::{IdentGenerator, TamePat, make_reference_pattern, tame_pattern},
     },
     qualifiers::FnQualifiers,
 };
@@ -338,12 +338,14 @@ impl CheckSettings {
         let repr = expr.to_token_stream().to_string();
         match tame_pat {
             Some(TamePat::Borrowing(brw_pat)) => {
-                let eval = build_cond_eval(&parse_quote! {
-                    { let #brw_pat = __anodized_output; #expr }
-                });
+                let eval = build_cond_eval(expr);
                 let check = self.build_cond_check(msg, cfg, eval, &repr);
+                let reference_pat = make_reference_pattern(brw_pat);
                 parse_quote! {
-                    let __anodized_post = __anodized_post & #check;
+                    let __anodized_post = ::anodized::__::apply(
+                        |#reference_pat| { __anodized_post & #check },
+                        &__anodized_output,
+                    );
                 }
             }
             Some(TamePat::Invertible(inv_pat, inv_expr)) => {
