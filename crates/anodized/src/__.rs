@@ -4,3 +4,8 @@
 pub fn eval<T>(closure: impl Fn() -> T) -> T {
     closure()
 }
+
+/// Coerce the evaluated closure to `FnOnce`.
+pub fn eval_once<T>(closure: impl FnOnce() -> T) -> T {
+    closure()
+}

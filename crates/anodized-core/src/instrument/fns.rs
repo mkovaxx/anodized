@@ -239,9 +239,13 @@ impl CheckSettings {
             .chain(std::iter::once(&output_ident));
 
         let body_expr: Expr = if is_async {
-            parse_quote! { (async || #return_type #original_body)().await }
+            parse_quote! {
+                ::anodized::__::eval_once(async || #return_type #original_body).await
+            }
         } else {
-            parse_quote! { (|| #return_type #original_body)() }
+            parse_quote! {
+                ::anodized::__::eval_once(|| #return_type #original_body)
+            }
         };
         let values = spec
             .captures
