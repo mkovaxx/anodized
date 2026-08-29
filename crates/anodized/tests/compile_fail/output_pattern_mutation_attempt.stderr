@@ -1,33 +1,33 @@
 error: captured variable cannot escape `FnMut` closure body
-  --> tests/compile_fail/output_pattern_mutation_attempt.rs:10:5
-   |
- 9 | fn sort_pair(val: &mut i32) -> &mut i32 {
-   |              ---               - inferred to be a `FnMut` closure
-   |              |
-   |              variable defined here
-10 |     val
-   |     ^^^
-   |     |
-   |     returns a reference to a captured variable which escapes the closure body
-   |     variable captured here
-   |
-   = note: `FnMut` closures only have access to their captured variables while they are executing...
-   = note: ...therefore, they cannot allow references to captured variables to escape
+ --> tests/compile_fail/output_pattern_mutation_attempt.rs:8:5
+  |
+7 | fn sort_pair(val: &mut i32) -> &mut i32 {
+  |              ---               - inferred to be a `FnMut` closure
+  |              |
+  |              variable defined here
+8 |     val
+  |     ^^^
+  |     |
+  |     returns a reference to a captured variable which escapes the closure body
+  |     variable captured here
+  |
+  = note: `FnMut` closures only have access to their captured variables while they are executing...
+  = note: ...therefore, they cannot allow references to captured variables to escape
 
 error[E0594]: cannot assign to value, as it is a captured variable in a `Fn` closure
- --> tests/compile_fail/output_pattern_mutation_attempt.rs:6:5
+ --> tests/compile_fail/output_pattern_mutation_attempt.rs:4:5
   |
-5 | / #[spec(ensures: |mut a| {
-6 | |     *a = 999;
+3 | / #[spec(ensures: |mut a| {
+4 | |     *a = 999;
   | |     ^^^^^^^^ cannot assign
-7 | |     true
-8 | | })]
+5 | |     true
+6 | | })]
   | |___- in this closure
 
 warning: variable does not need to be mutable
- --> tests/compile_fail/output_pattern_mutation_attempt.rs:5:18
+ --> tests/compile_fail/output_pattern_mutation_attempt.rs:3:18
   |
-5 | #[spec(ensures: |mut a| {
+3 | #[spec(ensures: |mut a| {
   |                  ----^
   |                  |
   |                  help: remove this `mut`
