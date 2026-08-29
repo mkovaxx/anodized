@@ -58,11 +58,11 @@ fn ident_at_subpat_is_inv() {
 }
 
 #[test]
-fn wild_at_subpat_is_inv() {
-    let pat: Pat = parse_quote! { _ @ (a, b) };
+fn ident_at_pair_of_ident_wild_is_inv() {
+    let pat: Pat = parse_quote! { x @ (_, b) };
     let expected = Ok(TamePat::Invertible(
-        parse_quote! { _ @ (a, b) },
-        parse_quote! { __anodized_ident_1 },
+        parse_quote! { x @ (__anodized_ident_1, b) },
+        parse_quote! { x },
     ));
 
     let mut id_gen = IdentGenerator::new();
