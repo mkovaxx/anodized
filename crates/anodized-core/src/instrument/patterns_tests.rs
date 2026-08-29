@@ -8,7 +8,10 @@ use crate::{
 #[test]
 fn ident_is_inv() {
     let pat: Pat = parse_quote! { ident };
-    let expected = Ok(TamePat::Invertible(parse_quote! { ident }));
+    let expected = Ok(TamePat::Invertible(
+        parse_quote! { ident },
+        parse_quote! { ident },
+    ));
 
     let mut id_gen = IdentGenerator::new();
     let observed = tame_pattern(&mut id_gen, pat);
@@ -63,6 +66,7 @@ fn pair_of_move_and_wild_is_inv() {
     let pat: Pat = parse_quote! { (a, _) };
     let expected = Ok(TamePat::Invertible(
         parse_quote! { (a, __anodized_ident_1) },
+        parse_quote! { (a, __anodized_ident_1) },
     ));
 
     let mut id_gen = IdentGenerator::new();
@@ -109,6 +113,7 @@ fn tuple_with_only_rest_is_brw() {
 fn struct_with_move_and_wild_is_inv() {
     let pat: Pat = parse_quote! { Point { x, y: _ } };
     let expected = Ok(TamePat::Invertible(
+        parse_quote! { Point { x, y: __anodized_ident_1 } },
         parse_quote! { Point { x, y: __anodized_ident_1 } },
     ));
 
@@ -170,6 +175,7 @@ fn tuple_struct_with_move_and_wild_is_inv() {
     let pat: Pat = parse_quote! { Point(_, x) };
     let expected = Ok(TamePat::Invertible(
         parse_quote! { Point(__anodized_ident_1, x) },
+        parse_quote! { Point(__anodized_ident_1, x) },
     ));
 
     let mut id_gen = IdentGenerator::new();
@@ -227,6 +233,7 @@ fn tuple_struct_with_ref_and_move_is_err() {
 fn slice_with_move_and_wild_is_inv() {
     let pat: Pat = parse_quote! { [first, _] };
     let expected = Ok(TamePat::Invertible(
+        parse_quote! { [first, __anodized_ident_1] },
         parse_quote! { [first, __anodized_ident_1] },
     ));
 
