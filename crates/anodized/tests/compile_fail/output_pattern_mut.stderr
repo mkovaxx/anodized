@@ -1,7 +1,0 @@
-error: custom attribute panicked
- --> tests/compile_fail/output_pattern_mut.rs:9:1
-  |
-9 | #[spec(ensures: |(mut a, b)| a <= b)]
-  | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  |
-  = help: message: expected an expression

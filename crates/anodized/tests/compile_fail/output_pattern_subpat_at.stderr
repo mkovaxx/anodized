@@ -1,7 +1,0 @@
-error: custom attribute panicked
- --> tests/compile_fail/output_pattern_subpat_at.rs:9:1
-  |
-9 | #[spec(ensures: |x @ (a, b)| a <= b)]
-  | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  |
-  = help: message: unexpected token, expected `;`
