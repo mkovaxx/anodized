@@ -1,41 +1,9 @@
 use syn::{Pat, parse_quote};
 
 use crate::{
-    instrument::patterns::{IdentGenerator, TamePat, make_reference_pattern, tame_pattern},
-    test_util::{assert_tame_pat_eq, assert_tokens_eq},
+    instrument::patterns::{IdentGenerator, TamePat, tame_pattern},
+    test_util::assert_tame_pat_eq,
 };
-
-#[test]
-fn make_reference_simple_pattern() {
-    let pat: Pat = parse_quote! { value };
-    let expected: Pat = parse_quote! { &value };
-    let observed = make_reference_pattern(&pat);
-    assert_tokens_eq(&observed, &expected);
-}
-
-#[test]
-fn make_reference_composite_pattern() {
-    let pat: Pat = parse_quote! { (a, b) };
-    let expected: Pat = parse_quote! { &(a, b) };
-    let observed = make_reference_pattern(&pat);
-    assert_tokens_eq(&observed, &expected);
-}
-
-#[test]
-fn make_reference_wildcard_pattern() {
-    let pat: Pat = parse_quote! { _ };
-    let expected: Pat = parse_quote! { &_ };
-    let observed = make_reference_pattern(&pat);
-    assert_tokens_eq(&observed, &expected);
-}
-
-#[test]
-fn make_reference_typed_pattern() {
-    let pat = Pat::Type(parse_quote! { key: String });
-    let expected = Pat::Type(parse_quote! { &key: &String });
-    let observed = make_reference_pattern(&pat);
-    assert_tokens_eq(&observed, &expected);
-}
 
 #[test]
 fn ident_is_inv() {
