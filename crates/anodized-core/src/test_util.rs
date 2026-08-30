@@ -17,13 +17,6 @@ fn pretty_print_tokens(ts: proc_macro2::TokenStream) -> String {
                     #ts
                 }
             }))
-        .or_else(|_|
-            // Token stream may be a pattern.
-            syn::parse2(quote! {
-                fn main() {
-                    let _ = |#ts| {};
-                }
-            }))
         .expect("wrap tokens in a file");
     prettyplease::unparse(&file)
 }
