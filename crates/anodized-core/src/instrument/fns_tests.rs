@@ -109,21 +109,18 @@ fn default_instrument_item_fn() {
             let __anodized_post = __anodized_post & (true || ::anodized::__::eval::<bool>(|| COND_4));
             let __anodized_post = __anodized_post & (true || ::anodized::__::eval::<bool>(|| COND_5));
             let __anodized_post = __anodized_post & (true || ::anodized::__::eval::<bool>(|| COND_6));
-            let (__anodized_post, __anodized_output) = {
-                let PAT_1 = __anodized_output else { unreachable!() };
-                (__anodized_post & (true || ::anodized::__::eval::<bool>(|| COND_7)),
-                    ::anodized::__::coerce_input(#[allow(warnings)] |PAT_1| (), PAT_1))
-            };
-            let (__anodized_post, __anodized_output) = {
-                let PAT_1 = __anodized_output else { unreachable!() };
-                (__anodized_post & (true || ::anodized::__::eval::<bool>(|| COND_8)),
-                    ::anodized::__::coerce_input(#[allow(warnings)] |PAT_1| (), PAT_1))
-            };
-            let (__anodized_post, __anodized_output) = {
-                let PAT_1 = __anodized_output else { unreachable!() };
-                (__anodized_post & (true || ::anodized::__::eval::<bool>(|| COND_9)),
-                    ::anodized::__::coerce_input(#[allow(warnings)] |PAT_1| (), PAT_1))
-            };
+            let (__anodized_post, __anodized_output) = ::anodized::__::apply_keep(
+                |PAT_1| (__anodized_post & (true || ::anodized::__::eval::<bool>(|| COND_7)), PAT_1),
+                __anodized_output,
+            );
+            let (__anodized_post, __anodized_output) = ::anodized::__::apply_keep(
+                |PAT_1| (__anodized_post & (true || ::anodized::__::eval::<bool>(|| COND_8)), PAT_1),
+                __anodized_output,
+            );
+            let (__anodized_post, __anodized_output) = ::anodized::__::apply_keep(
+                |PAT_1| (__anodized_post & (true || ::anodized::__::eval::<bool>(|| COND_9)), PAT_1),
+                __anodized_output,
+            );
             if !__anodized_post {}
             __anodized_output
         }
@@ -188,24 +185,21 @@ fn emit_try_fn_instrument_item_fn() {
                     || eprintln!("postinvariant failed: {}", "COND_5") != ());
             let __anodized_post = __anodized_post & (!cfg!(META_2) || ::anodized::__::eval::<bool>(|| COND_6)
                     || eprintln!("postinvariant failed: {}", "COND_6") != ());
-            let (__anodized_post, __anodized_output) = {
-                let PAT_1 = __anodized_output else { unreachable!() };
-                (__anodized_post & (::anodized::__::eval::<bool>(|| COND_7)
-                    || eprintln!("postcondition failed: {}", "COND_7") != ()),
-                    ::anodized::__::coerce_input(#[allow(warnings)] |PAT_1| (), PAT_1))
-            };
-            let (__anodized_post, __anodized_output) = {
-                let PAT_1 = __anodized_output else { unreachable!() };
-                (__anodized_post & (!cfg!(META_3) || ::anodized::__::eval::<bool>(|| COND_8)
-                    || eprintln!("postcondition failed: {}", "COND_8") != ()),
-                    ::anodized::__::coerce_input(#[allow(warnings)] |PAT_1| (), PAT_1))
-            };
-            let (__anodized_post, __anodized_output) = {
-                let PAT_1 = __anodized_output else { unreachable!() };
-                (__anodized_post & (!cfg!(META_3) || ::anodized::__::eval::<bool>(|| COND_9)
-                    || eprintln!("postcondition failed: {}", "COND_9") != ()),
-                    ::anodized::__::coerce_input(#[allow(warnings)] |PAT_1| (), PAT_1))
-            };
+            let (__anodized_post, __anodized_output) = ::anodized::__::apply_keep(
+                |PAT_1| (__anodized_post & (::anodized::__::eval::<bool>(|| COND_7)
+                        || eprintln!("postcondition failed: {}", "COND_7") != ()), PAT_1),
+                __anodized_output,
+            );
+            let (__anodized_post, __anodized_output) = ::anodized::__::apply_keep(
+                |PAT_1| (__anodized_post & (!cfg!(META_3) || ::anodized::__::eval::<bool>(|| COND_8)
+                        || eprintln!("postcondition failed: {}", "COND_8") != ()), PAT_1),
+                __anodized_output,
+            );
+            let (__anodized_post, __anodized_output) = ::anodized::__::apply_keep(
+                |PAT_1| (__anodized_post & (!cfg!(META_3) || ::anodized::__::eval::<bool>(|| COND_9)
+                        || eprintln!("postcondition failed: {}", "COND_9") != ()), PAT_1),
+                __anodized_output,
+            );
             if !__anodized_post {
                 return ::anodized::result::post_err(__anodized_output);
             }
@@ -637,12 +631,11 @@ fn postcond_closure_form() {
             }
             let (__anodized_output) = (::anodized::__::eval_once(|| #ret_type #body));
             let __anodized_post = true;
-            let (__anodized_post, __anodized_output) = {
-                let OUTPUT_PATTERN = __anodized_output else { unreachable!() };
-                (__anodized_post & (::anodized::__::eval::<bool>(|| CONDITION_1)
-                    || eprintln!("postcondition failed: {}", "CONDITION_1") != ()),
-                    ::anodized::__::coerce_input(#[allow(warnings)] |OUTPUT_PATTERN| (), OUTPUT_PATTERN))
-            };
+            let (__anodized_post, __anodized_output) = ::anodized::__::apply_keep(
+                |OUTPUT_PATTERN| (__anodized_post & (::anodized::__::eval::<bool>(|| CONDITION_1)
+                    || eprintln!("postcondition failed: {}", "CONDITION_1") != ()), OUTPUT_PATTERN),
+                __anodized_output,
+            );
             if !__anodized_post {
                 panic!("postcondition failed");
             }
@@ -673,12 +666,14 @@ fn postcond_borrowing_closure_form() {
             }
             let (__anodized_output) = (::anodized::__::eval_once(|| #ret_type #body));
             let __anodized_post = true;
-            let (__anodized_post, __anodized_output) = {
-                let ref OUTPUT_PATTERN = __anodized_output else { unreachable!() };
-                (__anodized_post & (::anodized::__::eval::<bool>(|| CONDITION_1)
-                    || eprintln!("postcondition failed: {}", "CONDITION_1") != ()),
-                    ::anodized::__::coerce_input(#[allow(warnings)] |ref OUTPUT_PATTERN| (), __anodized_output))
-            };
+            let (__anodized_post, __anodized_output) = ::anodized::__::apply_keep(
+                |__anodized_output| {
+                    let ref OUTPUT_PATTERN = __anodized_output else { unreachable!() };
+                    (__anodized_post & (::anodized::__::eval::<bool>(|| CONDITION_1)
+                        || eprintln!("postcondition failed: {}", "CONDITION_1") != ()), __anodized_output)
+                },
+                __anodized_output,
+            );
             if !__anodized_post {
                 panic!("postcondition failed");
             }

@@ -82,11 +82,10 @@ fn default_instrument_item_impl() {
                 let (__anodized_output) = (::anodized::__::eval_once(|| -> RET_TYPE { BODY }));
                 let __anodized_post = true;
                 let __anodized_post = __anodized_post & (true || ::anodized::__::eval::<bool>(|| COND_2));
-                let (__anodized_post, __anodized_output) = {
-                    let PAT_1 = __anodized_output else { unreachable!() };
-                    (__anodized_post & (true || ::anodized::__::eval::<bool>(|| COND_3)),
-                        ::anodized::__::coerce_input(#[allow(warnings)] |PAT_1| (), PAT_1))
-                };
+                let (__anodized_post, __anodized_output) = ::anodized::__::apply_keep(
+                    |PAT_1| (__anodized_post & (true || ::anodized::__::eval::<bool>(|| COND_3)), PAT_1),
+                    __anodized_output,
+                );
                 if !__anodized_post {}
                 __anodized_output
             }
@@ -147,12 +146,11 @@ fn emit_try_fn_instrument_item_impl() {
                 let __anodized_post = true;
                 let __anodized_post = __anodized_post & (::anodized::__::eval::<bool>(|| COND_2)
                         || eprintln!("postinvariant failed: {}", "COND_2") != ());
-                let (__anodized_post, __anodized_output) = {
-                    let PAT_1 = __anodized_output else { unreachable!() };
-                    (__anodized_post & (::anodized::__::eval::<bool>(|| COND_3)
-                        || eprintln!("postcondition failed: {}", "COND_3") != ()),
-                        ::anodized::__::coerce_input(#[allow(warnings)] |PAT_1| (), PAT_1))
-                };
+                let (__anodized_post, __anodized_output) = ::anodized::__::apply_keep(
+                    |PAT_1| (__anodized_post & (::anodized::__::eval::<bool>(|| COND_3)
+                        || eprintln!("postcondition failed: {}", "COND_3") != ()), PAT_1),
+                    __anodized_output,
+                );
                 if !__anodized_post {
                     return ::anodized::result::post_err(__anodized_output);
                 }
