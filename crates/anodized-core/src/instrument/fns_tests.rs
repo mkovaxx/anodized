@@ -668,6 +668,8 @@ fn postcond_borrowing_closure_form() {
             let __anodized_post = true;
             let (__anodized_post, __anodized_output) = ::anodized::__::apply_keep(
                 |__anodized_output| {
+                    ::anodized::__::coerce_input(
+                        #[allow(unused)] |ref OUTPUT_PATTERN| (), &__anodized_output);
                     let ref OUTPUT_PATTERN = __anodized_output else { unreachable!() };
                     (__anodized_post & (::anodized::__::eval::<bool>(|| CONDITION_1)
                         || eprintln!("postcondition failed: {}", "CONDITION_1") != ()), __anodized_output)
