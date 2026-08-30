@@ -337,10 +337,10 @@ impl CheckSettings {
         expr: &Expr,
     ) -> Stmt {
         let repr = expr.to_token_stream().to_string();
+        let eval = build_cond_eval(expr);
+        let check = self.build_cond_check(msg, cfg, eval, &repr);
         match tame_pat {
             Some(TamePat::Borrowing(brw_pat)) => {
-                let eval = build_cond_eval(expr);
-                let check = self.build_cond_check(msg, cfg, eval, &repr);
                 parse_quote! {
                     let (__anodized_post, __anodized_output) = {
                         let #brw_pat = __anodized_output else { unreachable!() };
@@ -350,8 +350,6 @@ impl CheckSettings {
                 }
             }
             Some(TamePat::Invertible(inv_pat, inv_expr)) => {
-                let eval = build_cond_eval(expr);
-                let check = self.build_cond_check(msg, cfg, eval, &repr);
                 parse_quote! {
                     let (__anodized_post, __anodized_output) = {
                         let #inv_pat = __anodized_output else { unreachable!() };
@@ -361,8 +359,6 @@ impl CheckSettings {
                 }
             }
             None => {
-                let eval = build_cond_eval(expr);
-                let check = self.build_cond_check(msg, cfg, eval, &repr);
                 parse_quote! {
                     let __anodized_post = __anodized_post & #check;
                 }
