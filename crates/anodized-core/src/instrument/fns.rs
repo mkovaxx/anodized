@@ -344,6 +344,8 @@ impl CheckSettings {
                 parse_quote! {
                     let (__anodized_post, __anodized_output) = ::anodized::__::apply_keep(
                         |__anodized_output| {
+                            ::anodized::__::coerce_input(
+                                #[allow(unused)] |#brw_pat| (), &__anodized_output);
                             let #brw_pat = __anodized_output else { unreachable!() };
                             (__anodized_post & #check, __anodized_output)
                         },

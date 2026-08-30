@@ -8,6 +8,8 @@ error[E0594]: cannot assign to `*a`, as it is a captured variable in a `Fn` clos
 7 | |     true
 8 | | })]
   | |_- in this closure
+9 |   fn sort_pair(val: &mut i32) -> &mut i32 {
+  |      ---------                   -------- change this to return `FnMut` instead of `Fn`
 
 warning: variable does not need to be mutable
  --> tests/compile_fail/output_pattern_mutation_attempt.rs:5:18
