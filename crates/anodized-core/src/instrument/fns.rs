@@ -339,15 +339,13 @@ impl CheckSettings {
         let repr = expr.to_token_stream().to_string();
         match tame_pat {
             Some(TamePat::Borrowing(brw_pat)) => {
-                let eval = build_cond_eval(&parse_quote! {
-                    { let #brw_pat = __anodized_output else { unreachable!() }; #expr }
-                });
+                let eval = build_cond_eval(expr);
                 let check = self.build_cond_check(msg, cfg, eval, &repr);
                 parse_quote! {
-                    let __anodized_post = __anodized_post & {
-                        ::anodized::__::coerce_input(
-                            #[allow(warnings)] |#brw_pat| (), &__anodized_output);
-                        #check
+                    let (__anodized_post, __anodized_output) = {
+                        let #brw_pat = __anodized_output else { unreachable!() };
+                        (__anodized_post & #check, ::anodized::__::coerce_input(
+                            #[allow(warnings)] |#brw_pat| (), __anodized_output))
                     };
                 }
             }
@@ -356,10 +354,9 @@ impl CheckSettings {
                 let check = self.build_cond_check(msg, cfg, eval, &repr);
                 parse_quote! {
                     let (__anodized_post, __anodized_output) = {
-                        ::anodized::__::coerce_input(
-                            #[allow(warnings)] |#inv_pat| (), &__anodized_output);
                         let #inv_pat = __anodized_output else { unreachable!() };
-                        (__anodized_post & #check, #inv_expr)
+                        (__anodized_post & #check, ::anodized::__::coerce_input(
+                            #[allow(warnings)] |#inv_pat| (), #inv_expr))
                     };
                 }
             }
@@ -374,6 +371,8 @@ impl CheckSettings {
     }
 
     fn build_cond_check(&self, msg: &str, cfg: &Option<Meta>, cond: Expr, repr: &str) -> Expr {
+        let span = cond.span();
+
         let guard: Option<Expr> = if self.does_print || self.does_panic.is_some() {
             cfg.as_ref().map(|meta| parse_quote! { !cfg!(#meta) })
         } else {
@@ -390,9 +389,9 @@ impl CheckSettings {
         let exprs = maybe_exprs.iter().flatten();
 
         if exprs.clone().count() > 1 {
-            parse_quote! { ( #(#exprs)||* ) }
+            parse_quote_spanned! { span => ( #(#exprs)||* ) }
         } else {
-            parse_quote! { #(#exprs)||* }
+            parse_quote_spanned! { span => #(#exprs)||* }
         }
     }
 
