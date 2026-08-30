@@ -342,20 +342,21 @@ impl CheckSettings {
         match tame_pat {
             Some(TamePat::Borrowing(brw_pat)) => {
                 parse_quote! {
-                    let (__anodized_post, __anodized_output) = {
-                        let #brw_pat = __anodized_output else { unreachable!() };
-                        (__anodized_post & #check, ::anodized::__::coerce_input(
-                            #[allow(warnings)] |#brw_pat| (), __anodized_output))
-                    };
+                    let (__anodized_post, __anodized_output) = ::anodized::__::apply_keep(
+                        |__anodized_output| {
+                            let #brw_pat = __anodized_output else { unreachable!() };
+                            (__anodized_post & #check, __anodized_output)
+                        },
+                        __anodized_output,
+                    );
                 }
             }
             Some(TamePat::Invertible(inv_pat, inv_expr)) => {
                 parse_quote! {
-                    let (__anodized_post, __anodized_output) = {
-                        let #inv_pat = __anodized_output else { unreachable!() };
-                        (__anodized_post & #check, ::anodized::__::coerce_input(
-                            #[allow(warnings)] |#inv_pat| (), #inv_expr))
-                    };
+                    let (__anodized_post, __anodized_output) = ::anodized::__::apply_keep(
+                        |#inv_pat| (__anodized_post & #check, #inv_expr),
+                        __anodized_output,
+                    );
                 }
             }
             None => {

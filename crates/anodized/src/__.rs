@@ -1,8 +1,8 @@
 //! Module for the internal use of `anodized_macros`.
 
-/// Coerce the closure's input type based on an input.
-pub fn coerce_input<T>(_: impl Fn(T), value: T) -> T {
-    value
+/// Apply the closure to an owned value and then recover it.
+pub fn apply_keep<T, U>(closure: impl Fn(U) -> (T, U), value: U) -> (T, U) {
+    closure(value)
 }
 
 /// Make the evaluated closure mutation-free by coercing it to `Fn`.
