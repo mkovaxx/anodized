@@ -239,8 +239,12 @@ impl CheckSettings {
                     FnArg::Typed(arg) => {
                         let ident =
                             Ident::new(&format!("__anodized_input_{}", i + 1), arg.pat.span());
+                        let coercion = parse_quote! {
+                            let _ = |#arg| ();
+                        };
                         let new_pat: Pat = parse_quote! { #ident };
                         let pat: Pat = std::mem::replace(&mut arg.pat, new_pat);
+                        stmts.push(coercion);
                         let tame_pat = tame_pattern(&mut id_gen, pat)?;
                         checked_inputs.push((ident, tame_pat, arg.ty.as_ref()));
                     }
@@ -252,14 +256,29 @@ impl CheckSettings {
         stmts.push(parse_quote! {
             let __anodized_pre = true;
         });
-        for (i, (ident, _, ty)) in checked_inputs.iter().enumerate() {
-            let message = format!("precondition failed: check input {}", i + 1);
-            let expr = parse_quote! {
-                <#ty as ::anodized::data::Refine>::predicate(&#ident)
-            };
-            let check = self.build_precond_check("{}", &None, expr, &message);
-            stmts.push(check);
+
+        if self.check_data {
+            // Check data specs of inputs.
+            for (i, (ident, _, ty)) in checked_inputs.iter().enumerate() {
+                let message = format!("precondition failed: data spec of input {}", i + 1);
+                let expr = parse_quote! {
+                    <#ty as ::anodized::data::Refine>::predicate(&#ident)
+                };
+                let check = self.build_precond_check("{}", &None, expr, &message);
+                stmts.push(check);
+            }
+            // Bind input patterns.
+            let input_idents = checked_inputs.iter().map(|(ident, _, _)| ident);
+            let input_pats = checked_inputs
+                .iter()
+                .map(|(_, tame_pat, _)| match tame_pat {
+                    TamePat::Borrowing(pat) | TamePat::Invertible(pat, _) => pat,
+                });
+            stmts.push(parse_quote! {
+                let (#(#input_pats),*) = (#(#input_idents),*) else { unreachable!() };
+            });
         }
+
         for precondition in &spec.requires {
             let check = self.build_precond_check(
                 "precondition failed: {}",
@@ -292,14 +311,14 @@ impl CheckSettings {
             .map(|cb| &cb.pat)
             .chain(std::iter::once(&output_ident));
 
-        let return_type = &sig.output;
+        let output = &sig.output;
         let body_expr: Expr = if sig.asyncness.is_some() {
             parse_quote! {
-                ::anodized::__::eval_once(async || #return_type #body).await
+                ::anodized::__::eval_once(async || #output #body).await
             }
         } else {
             parse_quote! {
-                ::anodized::__::eval_once(|| #return_type #body)
+                ::anodized::__::eval_once(|| #output #body)
             }
         };
         let values = spec
@@ -316,6 +335,49 @@ impl CheckSettings {
         stmts.push(parse_quote! {
             let __anodized_post = true;
         });
+
+        if self.check_data {
+            let ret_type = match &sig.output {
+                ReturnType::Default => quote! { () },
+                ReturnType::Type(_, ty) => ty.to_token_stream(),
+            };
+            // Check data spec of the output.
+            let message = format!("postcondition failed: data spec of output");
+            let expr = parse_quote! {
+                <#ret_type as ::anodized::data::Refine>::predicate(&#output_ident)
+            };
+            let check = self.build_postcond_check("{}", &None, &None, expr, &message);
+            stmts.push(check);
+            // Unbind invertible input patterns.
+            let invertible_inputs =
+                checked_inputs
+                    .iter()
+                    .filter_map(|(ident, tame_pat, ty)| match tame_pat {
+                        TamePat::Borrowing(_) => None,
+                        TamePat::Invertible(pat, expr) => Some((ident, pat, expr, ty)),
+                    });
+            let input_inv_idents = invertible_inputs.clone().map(|(ident, _, _, _)| ident);
+            let input_inv_exprs = invertible_inputs.clone().map(|(_, _, expr, _)| expr);
+            stmts.push(parse_quote! {
+                let (#(#input_inv_idents),*) = (#(#input_inv_exprs),*);
+            });
+            // Check data spec out inputs again.
+            for (i, (ident, _, ty)) in checked_inputs.iter().enumerate() {
+                let message = format!("postcondition failed: data spec of input {}", i + 1);
+                let expr = parse_quote! {
+                    <#ty as ::anodized::data::Refine>::predicate(&#ident)
+                };
+                let check = self.build_postcond_check("{}", &None, &None, expr, &message);
+                stmts.push(check);
+            }
+            // Re-bind invertible inputs.
+            let input_inv_idents = invertible_inputs.clone().map(|(ident, _, _, _)| ident);
+            let input_inv_pats = invertible_inputs.clone().map(|(_, pat, _, _)| pat);
+            stmts.push(parse_quote! {
+                let (#(#input_inv_pats),*) = (#(#input_inv_idents),*) else { unreachable!() };
+            });
+        };
+
         for postinvariant in &spec.maintains {
             let check = self.build_postcond_check(
                 "postinvariant failed: {}",
