@@ -208,6 +208,24 @@ impl CheckSettings {
     ) -> Result<()> {
         // The identifier for the return value binding.
         let output_ident: Pat = parse_quote!(__anodized_output);
+        let (output_expr, precond_fail_action, postcond_fail_action) =
+            if let Some(ref panic_settings) = self.does_panic
+                && panic_settings.has_try_fn
+            {
+                (
+                    quote! { Ok(#output_ident) },
+                    Some(parse_quote! { return ::anodized::result::pre_err(); }),
+                    Some(parse_quote! { return ::anodized::result::post_err(#output_ident); }),
+                )
+            } else {
+                (
+                    quote! { #output_ident },
+                    self.build_fail_action("precondition failed"),
+                    self.build_fail_action("postcondition failed"),
+                )
+            };
+
+        let mut stmts: Vec<Stmt> = vec![];
 
         let mut checked_inputs: Vec<(Ident, TamePat, &Type)> = vec![];
 
@@ -231,16 +249,16 @@ impl CheckSettings {
         }
 
         // Generate precondition checks.
-        let mut precond_checks: Vec<Stmt> = vec![parse_quote! {
+        stmts.push(parse_quote! {
             let __anodized_pre = true;
-        }];
+        });
         for (i, (ident, _, ty)) in checked_inputs.iter().enumerate() {
             let message = format!("precondition failed: check input {}", i + 1);
             let expr = parse_quote! {
                 <#ty as ::anodized::data::Refine>::predicate(&#ident)
             };
             let check = self.build_precond_check("{}", &None, expr, &message);
-            precond_checks.push(check);
+            stmts.push(check);
         }
         for precondition in &spec.requires {
             let check = self.build_precond_check(
@@ -249,7 +267,7 @@ impl CheckSettings {
                 build_cond_eval(&precondition.expr),
                 &precondition.expr.to_token_stream().to_string(),
             );
-            precond_checks.push(check);
+            stmts.push(check);
         }
         for preinvariant in &spec.maintains {
             let check = self.build_precond_check(
@@ -258,8 +276,13 @@ impl CheckSettings {
                 build_cond_eval(&preinvariant.expr),
                 &preinvariant.expr.to_token_stream().to_string(),
             );
-            precond_checks.push(check);
+            stmts.push(check);
         }
+        stmts.push(parse_quote! {
+            if !__anodized_pre {
+                #precond_fail_action
+            }
+        });
 
         // Bind capture values and function output in a single tuple assignment.
         // This ensures captured values are inaccessible to the body.
@@ -285,14 +308,14 @@ impl CheckSettings {
             .map(|cb| build_capture_eval(&cb.expr))
             .chain(std::iter::once(body_expr));
 
-        let captures_and_output = quote! {
+        stmts.push(parse_quote! {
             let (#(#patterns),*) = (#(#values),*);
-        };
+        });
 
         // Generate postcondition checks.
-        let mut postcond_checks: Vec<Stmt> = vec![parse_quote! {
+        stmts.push(parse_quote! {
             let __anodized_post = true;
-        }];
+        });
         for postinvariant in &spec.maintains {
             let check = self.build_postcond_check(
                 "postinvariant failed: {}",
@@ -301,7 +324,7 @@ impl CheckSettings {
                 build_cond_eval(&postinvariant.expr),
                 &postinvariant.expr.to_token_stream().to_string(),
             );
-            postcond_checks.push(check);
+            stmts.push(check);
         }
         for postcondition in &spec.ensures {
             let tame_pat = if let Some(pat) = &postcondition.pat {
@@ -316,37 +339,17 @@ impl CheckSettings {
                 build_cond_eval(&postcondition.expr),
                 &postcondition.expr.to_token_stream().to_string(),
             );
-            postcond_checks.push(check);
+            stmts.push(check);
         }
-
-        let (output_expr, precond_fail_action, postcond_fail_action) =
-            if let Some(ref panic_settings) = self.does_panic
-                && panic_settings.has_try_fn
-            {
-                (
-                    quote! { Ok(#output_ident) },
-                    Some(parse_quote! { return ::anodized::result::pre_err(); }),
-                    Some(parse_quote! { return ::anodized::result::post_err(#output_ident); }),
-                )
-            } else {
-                (
-                    quote! { #output_ident },
-                    self.build_fail_action("precondition failed"),
-                    self.build_fail_action("postcondition failed"),
-                )
-            };
+        stmts.push(parse_quote! {
+            if !__anodized_post {
+                #postcond_fail_action
+            }
+        });
 
         *body = parse_quote! {
             {
-                #(#precond_checks)*
-                if !__anodized_pre {
-                    #precond_fail_action
-                }
-                #captures_and_output
-                #(#postcond_checks)*
-                if !__anodized_post {
-                    #postcond_fail_action
-                }
+                #(#stmts)*
                 #output_expr
             }
         };
