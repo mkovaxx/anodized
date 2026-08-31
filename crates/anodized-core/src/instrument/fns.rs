@@ -243,21 +243,19 @@ impl CheckSettings {
             precond_checks.push(check);
         }
         for precondition in &spec.requires {
-            let eval = build_cond_eval(&precondition.expr);
             let check = self.build_precond_check(
                 "precondition failed: {}",
                 &precondition.cfg,
-                eval,
+                build_cond_eval(&precondition.expr),
                 &precondition.expr.to_token_stream().to_string(),
             );
             precond_checks.push(check);
         }
         for preinvariant in &spec.maintains {
-            let eval = build_cond_eval(&preinvariant.expr);
             let check = self.build_precond_check(
                 "preinvariant failed: {}",
                 &preinvariant.cfg,
-                eval,
+                build_cond_eval(&preinvariant.expr),
                 &preinvariant.expr.to_token_stream().to_string(),
             );
             precond_checks.push(check);
@@ -300,7 +298,7 @@ impl CheckSettings {
                 "postinvariant failed: {}",
                 &postinvariant.cfg,
                 &None,
-                &postinvariant.expr,
+                build_cond_eval(&postinvariant.expr),
                 &postinvariant.expr.to_token_stream().to_string(),
             );
             postcond_checks.push(check);
@@ -315,7 +313,7 @@ impl CheckSettings {
                 "postcondition failed: {}",
                 &postcondition.cfg,
                 &tame_pat,
-                &postcondition.expr,
+                build_cond_eval(&postcondition.expr),
                 &postcondition.expr.to_token_stream().to_string(),
             );
             postcond_checks.push(check);
@@ -368,10 +366,9 @@ impl CheckSettings {
         msg: &str,
         cfg: &Option<Meta>,
         tame_pat: &Option<TamePat>,
-        expr: &Expr,
+        eval: Expr,
         repr: &str,
     ) -> Stmt {
-        let eval = build_cond_eval(&expr);
         let check = self.build_cond_check(msg, cfg, eval, &repr);
         match tame_pat {
             Some(TamePat::Borrowing(brw_pat)) => {
