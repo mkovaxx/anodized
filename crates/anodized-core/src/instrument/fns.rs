@@ -342,11 +342,11 @@ impl CheckSettings {
                 ReturnType::Type(_, ty) => ty.to_token_stream(),
             };
             // Check data spec of the output.
-            let message = format!("postcondition failed: data spec of output");
+            let message = "postcondition failed: data spec of output";
             let expr = parse_quote! {
                 <#ret_type as ::anodized::data::Refine>::predicate(&#output_ident)
             };
-            let check = self.build_postcond_check("{}", &None, &None, expr, &message);
+            let check = self.build_postcond_check("{}", &None, &None, expr, message);
             stmts.push(check);
             // Unbind invertible input patterns.
             let invertible_inputs =
@@ -434,7 +434,7 @@ impl CheckSettings {
         eval: Expr,
         repr: &str,
     ) -> Stmt {
-        let check = self.build_cond_check(msg, cfg, eval, &repr);
+        let check = self.build_cond_check(msg, cfg, eval, repr);
         match tame_pat {
             Some(TamePat::Borrowing(brw_pat)) => {
                 parse_quote! {
