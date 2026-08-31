@@ -7,7 +7,7 @@ use quote::{ToTokens, quote};
 use syn::{
     Attribute, Block, Expr, FnArg, Ident, Meta, Pat, Path, ReturnType, Signature, Stmt, Type,
     parse::{Parse, Result},
-    parse_quote,
+    parse_quote, parse_quote_spanned,
     spanned::Spanned,
 };
 
@@ -273,9 +273,13 @@ impl CheckSettings {
 
         let return_type = &sig.output;
         let body_expr: Expr = if sig.asyncness.is_some() {
-            parse_quote! { (async || #return_type #body)().await }
+            parse_quote! {
+                ::anodized::__::eval_once(async || #return_type #body).await
+            }
         } else {
-            parse_quote! { (|| #return_type #body)() }
+            parse_quote! {
+                ::anodized::__::eval_once(|| #return_type #body)
+            }
         };
         let values = spec
             .captures
@@ -292,30 +296,27 @@ impl CheckSettings {
             let __anodized_post = true;
         }];
         for postinvariant in &spec.maintains {
-            let eval = build_cond_eval(&postinvariant.expr);
             let check = self.build_postcond_check(
                 "postinvariant failed: {}",
                 &postinvariant.cfg,
                 &None,
-                eval,
+                &postinvariant.expr,
                 &postinvariant.expr.to_token_stream().to_string(),
             );
             postcond_checks.push(check);
         }
         for postcondition in &spec.ensures {
-            let expr = &postcondition.expr;
             let tame_pat = if let Some(pat) = &postcondition.pat {
                 Some(tame_pattern(&mut id_gen, pat.clone())?)
             } else {
                 None
             };
-            let eval = build_cond_eval(&postcondition.expr);
             let check = self.build_postcond_check(
                 "postcondition failed: {}",
                 &postcondition.cfg,
                 &tame_pat,
-                eval,
-                &expr.to_token_stream().to_string(),
+                &postcondition.expr,
+                &postcondition.expr.to_token_stream().to_string(),
             );
             postcond_checks.push(check);
         }
@@ -367,30 +368,34 @@ impl CheckSettings {
         msg: &str,
         cfg: &Option<Meta>,
         tame_pat: &Option<TamePat>,
-        expr: Expr,
+        expr: &Expr,
         repr: &str,
     ) -> Stmt {
+        let eval = build_cond_eval(&expr);
+        let check = self.build_cond_check(msg, cfg, eval, &repr);
         match tame_pat {
             Some(TamePat::Borrowing(brw_pat)) => {
-                let eval = parse_quote! {
-                    { let #brw_pat = __anodized_output; #expr }
-                };
-                let check = self.build_cond_check(msg, cfg, eval, repr);
                 parse_quote! {
-                    let __anodized_post = __anodized_post & #check;
+                    let (__anodized_post, __anodized_output) = ::anodized::__::apply_keep(
+                        |__anodized_output| {
+                            ::anodized::__::coerce_input(
+                                #[allow(unused)] |#brw_pat| (), &__anodized_output);
+                            let #brw_pat = __anodized_output else { unreachable!() };
+                            (__anodized_post & #check, __anodized_output)
+                        },
+                        __anodized_output,
+                    );
                 }
             }
-            Some(TamePat::Invertible(inv_pat)) => {
-                let check = self.build_cond_check(msg, cfg, expr.clone(), repr);
+            Some(TamePat::Invertible(inv_pat, inv_expr)) => {
                 parse_quote! {
-                    let (__anodized_post, __anodized_output) = {
-                        let #inv_pat = __anodized_output;
-                        (__anodized_post & #check, #inv_pat)
-                    };
+                    let (__anodized_post, __anodized_output) = ::anodized::__::apply_keep(
+                        |#inv_pat| (__anodized_post & #check, #inv_expr),
+                        __anodized_output,
+                    );
                 }
             }
             None => {
-                let check = self.build_cond_check(msg, cfg, expr.clone(), repr);
                 parse_quote! {
                     let __anodized_post = __anodized_post & #check;
                 }
@@ -399,6 +404,8 @@ impl CheckSettings {
     }
 
     fn build_cond_check(&self, msg: &str, cfg: &Option<Meta>, cond: Expr, repr: &str) -> Expr {
+        let span = cond.span();
+
         let guard: Option<Expr> = if self.does_print || self.does_panic.is_some() {
             cfg.as_ref().map(|meta| parse_quote! { !cfg!(#meta) })
         } else {
@@ -415,9 +422,9 @@ impl CheckSettings {
         let exprs = maybe_exprs.iter().flatten();
 
         if exprs.clone().count() > 1 {
-            parse_quote! { ( #(#exprs)||* ) }
+            parse_quote_spanned! { span => ( #(#exprs)||* ) }
         } else {
-            parse_quote! { #(#exprs)||* }
+            parse_quote_spanned! { span => #(#exprs)||* }
         }
     }
 
@@ -429,7 +436,8 @@ impl CheckSettings {
 }
 
 fn build_cond_eval(expr: &Expr) -> Expr {
-    parse_quote! { ::anodized::__::eval::<bool>(|| #expr) }
+    let span = expr.span();
+    parse_quote_spanned! { span => ::anodized::__::eval::<bool>(|| #expr) }
 }
 
 fn build_capture_eval(expr: &Expr) -> Expr {
