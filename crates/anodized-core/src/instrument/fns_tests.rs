@@ -138,32 +138,53 @@ fn check_data_instrument_item_fn() {
         ensures: |OUT_PAT| COND_3,
     };
     let item_fn: ItemFn = parse_quote! {
-        fn FUNC(IN_PAT_1: TYPE_1, IN_PAT_2: TYPE_2) -> RET_TYPE {
+        fn FUNC(IN_PAT_1: TYPE_1, ref IN_PAT_2: TYPE_2) -> RET_TYPE {
             BODY
         }
     };
 
     let expected: TokenStream = parse_quote! {
         fn FUNC(__anodized_input_1: TYPE_1, __anodized_input_2: TYPE_2) -> RET_TYPE {
+            // Coerce inputs to prevent weird errors about refutable patterns.
+            ::anodized::__::coerce_input(#[allow(unused)] |IN_PAT_1| (), &__anodized_input_1);
+            ::anodized::__::coerce_input(#[allow(unused)] |ref IN_PAT_2| (), &__anodized_input_2);
             // Check data specs of inputs.
             let __anodized_pre = true;
             let __anodized_pre = __anodized_pre &
                 (true || <TYPE_1 as ::anodized::data::Refine>::predicate(&__anodized_input_1));
             let __anodized_pre = __anodized_pre &
                 (true || <TYPE_2 as ::anodized::data::Refine>::predicate(&__anodized_input_2));
+            // Bind input patterns.
+            let (IN_PAT_1, ref IN_PAT_2) = (__anodized_input_1, __anodized_input_2) else {
+                unreachable!()
+            };
             // Check preconditions.
             let __anodized_pre = __anodized_pre & (true || ::anodized::__::eval::<bool>(|| COND_1));
             let __anodized_pre = __anodized_pre & (true || ::anodized::__::eval::<bool>(|| COND_2));
             if !__anodized_pre {}
             // Evaluate captures and the output.
             let (__anodized_output) = (::anodized::__::eval_once(|| -> RET_TYPE { BODY }));
-            // Check data specs of inputs again. Needed to correctly handle e.g. `&mut T` inputs.
+            // Check data spec of the output.
             let __anodized_post = true;
+            let __anodized_post = __anodized_post &
+                (true || <RET_TYPE as ::anodized::data::Refine>::predicate(&__anodized_output));
+            // Unbind invertible input patterns.
+            let (__anodized_input_1) = (IN_PAT_1);
+            // Check data specs of inputs again. Needed to correctly handle e.g. `&mut T` inputs.
+            let __anodized_post = __anodized_post &
+                (true || <TYPE_1 as ::anodized::data::Refine>::predicate(&__anodized_input_1));
+            let __anodized_post = __anodized_post &
+                (true || <TYPE_2 as ::anodized::data::Refine>::predicate(&__anodized_input_2));
+            // Re-bind invertible patterns.
+            let (IN_PAT_1) = (__anodized_input_1) else { unreachable!() };
             // Check postconditions.
             let __anodized_post = __anodized_post &
                 (true || ::anodized::__::eval::<bool>(|| COND_2));
             let (__anodized_post, __anodized_output) = ::anodized::__::apply_keep(
-                |OUT_PAT| (__anodized_post & (true || ::anodized::__::eval::<bool>(|| COND_3)), OUT_PAT),
+                |OUT_PAT| (
+                    __anodized_post & (true || ::anodized::__::eval::<bool>(|| COND_3)),
+                    OUT_PAT
+                ),
                 __anodized_output,
             );
             if !__anodized_post {}
