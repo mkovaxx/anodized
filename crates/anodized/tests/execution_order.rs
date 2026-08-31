@@ -180,7 +180,7 @@ fn func_io<'a>(i1: TypeWithSpec<'a>, _: &mut TypeWithSpec, _: &TypeWithSpec) -> 
     }
 }
 
-#[cfg(any(anodized_panic, anodized_check_data))]
+#[cfg(all(anodized_panic, anodized_check_data))]
 #[test]
 fn data_check_execution_order() {
     let log = ExecLog::new();
