@@ -1,4 +1,4 @@
-use anodized::spec;
+use anodized::{data::Refine, spec};
 
 #[spec(
     ensures: |(a, b)| [
@@ -24,7 +24,7 @@ fn sort_pair_i32_fail_postcondition() {
     ensures: |(a, b)| a <= b,
 )]
 #[allow(unused)]
-fn sort_pair<T: Ord>(pair: (T, T)) -> (T, T) {
+fn sort_pair<T: Ord + Refine>(pair: (T, T)) -> (T, T) {
     // Deliberately wrong implementation to break the spec.
     pair
 }

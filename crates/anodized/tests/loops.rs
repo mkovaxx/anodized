@@ -1,5 +1,5 @@
 #![allow(clippy::needless_range_loop)]
-use anodized::spec;
+use anodized::{data::Refine, spec};
 
 #[spec(
     ensures: |ref output| [
@@ -30,7 +30,7 @@ pub fn find_maximum(seq: &[u8]) -> u8 {
         seq[output..].iter().all(|item| item >= value),
     ],
 )]
-pub fn find_insert_position<T: Ord>(seq: &[T], value: &T) -> usize {
+pub fn find_insert_position<T: Ord + Refine>(seq: &[T], value: &T) -> usize {
     let mut i = 0;
 
     #[spec(
