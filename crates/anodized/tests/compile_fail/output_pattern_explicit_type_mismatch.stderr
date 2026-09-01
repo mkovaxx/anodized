@@ -1,14 +1,14 @@
 error[E0631]: type mismatch in closure arguments
- --> tests/compile_fail/output_pattern_explicit_type_mismatch.rs:7:1
+ --> tests/compile_fail/output_pattern_explicit_type_mismatch.rs:5:1
   |
-7 | #[spec(ensures: |_: SomeType| true)]
+5 | #[spec(ensures: |output: u32| true)]
   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
   | |
   | expected due to this
   | found signature defined here
   |
   = note: expected closure signature `fn(usize) -> _`
-             found closure signature `fn(SomeType) -> _`
+             found closure signature `fn(u32) -> _`
 note: required by a bound in `apply_keep`
  --> src/__.rs
   |
