@@ -1,50 +1,28 @@
 error[E0308]: mismatched types
- --> tests/compile_fail/output_pattern_explicit_type_mismatch.rs:5:41
+ --> tests/compile_fail/output_pattern_explicit_type_mismatch.rs:7:1
   |
-5 | #[spec(ensures: |output: u32| output <= input.len())]
-  |                                         ^^^^^^^^^^^ expected `u32`, found `usize`
-
-error[E0277]: can't compare `u32` with `usize`
- --> tests/compile_fail/output_pattern_explicit_type_mismatch.rs:5:38
+7 | #[spec(ensures: |_: SomeType| true)]
+  | ^^^^^^^^^^^^^^^^^^^^--------^^^^^^^^
+  | |                   |
+  | |                   expected due to this
+  | expected `SomeType`, found `usize`
   |
-5 | #[spec(ensures: |output: u32| output <= input.len())]
-  |                                      ^^ no implementation for `u32 < usize` and `u32 > usize`
-  |
-  = help: the trait `PartialOrd<usize>` is not implemented for `u32`
-help: the following other types implement trait `PartialOrd<Rhs>`
- --> $WORKSPACE/crates/anodized-logic/src/arithmetic/interop.rs
-  |
-  |         impl ::core::cmp::PartialOrd<$crate::arithmetic::int> for $t {
-  |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `u32` implements `PartialOrd<int>`
-  |
- ::: $RUST/core/src/cmp.rs
-  |
-  |             impl const PartialOrd for $t {
-  |             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `u32` implements `PartialOrd`
-...
-  |     ord_impl! { char usize u8 u16 u32 u64 u128 isize i8 i16 i32 i64 i128 }
-  |     ---------------------------------------------------------------------- in this macro invocation
-  |
- ::: $WORKSPACE/crates/anodized-logic/src/arithmetic.rs
-  |
-  | impl_primitive_interop!(u32);
-  | ---------------------------- in this macro invocation
-  = note: this error originates in the macro `ord_impl` which comes from the expansion of the macro `impl_primitive_interop` (in Nightly builds, run with -Z macro-backtrace for more info)
+  = note: this error originates in the attribute macro `spec` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0631]: type mismatch in closure arguments
- --> tests/compile_fail/output_pattern_explicit_type_mismatch.rs:5:1
+ --> tests/compile_fail/output_pattern_explicit_type_mismatch.rs:7:1
   |
-5 | #[spec(ensures: |output: u32| output <= input.len())]
-  | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+7 | #[spec(ensures: |_: SomeType| true)]
+  | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
   | |
   | expected due to this
   | found signature defined here
   |
   = note: expected closure signature `fn(usize) -> _`
-             found closure signature `fn(u32) -> _`
-note: required by a bound in `apply_keep`
+             found closure signature `fn(SomeType) -> _`
+note: required by a bound in `coerce_input`
  --> src/__.rs
   |
-  | pub fn apply_keep<T, U>(closure: impl Fn(U) -> (T, U), value: U) -> (T, U) {
-  |                                       ^^^^^^^^^^^^^^^ required by this bound in `apply_keep`
+  | pub fn coerce_input<T>(_: impl Fn(T), _: &T) {}
+  |                                ^^^^^ required by this bound in `coerce_input`
   = note: this error originates in the attribute macro `spec` (in Nightly builds, run with -Z macro-backtrace for more info)

@@ -2,7 +2,9 @@
 
 use anodized::spec;
 
-#[spec(ensures: |output: u32| output <= input.len())]
+struct SomeType;
+
+#[spec(ensures: |_: SomeType| true)]
 fn count_chars(input: String) -> usize {
     input.chars().count()
 }
