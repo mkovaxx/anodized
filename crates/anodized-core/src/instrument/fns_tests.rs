@@ -146,9 +146,9 @@ fn check_data_instrument_item_fn() {
     let expected: TokenStream = parse_quote! {
         fn FUNC(__anodized_input_1: TYPE_1, __anodized_input_2: TYPE_2) -> RET_TYPE {
             // Coerce inputs to prevent weird errors about refutable patterns.
-            let _ = |INPUT_1: TYPE_1| ();
-            let _ = |ref INPUT_2: TYPE_2| ();
-            // Check data specs of inputs.
+            let _ = #[allow(unused)] |INPUT_1: TYPE_1| ();
+            let _ = #[allow(unused)] |ref INPUT_2: TYPE_2| ();
+            // Check input type specs.
             let __anodized_pre = true;
             let __anodized_pre = __anodized_pre &
                 (true || <TYPE_1 as ::anodized::types::Refine>::predicate(&__anodized_input_1));
@@ -164,13 +164,13 @@ fn check_data_instrument_item_fn() {
             if !__anodized_pre {}
             // Evaluate captures and the output.
             let (__anodized_output) = (::anodized::__::eval_once(|| -> RET_TYPE { BODY }));
-            // Check data spec of the output.
+            // Check output type spec.
             let __anodized_post = true;
             let __anodized_post = __anodized_post &
                 (true || <RET_TYPE as ::anodized::types::Refine>::predicate(&__anodized_output));
             // Unbind invertible input patterns.
             let (__anodized_input_1) = (INPUT_1);
-            // Check data specs of inputs again. Needed to correctly handle e.g. `&mut T` inputs.
+            // Check input type specs again. Needed to correctly handle e.g. `&mut T` inputs.
             let __anodized_post = __anodized_post &
                 (true || <TYPE_1 as ::anodized::types::Refine>::predicate(&__anodized_input_1));
             let __anodized_post = __anodized_post &

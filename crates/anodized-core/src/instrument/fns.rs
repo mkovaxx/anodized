@@ -5,7 +5,8 @@ mod fns_tests;
 use proc_macro2::Span;
 use quote::{ToTokens, quote};
 use syn::{
-    Attribute, Block, Expr, FnArg, Ident, Meta, Pat, Path, ReturnType, Signature, Stmt, Type,
+    Attribute, Block, Expr, FnArg, Ident, Meta, Pat, Path, Receiver, ReturnType, Signature, Stmt,
+    Type,
     parse::{Parse, Result},
     parse_quote, parse_quote_spanned,
     spanned::Spanned,
@@ -227,28 +228,32 @@ impl CheckSettings {
 
         let mut stmts: Vec<Stmt> = vec![];
 
+        let mut maybe_receiver: Option<Receiver> = None;
         let mut checked_inputs: Vec<(Ident, TamePat, &Type)> = vec![];
 
         let mut id_gen = IdentGenerator::new();
         if self.check_data {
-            for (i, input) in sig.inputs.iter_mut().enumerate() {
-                match input {
-                    FnArg::Receiver(_) => {
-                        todo!()
+            for (i, arg) in sig
+                .inputs
+                .iter_mut()
+                .filter_map(|input| match input {
+                    FnArg::Receiver(receiver) => {
+                        maybe_receiver = Some(receiver.clone());
+                        None
                     }
-                    FnArg::Typed(arg) => {
-                        let ident =
-                            Ident::new(&format!("__anodized_input_{}", i + 1), arg.pat.span());
-                        let coercion = parse_quote! {
-                            let _ = |#arg| ();
-                        };
-                        let new_pat: Pat = parse_quote! { #ident };
-                        let pat: Pat = std::mem::replace(&mut arg.pat, new_pat);
-                        stmts.push(coercion);
-                        let tame_pat = tame_pattern(&mut id_gen, pat)?;
-                        checked_inputs.push((ident, tame_pat, arg.ty.as_ref()));
-                    }
-                }
+                    FnArg::Typed(pat_type) => Some(pat_type),
+                })
+                .enumerate()
+            {
+                let ident = Ident::new(&format!("__anodized_input_{}", i + 1), arg.pat.span());
+                let coercion = parse_quote! {
+                    let _ = #[allow(unused)] |#arg| ();
+                };
+                let new_pat: Pat = parse_quote! { #ident };
+                let pat: Pat = std::mem::replace(&mut arg.pat, new_pat);
+                stmts.push(coercion);
+                let tame_pat = tame_pattern(&mut id_gen, pat)?;
+                checked_inputs.push((ident, tame_pat, arg.ty.as_ref()));
             }
         }
 
@@ -259,8 +264,17 @@ impl CheckSettings {
 
         if self.check_data {
             // Check data specs of inputs.
+            if let Some(receiver) = &maybe_receiver {
+                let message = format!("precondition failed: type spec of self");
+                let self_token = &receiver.self_token;
+                let expr = parse_quote! {
+                    <Self as ::anodized::types::Refine>::predicate(#self_token)
+                };
+                let check = self.build_precond_check("{}", &None, expr, &message);
+                stmts.push(check);
+            }
             for (i, (ident, _, ty)) in checked_inputs.iter().enumerate() {
-                let message = format!("precondition failed: data spec of input {}", i + 1);
+                let message = format!("precondition failed: type spec of input {}", i + 1);
                 let expr = parse_quote! {
                     <#ty as ::anodized::types::Refine>::predicate(&#ident)
                 };
@@ -362,6 +376,15 @@ impl CheckSettings {
                 let (#(#input_inv_idents),*) = (#(#input_inv_exprs),*);
             });
             // Check data spec out inputs again.
+            if let Some(receiver) = &maybe_receiver {
+                let message = format!("postcondition failed: type spec of self");
+                let self_token = &receiver.self_token;
+                let expr = parse_quote! {
+                    <Self as ::anodized::types::Refine>::predicate(#self_token)
+                };
+                let check = self.build_postcond_check("{}", &None, &None, expr, &message);
+                stmts.push(check);
+            }
             for (i, (ident, _, ty)) in checked_inputs.iter().enumerate() {
                 let message = format!("postcondition failed: data spec of input {}", i + 1);
                 let expr = parse_quote! {
