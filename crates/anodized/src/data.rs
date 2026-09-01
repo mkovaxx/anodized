@@ -1,3 +1,16 @@
+#[diagnostic::on_unimplemented(
+    label = "type at the boundary of a `#[spec]`",
+    message = "\
+data spec enforcement requires `{Self}` to implement trait `anodized::data::Refine`",
+    note = "\
+if `{Self}` is a concrete local type, place a `#[spec]` attribute on its definition",
+    note = "\
+if `{Self}` is a concrete foreign type, wrap it in a local type such as `struct NewType({Self})`",
+    note = "\
+if `{Self}` is a type parameter, restrict it with the trait `{Self}: Refine`",
+    note = "\
+*UNSAFE*: alternatively, use `#[uncheck]` to locally disable data spec enforcement here"
+)]
 pub trait Refine {
     fn predicate(&self) -> bool;
 }
