@@ -26,8 +26,10 @@ impl Mode {
             let spec_impl: ItemImpl = parse_quote! {
                 #[doc(hidden)]
                 #[allow(warnings)]
-                impl #impl_generics #ident #ty_generics #where_clause {
-                    fn __anodized_data_maintains(&self) -> bool {
+                impl #impl_generics ::anodized::types::Refine for #ident #ty_generics
+                    #where_clause
+                {
+                    fn predicate(&self) -> bool {
                         #(#statements)*
                     }
                 }
@@ -51,8 +53,10 @@ impl Mode {
             let spec_impl: ItemImpl = parse_quote! {
                 #[doc(hidden)]
                 #[allow(warnings)]
-                impl #impl_generics #ident #ty_generics #where_clause {
-                    fn __anodized_data_maintains(&self) -> bool {
+                impl #impl_generics ::anodized::types::Refine for #ident #ty_generics
+                    #where_clause
+                {
+                    fn predicate(&self) -> bool {
                         // Bring all variants into scope for convenience.
                         use #ident::*;
                         #(#statements)*

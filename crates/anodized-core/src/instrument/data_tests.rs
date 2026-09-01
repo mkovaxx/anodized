@@ -34,11 +34,12 @@ fn embed_spec_item_struct() {
 
         #[doc(hidden)]
         #[allow(warnings)]
-        impl<'LT_1, TYPE_1: BOUND_1, const CONST_1: TYPE_2> STRUCT<'LT_1, TYPE_1, CONST_1>
+        impl<'LT_1, TYPE_1: BOUND_1, const CONST_1: TYPE_2> ::anodized::types::Refine
+            for STRUCT<'LT_1, TYPE_1, CONST_1>
         where
             'LT_1: 'LT_2,
         {
-            fn __anodized_data_maintains(&self) -> bool {
+            fn predicate(&self) -> bool {
                 let __anodized_clause_1 = ::anodized::__::eval::<bool>(|| COND_1);
                 let __anodized_clause_2 = ::anodized::__::eval::<bool>(|| COND_2);
                 __anodized_clause_1 && __anodized_clause_2
@@ -85,11 +86,12 @@ fn embed_spec_item_enum() {
 
         #[doc(hidden)]
         #[allow(warnings)]
-        impl<'LT_1, TYPE_1: BOUND_1, const CONST_1: TYPE_2> ENUM<'LT_1, TYPE_1, CONST_1>
+        impl<'LT_1, TYPE_1: BOUND_1, const CONST_1: TYPE_2> ::anodized::types::Refine
+            for ENUM<'LT_1, TYPE_1, CONST_1>
         where
             'LT_1: 'LT_2,
         {
-            fn __anodized_data_maintains(&self) -> bool {
+            fn predicate(&self) -> bool {
                 use ENUM::*;
                 let __anodized_clause_1 = ::anodized::__::eval::<bool>(|| COND_1);
                 let __anodized_clause_2 = ::anodized::__::eval::<bool>(|| COND_2);
