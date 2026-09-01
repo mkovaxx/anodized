@@ -1,7 +1,7 @@
 #[diagnostic::on_unimplemented(
     label = "type at the boundary of a `#[spec]`",
     message = "\
-data spec enforcement requires `{Self}` to implement trait `anodized::data::Refine`",
+data spec enforcement needs `{Self}` to implement trait `anodized::data::Refine`",
     note = "\
 if `{Self}` is a concrete local type, place a `#[spec]` attribute on its definition",
     note = "\
