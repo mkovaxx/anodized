@@ -16,9 +16,10 @@ pub enum TamePat {
 
 /// Tame an irrefutable pattern, so that it may be used inside a `#[spec]`.
 ///
-/// 1. If the pattern binds *only* references, classify as `Borrowing`.
-/// 2. If the pattern binds *any* references or contains the rest (`..`) pattern, return `Err`.
-/// 3. Replace wildcard (`_`) patterns with fresh identifiers, then classify as `Invertible`.
+/// 1. If the pattern binds *no* names by `ref` and does not contain rest (`..`) patterns,
+///    rename wildcards (`_`) to fresh idents, then mark as `Invertible`.
+/// 2. If the pattern binds *all* names by `ref`, then mark as `Borrowing`.
+/// 3. Otherwise return `Err`.
 pub fn tame_pattern(id_gen: &mut IdentGenerator, mut pat: Pat) -> syn::Result<TamePat> {
     let mut ident_count: u32 = 0;
     let mut ref_count: u32 = 0;
@@ -36,9 +37,7 @@ pub fn tame_pattern(id_gen: &mut IdentGenerator, mut pat: Pat) -> syn::Result<Ta
     })
     .visit_pat_mut(&mut pat);
 
-    if ident_count == ref_count {
-        Ok(TamePat::Borrowing(pat))
-    } else if ref_count == 0 && !has_rest {
+    if ref_count == 0 && !has_rest {
         ForEachMutPattern::with(|subpat| {
             if let Pat::Wild(subpat_wild) = subpat {
                 *subpat = Pat::Ident(PatIdent {
@@ -71,6 +70,8 @@ pub fn tame_pattern(id_gen: &mut IdentGenerator, mut pat: Pat) -> syn::Result<Ta
         let expr = parse_quote! { #clean_pat };
 
         Ok(TamePat::Invertible(pat, expr))
+    } else if ident_count == ref_count {
+        Ok(TamePat::Borrowing(pat))
     } else {
         let message = if has_rest {
             "inside `#[spec]`, patterns containing `..` must bind only by `ref`"
