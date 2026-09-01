@@ -1,4 +1,4 @@
-use anodized::{data::Refine, spec};
+use anodized::{spec, types::Refine};
 
 #[spec(
     ensures: |(a, b)| [

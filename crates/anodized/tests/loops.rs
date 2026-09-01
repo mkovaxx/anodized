@@ -1,5 +1,5 @@
 #![allow(clippy::needless_range_loop)]
-use anodized::{data::Refine, spec};
+use anodized::{spec, types::Refine};
 
 #[spec(
     ensures: |ref output| [
