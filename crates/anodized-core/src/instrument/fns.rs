@@ -262,7 +262,7 @@ impl CheckSettings {
             for (i, (ident, _, ty)) in checked_inputs.iter().enumerate() {
                 let message = format!("precondition failed: data spec of input {}", i + 1);
                 let expr = parse_quote! {
-                    <#ty as ::anodized::data::Refine>::predicate(&#ident)
+                    <#ty as ::anodized::types::Refine>::predicate(&#ident)
                 };
                 let check = self.build_precond_check("{}", &None, expr, &message);
                 stmts.push(check);
@@ -344,7 +344,7 @@ impl CheckSettings {
             // Check data spec of the output.
             let message = "postcondition failed: data spec of output";
             let expr = parse_quote! {
-                <#ret_type as ::anodized::data::Refine>::predicate(&#output_ident)
+                <#ret_type as ::anodized::types::Refine>::predicate(&#output_ident)
             };
             let check = self.build_postcond_check("{}", &None, &None, expr, message);
             stmts.push(check);
@@ -365,7 +365,7 @@ impl CheckSettings {
             for (i, (ident, _, ty)) in checked_inputs.iter().enumerate() {
                 let message = format!("postcondition failed: data spec of input {}", i + 1);
                 let expr = parse_quote! {
-                    <#ty as ::anodized::data::Refine>::predicate(&#ident)
+                    <#ty as ::anodized::types::Refine>::predicate(&#ident)
                 };
                 let check = self.build_postcond_check("{}", &None, &None, expr, &message);
                 stmts.push(check);

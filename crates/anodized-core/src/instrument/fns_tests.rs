@@ -151,9 +151,9 @@ fn check_data_instrument_item_fn() {
             // Check data specs of inputs.
             let __anodized_pre = true;
             let __anodized_pre = __anodized_pre &
-                (true || <TYPE_1 as ::anodized::data::Refine>::predicate(&__anodized_input_1));
+                (true || <TYPE_1 as ::anodized::types::Refine>::predicate(&__anodized_input_1));
             let __anodized_pre = __anodized_pre &
-                (true || <TYPE_2 as ::anodized::data::Refine>::predicate(&__anodized_input_2));
+                (true || <TYPE_2 as ::anodized::types::Refine>::predicate(&__anodized_input_2));
             // Bind input patterns.
             let (INPUT_1, ref INPUT_2) = (__anodized_input_1, __anodized_input_2) else {
                 unreachable!()
@@ -167,14 +167,14 @@ fn check_data_instrument_item_fn() {
             // Check data spec of the output.
             let __anodized_post = true;
             let __anodized_post = __anodized_post &
-                (true || <RET_TYPE as ::anodized::data::Refine>::predicate(&__anodized_output));
+                (true || <RET_TYPE as ::anodized::types::Refine>::predicate(&__anodized_output));
             // Unbind invertible input patterns.
             let (__anodized_input_1) = (INPUT_1);
             // Check data specs of inputs again. Needed to correctly handle e.g. `&mut T` inputs.
             let __anodized_post = __anodized_post &
-                (true || <TYPE_1 as ::anodized::data::Refine>::predicate(&__anodized_input_1));
+                (true || <TYPE_1 as ::anodized::types::Refine>::predicate(&__anodized_input_1));
             let __anodized_post = __anodized_post &
-                (true || <TYPE_2 as ::anodized::data::Refine>::predicate(&__anodized_input_2));
+                (true || <TYPE_2 as ::anodized::types::Refine>::predicate(&__anodized_input_2));
             // Re-bind invertible patterns.
             let (INPUT_1) = (__anodized_input_1) else { unreachable!() };
             // Check postconditions.
