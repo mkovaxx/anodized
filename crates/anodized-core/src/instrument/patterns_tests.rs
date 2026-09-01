@@ -107,9 +107,12 @@ fn ref_ident_is_brw() {
 }
 
 #[test]
-fn wild_is_brw() {
+fn wild_is_inv() {
     let pat: Pat = parse_quote! { _ };
-    let expected = Ok(TamePat::Borrowing(parse_quote! { _ }));
+    let expected = Ok(TamePat::Invertible(
+        parse_quote! { __anodized_ident_1 },
+        parse_quote! { __anodized_ident_1 },
+    ));
 
     let mut id_gen = IdentGenerator::new();
     let observed = tame_pattern(&mut id_gen, pat);
@@ -117,9 +120,12 @@ fn wild_is_brw() {
 }
 
 #[test]
-fn typed_wild_is_brw() {
+fn typed_wild_is_inv() {
     let pat: Pat = Pat::Type(parse_quote! { _: String });
-    let expected = Ok(TamePat::Borrowing(Pat::Type(parse_quote! { _: String })));
+    let expected = Ok(TamePat::Invertible(
+        Pat::Type(parse_quote! { __anodized_ident_1: String }),
+        parse_quote! { __anodized_ident_1 },
+    ));
 
     let mut id_gen = IdentGenerator::new();
     let observed = tame_pattern(&mut id_gen, pat);
