@@ -266,12 +266,12 @@ impl CheckSettings {
         if self.check_data {
             // Check data specs of inputs.
             if let Some(receiver) = &maybe_receiver {
-                let message = format!("precondition failed: type spec of self");
+                let message = "precondition failed: type spec of `self`";
                 let self_token = &receiver.self_token;
                 let expr = parse_quote! {
                     <Self as ::anodized::types::Refine>::predicate(#self_token)
                 };
-                let check = self.build_precond_check("{}", &None, expr, &message);
+                let check = self.build_precond_check("{}", &None, expr, message);
                 stmts.push(check);
             }
             for (i, (ident, _, ty)) in checked_inputs.iter().enumerate() {
@@ -378,12 +378,12 @@ impl CheckSettings {
             });
             // Check data spec out inputs again.
             if let Some(receiver) = &maybe_receiver {
-                let message = format!("postcondition failed: type spec of self");
+                let message = "postcondition failed: type spec of `self`";
                 let self_token = &receiver.self_token;
                 let expr = parse_quote! {
                     <Self as ::anodized::types::Refine>::predicate(#self_token)
                 };
-                let check = self.build_postcond_check("{}", &None, &None, expr, &message);
+                let check = self.build_postcond_check("{}", &None, &None, expr, message);
                 stmts.push(check);
             }
             for (i, (ident, _, ty)) in checked_inputs.iter().enumerate() {
