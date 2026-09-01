@@ -146,8 +146,10 @@ fn check_data_instrument_item_fn() {
     let expected: TokenStream = parse_quote! {
         fn FUNC(__anodized_input_1: TYPE_1, __anodized_input_2: TYPE_2) -> RET_TYPE {
             // Coerce inputs to prevent weird errors about refutable patterns.
-            let _ = #[allow(unused)] |INPUT_1: TYPE_1| ();
-            let _ = #[allow(unused)] |ref INPUT_2: TYPE_2| ();
+            #[allow(unused)]
+            let _ = |INPUT_1: TYPE_1| ();
+            #[allow(unused)]
+            let _ = |ref INPUT_2: TYPE_2| ();
             // Check input type specs.
             let __anodized_pre = true;
             let __anodized_pre = __anodized_pre &

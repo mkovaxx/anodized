@@ -247,7 +247,8 @@ impl CheckSettings {
             {
                 let ident = Ident::new(&format!("__anodized_input_{}", i + 1), arg.pat.span());
                 let coercion = parse_quote! {
-                    let _ = #[allow(unused)] |#arg| ();
+                    #[allow(unused)]
+                    let _ = |#arg| ();
                 };
                 let new_pat: Pat = parse_quote! { #ident };
                 let pat: Pat = std::mem::replace(&mut arg.pat, new_pat);
