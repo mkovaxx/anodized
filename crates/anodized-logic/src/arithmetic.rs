@@ -5,6 +5,8 @@ use num_bigint::BigInt;
 #[repr(transparent)]
 pub struct int(BigInt);
 
+crate::trivial_refinement!(int);
+
 mod interop;
 use interop::impl_primitive_interop;
 

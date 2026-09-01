@@ -15,15 +15,21 @@ pub trait Refine {
     fn predicate(&self) -> bool;
 }
 
-impl<T: Refine> Refine for &T {
+impl<T: Refine + ?Sized> Refine for &T {
     fn predicate(&self) -> bool {
         <T as Refine>::predicate(self)
     }
 }
 
-impl<T: Refine> Refine for &mut T {
+impl<T: Refine + ?Sized> Refine for &mut T {
     fn predicate(&self) -> bool {
         <T as Refine>::predicate(self)
+    }
+}
+
+impl<T: Refine> Refine for [T] {
+    fn predicate(&self) -> bool {
+        self.iter().all(<T as Refine>::predicate)
     }
 }
 
@@ -45,9 +51,15 @@ impl<T: Refine, E: Refine> Refine for Result<T, E> {
     }
 }
 
-impl<T: Refine> Refine for Box<T> {
+impl<T: Refine + ?Sized> Refine for Box<T> {
     fn predicate(&self) -> bool {
         self.as_ref().predicate()
+    }
+}
+
+impl<T: Refine> Refine for Vec<T> {
+    fn predicate(&self) -> bool {
+        <[T] as Refine>::predicate(self.as_slice())
     }
 }
 
@@ -57,29 +69,30 @@ impl Refine for () {
     }
 }
 
-impl<T1: Refine> Refine for (T1,) {
+impl<T1: Refine + ?Sized> Refine for (T1,) {
     fn predicate(&self) -> bool {
         self.0.predicate()
     }
 }
 
-impl<T1: Refine, T2: Refine> Refine for (T1, T2) {
+impl<T1: Refine, T2: Refine + ?Sized> Refine for (T1, T2) {
     fn predicate(&self) -> bool {
         self.0.predicate() && self.1.predicate()
     }
 }
 
-impl<T1: Refine, T2: Refine, T3: Refine> Refine for (T1, T2, T3) {
+impl<T1: Refine, T2: Refine, T3: Refine + ?Sized> Refine for (T1, T2, T3) {
     fn predicate(&self) -> bool {
         self.0.predicate() && self.1.predicate() && self.2.predicate()
     }
 }
 
 /// Implement `Refine` for concrete types, with `predicate` always `true`.
+#[macro_export]
 macro_rules! trivial_refinement {
     ($($ty:ty),+ $(,)?) => {
         $(
-            impl $crate::data::Refine for $ty {
+            impl $crate::types::Refine for $ty {
                 fn predicate(&self) -> bool { true }
             }
         )+
