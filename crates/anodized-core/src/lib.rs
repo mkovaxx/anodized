@@ -48,6 +48,8 @@ impl Spec {
     pub fn empty() -> Self {
         Self {
             qualifiers: FnQualifiers::empty(),
+            input_specs: vec![],
+            output_spec_on_exit: true,
             requires: vec![],
             maintains: vec![],
             captures: vec![],
@@ -71,6 +73,15 @@ impl Spec {
     }
 }
 
+impl Default for InputSpec {
+    fn default() -> Self {
+        Self {
+            on_entry: true,
+            on_exit: true,
+        }
+    }
+}
+
 /// Specifies the intended behavior of a data type: `struct` or `enum`.
 #[derive(Debug)]
 pub struct DataSpec {
@@ -86,6 +97,7 @@ impl DataSpec {
     /// Empty spec that contains no elements.
     pub fn empty() -> Self {
         Self {
+            field_specs: vec![],
             maintains: vec![],
             span: Span::call_site(),
         }

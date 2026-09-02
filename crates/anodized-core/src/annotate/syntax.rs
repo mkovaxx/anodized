@@ -1,5 +1,5 @@
 use syn::{
-    FieldValue, Ident, Member, Token,
+    Attribute, Error, FieldValue, Ident, Member, Meta, Token,
     parse::{Parse, ParseStream, Result},
     punctuated::Punctuated,
 };
@@ -99,4 +99,63 @@ impl std::fmt::Display for Keyword {
             Keyword::Decreases => write!(f, "decreases"),
         }
     }
+}
+
+/// Represents a valid `#[unspec]` attribute.
+#[derive(Debug, Clone)]
+pub struct UnspecAttr {
+    unspec: Ident,
+    args: UnspecArgs,
+}
+
+/// Represents valid arguments to the `#[unspec]` attribute.
+#[derive(Debug, Clone, Copy)]
+pub enum UnspecArgs {
+    /// No arguments: `#[unspec]`.
+    None,
+    /// An `in` argument: `#[unspec(in)]`.
+    In,
+    /// An `out` argument: `#[unspec(out)]`.
+    Out,
+}
+
+impl Parse for UnspecArgs {
+    fn parse(input: ParseStream) -> Result<Self> {
+        let args = if input.peek(Token![in]) {
+            input.parse::<Token![in]>()?;
+            Self::In
+        } else if input.peek(kw::out) {
+            input.parse::<kw::out>()?;
+            Self::Out
+        } else {
+            return Err(input.error("expected `in` or `out`"));
+        };
+
+        if !input.is_empty() {
+            return Err(input.error("expected exactly one argument"));
+        }
+
+        Ok(args)
+    }
+}
+
+impl TryFrom<Meta> for UnspecArgs {
+    type Error = Error;
+
+    fn try_from(meta: Meta) -> Result<Self> {
+        match meta {
+            Meta::Path(_) => Ok(Self::None),
+            Meta::List(list) => syn::parse2(list.tokens),
+            Meta::NameValue(name_value) => Err(Error::new_spanned(name_value, "not allowed here")),
+        }
+    }
+}
+
+/// Removes the single `#[unspec]` attribute from an attribute list, if present.
+pub(crate) fn remove_unspec_attr(attrs: &mut Vec<Attribute>) -> Result<Option<UnspecAttr>> {
+    todo!()
+}
+
+mod kw {
+    syn::custom_keyword!(out);
 }

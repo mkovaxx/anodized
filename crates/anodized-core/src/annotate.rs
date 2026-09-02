@@ -1,12 +1,13 @@
 use syn::{
-    Attribute, Error, Expr, ExprAssign, FieldValue, Meta,
+    Attribute, Error, Expr, ExprAssign, FieldValue, FnArg, Meta, Signature,
     parse::{Parse, ParseStream, Result},
     parse_quote,
     spanned::Spanned,
 };
 
 use crate::{
-    Capture, Condition, DataSpec, LoopSpec, LoopVariant, PostCondition, Spec,
+    Capture, Condition, DataSpec, InputSpec, LoopSpec, LoopVariant, PostCondition, Spec,
+    annotate::syntax::{UnspecArgs, remove_unspec_attr},
     qualifiers::FnQualifiers,
 };
 
@@ -140,12 +141,60 @@ impl Parse for Spec {
 
         Ok(Self {
             qualifiers,
+            input_specs: vec![],
+            output_spec_on_exit: true,
             requires,
             maintains,
             captures,
             ensures,
             span: input.span(),
         })
+    }
+}
+
+impl Spec {
+    /// Sets the input and output type specs from `#[unspec]` attributes on a function signature.
+    pub fn with_signature_spec(
+        mut self,
+        attrs: &mut Vec<Attribute>,
+        sig: &mut Signature,
+    ) -> Result<Self> {
+        self.output_spec_on_exit = match remove_unspec_attr(attrs)? {
+            None | Some(UnspecArgs::Out) => true,
+            other => syn::Error::new_spanned(&attrs, "only `#[unspec(out)]` is allowed here"),
+        };
+        self.input_specs = sig
+            .inputs
+            .iter_mut()
+            .map(|input| {
+                let unspec_args = match input {
+                    FnArg::Receiver(receiver) => remove_unspec_attr(&mut receiver.attrs)?,
+                    FnArg::Typed(pat_type) => remove_unspec_attr(&mut pat_type.attrs)?,
+                };
+                Ok(unspec_args.into())
+            })
+            .collect::<Result<Vec<_>>>()?;
+        Ok(self)
+    }
+}
+
+impl From<Option<UnspecArgs>> for InputSpec {
+    fn from(args: Option<UnspecArgs>) -> Self {
+        match args {
+            None => InputSpec::default(),
+            Some(UnspecArgs::None) => InputSpec {
+                on_entry: false,
+                on_exit: false,
+            },
+            Some(UnspecArgs::In) => InputSpec {
+                on_entry: false,
+                on_exit: true,
+            },
+            Some(UnspecArgs::Out) => InputSpec {
+                on_entry: true,
+                on_exit: false,
+            },
+        }
     }
 }
 
@@ -178,6 +227,7 @@ impl Parse for DataSpec {
         }
 
         Ok(Self {
+            field_specs: vec![],
             maintains,
             span: input.span(),
         })

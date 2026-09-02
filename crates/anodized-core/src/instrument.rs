@@ -70,6 +70,8 @@ impl Mode {
     }
 
     pub fn instrument_item_fn(&self, spec: Spec, mut item_fn: ItemFn) -> Result<TokenStream> {
+        let spec = spec.with_signature_spec(&mut item_fn.attrs, &mut item_fn.sig)?;
+
         let mut tokens = TokenStream::new();
 
         if item_fn.sig.ident.to_string().starts_with("__anodized_") {
