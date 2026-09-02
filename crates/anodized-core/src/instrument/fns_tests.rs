@@ -202,6 +202,128 @@ fn check_data_instrument_item_fn() {
 }
 
 #[test]
+fn check_data_unspec_input_in() {
+    let item_fn: ItemFn = parse_quote! {
+        fn FUNC(#[unspec(in)] INPUT: TYPE) -> RET_TYPE {
+            BODY
+        }
+    };
+
+    let expected: TokenStream = parse_quote! {
+        fn FUNC(__anodized_input_1: TYPE) -> RET_TYPE {
+            #[allow(unused)]
+            let _ = |INPUT: TYPE| ();
+            let __anodized_pre = true;
+            let (INPUT) = (__anodized_input_1) else { unreachable!() };
+            if !__anodized_pre {}
+            let (__anodized_output) = (::anodized::__::eval_once(|| -> RET_TYPE { BODY }));
+            let __anodized_post = true;
+            let __anodized_post = __anodized_post &
+                (true || <RET_TYPE as ::anodized::types::Refine>::predicate(&__anodized_output));
+            let (__anodized_input_1) = (INPUT);
+            let __anodized_post = __anodized_post &
+                (true || <TYPE as ::anodized::types::Refine>::predicate(&__anodized_input_1));
+            let (INPUT) = (__anodized_input_1) else { unreachable!() };
+            if !__anodized_post {}
+            __anodized_output
+        }
+    };
+
+    let observed = Mode::InjectChecks(CheckSettings::CHECK_DATA)
+        .instrument_item_fn(Spec::empty(), item_fn)
+        .unwrap();
+    assert_tokens_eq(&observed, &expected);
+}
+
+#[test]
+fn check_data_unspec_input_out() {
+    let item_fn: ItemFn = parse_quote! {
+        fn FUNC(#[unspec(out)] INPUT: TYPE) -> RET_TYPE {
+            BODY
+        }
+    };
+
+    let expected: TokenStream = parse_quote! {
+        fn FUNC(__anodized_input_1: TYPE) -> RET_TYPE {
+            #[allow(unused)]
+            let _ = |INPUT: TYPE| ();
+            let __anodized_pre = true;
+            let __anodized_pre = __anodized_pre &
+                (true || <TYPE as ::anodized::types::Refine>::predicate(&__anodized_input_1));
+            let (INPUT) = (__anodized_input_1) else { unreachable!() };
+            if !__anodized_pre {}
+            let (__anodized_output) = (::anodized::__::eval_once(|| -> RET_TYPE { BODY }));
+            let __anodized_post = true;
+            let __anodized_post = __anodized_post &
+                (true || <RET_TYPE as ::anodized::types::Refine>::predicate(&__anodized_output));
+            if !__anodized_post {}
+            __anodized_output
+        }
+    };
+
+    let observed = Mode::InjectChecks(CheckSettings::CHECK_DATA)
+        .instrument_item_fn(Spec::empty(), item_fn)
+        .unwrap();
+    assert_tokens_eq(&observed, &expected);
+}
+
+#[test]
+fn check_data_unspec_input() {
+    let item_fn: ItemFn = parse_quote! {
+        fn FUNC(#[unspec] INPUT: TYPE) -> RET_TYPE {
+            BODY
+        }
+    };
+
+    let expected: TokenStream = parse_quote! {
+        fn FUNC(__anodized_input_1: TYPE) -> RET_TYPE {
+            #[allow(unused)]
+            let _ = |INPUT: TYPE| ();
+            let __anodized_pre = true;
+            let (INPUT) = (__anodized_input_1) else { unreachable!() };
+            if !__anodized_pre {}
+            let (__anodized_output) = (::anodized::__::eval_once(|| -> RET_TYPE { BODY }));
+            let __anodized_post = true;
+            let __anodized_post = __anodized_post &
+                (true || <RET_TYPE as ::anodized::types::Refine>::predicate(&__anodized_output));
+            if !__anodized_post {}
+            __anodized_output
+        }
+    };
+
+    let observed = Mode::InjectChecks(CheckSettings::CHECK_DATA)
+        .instrument_item_fn(Spec::empty(), item_fn)
+        .unwrap();
+    assert_tokens_eq(&observed, &expected);
+}
+
+#[test]
+fn check_data_unspec_output_out() {
+    let item_fn: ItemFn = parse_quote! {
+        #[unspec(out)]
+        fn FUNC() -> RET_TYPE {
+            BODY
+        }
+    };
+
+    let expected: TokenStream = parse_quote! {
+        fn FUNC() -> RET_TYPE {
+            let __anodized_pre = true;
+            if !__anodized_pre {}
+            let (__anodized_output) = (::anodized::__::eval_once(|| -> RET_TYPE { BODY }));
+            let __anodized_post = true;
+            if !__anodized_post {}
+            __anodized_output
+        }
+    };
+
+    let observed = Mode::InjectChecks(CheckSettings::CHECK_DATA)
+        .instrument_item_fn(Spec::empty(), item_fn)
+        .unwrap();
+    assert_tokens_eq(&observed, &expected);
+}
+
+#[test]
 fn emit_try_fn_instrument_item_fn() {
     let fn_spec = make_complex_spec();
     let item_fn: ItemFn = parse_quote! {
