@@ -2,7 +2,7 @@ use proc_macro2::TokenStream;
 use syn::{
     Attribute, Error, Expr, ExprAssign, FieldValue, ImplItemFn, ItemEnum, ItemFn, ItemStruct, Meta,
     Path, TraitItemFn,
-    parse::{Parse, ParseStream, Result},
+    parse::{Parse, ParseStream, Parser, Result},
     parse_quote,
     spanned::Spanned,
 };
@@ -28,7 +28,7 @@ impl Specify for ItemFn {
     type Spec = FnSpec;
 
     fn parse_spec(self, input: TokenStream) -> Result<SpecItem<Self::Spec, Self>> {
-        let spec = syn::parse2(input)?;
+        let spec = Parser::parse2(FnSpec::parse, input)?;
         Ok(SpecItem { spec, item: self })
     }
 }
@@ -37,7 +37,7 @@ impl Specify for ImplItemFn {
     type Spec = FnSpec;
 
     fn parse_spec(self, input: TokenStream) -> Result<SpecItem<Self::Spec, Self>> {
-        let spec = syn::parse2(input)?;
+        let spec = Parser::parse2(FnSpec::parse, input)?;
         Ok(SpecItem { spec, item: self })
     }
 }
@@ -46,7 +46,7 @@ impl Specify for TraitItemFn {
     type Spec = FnSpec;
 
     fn parse_spec(self, input: TokenStream) -> Result<SpecItem<Self::Spec, Self>> {
-        let spec = syn::parse2(input)?;
+        let spec = Parser::parse2(FnSpec::parse, input)?;
         Ok(SpecItem { spec, item: self })
     }
 }
@@ -55,7 +55,7 @@ impl Specify for ItemStruct {
     type Spec = DataSpec;
 
     fn parse_spec(self, input: TokenStream) -> Result<SpecItem<Self::Spec, Self>> {
-        let spec = syn::parse2(input)?;
+        let spec = Parser::parse2(DataSpec::parse, input)?;
         Ok(SpecItem { spec, item: self })
     }
 }
@@ -64,7 +64,7 @@ impl Specify for ItemEnum {
     type Spec = DataSpec;
 
     fn parse_spec(self, input: TokenStream) -> Result<SpecItem<Self::Spec, Self>> {
-        let spec = syn::parse2(input)?;
+        let spec = Parser::parse2(DataSpec::parse, input)?;
         Ok(SpecItem { spec, item: self })
     }
 }
@@ -161,8 +161,8 @@ pub fn get_attr_input(attr: Attribute) -> Result<TokenStream> {
     }
 }
 
-impl Parse for FnSpec {
-    fn parse(input: ParseStream) -> Result<Self> {
+impl FnSpec {
+    fn parse(input: ParseStream) -> Result<FnSpec> {
         let raw_spec = syntax::SpecFields::parse(input)?;
 
         let mut errors = MultiError::empty();
@@ -293,7 +293,7 @@ impl Parse for FnSpec {
     }
 }
 
-impl Parse for DataSpec {
+impl DataSpec {
     fn parse(input: ParseStream) -> Result<Self> {
         let raw_spec = syntax::SpecFields::parse(input)?;
 
