@@ -8,8 +8,8 @@ use syn::{
 };
 
 use crate::{
-    Capture, Condition, DataSpec, FnSpec, LoopSpec, LoopVariant, PostCondition, SpecImplItemFn,
-    SpecItemEnum, SpecItemFn, SpecItemStruct, SpecTraitItemFn, qualifiers::FnQualifiers,
+    Capture, Condition, DataSpec, FnSpec, LoopSpec, LoopVariant, PostCondition, SpecItem,
+    qualifiers::FnQualifiers,
 };
 
 pub mod syntax;
@@ -19,20 +19,27 @@ use syntax::Keyword;
 #[path = "annotate_tests.rs"]
 mod annotate_tests;
 
-impl SpecItemFn {
-    pub fn parse_spec_on(item: ItemFn, spec_input: TokenStream) -> Result<Self> {
+pub trait ParseOnItem<Item>: Sized {
+    fn parse_spec_on(item: Item, spec_input: TokenStream) -> Result<Self>;
+}
+
+impl<Spec: Parse, Item: Parse> ParseOnItem<Item> for SpecItem<Spec, Item> {
+    fn parse_spec_on(item: Item, spec_input: TokenStream) -> Result<Self> {
         let spec = syn::parse2(spec_input)?;
-        Ok(SpecItemFn { spec, item })
+        Ok(SpecItem { spec, item })
     }
 }
 
-impl Parse for SpecItemFn {
+impl<Spec, Item: Parse + Spanned + HasAttrs> Parse for SpecItem<Spec, Item>
+where
+    SpecItem<Spec, Item>: ParseOnItem<Item>,
+{
     fn parse(input: ParseStream) -> Result<Self> {
-        let mut item: ItemFn = input.parse()?;
-        let Some(attr) = remove_spec_attr(&mut item.attrs)? else {
-            return Err(Error::new_spanned(
-                item,
-                "expected a `#[spec]` attribute on this `fn`",
+        let mut item: Item = input.parse()?;
+        let Some(attr) = remove_spec_attr(item.get_attrs_mut())? else {
+            return Err(Error::new(
+                item.span(),
+                "expected a `#[spec]` attribute on this item",
             ));
         };
         let spec_input = get_attr_input(attr)?;
@@ -40,87 +47,37 @@ impl Parse for SpecItemFn {
     }
 }
 
-impl SpecImplItemFn {
-    pub fn parse_spec_on(item: ImplItemFn, spec_input: TokenStream) -> Result<Self> {
-        let spec = syn::parse2(spec_input)?;
-        Ok(SpecImplItemFn { spec, item })
+trait HasAttrs {
+    fn get_attrs_mut(&mut self) -> &mut Vec<Attribute>;
+}
+
+impl HasAttrs for ItemFn {
+    fn get_attrs_mut(&mut self) -> &mut Vec<Attribute> {
+        &mut self.attrs
     }
 }
 
-impl Parse for SpecImplItemFn {
-    fn parse(input: ParseStream) -> Result<Self> {
-        let mut item: ImplItemFn = input.parse()?;
-        let Some(attr) = remove_spec_attr(&mut item.attrs)? else {
-            return Err(Error::new_spanned(
-                item,
-                "expected a `#[spec]` attribute on this `fn`",
-            ));
-        };
-        let spec_input = get_attr_input(attr)?;
-        Self::parse_spec_on(item, spec_input)
+impl HasAttrs for ImplItemFn {
+    fn get_attrs_mut(&mut self) -> &mut Vec<Attribute> {
+        &mut self.attrs
     }
 }
 
-impl SpecTraitItemFn {
-    pub fn parse_spec_on(item: TraitItemFn, spec_input: TokenStream) -> Result<Self> {
-        let spec = syn::parse2(spec_input)?;
-        Ok(SpecTraitItemFn { spec, item })
+impl HasAttrs for TraitItemFn {
+    fn get_attrs_mut(&mut self) -> &mut Vec<Attribute> {
+        &mut self.attrs
     }
 }
 
-impl Parse for SpecTraitItemFn {
-    fn parse(input: ParseStream) -> Result<Self> {
-        let mut item: TraitItemFn = input.parse()?;
-        let Some(attr) = remove_spec_attr(&mut item.attrs)? else {
-            return Err(Error::new_spanned(
-                item,
-                "expected a `#[spec]` attribute on this `fn`",
-            ));
-        };
-        let spec_input = get_attr_input(attr)?;
-        Self::parse_spec_on(item, spec_input)
+impl HasAttrs for ItemStruct {
+    fn get_attrs_mut(&mut self) -> &mut Vec<Attribute> {
+        &mut self.attrs
     }
 }
 
-impl SpecItemStruct {
-    pub fn parse_spec_on(item: ItemStruct, spec_input: TokenStream) -> Result<Self> {
-        let spec = syn::parse2(spec_input)?;
-        Ok(SpecItemStruct { spec, item })
-    }
-}
-
-impl Parse for SpecItemStruct {
-    fn parse(input: ParseStream) -> Result<Self> {
-        let mut item: ItemStruct = input.parse()?;
-        let Some(attr) = remove_spec_attr(&mut item.attrs)? else {
-            return Err(Error::new_spanned(
-                item,
-                "expected a `#[spec]` attribute on this `struct`",
-            ));
-        };
-        let spec_input = get_attr_input(attr)?;
-        Self::parse_spec_on(item, spec_input)
-    }
-}
-
-impl SpecItemEnum {
-    pub fn parse_spec_on(item: ItemEnum, spec_input: TokenStream) -> Result<Self> {
-        let spec = syn::parse2(spec_input)?;
-        Ok(SpecItemEnum { spec, item })
-    }
-}
-
-impl Parse for SpecItemEnum {
-    fn parse(input: ParseStream) -> Result<Self> {
-        let mut item: ItemEnum = input.parse()?;
-        let Some(attr) = remove_spec_attr(&mut item.attrs)? else {
-            return Err(Error::new_spanned(
-                item,
-                "expected a `#[spec]` attribute on this `enum`",
-            ));
-        };
-        let spec_input = get_attr_input(attr)?;
-        Self::parse_spec_on(item, spec_input)
+impl HasAttrs for ItemEnum {
+    fn get_attrs_mut(&mut self) -> &mut Vec<Attribute> {
+        &mut self.attrs
     }
 }
 

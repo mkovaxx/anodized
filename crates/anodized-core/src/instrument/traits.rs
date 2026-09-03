@@ -11,7 +11,7 @@ use syn::{
 
 use crate::{
     DataSpec, SpecImplItemFn, SpecTraitItemFn,
-    annotate::{get_attr_input, remove_spec_attr},
+    annotate::{ParseOnItem as _, get_attr_input, remove_spec_attr},
     instrument::{Mode, make_item_error},
 };
 

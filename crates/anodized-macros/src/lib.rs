@@ -7,6 +7,7 @@ use syn::{Expr, Item, TraitItemFn, parse_macro_input};
 
 use anodized_core::{
     DataSpec, SpecItemFn,
+    annotate::ParseOnItem as _,
     instrument::{CheckSettings, Mode, PanicSettings, fns::make_try_call, make_item_error},
 };
 
