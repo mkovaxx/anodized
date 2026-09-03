@@ -2,12 +2,14 @@
 #[path = "impls_tests.rs"]
 mod impls_tests;
 
+use proc_macro2::TokenStream;
 use syn::{
     Attribute, Error, ImplItem, ImplItemFn, ItemImpl, Result, ReturnType, Visibility, parse_quote,
 };
 
 use crate::{
     DataSpec, Spec,
+    annotate::get_attr_input,
     instrument::{Mode, find_spec_attr, make_item_error},
 };
 
@@ -41,10 +43,11 @@ Instead, ensure that both the impl block and the fn have a `#[spec]` annotation.
                         ));
                     }
 
-                    let fn_spec: Spec = match spec_attr {
-                        Some(spec_attr) => spec_attr.parse_args()?,
-                        None => Spec::empty(),
+                    let spec_input = match spec_attr {
+                        Some(spec_attr) => get_attr_input(spec_attr)?,
+                        None => TokenStream::new(),
                     };
+                    let fn_spec: Spec = syn::parse2(spec_input)?;
 
                     if let Self::EmbedSpecs = self {
                         // Embed `spec` elements as `__anodized_fn_*` items.

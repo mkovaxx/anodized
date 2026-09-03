@@ -158,7 +158,7 @@ fn path_matches_name(path: &Path, name: &str) -> bool {
         .is_some_and(|ident| ident.to_string() == name)
 }
 
-fn get_attr_input(attr: Attribute) -> Result<TokenStream> {
+pub fn get_attr_input(attr: Attribute) -> Result<TokenStream> {
     match attr.meta {
         Meta::Path(_) => Ok(TokenStream::new()),
         Meta::List(list) => Ok(list.tokens),
