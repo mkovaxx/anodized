@@ -19,21 +19,67 @@ use syntax::Keyword;
 #[path = "annotate_tests.rs"]
 mod annotate_tests;
 
+pub trait Specify: Sized {
+    type Spec;
+    fn parse_spec(self, input: TokenStream) -> Result<SpecItem<Self::Spec, Self>>;
+}
+
+impl Specify for ItemFn {
+    type Spec = FnSpec;
+
+    fn parse_spec(self, input: TokenStream) -> Result<SpecItem<Self::Spec, Self>> {
+        let spec = syn::parse2(input)?;
+        Ok(SpecItem { spec, item: self })
+    }
+}
+
+impl Specify for ImplItemFn {
+    type Spec = FnSpec;
+
+    fn parse_spec(self, input: TokenStream) -> Result<SpecItem<Self::Spec, Self>> {
+        let spec = syn::parse2(input)?;
+        Ok(SpecItem { spec, item: self })
+    }
+}
+
+impl Specify for TraitItemFn {
+    type Spec = FnSpec;
+
+    fn parse_spec(self, input: TokenStream) -> Result<SpecItem<Self::Spec, Self>> {
+        let spec = syn::parse2(input)?;
+        Ok(SpecItem { spec, item: self })
+    }
+}
+
+impl Specify for ItemStruct {
+    type Spec = DataSpec;
+
+    fn parse_spec(self, input: TokenStream) -> Result<SpecItem<Self::Spec, Self>> {
+        let spec = syn::parse2(input)?;
+        Ok(SpecItem { spec, item: self })
+    }
+}
+
+impl Specify for ItemEnum {
+    type Spec = DataSpec;
+
+    fn parse_spec(self, input: TokenStream) -> Result<SpecItem<Self::Spec, Self>> {
+        let spec = syn::parse2(input)?;
+        Ok(SpecItem { spec, item: self })
+    }
+}
+
 pub trait ParseOnItem<Item>: Sized {
     fn parse_spec_on(item: Item, spec_input: TokenStream) -> Result<Self>;
 }
 
-impl<Spec: Parse, Item: Parse> ParseOnItem<Item> for SpecItem<Spec, Item> {
+impl<Item: Specify> ParseOnItem<Item> for SpecItem<Item::Spec, Item> {
     fn parse_spec_on(item: Item, spec_input: TokenStream) -> Result<Self> {
-        let spec = syn::parse2(spec_input)?;
-        Ok(SpecItem { spec, item })
+        item.parse_spec(spec_input)
     }
 }
 
-impl<Spec, Item: Parse + Spanned + HasAttrs> Parse for SpecItem<Spec, Item>
-where
-    SpecItem<Spec, Item>: ParseOnItem<Item>,
-{
+impl<Item: Parse + HasAttrs + Spanned + Specify> Parse for SpecItem<Item::Spec, Item> {
     fn parse(input: ParseStream) -> Result<Self> {
         let mut item: Item = input.parse()?;
         let Some(attr) = remove_spec_attr(item.get_attrs_mut())? else {
@@ -43,7 +89,7 @@ where
             ));
         };
         let spec_input = get_attr_input(attr)?;
-        Self::parse_spec_on(item, spec_input)
+        item.parse_spec(spec_input)
     }
 }
 
