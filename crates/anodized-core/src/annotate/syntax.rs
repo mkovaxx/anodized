@@ -1,7 +1,11 @@
+use proc_macro2::TokenStream;
+use quote::ToTokens;
 use syn::{
-    Attribute, Error, FieldValue, Ident, Member, Meta, Token,
+    AttrStyle, Attribute, Error, FieldValue, Ident, MacroDelimiter, Member, Meta, MetaList, Path,
+    Token,
     parse::{Parse, ParseStream, Result},
     punctuated::Punctuated,
+    token::{Bracket, Paren, Pound},
 };
 
 /// Raw spec fields, i.e. as they appear in the `#[spec(...)]` proc macro invocation.
@@ -104,8 +108,79 @@ impl std::fmt::Display for Keyword {
 /// Represents a valid `#[unspec]` attribute.
 #[derive(Debug, Clone)]
 pub struct UnspecAttr {
-    unspec: Ident,
-    args: UnspecArgs,
+    pub pound_token: Pound,
+    pub bracket_token: Bracket,
+    pub path: Path,
+    pub paren_token: Option<Paren>,
+    pub args: UnspecArgs,
+}
+
+impl From<UnspecAttr> for Attribute {
+    fn from(unspec: UnspecAttr) -> Self {
+        Attribute {
+            pound_token: unspec.pound_token,
+            style: AttrStyle::Outer,
+            bracket_token: unspec.bracket_token,
+            meta: if let Some(paren) = unspec.paren_token {
+                Meta::List(MetaList {
+                    path: unspec.path,
+                    delimiter: MacroDelimiter::Paren(paren),
+                    tokens: unspec.args.into_token_stream(),
+                })
+            } else {
+                Meta::Path(unspec.path)
+            },
+        }
+    }
+}
+
+impl TryFrom<Attribute> for UnspecAttr {
+    type Error = Error;
+
+    fn try_from(attr: Attribute) -> Result<Self> {
+        if let AttrStyle::Inner(bang_token) = attr.style {
+            return Err(syn::Error::new_spanned(
+                bang_token,
+                "must be an outer attribute (no `!`): `#[unspec]`",
+            ));
+        };
+        match attr.meta {
+            Meta::Path(path) if path_matches_name(&path, "unspec") => Ok(UnspecAttr {
+                pound_token: attr.pound_token,
+                bracket_token: attr.bracket_token,
+                path,
+                paren_token: None,
+                args: UnspecArgs::None,
+            }),
+            Meta::List(list) if path_matches_name(&list.path, "unspec") => {
+                let MacroDelimiter::Paren(paren) = list.delimiter else {
+                    return Err(syn::Error::new(
+                        list.delimiter.span().open(),
+                        "expected arguments in parentheses",
+                    ));
+                };
+                Ok(UnspecAttr {
+                    pound_token: attr.pound_token,
+                    bracket_token: attr.bracket_token,
+                    path: list.path,
+                    paren_token: Some(paren),
+                    args: syn::parse2(list.tokens)?,
+                })
+            }
+            Meta::NameValue(key_val) if path_matches_name(&key_val.path, "unspec") => Err(
+                syn::Error::new_spanned(key_val.eq_token, "expected arguments in parentheses"),
+            ),
+            _ => Err(syn::Error::new_spanned(
+                attr,
+                "expected an `#[unspec]` attribute",
+            )),
+        }
+    }
+}
+
+fn path_matches_name(path: &Path, name: &str) -> bool {
+    path.get_ident()
+        .is_some_and(|ident| ident.to_string() == name)
 }
 
 /// Represents valid arguments to the `#[unspec]` attribute.
@@ -114,19 +189,27 @@ pub enum UnspecArgs {
     /// No arguments: `#[unspec]`.
     None,
     /// An `in` argument: `#[unspec(in)]`.
-    In,
+    In(Token![in]),
     /// An `out` argument: `#[unspec(out)]`.
-    Out,
+    Out(kw::out),
+}
+
+impl ToTokens for UnspecArgs {
+    fn to_tokens(&self, tokens: &mut TokenStream) {
+        match self {
+            UnspecArgs::None => {}
+            UnspecArgs::In(in_token) => in_token.to_tokens(tokens),
+            UnspecArgs::Out(out_token) => out_token.to_tokens(tokens),
+        }
+    }
 }
 
 impl Parse for UnspecArgs {
     fn parse(input: ParseStream) -> Result<Self> {
         let args = if input.peek(Token![in]) {
-            input.parse::<Token![in]>()?;
-            Self::In
+            Self::In(input.parse::<Token![in]>()?)
         } else if input.peek(kw::out) {
-            input.parse::<kw::out>()?;
-            Self::Out
+            Self::Out(input.parse::<kw::out>()?)
         } else {
             return Err(input.error("expected `in` or `out`"));
         };
@@ -139,21 +222,33 @@ impl Parse for UnspecArgs {
     }
 }
 
-impl TryFrom<Meta> for UnspecArgs {
-    type Error = Error;
+/// Removes a single `#[unspec]` attribute if present, from an attribute list.
+///
+/// If there are multiple `#[unspec]` attributes, return `Err`.
+/// The arguments of the `unspec` attribute are *not* validated.
+pub fn remove_unspec_attr(attrs: &mut Vec<Attribute>) -> Result<Option<Attribute>> {
+    let mut maybe_index = None;
 
-    fn try_from(meta: Meta) -> Result<Self> {
-        match meta {
-            Meta::Path(_) => Ok(Self::None),
-            Meta::List(list) => syn::parse2(list.tokens),
-            Meta::NameValue(name_value) => Err(Error::new_spanned(name_value, "not allowed here")),
+    for (i, attr) in attrs
+        .iter()
+        .enumerate()
+        .filter(|(_, attr)| path_matches_name(attr.path(), "unspec"))
+    {
+        if maybe_index.is_some() {
+            return Err(Error::new_spanned(
+                attr,
+                "multiple `#[unspec]` attributes are not allowed",
+            ));
         }
+        maybe_index = Some(i);
     }
-}
 
-/// Removes the single `#[unspec]` attribute from an attribute list, if present.
-pub(crate) fn remove_unspec_attr(attrs: &mut Vec<Attribute>) -> Result<Option<UnspecAttr>> {
-    todo!()
+    if let Some(index) = maybe_index {
+        let attr = attrs.remove(index);
+        Ok(Some(attr))
+    } else {
+        Ok(None)
+    }
 }
 
 mod kw {

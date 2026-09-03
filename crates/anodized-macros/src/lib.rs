@@ -7,6 +7,7 @@ use syn::{Expr, Item, TraitItemFn, parse_macro_input};
 
 use anodized_core::{
     DataSpec, Spec,
+    annotate::syntax::UnspecArgs,
     instrument::{CheckSettings, Mode, PanicSettings, fns::make_try_call, make_item_error},
 };
 
@@ -108,4 +109,19 @@ pub fn try_call(args: TokenStream) -> TokenStream {
         Ok(call) => call.into_token_stream().into(),
         Err(error) => error.to_compile_error().into(),
     }
+}
+
+/// Provides fine-grained control of type spec enforcement at `spec` boundaries.
+///
+/// May attach to a `fn` item, its inputs, or fields in a `struct` or `enum` definition.
+///
+/// It has the following three variants:
+/// - `#[unspec]`: Generally opt out of type spec enforcement.
+/// - `#[unspec(in)]`: Opt out of type spec enforcement on entry into a `fn`.
+/// - `#[unspec(out)]`: Opt out of type spec enforcement on exit from a `fn`.
+#[proc_macro_attribute]
+pub fn unspec(args: TokenStream, input: TokenStream) -> TokenStream {
+    let args = parse_macro_input!(args as UnspecArgs);
+    // TODO: Validate `input` as well.
+    input
 }

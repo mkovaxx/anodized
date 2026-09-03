@@ -7,7 +7,7 @@ use syn::{
 
 use crate::{
     Capture, Condition, DataSpec, InputSpec, LoopSpec, LoopVariant, PostCondition, Spec,
-    annotate::syntax::{UnspecArgs, remove_unspec_attr},
+    annotate::syntax::{UnspecArgs, UnspecAttr, remove_unspec_attr},
     qualifiers::FnQualifiers,
 };
 
@@ -159,38 +159,52 @@ impl Spec {
         attrs: &mut Vec<Attribute>,
         sig: &mut Signature,
     ) -> Result<Self> {
-        self.output_spec_on_exit = match remove_unspec_attr(attrs)? {
-            None | Some(UnspecArgs::Out) => true,
-            other => syn::Error::new_spanned(&attrs, "only `#[unspec(out)]` is allowed here"),
+        self.output_spec_on_exit = if let Some(attr) = remove_unspec_attr(attrs)? {
+            let unspec_attr = UnspecAttr::try_from(attr)?;
+            let UnspecArgs::Out(_) = unspec_attr.args else {
+                return Err(Error::new_spanned(
+                    Attribute::from(unspec_attr),
+                    "only `#[unspec(out)]` is allowed on the output of a `fn`",
+                ));
+            };
+            false
+        } else {
+            true
         };
+
         self.input_specs = sig
             .inputs
             .iter_mut()
             .map(|input| {
-                let unspec_args = match input {
-                    FnArg::Receiver(receiver) => remove_unspec_attr(&mut receiver.attrs)?,
-                    FnArg::Typed(pat_type) => remove_unspec_attr(&mut pat_type.attrs)?,
+                let attrs = match input {
+                    FnArg::Receiver(receiver) => &mut receiver.attrs,
+                    FnArg::Typed(pat_type) => &mut pat_type.attrs,
                 };
-                Ok(unspec_args.into())
+                if let Some(attr) = remove_unspec_attr(attrs)? {
+                    let unspec_attr: UnspecAttr = attr.try_into()?;
+                    Ok(unspec_attr.args.into())
+                } else {
+                    Ok(InputSpec::default())
+                }
             })
             .collect::<Result<Vec<_>>>()?;
+
         Ok(self)
     }
 }
 
-impl From<Option<UnspecArgs>> for InputSpec {
-    fn from(args: Option<UnspecArgs>) -> Self {
+impl From<UnspecArgs> for InputSpec {
+    fn from(args: UnspecArgs) -> Self {
         match args {
-            None => InputSpec::default(),
-            Some(UnspecArgs::None) => InputSpec {
+            UnspecArgs::None => InputSpec {
                 on_entry: false,
                 on_exit: false,
             },
-            Some(UnspecArgs::In) => InputSpec {
+            UnspecArgs::In(_) => InputSpec {
                 on_entry: false,
                 on_exit: true,
             },
-            Some(UnspecArgs::Out) => InputSpec {
+            UnspecArgs::Out(_) => InputSpec {
                 on_entry: true,
                 on_exit: false,
             },
