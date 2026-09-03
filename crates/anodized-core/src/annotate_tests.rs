@@ -1,4 +1,4 @@
-use crate::test_util::assert_spec_eq;
+use crate::{SpecItemFn, test_util::assert_spec_eq};
 
 use super::*;
 use proc_macro2::Span;
