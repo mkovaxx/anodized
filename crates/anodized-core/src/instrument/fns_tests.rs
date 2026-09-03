@@ -1,60 +1,38 @@
-use crate::{SpecItemFn, annotate::syntax::SpecFields, test_util::assert_tokens_eq};
+use crate::{SpecItemFn, test_util::assert_tokens_eq};
 
 use super::*;
 use proc_macro2::TokenStream;
-use syn::{Block, ItemFn, parse_quote};
+use syn::{Block, parse_quote};
 
-fn DEPRECATED_make_complex_spec() -> Spec {
+fn make_complex_spec_item_fn() -> SpecItemFn {
     parse_quote! {
-        requires: COND_1,
-        #[cfg(META_1)]
-        requires: [COND_2, COND_3],
-        maintains: [COND_4, COND_5],
-        #[cfg(META_2)]
-        maintains: COND_6,
-        captures: [
-            ALIAS_1 = EXPR_1,
-            (ALIAS_2, ALIAS_3) = EXPR_2,
-        ],
-        ensures: |PAT_1| COND_7,
-        #[cfg(META_3)]
-        ensures: |PAT_1| [
-            COND_8,
-            COND_9,
-        ],
-    }
-}
-
-fn make_complex_spec() -> SpecFields {
-    parse_quote! {
-        requires: COND_1,
-        #[cfg(META_1)]
-        requires: [COND_2, COND_3],
-        maintains: [COND_4, COND_5],
-        #[cfg(META_2)]
-        maintains: COND_6,
-        captures: [
-            ALIAS_1 = EXPR_1,
-            (ALIAS_2, ALIAS_3) = EXPR_2,
-        ],
-        ensures: |PAT_1| COND_7,
-        #[cfg(META_3)]
-        ensures: |PAT_1| [
-            COND_8,
-            COND_9,
-        ],
+        #[spec(
+            requires: COND_1,
+            #[cfg(META_1)]
+            requires: [COND_2, COND_3],
+            maintains: [COND_4, COND_5],
+            #[cfg(META_2)]
+            maintains: COND_6,
+            captures: [
+                ALIAS_1 = EXPR_1,
+                (ALIAS_2, ALIAS_3) = EXPR_2,
+            ],
+            ensures: |PAT_1| COND_7,
+            #[cfg(META_3)]
+            ensures: |PAT_1| [
+                COND_8,
+                COND_9,
+            ],
+        )]
+        fn FUNC(&self, PARAM_1: TYPE_1, PARAM_2: TYPE_2) -> RET_TYPE {
+            BODY
+        }
     }
 }
 
 #[test]
 fn embed_spec_item_fn() {
-    let spec_fields = make_complex_spec();
-    let spec_item_fn: SpecItemFn = parse_quote! {
-        #[spec(#spec_fields)]
-        fn FUNC(&self, PARAM_1: TYPE_1, PARAM_2: TYPE_2) -> RET_TYPE {
-            BODY
-        }
-    };
+    let spec_item_fn = make_complex_spec_item_fn();
 
     let qualifier_bits = FnQualifiers::empty().bits();
     let expected: TokenStream = parse_quote! {
@@ -105,12 +83,7 @@ fn embed_spec_item_fn() {
 
 #[test]
 fn default_instrument_item_fn() {
-    let fn_spec = DEPRECATED_make_complex_spec();
-    let item_fn: ItemFn = parse_quote! {
-        fn FUNC(&self, PARAM_1: TYPE_1, PARAM_2: TYPE_2) -> RET_TYPE {
-            BODY
-        }
-    };
+    let spec_item_fn = make_complex_spec_item_fn();
 
     let expected: TokenStream = parse_quote! {
         fn FUNC(&self, PARAM_1: TYPE_1, PARAM_2: TYPE_2) -> RET_TYPE {
@@ -148,18 +121,15 @@ fn default_instrument_item_fn() {
         }
     };
 
-    let observed = Mode::DEFAULT.instrument_item_fn(fn_spec, item_fn).unwrap();
+    let observed = Mode::DEFAULT
+        .instrument_item_fn(spec_item_fn.spec, spec_item_fn.item)
+        .unwrap();
     assert_tokens_eq(&observed, &expected);
 }
 
 #[test]
 fn emit_try_fn_instrument_item_fn() {
-    let fn_spec = DEPRECATED_make_complex_spec();
-    let item_fn: ItemFn = parse_quote! {
-        fn FUNC(&self, PARAM_1: TYPE_1, PARAM_2: TYPE_2) -> RET_TYPE {
-            BODY
-        }
-    };
+    let spec_item_fn = make_complex_spec_item_fn();
 
     let expected: TokenStream = parse_quote! {
         fn FUNC(&self, input_1: TYPE_1, input_2: TYPE_2) -> RET_TYPE {
@@ -230,31 +200,17 @@ fn emit_try_fn_instrument_item_fn() {
     };
 
     let observed = Mode::InjectChecks(CheckSettings::PRINT_AND_TRY)
-        .instrument_item_fn(fn_spec, item_fn)
+        .instrument_item_fn(spec_item_fn.spec, spec_item_fn.item)
         .unwrap();
     assert_tokens_eq(&observed, &expected);
 }
 
-fn make_fn_body() -> Block {
-    parse_quote! {
-        {
-            this_is_the_body()
-        }
-    }
-}
-
-fn make_return_type() -> ReturnType {
-    parse_quote! { -> SomeType }
-}
-
 #[test]
 fn simple_requires() {
-    let spec: Spec = parse_quote! {
-        requires: CONDITION_1,
+    let spec_item_fn: SpecItemFn = parse_quote! {
+        #[spec(requires: CONDITION_1)]
+        fn FUNCTION() -> SomeType { this_is_the_body() }
     };
-    let body = make_fn_body();
-    let ret_type = make_return_type();
-    let is_async = false;
 
     let expected: Block = parse_quote! {
         {
@@ -264,7 +220,7 @@ fn simple_requires() {
             if !__anodized_pre {
                 panic!("precondition failed");
             }
-            let (__anodized_output) = (::anodized::__::eval_once(|| #ret_type #body));
+            let (__anodized_output) = (::anodized::__::eval_once(|| -> SomeType { this_is_the_body() }));
             let __anodized_post = true;
             if !__anodized_post {
                 panic!("postcondition failed");
@@ -274,29 +230,37 @@ fn simple_requires() {
     };
 
     let observed = CheckSettings::PRINT_AND_PANIC
-        .instrument_fn_body(&spec, &body, is_async, &ret_type)
+        .instrument_fn_body(
+            &spec_item_fn.spec,
+            &spec_item_fn.item.block,
+            spec_item_fn.item.sig.asyncness.is_some(),
+            &spec_item_fn.item.sig.output,
+        )
         .unwrap();
     assert_tokens_eq(&observed, &expected);
 }
 
 #[test]
 fn requires_disable_runtime_checks() {
-    let spec: Spec = parse_quote! {
-        requires: CONDITION_1,
+    let spec_item_fn: SpecItemFn = parse_quote! {
+        #[spec(requires: CONDITION_1)]
+        fn FUNCTION() -> SomeType { this_is_the_body() }
     };
-    let body = make_fn_body();
-    let ret_type = make_return_type();
-    let is_async = false;
 
     let observed = CheckSettings::DEFAULT
-        .instrument_fn_body(&spec, &body, is_async, &ret_type)
+        .instrument_fn_body(
+            &spec_item_fn.spec,
+            &spec_item_fn.item.block,
+            spec_item_fn.item.sig.asyncness.is_some(),
+            &spec_item_fn.item.sig.output,
+        )
         .unwrap();
     let expected: Block = parse_quote! {
         {
             let __anodized_pre = true;
             let __anodized_pre = __anodized_pre & (true || ::anodized::__::eval::<bool>(|| CONDITION_1));
             if !__anodized_pre {}
-            let (__anodized_output) = (::anodized::__::eval_once(|| #ret_type #body));
+            let (__anodized_output) = (::anodized::__::eval_once(|| -> SomeType { this_is_the_body() }));
             let __anodized_post = true;
             if !__anodized_post {}
             __anodized_output
@@ -307,12 +271,10 @@ fn requires_disable_runtime_checks() {
 
 #[test]
 fn requires_no_panic_runtime() {
-    let spec: Spec = parse_quote! {
-        requires: CONDITION_1,
+    let spec_item_fn: SpecItemFn = parse_quote! {
+        #[spec(requires: CONDITION_1)]
+        fn FUNCTION() -> SomeType { this_is_the_body() }
     };
-    let body = make_fn_body();
-    let ret_type = make_return_type();
-    let is_async = false;
 
     let expected: Block = parse_quote! {
         {
@@ -320,7 +282,7 @@ fn requires_no_panic_runtime() {
             let __anodized_pre = __anodized_pre & (::anodized::__::eval::<bool>(|| CONDITION_1)
                 || eprintln!("precondition failed: {}", "CONDITION_1") != ());
             if !__anodized_pre {}
-            let (__anodized_output) = (::anodized::__::eval_once(|| #ret_type #body));
+            let (__anodized_output) = (::anodized::__::eval_once(|| -> SomeType { this_is_the_body() }));
             let __anodized_post = true;
             if !__anodized_post {}
             __anodized_output
@@ -328,19 +290,22 @@ fn requires_no_panic_runtime() {
     };
 
     let observed = CheckSettings::PRINT
-        .instrument_fn_body(&spec, &body, is_async, &ret_type)
+        .instrument_fn_body(
+            &spec_item_fn.spec,
+            &spec_item_fn.item.block,
+            spec_item_fn.item.sig.asyncness.is_some(),
+            &spec_item_fn.item.sig.output,
+        )
         .unwrap();
     assert_tokens_eq(&observed, &expected);
 }
 
 #[test]
 fn simple_maintains() {
-    let spec: Spec = parse_quote! {
-        maintains: CONDITION_1,
+    let spec_item_fn: SpecItemFn = parse_quote! {
+        #[spec(maintains: CONDITION_1)]
+        fn FUNCTION() -> SomeType { this_is_the_body() }
     };
-    let body = make_fn_body();
-    let ret_type = make_return_type();
-    let is_async = false;
 
     let expected: Block = parse_quote! {
         {
@@ -350,7 +315,7 @@ fn simple_maintains() {
             if !__anodized_pre {
                 panic!("precondition failed");
             }
-            let (__anodized_output) = (::anodized::__::eval_once(|| #ret_type #body));
+            let (__anodized_output) = (::anodized::__::eval_once(|| -> SomeType { this_is_the_body() }));
             let __anodized_post = true;
             let __anodized_post = __anodized_post & (::anodized::__::eval::<bool>(|| CONDITION_1)
                 || eprintln!("postinvariant failed: {}", "CONDITION_1") != ());
@@ -362,19 +327,22 @@ fn simple_maintains() {
     };
 
     let observed = CheckSettings::PRINT_AND_PANIC
-        .instrument_fn_body(&spec, &body, is_async, &ret_type)
+        .instrument_fn_body(
+            &spec_item_fn.spec,
+            &spec_item_fn.item.block,
+            spec_item_fn.item.sig.asyncness.is_some(),
+            &spec_item_fn.item.sig.output,
+        )
         .unwrap();
     assert_tokens_eq(&observed, &expected);
 }
 
 #[test]
 fn simple_ensures() {
-    let spec: Spec = parse_quote! {
-        ensures: CONDITION_1,
+    let spec_item_fn: SpecItemFn = parse_quote! {
+        #[spec(ensures: CONDITION_1)]
+        fn FUNCTION() -> SomeType { this_is_the_body() }
     };
-    let body = make_fn_body();
-    let ret_type = make_return_type();
-    let is_async = false;
 
     let expected: Block = parse_quote! {
         {
@@ -382,7 +350,7 @@ fn simple_ensures() {
             if !__anodized_pre {
                 panic!("precondition failed");
             }
-            let (__anodized_output) = (::anodized::__::eval_once(|| #ret_type #body));
+            let (__anodized_output) = (::anodized::__::eval_once(|| -> SomeType { this_is_the_body() }));
             let __anodized_post = true;
             let __anodized_post = __anodized_post & (::anodized::__::eval::<bool>(|| CONDITION_1)
                 || eprintln!("postcondition failed: {}", "CONDITION_1") != ());
@@ -394,20 +362,22 @@ fn simple_ensures() {
     };
 
     let observed = CheckSettings::PRINT_AND_PANIC
-        .instrument_fn_body(&spec, &body, is_async, &ret_type)
+        .instrument_fn_body(
+            &spec_item_fn.spec,
+            &spec_item_fn.item.block,
+            spec_item_fn.item.sig.asyncness.is_some(),
+            &spec_item_fn.item.sig.output,
+        )
         .unwrap();
     assert_tokens_eq(&observed, &expected);
 }
 
 #[test]
 fn simple_requires_and_maintains() {
-    let spec: Spec = parse_quote! {
-        requires: CONDITION_1,
-        maintains: CONDITION_2,
+    let spec_item_fn: SpecItemFn = parse_quote! {
+        #[spec(requires: CONDITION_1, maintains: CONDITION_2)]
+        fn FUNCTION() -> SomeType { this_is_the_body() }
     };
-    let body = make_fn_body();
-    let ret_type = make_return_type();
-    let is_async = false;
 
     let expected: Block = parse_quote! {
         {
@@ -419,7 +389,7 @@ fn simple_requires_and_maintains() {
             if !__anodized_pre {
                 panic!("precondition failed");
             }
-            let (__anodized_output) = (::anodized::__::eval_once(|| #ret_type #body));
+            let (__anodized_output) = (::anodized::__::eval_once(|| -> SomeType { this_is_the_body() }));
             let __anodized_post = true;
             let __anodized_post = __anodized_post & (::anodized::__::eval::<bool>(|| CONDITION_2)
                 || eprintln!("postinvariant failed: {}", "CONDITION_2") != ());
@@ -431,20 +401,22 @@ fn simple_requires_and_maintains() {
     };
 
     let observed = CheckSettings::PRINT_AND_PANIC
-        .instrument_fn_body(&spec, &body, is_async, &ret_type)
+        .instrument_fn_body(
+            &spec_item_fn.spec,
+            &spec_item_fn.item.block,
+            spec_item_fn.item.sig.asyncness.is_some(),
+            &spec_item_fn.item.sig.output,
+        )
         .unwrap();
     assert_tokens_eq(&observed, &expected);
 }
 
 #[test]
 fn simple_requires_and_ensures() {
-    let spec: Spec = parse_quote! {
-        requires: CONDITION_1,
-        ensures: CONDITION_2,
+    let spec_item_fn: SpecItemFn = parse_quote! {
+        #[spec(requires: CONDITION_1, ensures: CONDITION_2)]
+        fn FUNCTION() -> SomeType { this_is_the_body() }
     };
-    let body = make_fn_body();
-    let ret_type = make_return_type();
-    let is_async = false;
 
     let expected: Block = parse_quote! {
         {
@@ -454,7 +426,7 @@ fn simple_requires_and_ensures() {
             if !__anodized_pre {
                 panic!("precondition failed");
             }
-            let (__anodized_output) = (::anodized::__::eval_once(|| #ret_type #body));
+            let (__anodized_output) = (::anodized::__::eval_once(|| -> SomeType { this_is_the_body() }));
             let __anodized_post = true;
             let __anodized_post = __anodized_post & (::anodized::__::eval::<bool>(|| CONDITION_2)
                 || eprintln!("postcondition failed: {}", "CONDITION_2") != ());
@@ -466,20 +438,22 @@ fn simple_requires_and_ensures() {
     };
 
     let observed = CheckSettings::PRINT_AND_PANIC
-        .instrument_fn_body(&spec, &body, is_async, &ret_type)
+        .instrument_fn_body(
+            &spec_item_fn.spec,
+            &spec_item_fn.item.block,
+            spec_item_fn.item.sig.asyncness.is_some(),
+            &spec_item_fn.item.sig.output,
+        )
         .unwrap();
     assert_tokens_eq(&observed, &expected);
 }
 
 #[test]
 fn simple_maintains_and_ensures() {
-    let spec: Spec = parse_quote! {
-        maintains: CONDITION_1,
-        ensures: CONDITION_2,
+    let spec_item_fn: SpecItemFn = parse_quote! {
+        #[spec(maintains: CONDITION_1, ensures: CONDITION_2)]
+        fn FUNCTION() -> SomeType { this_is_the_body() }
     };
-    let body = make_fn_body();
-    let ret_type = make_return_type();
-    let is_async = false;
 
     let expected: Block = parse_quote! {
         {
@@ -489,7 +463,7 @@ fn simple_maintains_and_ensures() {
             if !__anodized_pre {
                 panic!("precondition failed");
             }
-            let (__anodized_output) = (::anodized::__::eval_once(|| #ret_type #body));
+            let (__anodized_output) = (::anodized::__::eval_once(|| -> SomeType { this_is_the_body() }));
             let __anodized_post = true;
             let __anodized_post = __anodized_post & (::anodized::__::eval::<bool>(|| CONDITION_1)
                 || eprintln!("postinvariant failed: {}", "CONDITION_1") != ());
@@ -503,21 +477,22 @@ fn simple_maintains_and_ensures() {
     };
 
     let observed = CheckSettings::PRINT_AND_PANIC
-        .instrument_fn_body(&spec, &body, is_async, &ret_type)
+        .instrument_fn_body(
+            &spec_item_fn.spec,
+            &spec_item_fn.item.block,
+            spec_item_fn.item.sig.asyncness.is_some(),
+            &spec_item_fn.item.sig.output,
+        )
         .unwrap();
     assert_tokens_eq(&observed, &expected);
 }
 
 #[test]
 fn simple_requires_maintains_and_ensures() {
-    let spec: Spec = parse_quote! {
-        requires: CONDITION_1,
-        maintains: CONDITION_2,
-        ensures: CONDITION_3,
+    let spec_item_fn: SpecItemFn = parse_quote! {
+        #[spec(requires: CONDITION_1, maintains: CONDITION_2, ensures: CONDITION_3)]
+        fn FUNCTION() -> SomeType { this_is_the_body() }
     };
-    let body = make_fn_body();
-    let ret_type = make_return_type();
-    let is_async = false;
 
     let expected: Block = parse_quote! {
         {
@@ -529,7 +504,7 @@ fn simple_requires_maintains_and_ensures() {
             if !__anodized_pre {
                 panic!("precondition failed");
             }
-            let (__anodized_output) = (::anodized::__::eval_once(|| #ret_type #body));
+            let (__anodized_output) = (::anodized::__::eval_once(|| -> SomeType { this_is_the_body() }));
             let __anodized_post = true;
             let __anodized_post = __anodized_post & (::anodized::__::eval::<bool>(|| CONDITION_2)
                 || eprintln!("postinvariant failed: {}", "CONDITION_2") != ());
@@ -543,21 +518,22 @@ fn simple_requires_maintains_and_ensures() {
     };
 
     let observed = CheckSettings::PRINT_AND_PANIC
-        .instrument_fn_body(&spec, &body, is_async, &ret_type)
+        .instrument_fn_body(
+            &spec_item_fn.spec,
+            &spec_item_fn.item.block,
+            spec_item_fn.item.sig.asyncness.is_some(),
+            &spec_item_fn.item.sig.output,
+        )
         .unwrap();
     assert_tokens_eq(&observed, &expected);
 }
 
 #[test]
 fn simple_async_requires_maintains_and_ensures() {
-    let spec: Spec = parse_quote! {
-        requires: CONDITION_1,
-        maintains: CONDITION_2,
-        ensures: CONDITION_3,
+    let spec_item_fn: SpecItemFn = parse_quote! {
+        #[spec(requires: CONDITION_1, maintains: CONDITION_2, ensures: CONDITION_3)]
+        async fn FUNCTION() -> SomeType { this_is_the_body() }
     };
-    let body = make_fn_body();
-    let ret_type = make_return_type();
-    let is_async = true;
 
     let expected: Block = parse_quote! {
         {
@@ -569,7 +545,7 @@ fn simple_async_requires_maintains_and_ensures() {
             if !__anodized_pre {
                 panic!("precondition failed");
             }
-            let (__anodized_output) = (::anodized::__::eval_once(async || #ret_type #body).await);
+            let (__anodized_output) = (::anodized::__::eval_once(async || -> SomeType { this_is_the_body() }).await);
             let __anodized_post = true;
             let __anodized_post = __anodized_post & (::anodized::__::eval::<bool>(|| CONDITION_2)
                 || eprintln!("postinvariant failed: {}", "CONDITION_2") != ());
@@ -583,21 +559,26 @@ fn simple_async_requires_maintains_and_ensures() {
     };
 
     let observed = CheckSettings::PRINT_AND_PANIC
-        .instrument_fn_body(&spec, &body, is_async, &ret_type)
+        .instrument_fn_body(
+            &spec_item_fn.spec,
+            &spec_item_fn.item.block,
+            spec_item_fn.item.sig.asyncness.is_some(),
+            &spec_item_fn.item.sig.output,
+        )
         .unwrap();
     assert_tokens_eq(&observed, &expected);
 }
 
 #[test]
 fn multiple_conditions_in_clauses() {
-    let spec: Spec = parse_quote! {
-        requires: [CONDITION_1, CONDITION_2],
-        maintains: [CONDITION_3, CONDITION_4],
-        ensures: [CONDITION_5, CONDITION_6],
+    let spec_item_fn: SpecItemFn = parse_quote! {
+        #[spec(
+            requires: [CONDITION_1, CONDITION_2],
+            maintains: [CONDITION_3, CONDITION_4],
+            ensures: [CONDITION_5, CONDITION_6],
+        )]
+        fn FUNCTION() -> SomeType { this_is_the_body() }
     };
-    let body = make_fn_body();
-    let ret_type = make_return_type();
-    let is_async = false;
 
     let expected: Block = parse_quote! {
         {
@@ -613,7 +594,7 @@ fn multiple_conditions_in_clauses() {
             if !__anodized_pre {
                 panic!("precondition failed");
             }
-            let (__anodized_output) = (::anodized::__::eval_once(|| #ret_type #body));
+            let (__anodized_output) = (::anodized::__::eval_once(|| -> SomeType { this_is_the_body() }));
             let __anodized_post = true;
             let __anodized_post = __anodized_post & (::anodized::__::eval::<bool>(|| CONDITION_3)
                 || eprintln!("postinvariant failed: {}", "CONDITION_3") != ());
@@ -631,19 +612,22 @@ fn multiple_conditions_in_clauses() {
     };
 
     let observed = CheckSettings::PRINT_AND_PANIC
-        .instrument_fn_body(&spec, &body, is_async, &ret_type)
+        .instrument_fn_body(
+            &spec_item_fn.spec,
+            &spec_item_fn.item.block,
+            spec_item_fn.item.sig.asyncness.is_some(),
+            &spec_item_fn.item.sig.output,
+        )
         .unwrap();
     assert_tokens_eq(&observed, &expected);
 }
 
 #[test]
 fn postcond_closure_form() {
-    let spec: Spec = parse_quote! {
-        ensures: |OUTPUT_PATTERN| CONDITION_1,
+    let spec_item_fn: SpecItemFn = parse_quote! {
+        #[spec(ensures: |OUTPUT_PATTERN| CONDITION_1)]
+        fn FUNCTION() -> SomeType { this_is_the_body() }
     };
-    let body = make_fn_body();
-    let ret_type = make_return_type();
-    let is_async = false;
 
     let expected: Block = parse_quote! {
         {
@@ -651,7 +635,7 @@ fn postcond_closure_form() {
             if !__anodized_pre {
                 panic!("precondition failed");
             }
-            let (__anodized_output) = (::anodized::__::eval_once(|| #ret_type #body));
+            let (__anodized_output) = (::anodized::__::eval_once(|| -> SomeType { this_is_the_body() }));
             let __anodized_post = true;
             let (__anodized_post, __anodized_output) = ::anodized::__::apply_keep(
                 |OUTPUT_PATTERN| (__anodized_post & (::anodized::__::eval::<bool>(|| CONDITION_1)
@@ -666,19 +650,22 @@ fn postcond_closure_form() {
     };
 
     let observed = CheckSettings::PRINT_AND_PANIC
-        .instrument_fn_body(&spec, &body, is_async, &ret_type)
+        .instrument_fn_body(
+            &spec_item_fn.spec,
+            &spec_item_fn.item.block,
+            spec_item_fn.item.sig.asyncness.is_some(),
+            &spec_item_fn.item.sig.output,
+        )
         .unwrap();
     assert_tokens_eq(&observed, &expected);
 }
 
 #[test]
 fn postcond_borrowing_closure_form() {
-    let spec: Spec = parse_quote! {
-        ensures: |ref OUTPUT_PATTERN| CONDITION_1,
+    let spec_item_fn: SpecItemFn = parse_quote! {
+        #[spec(ensures: |ref OUTPUT_PATTERN| CONDITION_1)]
+        fn FUNCTION() -> SomeType { this_is_the_body() }
     };
-    let body = make_fn_body();
-    let ret_type = make_return_type();
-    let is_async = false;
 
     let expected: Block = parse_quote! {
         {
@@ -686,7 +673,7 @@ fn postcond_borrowing_closure_form() {
             if !__anodized_pre {
                 panic!("precondition failed");
             }
-            let (__anodized_output) = (::anodized::__::eval_once(|| #ret_type #body));
+            let (__anodized_output) = (::anodized::__::eval_once(|| -> SomeType { this_is_the_body() }));
             let __anodized_post = true;
             let (__anodized_post, __anodized_output) = ::anodized::__::apply_keep(
                 |__anodized_output| {
@@ -706,24 +693,27 @@ fn postcond_borrowing_closure_form() {
     };
 
     let observed = CheckSettings::PRINT_AND_PANIC
-        .instrument_fn_body(&spec, &body, is_async, &ret_type)
+        .instrument_fn_body(
+            &spec_item_fn.spec,
+            &spec_item_fn.item.block,
+            spec_item_fn.item.sig.asyncness.is_some(),
+            &spec_item_fn.item.sig.output,
+        )
         .unwrap();
     assert_tokens_eq(&observed, &expected);
 }
 
 #[test]
 fn ensures_with_mixed_conditions() {
-    let spec: Spec = parse_quote! {
-        ensures: [
+    let spec_item_fn: SpecItemFn = parse_quote! {
+        #[spec(ensures: [
             CONDITION_1,
             CONDITION_2,
             CONDITION_3,
             CONDITION_4
-        ],
+        ])]
+        fn FUNCTION() -> SomeType { this_is_the_body() }
     };
-    let body = make_fn_body();
-    let ret_type = make_return_type();
-    let is_async = false;
 
     let expected: Block = parse_quote! {
         {
@@ -731,7 +721,7 @@ fn ensures_with_mixed_conditions() {
             if !__anodized_pre {
                 panic!("precondition failed");
             }
-            let (__anodized_output) = (::anodized::__::eval_once(|| #ret_type #body));
+            let (__anodized_output) = (::anodized::__::eval_once(|| -> SomeType { this_is_the_body() }));
             let __anodized_post = true;
             let __anodized_post = __anodized_post & (::anodized::__::eval::<bool>(|| CONDITION_1)
                 || eprintln!("postcondition failed: {}", "CONDITION_1") != ());
@@ -749,24 +739,29 @@ fn ensures_with_mixed_conditions() {
     };
 
     let observed = CheckSettings::PRINT_AND_PANIC
-        .instrument_fn_body(&spec, &body, is_async, &ret_type)
+        .instrument_fn_body(
+            &spec_item_fn.spec,
+            &spec_item_fn.item.block,
+            spec_item_fn.item.sig.asyncness.is_some(),
+            &spec_item_fn.item.sig.output,
+        )
         .unwrap();
     assert_tokens_eq(&observed, &expected);
 }
 
 #[test]
 fn cfg_attributes() {
-    let spec: Spec = parse_quote! {
-        #[cfg(SETTING_1)]
-        requires: CONDITION_1,
-        #[cfg(SETTING_2)]
-        maintains: CONDITION_2,
-        #[cfg(SETTING_3)]
-        ensures: CONDITION_3,
+    let spec_item_fn: SpecItemFn = parse_quote! {
+        #[spec(
+            #[cfg(SETTING_1)]
+            requires: CONDITION_1,
+            #[cfg(SETTING_2)]
+            maintains: CONDITION_2,
+            #[cfg(SETTING_3)]
+            ensures: CONDITION_3,
+        )]
+        fn FUNCTION() -> SomeType { this_is_the_body() }
     };
-    let body = make_fn_body();
-    let ret_type = make_return_type();
-    let is_async = false;
 
     let expected: Block = parse_quote! {
         {
@@ -778,7 +773,7 @@ fn cfg_attributes() {
             if !__anodized_pre {
                 panic!("precondition failed");
             }
-            let (__anodized_output) = (::anodized::__::eval_once(|| #ret_type #body));
+            let (__anodized_output) = (::anodized::__::eval_once(|| -> SomeType { this_is_the_body() }));
             let __anodized_post = true;
             let __anodized_post = __anodized_post & (!cfg!(SETTING_2) || ::anodized::__::eval::<bool>(|| CONDITION_2)
                 || eprintln!("postinvariant failed: {}", "CONDITION_2") != ());
@@ -792,23 +787,28 @@ fn cfg_attributes() {
     };
 
     let observed = CheckSettings::PRINT_AND_PANIC
-        .instrument_fn_body(&spec, &body, is_async, &ret_type)
+        .instrument_fn_body(
+            &spec_item_fn.spec,
+            &spec_item_fn.item.block,
+            spec_item_fn.item.sig.asyncness.is_some(),
+            &spec_item_fn.item.sig.output,
+        )
         .unwrap();
     assert_tokens_eq(&observed, &expected);
 }
 
 #[test]
 fn cfg_on_single_and_list_conditions() {
-    let spec: Spec = parse_quote! {
-        #[cfg(SETTING_1)]
-        requires: CONDITION_1,
-        maintains: [CONDITION_2, CONDITION_3],
-        #[cfg(SETTING_2)]
-        ensures: [CONDITION_4, CONDITION_5],
+    let spec_item_fn: SpecItemFn = parse_quote! {
+        #[spec(
+            #[cfg(SETTING_1)]
+            requires: CONDITION_1,
+            maintains: [CONDITION_2, CONDITION_3],
+            #[cfg(SETTING_2)]
+            ensures: [CONDITION_4, CONDITION_5],
+        )]
+        fn FUNCTION() -> SomeType { this_is_the_body() }
     };
-    let body = make_fn_body();
-    let ret_type = make_return_type();
-    let is_async = false;
 
     let expected: Block = parse_quote! {
         {
@@ -822,7 +822,7 @@ fn cfg_on_single_and_list_conditions() {
             if !__anodized_pre {
                 panic!("precondition failed");
             }
-            let (__anodized_output) = (::anodized::__::eval_once(|| #ret_type #body));
+            let (__anodized_output) = (::anodized::__::eval_once(|| -> SomeType { this_is_the_body() }));
             let __anodized_post = true;
             let __anodized_post = __anodized_post & (::anodized::__::eval::<bool>(|| CONDITION_2)
                 || eprintln!("postinvariant failed: {}", "CONDITION_2") != ());
@@ -840,27 +840,32 @@ fn cfg_on_single_and_list_conditions() {
     };
 
     let observed = CheckSettings::PRINT_AND_PANIC
-        .instrument_fn_body(&spec, &body, is_async, &ret_type)
+        .instrument_fn_body(
+            &spec_item_fn.spec,
+            &spec_item_fn.item.block,
+            spec_item_fn.item.sig.asyncness.is_some(),
+            &spec_item_fn.item.sig.output,
+        )
         .unwrap();
     assert_tokens_eq(&observed, &expected);
 }
 
 #[test]
 fn complex_mixed_conditions() {
-    let spec: Spec = parse_quote! {
-        requires: CONDITION_1,
-        #[cfg(SETTING_1)]
-        requires: [CONDITION_2, CONDITION_3],
-        maintains: [CONDITION_4, CONDITION_5],
-        #[cfg(SETTING_2)]
-        maintains: CONDITION_6,
-        ensures: CONDITION_7,
-        #[cfg(SETTING_3)]
-        ensures: [CONDITION_8, CONDITION_9],
+    let spec_item_fn: SpecItemFn = parse_quote! {
+        #[spec(
+            requires: CONDITION_1,
+            #[cfg(SETTING_1)]
+            requires: [CONDITION_2, CONDITION_3],
+            maintains: [CONDITION_4, CONDITION_5],
+            #[cfg(SETTING_2)]
+            maintains: CONDITION_6,
+            ensures: CONDITION_7,
+            #[cfg(SETTING_3)]
+            ensures: [CONDITION_8, CONDITION_9],
+        )]
+        fn FUNCTION() -> SomeType { this_is_the_body() }
     };
-    let body = make_fn_body();
-    let ret_type = make_return_type();
-    let is_async = false;
 
     let expected: Block = parse_quote! {
         {
@@ -880,7 +885,7 @@ fn complex_mixed_conditions() {
             if !__anodized_pre {
                 panic!("precondition failed");
             }
-            let (__anodized_output) = (::anodized::__::eval_once(|| #ret_type #body));
+            let (__anodized_output) = (::anodized::__::eval_once(|| -> SomeType { this_is_the_body() }));
             let __anodized_post = true;
             let __anodized_post = __anodized_post & (::anodized::__::eval::<bool>(|| CONDITION_4)
                 || eprintln!("postinvariant failed: {}", "CONDITION_4") != ());
@@ -902,27 +907,32 @@ fn complex_mixed_conditions() {
     };
 
     let observed = CheckSettings::PRINT_AND_PANIC
-        .instrument_fn_body(&spec, &body, is_async, &ret_type)
+        .instrument_fn_body(
+            &spec_item_fn.spec,
+            &spec_item_fn.item.block,
+            spec_item_fn.item.sig.asyncness.is_some(),
+            &spec_item_fn.item.sig.output,
+        )
         .unwrap();
     assert_tokens_eq(&observed, &expected);
 }
 
 #[test]
 fn captures() {
-    let spec: Spec = parse_quote! {
-        requires: CONDITION_1,
-        captures: [
-            ALIAS_1 = EXPR_1,
-            ALIAS_2 = EXPR_2,
-        ],
-        ensures: [
-            CONDITION_2,
-            CONDITION_3,
-        ],
+    let spec_item_fn: SpecItemFn = parse_quote! {
+        #[spec(
+            requires: CONDITION_1,
+            captures: [
+                ALIAS_1 = EXPR_1,
+                ALIAS_2 = EXPR_2,
+            ],
+            ensures: [
+                CONDITION_2,
+                CONDITION_3,
+            ],
+        )]
+        fn FUNCTION() -> SomeType { this_is_the_body() }
     };
-    let body = make_fn_body();
-    let ret_type = make_return_type();
-    let is_async = false;
 
     let expected: Block = parse_quote! {
         {
@@ -935,7 +945,7 @@ fn captures() {
             let (ALIAS_1, ALIAS_2, __anodized_output) = (
                 ::anodized::__::eval(|| EXPR_1),
                 ::anodized::__::eval(|| EXPR_2),
-                ::anodized::__::eval_once(|| #ret_type #body),
+                ::anodized::__::eval_once(|| -> SomeType { this_is_the_body() }),
             );
             let __anodized_post = true;
             let __anodized_post = __anodized_post & (::anodized::__::eval::<bool>(|| CONDITION_2)
@@ -950,7 +960,12 @@ fn captures() {
     };
 
     let observed = CheckSettings::PRINT_AND_PANIC
-        .instrument_fn_body(&spec, &body, is_async, &ret_type)
+        .instrument_fn_body(
+            &spec_item_fn.spec,
+            &spec_item_fn.item.block,
+            spec_item_fn.item.sig.asyncness.is_some(),
+            &spec_item_fn.item.sig.output,
+        )
         .unwrap();
     assert_tokens_eq(&observed, &expected);
 }
