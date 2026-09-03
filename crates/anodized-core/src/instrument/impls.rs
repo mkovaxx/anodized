@@ -9,7 +9,7 @@ use syn::{
 
 use crate::{
     DataSpec, Spec,
-    annotate::get_attr_input,
+    annotate::{get_attr_input, remove_spec_attr},
     instrument::{Mode, find_spec_attr, make_item_error},
 };
 
@@ -32,8 +32,7 @@ impl Mode {
         for item in the_impl.items.into_iter() {
             match item {
                 ImplItem::Fn(mut item_fn) => {
-                    let (spec_attr, func_attrs) = find_spec_attr(item_fn.attrs)?;
-                    item_fn.attrs = func_attrs;
+                    let spec_attr = remove_spec_attr(&mut item_fn.attrs)?;
 
                     if item_fn.sig.ident.to_string().starts_with("__anodized_") {
                         return Err(Error::new_spanned(

@@ -11,7 +11,7 @@ use syn::{
 
 use crate::{
     DataSpec, Spec,
-    annotate::get_attr_input,
+    annotate::{get_attr_input, remove_spec_attr},
     instrument::{Mode, find_spec_attr, make_item_error},
 };
 
@@ -40,8 +40,7 @@ impl Mode {
         for item in the_trait.items.into_iter() {
             match item {
                 TraitItem::Fn(mut func) => {
-                    let (spec_attr, other_attrs) = find_spec_attr(func.attrs)?;
-                    func.attrs = other_attrs;
+                    let spec_attr = remove_spec_attr(&mut func.attrs)?;
                     // NOTE: We have no way of knowing which attributes are
                     //   "external" - meant for the interface and belong on the wrapper,
                     //   "internal" - meant for the mangled implementation.
@@ -224,8 +223,7 @@ impl Mode {
         for item in the_impl.items.into_iter() {
             match item {
                 ImplItem::Fn(mut func) => {
-                    let (spec_attr, func_attrs) = find_spec_attr(func.attrs)?;
-                    func.attrs = func_attrs;
+                    let spec_attr = remove_spec_attr(&mut func.attrs)?;
 
                     if func.sig.ident.to_string().starts_with("__anodized_") {
                         return Err(syn::Error::new_spanned(
