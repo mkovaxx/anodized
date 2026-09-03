@@ -10,7 +10,7 @@ use syn::{
 use crate::{
     DataSpec, Spec,
     annotate::{get_attr_input, remove_spec_attr},
-    instrument::{Mode, find_spec_attr, make_item_error},
+    instrument::{Mode, make_item_error},
 };
 
 impl Mode {
@@ -126,27 +126,21 @@ Instead, ensure that both the impl block and the fn have a `#[spec]` annotation.
                     new_items.push(ImplItem::Fn(item_fn));
                 }
                 ImplItem::Const(mut const_item) => {
-                    let (spec, attrs) = find_spec_attr(const_item.attrs)?;
-                    if let Some(ref spec_attr) = spec {
+                    if let Some(spec_attr) = remove_spec_attr(&mut const_item.attrs)? {
                         return Err(make_item_error(&spec_attr, "impl const"));
                     }
-                    const_item.attrs = attrs;
                     new_items.push(ImplItem::Const(const_item));
                 }
                 ImplItem::Type(mut type_item) => {
-                    let (spec, attrs) = find_spec_attr(type_item.attrs)?;
-                    if let Some(ref spec_attr) = spec {
+                    if let Some(spec_attr) = remove_spec_attr(&mut type_item.attrs)? {
                         return Err(make_item_error(&spec_attr, "impl type"));
                     }
-                    type_item.attrs = attrs;
                     new_items.push(ImplItem::Type(type_item));
                 }
                 ImplItem::Macro(mut macro_item) => {
-                    let (spec, attrs) = find_spec_attr(macro_item.attrs)?;
-                    if let Some(ref spec_attr) = spec {
+                    if let Some(spec_attr) = remove_spec_attr(&mut macro_item.attrs)? {
                         return Err(make_item_error(&spec_attr, "impl macro"));
                     }
-                    macro_item.attrs = attrs;
                     new_items.push(ImplItem::Macro(macro_item));
                 }
                 ImplItem::Verbatim(token_stream) => {

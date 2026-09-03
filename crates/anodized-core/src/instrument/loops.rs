@@ -9,10 +9,7 @@ use syn::{
     visit_mut::{self, VisitMut},
 };
 
-use crate::{
-    LoopSpec,
-    instrument::{Mode, find_spec_attr},
-};
+use crate::{LoopSpec, annotate::remove_spec_attr, instrument::Mode};
 
 impl Mode {
     pub fn instrument_loops_in_fn_body(&self, body: &mut Block) -> Result<()> {
@@ -97,15 +94,13 @@ impl<'a> LoopSpecVisitor<'a> {
 
 impl VisitMut for LoopSpecVisitor<'_> {
     fn visit_expr_while_mut(&mut self, expr_while: &mut ExprWhile) {
-        let attrs = std::mem::take(&mut expr_while.attrs);
-        let (spec_attr, other_attrs) = match find_spec_attr(attrs) {
-            Ok(result) => result,
+        let spec_attr = match remove_spec_attr(&mut expr_while.attrs) {
+            Ok(spec_attr) => spec_attr,
             Err(error) => {
                 self.add_error(error);
                 return;
             }
         };
-        expr_while.attrs = other_attrs;
 
         visit_mut::visit_expr_while_mut(self, expr_while);
 
@@ -122,15 +117,13 @@ impl VisitMut for LoopSpecVisitor<'_> {
     }
 
     fn visit_expr_for_loop_mut(&mut self, expr_for_loop: &mut ExprForLoop) {
-        let attrs = std::mem::take(&mut expr_for_loop.attrs);
-        let (spec_attr, other_attrs) = match find_spec_attr(attrs) {
-            Ok(result) => result,
+        let spec_attr = match remove_spec_attr(&mut expr_for_loop.attrs) {
+            Ok(spec_attr) => spec_attr,
             Err(error) => {
                 self.add_error(error);
                 return;
             }
         };
-        expr_for_loop.attrs = other_attrs;
 
         visit_mut::visit_expr_for_loop_mut(self, expr_for_loop);
 

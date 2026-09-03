@@ -12,7 +12,7 @@ use syn::{
 use crate::{
     DataSpec, Spec,
     annotate::{get_attr_input, remove_spec_attr},
-    instrument::{Mode, find_spec_attr, make_item_error},
+    instrument::{Mode, make_item_error},
 };
 
 impl Mode {
@@ -163,27 +163,21 @@ impl Mode {
                     new_trait_items.push(TraitItem::Fn(func));
                 }
                 TraitItem::Const(mut const_item) => {
-                    let (spec, attrs) = find_spec_attr(const_item.attrs)?;
-                    if let Some(ref spec_attr) = spec {
+                    if let Some(spec_attr) = remove_spec_attr(&mut const_item.attrs)? {
                         return Err(make_item_error(&spec_attr, "trait const"));
                     }
-                    const_item.attrs = attrs;
                     new_trait_items.push(TraitItem::Const(const_item));
                 }
                 TraitItem::Type(mut type_item) => {
-                    let (spec, attrs) = find_spec_attr(type_item.attrs)?;
-                    if let Some(ref spec_attr) = spec {
+                    if let Some(spec_attr) = remove_spec_attr(&mut type_item.attrs)? {
                         return Err(make_item_error(&spec_attr, "trait type"));
                     }
-                    type_item.attrs = attrs;
                     new_trait_items.push(TraitItem::Type(type_item));
                 }
                 TraitItem::Macro(mut macro_item) => {
-                    let (spec, attrs) = find_spec_attr(macro_item.attrs)?;
-                    if let Some(ref spec_attr) = spec {
+                    if let Some(spec_attr) = remove_spec_attr(&mut macro_item.attrs)? {
                         return Err(make_item_error(&spec_attr, "trait macro"));
                     }
-                    macro_item.attrs = attrs;
                     new_trait_items.push(TraitItem::Macro(macro_item));
                 }
                 TraitItem::Verbatim(token_stream) => {
@@ -317,27 +311,21 @@ Instead, ensure that both the trait and the impl fn have a `#[spec]` annotation.
                     new_items.push(ImplItem::Fn(func));
                 }
                 ImplItem::Const(mut const_item) => {
-                    let (spec, attrs) = find_spec_attr(const_item.attrs)?;
-                    if let Some(ref spec_attr) = spec {
+                    if let Some(spec_attr) = remove_spec_attr(&mut const_item.attrs)? {
                         return Err(make_item_error(&spec_attr, "trait impl const"));
                     }
-                    const_item.attrs = attrs;
                     new_items.push(ImplItem::Const(const_item));
                 }
                 ImplItem::Type(mut type_item) => {
-                    let (spec, attrs) = find_spec_attr(type_item.attrs)?;
-                    if let Some(ref spec_attr) = spec {
+                    if let Some(spec_attr) = remove_spec_attr(&mut type_item.attrs)? {
                         return Err(make_item_error(&spec_attr, "trait impl type"));
                     }
-                    type_item.attrs = attrs;
                     new_items.push(ImplItem::Type(type_item));
                 }
                 ImplItem::Macro(mut macro_item) => {
-                    let (spec, attrs) = find_spec_attr(macro_item.attrs)?;
-                    if let Some(ref spec_attr) = spec {
+                    if let Some(spec_attr) = remove_spec_attr(&mut macro_item.attrs)? {
                         return Err(make_item_error(&spec_attr, "trait impl macro"));
                     }
-                    macro_item.attrs = attrs;
                     new_items.push(ImplItem::Macro(macro_item));
                 }
                 ImplItem::Verbatim(token_stream) => {
