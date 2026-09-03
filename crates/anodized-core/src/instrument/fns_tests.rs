@@ -131,6 +131,199 @@ fn default_instrument_item_fn() {
 }
 
 #[test]
+fn check_data_instrument_item_fn() {
+    let fn_spec: Spec = parse_quote! {
+        requires: COND_1,
+        maintains: COND_2,
+        ensures: |OUT_PAT| COND_3,
+    };
+    let item_fn: ItemFn = parse_quote! {
+        fn FUNC(INPUT_1: TYPE_1, ref INPUT_2: TYPE_2) -> RET_TYPE {
+            BODY
+        }
+    };
+
+    let expected: TokenStream = parse_quote! {
+        fn FUNC(__anodized_input_1: TYPE_1, __anodized_input_2: TYPE_2) -> RET_TYPE {
+            // Coerce inputs to prevent weird errors about refutable patterns.
+            #[allow(unused)]
+            let _ = |INPUT_1: TYPE_1| ();
+            #[allow(unused)]
+            let _ = |ref INPUT_2: TYPE_2| ();
+            // Check input type specs.
+            let __anodized_pre = true;
+            let __anodized_pre = __anodized_pre &
+                (true || <TYPE_1 as ::anodized::types::Refine>::predicate(&__anodized_input_1));
+            let __anodized_pre = __anodized_pre &
+                (true || <TYPE_2 as ::anodized::types::Refine>::predicate(&__anodized_input_2));
+            // Bind input patterns.
+            let (INPUT_1, ref INPUT_2) = (__anodized_input_1, __anodized_input_2) else {
+                unreachable!()
+            };
+            // Check preconditions.
+            let __anodized_pre = __anodized_pre & (true || ::anodized::__::eval::<bool>(|| COND_1));
+            let __anodized_pre = __anodized_pre & (true || ::anodized::__::eval::<bool>(|| COND_2));
+            if !__anodized_pre {}
+            // Evaluate captures and the output.
+            let (__anodized_output) = (::anodized::__::eval_once(|| -> RET_TYPE { BODY }));
+            // Check output type spec.
+            let __anodized_post = true;
+            let __anodized_post = __anodized_post &
+                (true || <RET_TYPE as ::anodized::types::Refine>::predicate(&__anodized_output));
+            // Unbind invertible input patterns.
+            let (__anodized_input_1) = (INPUT_1);
+            // Check input type specs again. Needed to correctly handle e.g. `&mut T` inputs.
+            let __anodized_post = __anodized_post &
+                (true || <TYPE_1 as ::anodized::types::Refine>::predicate(&__anodized_input_1));
+            let __anodized_post = __anodized_post &
+                (true || <TYPE_2 as ::anodized::types::Refine>::predicate(&__anodized_input_2));
+            // Re-bind invertible patterns.
+            let (INPUT_1) = (__anodized_input_1) else { unreachable!() };
+            // Check postconditions.
+            let __anodized_post = __anodized_post &
+                (true || ::anodized::__::eval::<bool>(|| COND_2));
+            let (__anodized_post, __anodized_output) = ::anodized::__::apply_keep(
+                |OUT_PAT| (
+                    __anodized_post & (true || ::anodized::__::eval::<bool>(|| COND_3)),
+                    OUT_PAT
+                ),
+                __anodized_output,
+            );
+            if !__anodized_post {}
+            // Return the output.
+            __anodized_output
+        }
+    };
+
+    let observed = Mode::InjectChecks(CheckSettings::CHECK_DATA)
+        .instrument_item_fn(fn_spec, item_fn)
+        .unwrap();
+    assert_tokens_eq(&observed, &expected);
+}
+
+#[test]
+fn check_data_unspec_input_in() {
+    let item_fn: ItemFn = parse_quote! {
+        fn FUNC(#[unspec(in)] INPUT: TYPE) -> RET_TYPE {
+            BODY
+        }
+    };
+
+    let expected: TokenStream = parse_quote! {
+        fn FUNC(__anodized_input_1: TYPE) -> RET_TYPE {
+            #[allow(unused)]
+            let _ = |INPUT: TYPE| ();
+            let __anodized_pre = true;
+            let (INPUT) = (__anodized_input_1) else { unreachable!() };
+            if !__anodized_pre {}
+            let (__anodized_output) = (::anodized::__::eval_once(|| -> RET_TYPE { BODY }));
+            let __anodized_post = true;
+            let __anodized_post = __anodized_post &
+                (true || <RET_TYPE as ::anodized::types::Refine>::predicate(&__anodized_output));
+            let (__anodized_input_1) = (INPUT);
+            let __anodized_post = __anodized_post &
+                (true || <TYPE as ::anodized::types::Refine>::predicate(&__anodized_input_1));
+            let (INPUT) = (__anodized_input_1) else { unreachable!() };
+            if !__anodized_post {}
+            __anodized_output
+        }
+    };
+
+    let observed = Mode::InjectChecks(CheckSettings::CHECK_DATA)
+        .instrument_item_fn(Spec::empty(), item_fn)
+        .unwrap();
+    assert_tokens_eq(&observed, &expected);
+}
+
+#[test]
+fn check_data_unspec_input_out() {
+    let item_fn: ItemFn = parse_quote! {
+        fn FUNC(#[unspec(out)] INPUT: TYPE) -> RET_TYPE {
+            BODY
+        }
+    };
+
+    let expected: TokenStream = parse_quote! {
+        fn FUNC(__anodized_input_1: TYPE) -> RET_TYPE {
+            #[allow(unused)]
+            let _ = |INPUT: TYPE| ();
+            let __anodized_pre = true;
+            let __anodized_pre = __anodized_pre &
+                (true || <TYPE as ::anodized::types::Refine>::predicate(&__anodized_input_1));
+            let (INPUT) = (__anodized_input_1) else { unreachable!() };
+            if !__anodized_pre {}
+            let (__anodized_output) = (::anodized::__::eval_once(|| -> RET_TYPE { BODY }));
+            let __anodized_post = true;
+            let __anodized_post = __anodized_post &
+                (true || <RET_TYPE as ::anodized::types::Refine>::predicate(&__anodized_output));
+            if !__anodized_post {}
+            __anodized_output
+        }
+    };
+
+    let observed = Mode::InjectChecks(CheckSettings::CHECK_DATA)
+        .instrument_item_fn(Spec::empty(), item_fn)
+        .unwrap();
+    assert_tokens_eq(&observed, &expected);
+}
+
+#[test]
+fn check_data_unspec_input() {
+    let item_fn: ItemFn = parse_quote! {
+        fn FUNC(#[unspec] INPUT: TYPE) -> RET_TYPE {
+            BODY
+        }
+    };
+
+    let expected: TokenStream = parse_quote! {
+        fn FUNC(__anodized_input_1: TYPE) -> RET_TYPE {
+            #[allow(unused)]
+            let _ = |INPUT: TYPE| ();
+            let __anodized_pre = true;
+            let (INPUT) = (__anodized_input_1) else { unreachable!() };
+            if !__anodized_pre {}
+            let (__anodized_output) = (::anodized::__::eval_once(|| -> RET_TYPE { BODY }));
+            let __anodized_post = true;
+            let __anodized_post = __anodized_post &
+                (true || <RET_TYPE as ::anodized::types::Refine>::predicate(&__anodized_output));
+            if !__anodized_post {}
+            __anodized_output
+        }
+    };
+
+    let observed = Mode::InjectChecks(CheckSettings::CHECK_DATA)
+        .instrument_item_fn(Spec::empty(), item_fn)
+        .unwrap();
+    assert_tokens_eq(&observed, &expected);
+}
+
+#[test]
+fn check_data_unspec_output_out() {
+    let item_fn: ItemFn = parse_quote! {
+        #[unspec(out)]
+        fn FUNC() -> RET_TYPE {
+            BODY
+        }
+    };
+
+    let expected: TokenStream = parse_quote! {
+        fn FUNC() -> RET_TYPE {
+            let __anodized_pre = true;
+            if !__anodized_pre {}
+            let (__anodized_output) = (::anodized::__::eval_once(|| -> RET_TYPE { BODY }));
+            let __anodized_post = true;
+            if !__anodized_post {}
+            __anodized_output
+        }
+    };
+
+    let observed = Mode::InjectChecks(CheckSettings::CHECK_DATA)
+        .instrument_item_fn(Spec::empty(), item_fn)
+        .unwrap();
+    assert_tokens_eq(&observed, &expected);
+}
+
+#[test]
 fn emit_try_fn_instrument_item_fn() {
     let fn_spec = make_complex_spec();
     let item_fn: ItemFn = parse_quote! {
@@ -213,16 +406,20 @@ fn emit_try_fn_instrument_item_fn() {
     assert_tokens_eq(&observed, &expected);
 }
 
-fn make_fn_body() -> Block {
+fn make_fn() -> ItemFn {
     parse_quote! {
-        {
-            this_is_the_body()
+        fn FUNC() -> RET_TYPE {
+            BODY
         }
     }
 }
 
-fn make_return_type() -> ReturnType {
-    parse_quote! { -> SomeType }
+fn make_async_fn() -> ItemFn {
+    parse_quote! {
+        async fn FUNC() -> RET_TYPE {
+            BODY
+        }
+    }
 }
 
 #[test]
@@ -230,9 +427,7 @@ fn simple_requires() {
     let spec: Spec = parse_quote! {
         requires: CONDITION_1,
     };
-    let body = make_fn_body();
-    let ret_type = make_return_type();
-    let is_async = false;
+    let mut func = make_fn();
 
     let expected: Block = parse_quote! {
         {
@@ -242,7 +437,7 @@ fn simple_requires() {
             if !__anodized_pre {
                 panic!("precondition failed");
             }
-            let (__anodized_output) = (::anodized::__::eval_once(|| #ret_type #body));
+            let (__anodized_output) = (::anodized::__::eval_once(|| -> RET_TYPE { BODY }));
             let __anodized_post = true;
             if !__anodized_post {
                 panic!("postcondition failed");
@@ -251,10 +446,10 @@ fn simple_requires() {
         }
     };
 
-    let observed = CheckSettings::PRINT_AND_PANIC
-        .instrument_fn_body(&spec, &body, is_async, &ret_type)
+    CheckSettings::PRINT_AND_PANIC
+        .instrument_fn_sig_and_body(&spec, &mut func.sig, &mut func.block)
         .unwrap();
-    assert_tokens_eq(&observed, &expected);
+    assert_tokens_eq(&func.block, &expected);
 }
 
 #[test]
@@ -262,25 +457,24 @@ fn requires_disable_runtime_checks() {
     let spec: Spec = parse_quote! {
         requires: CONDITION_1,
     };
-    let body = make_fn_body();
-    let ret_type = make_return_type();
-    let is_async = false;
+    let mut func = make_fn();
 
-    let observed = CheckSettings::DEFAULT
-        .instrument_fn_body(&spec, &body, is_async, &ret_type)
-        .unwrap();
     let expected: Block = parse_quote! {
         {
             let __anodized_pre = true;
             let __anodized_pre = __anodized_pre & (true || ::anodized::__::eval::<bool>(|| CONDITION_1));
             if !__anodized_pre {}
-            let (__anodized_output) = (::anodized::__::eval_once(|| #ret_type #body));
+            let (__anodized_output) = (::anodized::__::eval_once(|| -> RET_TYPE { BODY }));
             let __anodized_post = true;
             if !__anodized_post {}
             __anodized_output
         }
     };
-    assert_tokens_eq(&observed, &expected);
+
+    CheckSettings::DEFAULT
+        .instrument_fn_sig_and_body(&spec, &mut func.sig, &mut func.block)
+        .unwrap();
+    assert_tokens_eq(&func.block, &expected);
 }
 
 #[test]
@@ -288,9 +482,7 @@ fn requires_no_panic_runtime() {
     let spec: Spec = parse_quote! {
         requires: CONDITION_1,
     };
-    let body = make_fn_body();
-    let ret_type = make_return_type();
-    let is_async = false;
+    let mut func = make_fn();
 
     let expected: Block = parse_quote! {
         {
@@ -298,17 +490,17 @@ fn requires_no_panic_runtime() {
             let __anodized_pre = __anodized_pre & (::anodized::__::eval::<bool>(|| CONDITION_1)
                 || eprintln!("precondition failed: {}", "CONDITION_1") != ());
             if !__anodized_pre {}
-            let (__anodized_output) = (::anodized::__::eval_once(|| #ret_type #body));
+            let (__anodized_output) = (::anodized::__::eval_once(|| -> RET_TYPE { BODY }));
             let __anodized_post = true;
             if !__anodized_post {}
             __anodized_output
         }
     };
 
-    let observed = CheckSettings::PRINT
-        .instrument_fn_body(&spec, &body, is_async, &ret_type)
+    CheckSettings::PRINT
+        .instrument_fn_sig_and_body(&spec, &mut func.sig, &mut func.block)
         .unwrap();
-    assert_tokens_eq(&observed, &expected);
+    assert_tokens_eq(&func.block, &expected);
 }
 
 #[test]
@@ -316,9 +508,7 @@ fn simple_maintains() {
     let spec: Spec = parse_quote! {
         maintains: CONDITION_1,
     };
-    let body = make_fn_body();
-    let ret_type = make_return_type();
-    let is_async = false;
+    let mut func = make_fn();
 
     let expected: Block = parse_quote! {
         {
@@ -328,7 +518,7 @@ fn simple_maintains() {
             if !__anodized_pre {
                 panic!("precondition failed");
             }
-            let (__anodized_output) = (::anodized::__::eval_once(|| #ret_type #body));
+            let (__anodized_output) = (::anodized::__::eval_once(|| -> RET_TYPE { BODY }));
             let __anodized_post = true;
             let __anodized_post = __anodized_post & (::anodized::__::eval::<bool>(|| CONDITION_1)
                 || eprintln!("postinvariant failed: {}", "CONDITION_1") != ());
@@ -339,10 +529,10 @@ fn simple_maintains() {
         }
     };
 
-    let observed = CheckSettings::PRINT_AND_PANIC
-        .instrument_fn_body(&spec, &body, is_async, &ret_type)
+    CheckSettings::PRINT_AND_PANIC
+        .instrument_fn_sig_and_body(&spec, &mut func.sig, &mut func.block)
         .unwrap();
-    assert_tokens_eq(&observed, &expected);
+    assert_tokens_eq(&func.block, &expected);
 }
 
 #[test]
@@ -350,9 +540,7 @@ fn simple_ensures() {
     let spec: Spec = parse_quote! {
         ensures: CONDITION_1,
     };
-    let body = make_fn_body();
-    let ret_type = make_return_type();
-    let is_async = false;
+    let mut func = make_fn();
 
     let expected: Block = parse_quote! {
         {
@@ -360,7 +548,7 @@ fn simple_ensures() {
             if !__anodized_pre {
                 panic!("precondition failed");
             }
-            let (__anodized_output) = (::anodized::__::eval_once(|| #ret_type #body));
+            let (__anodized_output) = (::anodized::__::eval_once(|| -> RET_TYPE { BODY }));
             let __anodized_post = true;
             let __anodized_post = __anodized_post & (::anodized::__::eval::<bool>(|| CONDITION_1)
                 || eprintln!("postcondition failed: {}", "CONDITION_1") != ());
@@ -371,10 +559,10 @@ fn simple_ensures() {
         }
     };
 
-    let observed = CheckSettings::PRINT_AND_PANIC
-        .instrument_fn_body(&spec, &body, is_async, &ret_type)
+    CheckSettings::PRINT_AND_PANIC
+        .instrument_fn_sig_and_body(&spec, &mut func.sig, &mut func.block)
         .unwrap();
-    assert_tokens_eq(&observed, &expected);
+    assert_tokens_eq(&func.block, &expected);
 }
 
 #[test]
@@ -383,9 +571,7 @@ fn simple_requires_and_maintains() {
         requires: CONDITION_1,
         maintains: CONDITION_2,
     };
-    let body = make_fn_body();
-    let ret_type = make_return_type();
-    let is_async = false;
+    let mut func = make_fn();
 
     let expected: Block = parse_quote! {
         {
@@ -397,7 +583,7 @@ fn simple_requires_and_maintains() {
             if !__anodized_pre {
                 panic!("precondition failed");
             }
-            let (__anodized_output) = (::anodized::__::eval_once(|| #ret_type #body));
+            let (__anodized_output) = (::anodized::__::eval_once(|| -> RET_TYPE { BODY }));
             let __anodized_post = true;
             let __anodized_post = __anodized_post & (::anodized::__::eval::<bool>(|| CONDITION_2)
                 || eprintln!("postinvariant failed: {}", "CONDITION_2") != ());
@@ -408,10 +594,10 @@ fn simple_requires_and_maintains() {
         }
     };
 
-    let observed = CheckSettings::PRINT_AND_PANIC
-        .instrument_fn_body(&spec, &body, is_async, &ret_type)
+    CheckSettings::PRINT_AND_PANIC
+        .instrument_fn_sig_and_body(&spec, &mut func.sig, &mut func.block)
         .unwrap();
-    assert_tokens_eq(&observed, &expected);
+    assert_tokens_eq(&func.block, &expected);
 }
 
 #[test]
@@ -420,9 +606,7 @@ fn simple_requires_and_ensures() {
         requires: CONDITION_1,
         ensures: CONDITION_2,
     };
-    let body = make_fn_body();
-    let ret_type = make_return_type();
-    let is_async = false;
+    let mut func = make_fn();
 
     let expected: Block = parse_quote! {
         {
@@ -432,7 +616,7 @@ fn simple_requires_and_ensures() {
             if !__anodized_pre {
                 panic!("precondition failed");
             }
-            let (__anodized_output) = (::anodized::__::eval_once(|| #ret_type #body));
+            let (__anodized_output) = (::anodized::__::eval_once(|| -> RET_TYPE { BODY }));
             let __anodized_post = true;
             let __anodized_post = __anodized_post & (::anodized::__::eval::<bool>(|| CONDITION_2)
                 || eprintln!("postcondition failed: {}", "CONDITION_2") != ());
@@ -443,10 +627,10 @@ fn simple_requires_and_ensures() {
         }
     };
 
-    let observed = CheckSettings::PRINT_AND_PANIC
-        .instrument_fn_body(&spec, &body, is_async, &ret_type)
+    CheckSettings::PRINT_AND_PANIC
+        .instrument_fn_sig_and_body(&spec, &mut func.sig, &mut func.block)
         .unwrap();
-    assert_tokens_eq(&observed, &expected);
+    assert_tokens_eq(&func.block, &expected);
 }
 
 #[test]
@@ -455,9 +639,7 @@ fn simple_maintains_and_ensures() {
         maintains: CONDITION_1,
         ensures: CONDITION_2,
     };
-    let body = make_fn_body();
-    let ret_type = make_return_type();
-    let is_async = false;
+    let mut func = make_fn();
 
     let expected: Block = parse_quote! {
         {
@@ -467,7 +649,7 @@ fn simple_maintains_and_ensures() {
             if !__anodized_pre {
                 panic!("precondition failed");
             }
-            let (__anodized_output) = (::anodized::__::eval_once(|| #ret_type #body));
+            let (__anodized_output) = (::anodized::__::eval_once(|| -> RET_TYPE { BODY }));
             let __anodized_post = true;
             let __anodized_post = __anodized_post & (::anodized::__::eval::<bool>(|| CONDITION_1)
                 || eprintln!("postinvariant failed: {}", "CONDITION_1") != ());
@@ -480,10 +662,10 @@ fn simple_maintains_and_ensures() {
         }
     };
 
-    let observed = CheckSettings::PRINT_AND_PANIC
-        .instrument_fn_body(&spec, &body, is_async, &ret_type)
+    CheckSettings::PRINT_AND_PANIC
+        .instrument_fn_sig_and_body(&spec, &mut func.sig, &mut func.block)
         .unwrap();
-    assert_tokens_eq(&observed, &expected);
+    assert_tokens_eq(&func.block, &expected);
 }
 
 #[test]
@@ -493,9 +675,7 @@ fn simple_requires_maintains_and_ensures() {
         maintains: CONDITION_2,
         ensures: CONDITION_3,
     };
-    let body = make_fn_body();
-    let ret_type = make_return_type();
-    let is_async = false;
+    let mut func = make_fn();
 
     let expected: Block = parse_quote! {
         {
@@ -507,7 +687,7 @@ fn simple_requires_maintains_and_ensures() {
             if !__anodized_pre {
                 panic!("precondition failed");
             }
-            let (__anodized_output) = (::anodized::__::eval_once(|| #ret_type #body));
+            let (__anodized_output) = (::anodized::__::eval_once(|| -> RET_TYPE { BODY }));
             let __anodized_post = true;
             let __anodized_post = __anodized_post & (::anodized::__::eval::<bool>(|| CONDITION_2)
                 || eprintln!("postinvariant failed: {}", "CONDITION_2") != ());
@@ -520,10 +700,10 @@ fn simple_requires_maintains_and_ensures() {
         }
     };
 
-    let observed = CheckSettings::PRINT_AND_PANIC
-        .instrument_fn_body(&spec, &body, is_async, &ret_type)
+    CheckSettings::PRINT_AND_PANIC
+        .instrument_fn_sig_and_body(&spec, &mut func.sig, &mut func.block)
         .unwrap();
-    assert_tokens_eq(&observed, &expected);
+    assert_tokens_eq(&func.block, &expected);
 }
 
 #[test]
@@ -533,9 +713,7 @@ fn simple_async_requires_maintains_and_ensures() {
         maintains: CONDITION_2,
         ensures: CONDITION_3,
     };
-    let body = make_fn_body();
-    let ret_type = make_return_type();
-    let is_async = true;
+    let mut func = make_async_fn();
 
     let expected: Block = parse_quote! {
         {
@@ -547,7 +725,7 @@ fn simple_async_requires_maintains_and_ensures() {
             if !__anodized_pre {
                 panic!("precondition failed");
             }
-            let (__anodized_output) = (::anodized::__::eval_once(async || #ret_type #body).await);
+            let (__anodized_output) = (::anodized::__::eval_once(async || -> RET_TYPE { BODY }).await);
             let __anodized_post = true;
             let __anodized_post = __anodized_post & (::anodized::__::eval::<bool>(|| CONDITION_2)
                 || eprintln!("postinvariant failed: {}", "CONDITION_2") != ());
@@ -560,10 +738,10 @@ fn simple_async_requires_maintains_and_ensures() {
         }
     };
 
-    let observed = CheckSettings::PRINT_AND_PANIC
-        .instrument_fn_body(&spec, &body, is_async, &ret_type)
+    CheckSettings::PRINT_AND_PANIC
+        .instrument_fn_sig_and_body(&spec, &mut func.sig, &mut func.block)
         .unwrap();
-    assert_tokens_eq(&observed, &expected);
+    assert_tokens_eq(&func.block, &expected);
 }
 
 #[test]
@@ -573,9 +751,7 @@ fn multiple_conditions_in_clauses() {
         maintains: [CONDITION_3, CONDITION_4],
         ensures: [CONDITION_5, CONDITION_6],
     };
-    let body = make_fn_body();
-    let ret_type = make_return_type();
-    let is_async = false;
+    let mut func = make_fn();
 
     let expected: Block = parse_quote! {
         {
@@ -591,7 +767,7 @@ fn multiple_conditions_in_clauses() {
             if !__anodized_pre {
                 panic!("precondition failed");
             }
-            let (__anodized_output) = (::anodized::__::eval_once(|| #ret_type #body));
+            let (__anodized_output) = (::anodized::__::eval_once(|| -> RET_TYPE { BODY }));
             let __anodized_post = true;
             let __anodized_post = __anodized_post & (::anodized::__::eval::<bool>(|| CONDITION_3)
                 || eprintln!("postinvariant failed: {}", "CONDITION_3") != ());
@@ -608,10 +784,10 @@ fn multiple_conditions_in_clauses() {
         }
     };
 
-    let observed = CheckSettings::PRINT_AND_PANIC
-        .instrument_fn_body(&spec, &body, is_async, &ret_type)
+    CheckSettings::PRINT_AND_PANIC
+        .instrument_fn_sig_and_body(&spec, &mut func.sig, &mut func.block)
         .unwrap();
-    assert_tokens_eq(&observed, &expected);
+    assert_tokens_eq(&func.block, &expected);
 }
 
 #[test]
@@ -619,9 +795,7 @@ fn postcond_closure_form() {
     let spec: Spec = parse_quote! {
         ensures: |OUTPUT_PATTERN| CONDITION_1,
     };
-    let body = make_fn_body();
-    let ret_type = make_return_type();
-    let is_async = false;
+    let mut func = make_fn();
 
     let expected: Block = parse_quote! {
         {
@@ -629,7 +803,7 @@ fn postcond_closure_form() {
             if !__anodized_pre {
                 panic!("precondition failed");
             }
-            let (__anodized_output) = (::anodized::__::eval_once(|| #ret_type #body));
+            let (__anodized_output) = (::anodized::__::eval_once(|| -> RET_TYPE { BODY }));
             let __anodized_post = true;
             let (__anodized_post, __anodized_output) = ::anodized::__::apply_keep(
                 |OUTPUT_PATTERN| (__anodized_post & (::anodized::__::eval::<bool>(|| CONDITION_1)
@@ -643,10 +817,10 @@ fn postcond_closure_form() {
         }
     };
 
-    let observed = CheckSettings::PRINT_AND_PANIC
-        .instrument_fn_body(&spec, &body, is_async, &ret_type)
+    CheckSettings::PRINT_AND_PANIC
+        .instrument_fn_sig_and_body(&spec, &mut func.sig, &mut func.block)
         .unwrap();
-    assert_tokens_eq(&observed, &expected);
+    assert_tokens_eq(&func.block, &expected);
 }
 
 #[test]
@@ -654,9 +828,7 @@ fn postcond_borrowing_closure_form() {
     let spec: Spec = parse_quote! {
         ensures: |ref OUTPUT_PATTERN| CONDITION_1,
     };
-    let body = make_fn_body();
-    let ret_type = make_return_type();
-    let is_async = false;
+    let mut func = make_fn();
 
     let expected: Block = parse_quote! {
         {
@@ -664,7 +836,7 @@ fn postcond_borrowing_closure_form() {
             if !__anodized_pre {
                 panic!("precondition failed");
             }
-            let (__anodized_output) = (::anodized::__::eval_once(|| #ret_type #body));
+            let (__anodized_output) = (::anodized::__::eval_once(|| -> RET_TYPE { BODY }));
             let __anodized_post = true;
             let (__anodized_post, __anodized_output) = ::anodized::__::apply_keep(
                 |__anodized_output| {
@@ -683,10 +855,10 @@ fn postcond_borrowing_closure_form() {
         }
     };
 
-    let observed = CheckSettings::PRINT_AND_PANIC
-        .instrument_fn_body(&spec, &body, is_async, &ret_type)
+    CheckSettings::PRINT_AND_PANIC
+        .instrument_fn_sig_and_body(&spec, &mut func.sig, &mut func.block)
         .unwrap();
-    assert_tokens_eq(&observed, &expected);
+    assert_tokens_eq(&func.block, &expected);
 }
 
 #[test]
@@ -699,9 +871,7 @@ fn ensures_with_mixed_conditions() {
             CONDITION_4
         ],
     };
-    let body = make_fn_body();
-    let ret_type = make_return_type();
-    let is_async = false;
+    let mut func = make_fn();
 
     let expected: Block = parse_quote! {
         {
@@ -709,7 +879,7 @@ fn ensures_with_mixed_conditions() {
             if !__anodized_pre {
                 panic!("precondition failed");
             }
-            let (__anodized_output) = (::anodized::__::eval_once(|| #ret_type #body));
+            let (__anodized_output) = (::anodized::__::eval_once(|| -> RET_TYPE { BODY }));
             let __anodized_post = true;
             let __anodized_post = __anodized_post & (::anodized::__::eval::<bool>(|| CONDITION_1)
                 || eprintln!("postcondition failed: {}", "CONDITION_1") != ());
@@ -726,10 +896,10 @@ fn ensures_with_mixed_conditions() {
         }
     };
 
-    let observed = CheckSettings::PRINT_AND_PANIC
-        .instrument_fn_body(&spec, &body, is_async, &ret_type)
+    CheckSettings::PRINT_AND_PANIC
+        .instrument_fn_sig_and_body(&spec, &mut func.sig, &mut func.block)
         .unwrap();
-    assert_tokens_eq(&observed, &expected);
+    assert_tokens_eq(&func.block, &expected);
 }
 
 #[test]
@@ -742,9 +912,7 @@ fn cfg_attributes() {
         #[cfg(SETTING_3)]
         ensures: CONDITION_3,
     };
-    let body = make_fn_body();
-    let ret_type = make_return_type();
-    let is_async = false;
+    let mut func = make_fn();
 
     let expected: Block = parse_quote! {
         {
@@ -756,7 +924,7 @@ fn cfg_attributes() {
             if !__anodized_pre {
                 panic!("precondition failed");
             }
-            let (__anodized_output) = (::anodized::__::eval_once(|| #ret_type #body));
+            let (__anodized_output) = (::anodized::__::eval_once(|| -> RET_TYPE { BODY }));
             let __anodized_post = true;
             let __anodized_post = __anodized_post & (!cfg!(SETTING_2) || ::anodized::__::eval::<bool>(|| CONDITION_2)
                 || eprintln!("postinvariant failed: {}", "CONDITION_2") != ());
@@ -769,10 +937,10 @@ fn cfg_attributes() {
         }
     };
 
-    let observed = CheckSettings::PRINT_AND_PANIC
-        .instrument_fn_body(&spec, &body, is_async, &ret_type)
+    CheckSettings::PRINT_AND_PANIC
+        .instrument_fn_sig_and_body(&spec, &mut func.sig, &mut func.block)
         .unwrap();
-    assert_tokens_eq(&observed, &expected);
+    assert_tokens_eq(&func.block, &expected);
 }
 
 #[test]
@@ -784,9 +952,7 @@ fn cfg_on_single_and_list_conditions() {
         #[cfg(SETTING_2)]
         ensures: [CONDITION_4, CONDITION_5],
     };
-    let body = make_fn_body();
-    let ret_type = make_return_type();
-    let is_async = false;
+    let mut func = make_fn();
 
     let expected: Block = parse_quote! {
         {
@@ -800,7 +966,7 @@ fn cfg_on_single_and_list_conditions() {
             if !__anodized_pre {
                 panic!("precondition failed");
             }
-            let (__anodized_output) = (::anodized::__::eval_once(|| #ret_type #body));
+            let (__anodized_output) = (::anodized::__::eval_once(|| -> RET_TYPE { BODY }));
             let __anodized_post = true;
             let __anodized_post = __anodized_post & (::anodized::__::eval::<bool>(|| CONDITION_2)
                 || eprintln!("postinvariant failed: {}", "CONDITION_2") != ());
@@ -817,10 +983,10 @@ fn cfg_on_single_and_list_conditions() {
         }
     };
 
-    let observed = CheckSettings::PRINT_AND_PANIC
-        .instrument_fn_body(&spec, &body, is_async, &ret_type)
+    CheckSettings::PRINT_AND_PANIC
+        .instrument_fn_sig_and_body(&spec, &mut func.sig, &mut func.block)
         .unwrap();
-    assert_tokens_eq(&observed, &expected);
+    assert_tokens_eq(&func.block, &expected);
 }
 
 #[test]
@@ -836,9 +1002,7 @@ fn complex_mixed_conditions() {
         #[cfg(SETTING_3)]
         ensures: [CONDITION_8, CONDITION_9],
     };
-    let body = make_fn_body();
-    let ret_type = make_return_type();
-    let is_async = false;
+    let mut func = make_fn();
 
     let expected: Block = parse_quote! {
         {
@@ -858,7 +1022,7 @@ fn complex_mixed_conditions() {
             if !__anodized_pre {
                 panic!("precondition failed");
             }
-            let (__anodized_output) = (::anodized::__::eval_once(|| #ret_type #body));
+            let (__anodized_output) = (::anodized::__::eval_once(|| -> RET_TYPE { BODY }));
             let __anodized_post = true;
             let __anodized_post = __anodized_post & (::anodized::__::eval::<bool>(|| CONDITION_4)
                 || eprintln!("postinvariant failed: {}", "CONDITION_4") != ());
@@ -879,10 +1043,10 @@ fn complex_mixed_conditions() {
         }
     };
 
-    let observed = CheckSettings::PRINT_AND_PANIC
-        .instrument_fn_body(&spec, &body, is_async, &ret_type)
+    CheckSettings::PRINT_AND_PANIC
+        .instrument_fn_sig_and_body(&spec, &mut func.sig, &mut func.block)
         .unwrap();
-    assert_tokens_eq(&observed, &expected);
+    assert_tokens_eq(&func.block, &expected);
 }
 
 #[test]
@@ -898,9 +1062,7 @@ fn captures() {
             CONDITION_3,
         ],
     };
-    let body = make_fn_body();
-    let ret_type = make_return_type();
-    let is_async = false;
+    let mut func = make_fn();
 
     let expected: Block = parse_quote! {
         {
@@ -913,7 +1075,7 @@ fn captures() {
             let (ALIAS_1, ALIAS_2, __anodized_output) = (
                 ::anodized::__::eval(|| EXPR_1),
                 ::anodized::__::eval(|| EXPR_2),
-                ::anodized::__::eval_once(|| #ret_type #body),
+                ::anodized::__::eval_once(|| -> RET_TYPE { BODY }),
             );
             let __anodized_post = true;
             let __anodized_post = __anodized_post & (::anodized::__::eval::<bool>(|| CONDITION_2)
@@ -927,10 +1089,10 @@ fn captures() {
         }
     };
 
-    let observed = CheckSettings::PRINT_AND_PANIC
-        .instrument_fn_body(&spec, &body, is_async, &ret_type)
+    CheckSettings::PRINT_AND_PANIC
+        .instrument_fn_sig_and_body(&spec, &mut func.sig, &mut func.block)
         .unwrap();
-    assert_tokens_eq(&observed, &expected);
+    assert_tokens_eq(&func.block, &expected);
 }
 
 #[test]

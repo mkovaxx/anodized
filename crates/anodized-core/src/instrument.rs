@@ -30,6 +30,8 @@ pub struct CheckSettings {
     pub does_print: bool,
     /// Panic on a violated pre/postcondition or invariant.
     pub does_panic: Option<PanicSettings>,
+    /// Check data type refinements at function boundaries.
+    pub check_data: bool,
 }
 
 #[derive(Debug, Clone)]
@@ -68,6 +70,8 @@ impl Mode {
     }
 
     pub fn instrument_item_fn(&self, spec: Spec, mut item_fn: ItemFn) -> Result<TokenStream> {
+        let spec = spec.with_signature_spec(&mut item_fn.attrs, &mut item_fn.sig)?;
+
         let mut tokens = TokenStream::new();
 
         if item_fn.sig.ident.to_string().starts_with("__anodized_") {
@@ -117,7 +121,7 @@ Instead, you likely need to place a `#[spec]` attribute on an enclosing trait or
         }
 
         // Instrument function body.
-        self.instrument_fn(&spec, &item_fn.sig, &mut item_fn.block)?;
+        self.instrument_fn(&spec, &mut item_fn.sig, &mut item_fn.block)?;
 
         if let Self::InjectChecks(check_settings) = self
             && let Some(ref panic_settings) = check_settings.does_panic
@@ -228,21 +232,31 @@ impl CheckSettings {
     pub(crate) const DEFAULT: Self = Self {
         does_print: false,
         does_panic: None,
+        check_data: false,
+    };
+
+    pub(crate) const CHECK_DATA: Self = Self {
+        does_print: false,
+        does_panic: None,
+        check_data: true,
     };
 
     pub(crate) const PRINT: Self = Self {
         does_print: true,
         does_panic: None,
+        check_data: false,
     };
 
     pub(crate) const PRINT_AND_PANIC: Self = Self {
         does_print: true,
         does_panic: Some(PanicSettings { has_try_fn: false }),
+        check_data: false,
     };
 
     pub(crate) const PRINT_AND_TRY: Self = Self {
         does_print: true,
         does_panic: Some(PanicSettings { has_try_fn: true }),
+        check_data: false,
     };
 }
 

@@ -1,12 +1,13 @@
 use syn::{
-    Attribute, Error, Expr, ExprAssign, FieldValue, Meta,
+    Attribute, Error, Expr, ExprAssign, FieldValue, FnArg, Meta, Signature,
     parse::{Parse, ParseStream, Result},
     parse_quote,
     spanned::Spanned,
 };
 
 use crate::{
-    Capture, Condition, DataSpec, LoopSpec, LoopVariant, PostCondition, Spec,
+    Capture, Condition, DataSpec, InputSpec, LoopSpec, LoopVariant, PostCondition, Spec,
+    annotate::syntax::{UnspecArgs, UnspecAttr, remove_unspec_attr},
     qualifiers::FnQualifiers,
 };
 
@@ -140,12 +141,74 @@ impl Parse for Spec {
 
         Ok(Self {
             qualifiers,
+            input_specs: vec![],
+            output_spec_on_exit: true,
             requires,
             maintains,
             captures,
             ensures,
             span: input.span(),
         })
+    }
+}
+
+impl Spec {
+    /// Sets the input and output type specs from `#[unspec]` attributes on a function signature.
+    pub fn with_signature_spec(
+        mut self,
+        attrs: &mut Vec<Attribute>,
+        sig: &mut Signature,
+    ) -> Result<Self> {
+        self.output_spec_on_exit = if let Some(attr) = remove_unspec_attr(attrs)? {
+            let unspec_attr = UnspecAttr::try_from(attr)?;
+            let UnspecArgs::Out(_) = unspec_attr.args else {
+                return Err(Error::new_spanned(
+                    Attribute::from(unspec_attr),
+                    "only `#[unspec(out)]` is allowed on the output of a `fn`",
+                ));
+            };
+            false
+        } else {
+            true
+        };
+
+        self.input_specs = sig
+            .inputs
+            .iter_mut()
+            .map(|input| {
+                let attrs = match input {
+                    FnArg::Receiver(receiver) => &mut receiver.attrs,
+                    FnArg::Typed(pat_type) => &mut pat_type.attrs,
+                };
+                if let Some(attr) = remove_unspec_attr(attrs)? {
+                    let unspec_attr: UnspecAttr = attr.try_into()?;
+                    Ok(unspec_attr.args.into())
+                } else {
+                    Ok(InputSpec::default())
+                }
+            })
+            .collect::<Result<Vec<_>>>()?;
+
+        Ok(self)
+    }
+}
+
+impl From<UnspecArgs> for InputSpec {
+    fn from(args: UnspecArgs) -> Self {
+        match args {
+            UnspecArgs::None => InputSpec {
+                on_entry: false,
+                on_exit: false,
+            },
+            UnspecArgs::In(_) => InputSpec {
+                on_entry: false,
+                on_exit: true,
+            },
+            UnspecArgs::Out(_) => InputSpec {
+                on_entry: true,
+                on_exit: false,
+            },
+        }
     }
 }
 
@@ -178,6 +241,7 @@ impl Parse for DataSpec {
         }
 
         Ok(Self {
+            field_specs: vec![],
             maintains,
             span: input.span(),
         })

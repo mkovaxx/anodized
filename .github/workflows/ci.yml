@@ -56,6 +56,7 @@ jobs:
           - cfg: '--config ''build.rustflags=["--cfg","anodized_print"]'''
           - cfg: '--config ''build.rustflags=["--cfg","anodized_panic"]'''
           - cfg: '--config ''build.rustflags=["--cfg","anodized_print","--cfg","anodized_panic"]'''
+          - cfg: '--config ''build.rustflags=["--cfg","anodized_check_data","--cfg","anodized_print","--cfg","anodized_panic"]'''
           - cfg: '--config ''build.rustflags=["--cfg","anodized_print","--cfg","anodized_panic","--cfg","anodized_try"]'''
     steps:
       - name: Checkout repository

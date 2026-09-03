@@ -18,6 +18,10 @@ mod test_util;
 pub struct Spec {
     /// Qualifiers that constrain the behavior of the computation.
     pub qualifiers: FnQualifiers,
+    /// Whether each input satisfies its type spec on entry/exit.
+    pub input_specs: Vec<InputSpec>,
+    /// Whether the output satisfies its type spec on exit.
+    pub output_spec_on_exit: bool,
     /// Preconditions: conditions that must hold when the function is called.
     pub requires: Vec<Condition>,
     /// Invariants: conditions that must hold both when the function is called and when it returns.
@@ -30,11 +34,22 @@ pub struct Spec {
     span: Span,
 }
 
+/// Determines when the input in a `fn` signature satisfies its type spec.
+#[derive(Debug)]
+pub struct InputSpec {
+    /// Whether the input satisfies its type spec on entry.
+    pub on_entry: bool,
+    /// Whether the input satisfies its type spec on exit.
+    pub on_exit: bool,
+}
+
 impl Spec {
     /// Empty spec that contains no elements.
     pub fn empty() -> Self {
         Self {
             qualifiers: FnQualifiers::empty(),
+            input_specs: vec![],
+            output_spec_on_exit: true,
             requires: vec![],
             maintains: vec![],
             captures: vec![],
@@ -58,9 +73,20 @@ impl Spec {
     }
 }
 
+impl Default for InputSpec {
+    fn default() -> Self {
+        Self {
+            on_entry: true,
+            on_exit: true,
+        }
+    }
+}
+
 /// Specifies the intended behavior of a data type: `struct` or `enum`.
 #[derive(Debug)]
 pub struct DataSpec {
+    /// Whether each field satisfies its type spec. Variant index first, field index second.
+    pub field_specs: Vec<Vec<bool>>,
     /// Invariants: conditions that must hold for all instances of the data type.
     pub maintains: Vec<Condition>,
     /// The span in the source code, from which this spec was parsed.
@@ -71,6 +97,7 @@ impl DataSpec {
     /// Empty spec that contains no elements.
     pub fn empty() -> Self {
         Self {
+            field_specs: vec![],
             maintains: vec![],
             span: Span::call_site(),
         }
