@@ -21,11 +21,18 @@ mod annotate_tests;
 
 pub trait Specify: Sized {
     type Spec;
+
+    fn get_attrs_mut(&mut self) -> &mut Vec<Attribute>;
+
     fn parse_spec(self, input: TokenStream) -> Result<SpecItem<Self::Spec, Self>>;
 }
 
 impl Specify for ItemFn {
     type Spec = FnSpec;
+
+    fn get_attrs_mut(&mut self) -> &mut Vec<Attribute> {
+        &mut self.attrs
+    }
 
     fn parse_spec(self, input: TokenStream) -> Result<SpecItem<Self::Spec, Self>> {
         let spec = Parser::parse2(FnSpec::parse, input)?;
@@ -36,6 +43,10 @@ impl Specify for ItemFn {
 impl Specify for ImplItemFn {
     type Spec = FnSpec;
 
+    fn get_attrs_mut(&mut self) -> &mut Vec<Attribute> {
+        &mut self.attrs
+    }
+
     fn parse_spec(self, input: TokenStream) -> Result<SpecItem<Self::Spec, Self>> {
         let spec = Parser::parse2(FnSpec::parse, input)?;
         Ok(SpecItem { spec, item: self })
@@ -44,6 +55,10 @@ impl Specify for ImplItemFn {
 
 impl Specify for TraitItemFn {
     type Spec = FnSpec;
+
+    fn get_attrs_mut(&mut self) -> &mut Vec<Attribute> {
+        &mut self.attrs
+    }
 
     fn parse_spec(self, input: TokenStream) -> Result<SpecItem<Self::Spec, Self>> {
         let spec = Parser::parse2(FnSpec::parse, input)?;
@@ -54,6 +69,10 @@ impl Specify for TraitItemFn {
 impl Specify for ItemStruct {
     type Spec = DataSpec;
 
+    fn get_attrs_mut(&mut self) -> &mut Vec<Attribute> {
+        &mut self.attrs
+    }
+
     fn parse_spec(self, input: TokenStream) -> Result<SpecItem<Self::Spec, Self>> {
         let spec = Parser::parse2(DataSpec::parse, input)?;
         Ok(SpecItem { spec, item: self })
@@ -63,14 +82,9 @@ impl Specify for ItemStruct {
 impl Specify for ItemEnum {
     type Spec = DataSpec;
 
-    fn parse_spec(self, input: TokenStream) -> Result<SpecItem<Self::Spec, Self>> {
-        let spec = Parser::parse2(DataSpec::parse, input)?;
-        Ok(SpecItem { spec, item: self })
+    fn get_attrs_mut(&mut self) -> &mut Vec<Attribute> {
+        &mut self.attrs
     }
-}
-
-impl Specify for ItemTrait {
-    type Spec = DataSpec;
 
     fn parse_spec(self, input: TokenStream) -> Result<SpecItem<Self::Spec, Self>> {
         let spec = Parser::parse2(DataSpec::parse, input)?;
@@ -81,13 +95,30 @@ impl Specify for ItemTrait {
 impl Specify for ItemImpl {
     type Spec = DataSpec;
 
+    fn get_attrs_mut(&mut self) -> &mut Vec<Attribute> {
+        &mut self.attrs
+    }
+
     fn parse_spec(self, input: TokenStream) -> Result<SpecItem<Self::Spec, Self>> {
         let spec = Parser::parse2(DataSpec::parse, input)?;
         Ok(SpecItem { spec, item: self })
     }
 }
 
-impl<Item: Parse + HasAttrs + Spanned + Specify> Parse for SpecItem<Item::Spec, Item> {
+impl Specify for ItemTrait {
+    type Spec = DataSpec;
+
+    fn get_attrs_mut(&mut self) -> &mut Vec<Attribute> {
+        &mut self.attrs
+    }
+
+    fn parse_spec(self, input: TokenStream) -> Result<SpecItem<Self::Spec, Self>> {
+        let spec = Parser::parse2(DataSpec::parse, input)?;
+        Ok(SpecItem { spec, item: self })
+    }
+}
+
+impl<Item: Parse + Spanned + Specify> Parse for SpecItem<Item::Spec, Item> {
     fn parse(input: ParseStream) -> Result<Self> {
         let mut item: Item = input.parse()?;
         let Some(attr) = remove_spec_attr(item.get_attrs_mut())? else {
@@ -98,52 +129,6 @@ impl<Item: Parse + HasAttrs + Spanned + Specify> Parse for SpecItem<Item::Spec, 
         };
         let spec_input = get_attr_input(attr)?;
         item.parse_spec(spec_input)
-    }
-}
-
-trait HasAttrs {
-    fn get_attrs_mut(&mut self) -> &mut Vec<Attribute>;
-}
-
-impl HasAttrs for ItemFn {
-    fn get_attrs_mut(&mut self) -> &mut Vec<Attribute> {
-        &mut self.attrs
-    }
-}
-
-impl HasAttrs for ImplItemFn {
-    fn get_attrs_mut(&mut self) -> &mut Vec<Attribute> {
-        &mut self.attrs
-    }
-}
-
-impl HasAttrs for TraitItemFn {
-    fn get_attrs_mut(&mut self) -> &mut Vec<Attribute> {
-        &mut self.attrs
-    }
-}
-
-impl HasAttrs for ItemStruct {
-    fn get_attrs_mut(&mut self) -> &mut Vec<Attribute> {
-        &mut self.attrs
-    }
-}
-
-impl HasAttrs for ItemEnum {
-    fn get_attrs_mut(&mut self) -> &mut Vec<Attribute> {
-        &mut self.attrs
-    }
-}
-
-impl HasAttrs for ItemTrait {
-    fn get_attrs_mut(&mut self) -> &mut Vec<Attribute> {
-        &mut self.attrs
-    }
-}
-
-impl HasAttrs for ItemImpl {
-    fn get_attrs_mut(&mut self) -> &mut Vec<Attribute> {
-        &mut self.attrs
     }
 }
 
