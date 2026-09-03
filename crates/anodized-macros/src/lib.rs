@@ -6,7 +6,6 @@ use quote::ToTokens;
 use syn::{Expr, Item, TraitItemFn, parse_macro_input};
 
 use anodized_core::{
-    DataSpec,
     annotate::Specify as _,
     instrument::{CheckSettings, Mode, PanicSettings, fns::make_try_call, make_item_error},
 };
@@ -40,32 +39,29 @@ pub fn spec(args: TokenStream, input: TokenStream) -> TokenStream {
         Item::Fn(func) => func
             .parse_spec(args.into())
             .and_then(|spec_item| CONFIG.instrument_item_fn(spec_item.spec, spec_item.item)),
-        Item::Trait(the_trait) => {
-            let spec = parse_macro_input!(args as DataSpec);
-            CONFIG.instrument_item_trait(spec, the_trait)
-        }
+        Item::Trait(the_trait) => the_trait
+            .parse_spec(args.into())
+            .and_then(|spec_item| CONFIG.instrument_item_trait(spec_item.spec, spec_item.item)),
         Item::Impl(the_impl) if the_impl.trait_.is_some() => {
-            let spec = parse_macro_input!(args as DataSpec);
-            CONFIG.instrument_item_trait_impl(spec, the_impl)
+            the_impl.parse_spec(args.into()).and_then(|spec_item| {
+                CONFIG.instrument_item_trait_impl(spec_item.spec, spec_item.item)
+            })
         }
-        Item::Impl(the_impl) if the_impl.trait_.is_none() => {
-            let spec = parse_macro_input!(args as DataSpec);
-            CONFIG.instrument_item_impl(spec, the_impl)
-        }
+        Item::Impl(the_impl) if the_impl.trait_.is_none() => the_impl
+            .parse_spec(args.into())
+            .and_then(|spec_item| CONFIG.instrument_item_impl(spec_item.spec, spec_item.item)),
         Item::Const(_) => Err(make_item_error(&item, "const")),
-        Item::Enum(the_enum) => {
-            let spec = parse_macro_input!(args as DataSpec);
-            CONFIG.instrument_item_enum(spec, the_enum)
-        }
+        Item::Enum(the_enum) => the_enum
+            .parse_spec(args.into())
+            .and_then(|spec_item| CONFIG.instrument_item_enum(spec_item.spec, spec_item.item)),
         Item::ExternCrate(_) => Err(make_item_error(&item, "extern crate")),
         Item::ForeignMod(_) => Err(make_item_error(&item, "extern block")),
         Item::Macro(_) => Err(make_item_error(&item, "macro")),
         Item::Mod(_) => Err(make_item_error(&item, "mod")),
         Item::Static(_) => Err(make_item_error(&item, "static")),
-        Item::Struct(the_struct) => {
-            let spec = parse_macro_input!(args as DataSpec);
-            CONFIG.instrument_item_struct(spec, the_struct)
-        }
+        Item::Struct(the_struct) => the_struct
+            .parse_spec(args.into())
+            .and_then(|spec_item| CONFIG.instrument_item_struct(spec_item.spec, spec_item.item)),
         Item::TraitAlias(_) => Err(make_item_error(&item, "trait alias")),
         Item::Type(_) => Err(make_item_error(&item, "type")),
         Item::Union(_) => Err(make_item_error(&item, "union")),

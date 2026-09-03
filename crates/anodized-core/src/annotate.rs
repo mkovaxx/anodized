@@ -1,7 +1,7 @@
 use proc_macro2::TokenStream;
 use syn::{
-    Attribute, Error, Expr, ExprAssign, FieldValue, ImplItemFn, ItemEnum, ItemFn, ItemStruct, Meta,
-    Path, TraitItemFn,
+    Attribute, Error, Expr, ExprAssign, FieldValue, ImplItemFn, ItemEnum, ItemFn, ItemImpl,
+    ItemStruct, ItemTrait, Meta, Path, TraitItemFn,
     parse::{Parse, ParseStream, Parser, Result},
     parse_quote,
     spanned::Spanned,
@@ -69,6 +69,24 @@ impl Specify for ItemEnum {
     }
 }
 
+impl Specify for ItemTrait {
+    type Spec = DataSpec;
+
+    fn parse_spec(self, input: TokenStream) -> Result<SpecItem<Self::Spec, Self>> {
+        let spec = Parser::parse2(DataSpec::parse, input)?;
+        Ok(SpecItem { spec, item: self })
+    }
+}
+
+impl Specify for ItemImpl {
+    type Spec = DataSpec;
+
+    fn parse_spec(self, input: TokenStream) -> Result<SpecItem<Self::Spec, Self>> {
+        let spec = Parser::parse2(DataSpec::parse, input)?;
+        Ok(SpecItem { spec, item: self })
+    }
+}
+
 impl<Item: Parse + HasAttrs + Spanned + Specify> Parse for SpecItem<Item::Spec, Item> {
     fn parse(input: ParseStream) -> Result<Self> {
         let mut item: Item = input.parse()?;
@@ -112,6 +130,18 @@ impl HasAttrs for ItemStruct {
 }
 
 impl HasAttrs for ItemEnum {
+    fn get_attrs_mut(&mut self) -> &mut Vec<Attribute> {
+        &mut self.attrs
+    }
+}
+
+impl HasAttrs for ItemTrait {
+    fn get_attrs_mut(&mut self) -> &mut Vec<Attribute> {
+        &mut self.attrs
+    }
+}
+
+impl HasAttrs for ItemImpl {
     fn get_attrs_mut(&mut self) -> &mut Vec<Attribute> {
         &mut self.attrs
     }
