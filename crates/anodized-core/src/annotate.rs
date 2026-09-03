@@ -1,13 +1,14 @@
 use syn::{
-    Attribute, Error, Expr, ExprAssign, FieldValue, ItemFn, Meta, Path,
+    Attribute, Error, Expr, ExprAssign, FieldValue, ImplItemFn, ItemEnum, ItemFn, ItemStruct, Meta,
+    Path, TraitItemFn,
     parse::{Parse, ParseStream, Result},
     parse_quote,
     spanned::Spanned,
 };
 
 use crate::{
-    Capture, Condition, DataSpec, LoopSpec, LoopVariant, PostCondition, Spec, SpecItemFn,
-    qualifiers::FnQualifiers,
+    Capture, Condition, DataSpec, LoopSpec, LoopVariant, PostCondition, Spec, SpecEnumItem,
+    SpecImplItemFn, SpecItemFn, SpecItemStruct, SpecTraitItemFn, qualifiers::FnQualifiers,
 };
 
 pub mod syntax;
@@ -28,6 +29,62 @@ impl Parse for SpecItemFn {
         };
         let spec = attr.meta.try_into()?;
         Ok(SpecItemFn { spec, item })
+    }
+}
+
+impl Parse for SpecImplItemFn {
+    fn parse(input: ParseStream) -> Result<Self> {
+        let mut item: ImplItemFn = input.parse()?;
+        let Some(attr) = remove_spec_attr(&mut item.attrs)? else {
+            return Err(Error::new_spanned(
+                item,
+                "expected a `#[spec]` attribute on this `fn`",
+            ));
+        };
+        let spec = attr.meta.try_into()?;
+        Ok(SpecImplItemFn { spec, item })
+    }
+}
+
+impl Parse for SpecTraitItemFn {
+    fn parse(input: ParseStream) -> Result<Self> {
+        let mut item: TraitItemFn = input.parse()?;
+        let Some(attr) = remove_spec_attr(&mut item.attrs)? else {
+            return Err(Error::new_spanned(
+                item,
+                "expected a `#[spec]` attribute on this `fn`",
+            ));
+        };
+        let spec = attr.meta.try_into()?;
+        Ok(SpecTraitItemFn { spec, item })
+    }
+}
+
+impl Parse for SpecItemStruct {
+    fn parse(input: ParseStream) -> Result<Self> {
+        let mut item: ItemStruct = input.parse()?;
+        let Some(attr) = remove_spec_attr(&mut item.attrs)? else {
+            return Err(Error::new_spanned(
+                item,
+                "expected a `#[spec]` attribute on this `struct`",
+            ));
+        };
+        let spec = attr.meta.try_into()?;
+        Ok(SpecItemStruct { spec, item })
+    }
+}
+
+impl Parse for SpecEnumItem {
+    fn parse(input: ParseStream) -> Result<Self> {
+        let mut item: ItemEnum = input.parse()?;
+        let Some(attr) = remove_spec_attr(&mut item.attrs)? else {
+            return Err(Error::new_spanned(
+                item,
+                "expected a `#[spec]` attribute on this `enum`",
+            ));
+        };
+        let spec = attr.meta.try_into()?;
+        Ok(SpecEnumItem { spec, item })
     }
 }
 
@@ -71,6 +128,21 @@ impl TryFrom<Meta> for Spec {
     fn try_from(meta: Meta) -> Result<Self> {
         match meta {
             Meta::Path(_) => Ok(Spec::empty()),
+            Meta::List(list) => syn::parse2(list.tokens),
+            Meta::NameValue(key_value) => Err(Error::new_spanned(
+                key_value.eq_token,
+                "expected arguments between delimiters `()`, `[]`, or `{}`",
+            )),
+        }
+    }
+}
+
+impl TryFrom<Meta> for DataSpec {
+    type Error = Error;
+
+    fn try_from(meta: Meta) -> Result<Self> {
+        match meta {
+            Meta::Path(_) => Ok(DataSpec::empty()),
             Meta::List(list) => syn::parse2(list.tokens),
             Meta::NameValue(key_value) => Err(Error::new_spanned(
                 key_value.eq_token,
