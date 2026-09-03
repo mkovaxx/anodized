@@ -11,7 +11,7 @@ use syn::{
 
 use crate::{
     DataSpec, SpecImplItemFn, SpecTraitItemFn,
-    annotate::{ParseOnItem as _, get_attr_input, remove_spec_attr},
+    annotate::{Specify as _, get_attr_input, remove_spec_attr},
     instrument::{Mode, make_item_error},
 };
 
@@ -54,7 +54,7 @@ impl Mode {
                     let SpecTraitItemFn {
                         spec: fn_spec,
                         item: mut func,
-                    } = SpecTraitItemFn::parse_spec_on(func, spec_input)?;
+                    } = func.parse_spec(spec_input)?;
 
                     let attrs: [Attribute; 2] = [
                         parse_quote!(#[doc(hidden)]),
@@ -237,7 +237,7 @@ Instead, ensure that both the trait and the impl fn have a `#[spec]` annotation.
                     let SpecImplItemFn {
                         spec: fn_spec,
                         item: mut func,
-                    } = SpecImplItemFn::parse_spec_on(func, spec_input)?;
+                    } = func.parse_spec(spec_input)?;
 
                     let attrs: [Attribute; 2] = [
                         parse_quote!(#[doc(hidden)]),

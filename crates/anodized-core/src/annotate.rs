@@ -69,16 +69,6 @@ impl Specify for ItemEnum {
     }
 }
 
-pub trait ParseOnItem<Item>: Sized {
-    fn parse_spec_on(item: Item, spec_input: TokenStream) -> Result<Self>;
-}
-
-impl<Item: Specify> ParseOnItem<Item> for SpecItem<Item::Spec, Item> {
-    fn parse_spec_on(item: Item, spec_input: TokenStream) -> Result<Self> {
-        item.parse_spec(spec_input)
-    }
-}
-
 impl<Item: Parse + HasAttrs + Spanned + Specify> Parse for SpecItem<Item::Spec, Item> {
     fn parse(input: ParseStream) -> Result<Self> {
         let mut item: Item = input.parse()?;

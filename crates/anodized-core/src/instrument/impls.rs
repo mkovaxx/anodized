@@ -9,7 +9,7 @@ use syn::{
 
 use crate::{
     DataSpec, SpecImplItemFn,
-    annotate::{ParseOnItem as _, get_attr_input, remove_spec_attr},
+    annotate::{Specify as _, get_attr_input, remove_spec_attr},
     instrument::{Mode, make_item_error},
 };
 
@@ -49,7 +49,7 @@ Instead, ensure that both the impl block and the fn have a `#[spec]` annotation.
                     let SpecImplItemFn {
                         spec: fn_spec,
                         item: mut item_fn,
-                    } = SpecImplItemFn::parse_spec_on(item_fn, spec_input)?;
+                    } = item_fn.parse_spec(spec_input)?;
 
                     if let Self::EmbedSpecs = self {
                         // Embed `spec` elements as `__anodized_fn_*` items.

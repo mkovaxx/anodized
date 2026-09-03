@@ -6,8 +6,8 @@ use quote::ToTokens;
 use syn::{Expr, Item, TraitItemFn, parse_macro_input};
 
 use anodized_core::{
-    DataSpec, SpecItemFn,
-    annotate::ParseOnItem as _,
+    DataSpec,
+    annotate::Specify as _,
     instrument::{CheckSettings, Mode, PanicSettings, fns::make_try_call, make_item_error},
 };
 
@@ -37,7 +37,8 @@ pub fn spec(args: TokenStream, input: TokenStream) -> TokenStream {
     let item = parse_macro_input!(input as Item);
 
     let result = match item {
-        Item::Fn(func) => SpecItemFn::parse_spec_on(func, args.into())
+        Item::Fn(func) => func
+            .parse_spec(args.into())
             .and_then(|spec_item| CONFIG.instrument_item_fn(spec_item.spec, spec_item.item)),
         Item::Trait(the_trait) => {
             let spec = parse_macro_input!(args as DataSpec);
