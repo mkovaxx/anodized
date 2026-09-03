@@ -1,12 +1,12 @@
 use syn::{
-    Attribute, Error, Expr, ExprAssign, FieldValue, Meta,
+    Attribute, Error, Expr, ExprAssign, FieldValue, ItemFn, Meta, Path,
     parse::{Parse, ParseStream, Result},
     parse_quote,
     spanned::Spanned,
 };
 
 use crate::{
-    Capture, Condition, DataSpec, LoopSpec, LoopVariant, PostCondition, Spec,
+    Capture, Condition, DataSpec, LoopSpec, LoopVariant, PostCondition, Spec, SpecItemFn,
     qualifiers::FnQualifiers,
 };
 
@@ -16,6 +16,69 @@ use syntax::Keyword;
 #[cfg(test)]
 #[path = "annotate_tests.rs"]
 mod annotate_tests;
+
+impl Parse for SpecItemFn {
+    fn parse(input: ParseStream) -> Result<Self> {
+        let mut item: ItemFn = input.parse()?;
+        let Some(attr) = remove_spec_attr(&mut item.attrs)? else {
+            return Err(Error::new_spanned(
+                item,
+                "expected a `#[spec]` attribute on this `fn`",
+            ));
+        };
+        let spec = attr.meta.try_into()?;
+        Ok(SpecItemFn { spec, item })
+    }
+}
+
+/// Removes a single `#[spec]` attribute, if present, from an attribute list.
+///
+/// If there are multiple `#[spec]` attributes, returns `Err`.
+/// The arguments of the `#[spec]` attribute are *not* validated.
+pub fn remove_spec_attr(attrs: &mut Vec<Attribute>) -> Result<Option<Attribute>> {
+    let mut maybe_index = None;
+
+    for (i, attr) in attrs
+        .iter()
+        .enumerate()
+        .filter(|(_, attr)| path_matches_name(attr.path(), "spec"))
+    {
+        if maybe_index.is_some() {
+            return Err(Error::new_spanned(
+                attr,
+                "multiple `#[spec]` attributes are not allowed",
+            ));
+        }
+        maybe_index = Some(i);
+    }
+
+    if let Some(index) = maybe_index {
+        let attr = attrs.remove(index);
+        Ok(Some(attr))
+    } else {
+        Ok(None)
+    }
+}
+
+fn path_matches_name(path: &Path, name: &str) -> bool {
+    path.get_ident()
+        .is_some_and(|ident| ident.to_string() == name)
+}
+
+impl TryFrom<Meta> for Spec {
+    type Error = Error;
+
+    fn try_from(meta: Meta) -> Result<Self> {
+        match meta {
+            Meta::Path(_) => Ok(Spec::empty()),
+            Meta::List(list) => syn::parse2(list.tokens),
+            Meta::NameValue(key_value) => Err(Error::new_spanned(
+                key_value.eq_token,
+                "expected arguments between delimiters `()`, `[]`, or `{}`",
+            )),
+        }
+    }
+}
 
 impl Parse for Spec {
     fn parse(input: ParseStream) -> Result<Self> {
