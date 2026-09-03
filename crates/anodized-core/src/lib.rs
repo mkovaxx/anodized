@@ -14,19 +14,19 @@ mod test_util;
 
 /// Specified `fn`.
 pub struct SpecItemFn {
-    pub spec: Spec,
+    pub spec: FnSpec,
     pub item: ItemFn,
 }
 
 /// Specified `fn` inside an `impl`.
 pub struct SpecImplItemFn {
-    pub spec: Spec,
+    pub spec: FnSpec,
     pub item: ImplItemFn,
 }
 
 /// Specified `fn` inside a `trait`.
 pub struct SpecTraitItemFn {
-    pub spec: Spec,
+    pub spec: FnSpec,
     pub item: TraitItemFn,
 }
 
@@ -44,8 +44,7 @@ pub struct SpecItemEnum {
 
 /// Specifies the intended behavior of a function or method: `fn`.
 #[derive(Debug)]
-// TODO: Rename to `FnSpec` to reduce ambiguity.
-pub struct Spec {
+pub struct FnSpec {
     /// Qualifiers that constrain the behavior of the computation.
     pub qualifiers: FnQualifiers,
     /// Preconditions: conditions that must hold when the function is called.
@@ -60,7 +59,7 @@ pub struct Spec {
     span: Span,
 }
 
-impl Spec {
+impl FnSpec {
     /// Empty spec that contains no elements.
     pub fn empty() -> Self {
         Self {

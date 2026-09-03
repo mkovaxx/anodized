@@ -8,7 +8,7 @@ use syn::{
 };
 
 use crate::{
-    Capture, Condition, DataSpec, LoopSpec, LoopVariant, PostCondition, Spec, SpecImplItemFn,
+    Capture, Condition, DataSpec, FnSpec, LoopSpec, LoopVariant, PostCondition, SpecImplItemFn,
     SpecItemEnum, SpecItemFn, SpecItemStruct, SpecTraitItemFn, qualifiers::FnQualifiers,
 };
 
@@ -168,7 +168,7 @@ pub fn get_attr_input(attr: Attribute) -> Result<TokenStream> {
     }
 }
 
-impl Parse for Spec {
+impl Parse for FnSpec {
     fn parse(input: ParseStream) -> Result<Self> {
         let raw_spec = syntax::SpecFields::parse(input)?;
 

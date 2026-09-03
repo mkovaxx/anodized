@@ -1,4 +1,4 @@
-use crate::{Capture, Condition, PostCondition, Spec, instrument::patterns::TamePat};
+use crate::{Capture, Condition, FnSpec, PostCondition, instrument::patterns::TamePat};
 use pretty_assertions::assert_eq;
 use quote::{ToTokens, quote};
 
@@ -21,9 +21,9 @@ fn pretty_print_tokens(ts: proc_macro2::TokenStream) -> String {
     prettyplease::unparse(&file)
 }
 
-pub fn assert_spec_eq(left: &Spec, right: &Spec) {
+pub fn assert_spec_eq(left: &FnSpec, right: &FnSpec) {
     // Destructure to ensure we handle all fields - compilation will fail if fields are added
-    let Spec {
+    let FnSpec {
         qualifiers: left_qualifiers,
         requires: left_requires,
         maintains: left_maintains,
@@ -32,7 +32,7 @@ pub fn assert_spec_eq(left: &Spec, right: &Spec) {
         span: _,
     } = left;
 
-    let Spec {
+    let FnSpec {
         qualifiers: right_qualifiers,
         requires: right_requires,
         maintains: right_maintains,

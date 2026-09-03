@@ -15,7 +15,7 @@ fn simple_spec() {
         fn f() {}
     };
 
-    let expected = Spec {
+    let expected = FnSpec {
         qualifiers: FnQualifiers::empty(),
         requires: vec![Condition {
             expr: parse_quote! { is_valid(x) },
@@ -41,7 +41,7 @@ fn fn_qualifiers_functional() {
         fn f() {}
     };
 
-    let expected = Spec {
+    let expected = FnSpec {
         qualifiers: FnQualifiers::FUNCTIONAL,
         requires: vec![],
         maintains: vec![],
@@ -60,7 +60,7 @@ fn fn_qualifiers_pure_total() {
         fn f() {}
     };
 
-    let expected = Spec {
+    let expected = FnSpec {
         qualifiers: FnQualifiers::PURE | FnQualifiers::TOTAL,
         requires: vec![],
         maintains: vec![],
@@ -84,7 +84,7 @@ fn fn_qualifiers_deterministic_effectfree_infallible_terminating() {
         fn f() {}
     };
 
-    let expected = Spec {
+    let expected = FnSpec {
         qualifiers: FnQualifiers::DETERMINISTIC
             | FnQualifiers::EFFECTFREE
             | FnQualifiers::INFALLIBLE
@@ -203,7 +203,7 @@ fn all_clauses() {
         fn f() {}
     };
 
-    let expected = Spec {
+    let expected = FnSpec {
         qualifiers: FnQualifiers::empty(),
         requires: vec![Condition {
             expr: parse_quote! { x > 0 && x.is_power_of_two() },
@@ -292,7 +292,7 @@ fn array_of_conditions() {
         fn f() {}
     };
 
-    let expected = Spec {
+    let expected = FnSpec {
         qualifiers: FnQualifiers::empty(),
         requires: vec![
             Condition {
@@ -333,7 +333,7 @@ fn ensures_with_explicit_closure() {
         fn f() {}
     };
 
-    let expected = Spec {
+    let expected = FnSpec {
         qualifiers: FnQualifiers::empty(),
         requires: vec![],
         maintains: vec![],
@@ -361,7 +361,7 @@ fn multiple_clauses_of_same_flavor() {
         fn f() {}
     };
 
-    let expected = Spec {
+    let expected = FnSpec {
         qualifiers: FnQualifiers::empty(),
         requires: vec![
             Condition {
@@ -415,7 +415,7 @@ fn mixed_single_and_array_clauses() {
         fn f() {}
     };
 
-    let expected = Spec {
+    let expected = FnSpec {
         qualifiers: FnQualifiers::empty(),
         requires: vec![
             Condition {
@@ -478,7 +478,7 @@ fn cfg_attributes() {
         fn f() {}
     };
 
-    let expected = Spec {
+    let expected = FnSpec {
         qualifiers: FnQualifiers::empty(),
         requires: vec![Condition {
             expr: parse_quote! { x > 0 && is_mode() },
@@ -545,7 +545,7 @@ fn macro_in_condition() {
         fn f() {}
     };
 
-    let expected = Spec {
+    let expected = FnSpec {
         qualifiers: FnQualifiers::empty(),
         requires: vec![Condition {
             expr: parse_quote! { matches!(self.state, State::Idle) },
@@ -579,7 +579,7 @@ fn binds_pattern() {
         fn f() {}
     };
 
-    let expected = Spec {
+    let expected = FnSpec {
         qualifiers: FnQualifiers::empty(),
         requires: vec![],
         maintains: vec![],
@@ -616,7 +616,7 @@ fn multiple_conditions() {
         fn f() {}
     };
 
-    let expected = Spec {
+    let expected = FnSpec {
         qualifiers: FnQualifiers::empty(),
         requires: vec![
             Condition {
@@ -656,7 +656,7 @@ fn rename_return_value() {
         fn f() {}
     };
 
-    let expected = Spec {
+    let expected = FnSpec {
         qualifiers: FnQualifiers::empty(),
         requires: vec![],
         maintains: vec![],
@@ -689,7 +689,7 @@ fn captures_simple_identifier() {
         fn f() {}
     };
 
-    let expected = Spec {
+    let expected = FnSpec {
         qualifiers: FnQualifiers::empty(),
         requires: vec![],
         maintains: vec![],
@@ -718,7 +718,7 @@ fn captures_identifier_with_alias() {
         fn f() {}
     };
 
-    let expected = Spec {
+    let expected = FnSpec {
         qualifiers: FnQualifiers::empty(),
         requires: vec![],
         maintains: vec![],
@@ -755,7 +755,7 @@ fn captures_array() {
         fn f() {}
     };
 
-    let expected = Spec {
+    let expected = FnSpec {
         qualifiers: FnQualifiers::empty(),
         requires: vec![],
         maintains: vec![],
@@ -808,7 +808,7 @@ fn captures_with_all_clauses() {
         fn f() {}
     };
 
-    let expected = Spec {
+    let expected = FnSpec {
         qualifiers: FnQualifiers::empty(),
         requires: vec![Condition {
             expr: parse_quote! { x > 0 },
@@ -855,7 +855,7 @@ fn captures_array_expression() {
         fn f() {}
     };
 
-    let expected = Spec {
+    let expected = FnSpec {
         qualifiers: FnQualifiers::empty(),
         requires: vec![],
         maintains: vec![],
@@ -914,7 +914,7 @@ fn captures_edge_case_cast_expr() {
         fn f() {}
     };
 
-    let expected = Spec {
+    let expected = FnSpec {
         qualifiers: FnQualifiers::empty(),
         requires: vec![],
         maintains: vec![],
@@ -942,7 +942,7 @@ fn captures_edge_case_array_of_cast_exprs() {
         fn f() {}
     };
 
-    let expected = Spec {
+    let expected = FnSpec {
         qualifiers: FnQualifiers::empty(),
         requires: vec![],
         maintains: vec![],
@@ -976,7 +976,7 @@ fn captures_edge_case_list_of_cast_exprs() {
         fn f() {}
     };
 
-    let expected = Spec {
+    let expected = FnSpec {
         qualifiers: FnQualifiers::empty(),
         requires: vec![],
         maintains: vec![],
@@ -1010,7 +1010,7 @@ fn captures_pattern_matches_slices() {
         fn f() {}
     };
 
-    let expected = Spec {
+    let expected = FnSpec {
         qualifiers: FnQualifiers::empty(),
         requires: vec![],
         maintains: vec![],
@@ -1034,7 +1034,7 @@ fn captures_pattern_matches_tuples() {
         fn f() {}
     };
 
-    let expected = Spec {
+    let expected = FnSpec {
         qualifiers: FnQualifiers::empty(),
         requires: vec![],
         maintains: vec![],
@@ -1058,7 +1058,7 @@ fn captures_pattern_matches_structs() {
         fn f() {}
     };
 
-    let expected = Spec {
+    let expected = FnSpec {
         qualifiers: FnQualifiers::empty(),
         requires: vec![],
         maintains: vec![],
@@ -1082,7 +1082,7 @@ fn captures_pattern_matches_nested() {
         fn f() {}
     };
 
-    let expected = Spec {
+    let expected = FnSpec {
         qualifiers: FnQualifiers::empty(),
         requires: vec![],
         maintains: vec![],

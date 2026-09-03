@@ -5,7 +5,7 @@ use syn::{
     Signature, parse_quote,
 };
 
-use crate::{DataSpec, Spec};
+use crate::{DataSpec, FnSpec};
 
 pub mod data;
 pub mod fns;
@@ -67,7 +67,7 @@ impl Mode {
         }
     }
 
-    pub fn instrument_item_fn(&self, spec: Spec, mut item_fn: ItemFn) -> Result<TokenStream> {
+    pub fn instrument_item_fn(&self, spec: FnSpec, mut item_fn: ItemFn) -> Result<TokenStream> {
         let mut tokens = TokenStream::new();
 
         if item_fn.sig.ident.to_string().starts_with("__anodized_") {
