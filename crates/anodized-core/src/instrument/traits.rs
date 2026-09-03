@@ -2,6 +2,7 @@
 #[path = "traits_tests.rs"]
 mod traits_tests;
 
+use proc_macro2::TokenStream;
 use syn::{
     Attribute, Block, FnArg, ImplItem, ImplItemFn, Pat, PatConst, PatIdent, PatLit, PatParen,
     PatPath, PatRange, PatSlice, PatStruct, PatTuple, PatTupleStruct, ReturnType, TraitItem,
@@ -10,6 +11,7 @@ use syn::{
 
 use crate::{
     DataSpec, Spec,
+    annotate::get_attr_input,
     instrument::{Mode, find_spec_attr, make_item_error},
 };
 
@@ -46,10 +48,11 @@ impl Mode {
                     //   Right now we put all attribs on both functions, but that's certainly
                     //   not going to work in every situation.
 
-                    let fn_spec: Spec = match spec_attr {
-                        Some(spec_attr) => spec_attr.parse_args()?,
-                        None => Spec::empty(),
+                    let spec_input = match spec_attr {
+                        Some(spec_attr) => get_attr_input(spec_attr)?,
+                        None => TokenStream::new(),
                     };
+                    let fn_spec: Spec = syn::parse2(spec_input)?;
 
                     let attrs: [Attribute; 2] = [
                         parse_quote!(#[doc(hidden)]),
@@ -232,10 +235,11 @@ Instead, ensure that both the trait and the impl fn have a `#[spec]` annotation.
                         ));
                     }
 
-                    let fn_spec: Spec = match spec_attr {
-                        Some(spec_attr) => spec_attr.parse_args()?,
-                        None => Spec::empty(),
+                    let spec_input = match spec_attr {
+                        Some(spec_attr) => get_attr_input(spec_attr)?,
+                        None => TokenStream::new(),
                     };
+                    let fn_spec: Spec = syn::parse2(spec_input)?;
 
                     let attrs: [Attribute; 2] = [
                         parse_quote!(#[doc(hidden)]),
