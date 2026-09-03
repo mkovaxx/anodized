@@ -8,8 +8,8 @@ use syn::{
 };
 
 use crate::{
-    Capture, Condition, DataSpec, LoopSpec, LoopVariant, PostCondition, Spec, SpecEnumItem,
-    SpecImplItemFn, SpecItemFn, SpecItemStruct, SpecTraitItemFn, qualifiers::FnQualifiers,
+    Capture, Condition, DataSpec, LoopSpec, LoopVariant, PostCondition, Spec, SpecImplItemFn,
+    SpecItemEnum, SpecItemFn, SpecItemStruct, SpecTraitItemFn, qualifiers::FnQualifiers,
 };
 
 pub mod syntax;
@@ -103,14 +103,14 @@ impl Parse for SpecItemStruct {
     }
 }
 
-impl SpecEnumItem {
+impl SpecItemEnum {
     pub fn parse_spec_on(item: ItemEnum, spec_input: TokenStream) -> Result<Self> {
         let spec = syn::parse2(spec_input)?;
-        Ok(SpecEnumItem { spec, item })
+        Ok(SpecItemEnum { spec, item })
     }
 }
 
-impl Parse for SpecEnumItem {
+impl Parse for SpecItemEnum {
     fn parse(input: ParseStream) -> Result<Self> {
         let mut item: ItemEnum = input.parse()?;
         let Some(attr) = remove_spec_attr(&mut item.attrs)? else {

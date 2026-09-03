@@ -37,7 +37,7 @@ pub struct SpecItemStruct {
 }
 
 /// Specified `enum`.
-pub struct SpecEnumItem {
+pub struct SpecItemEnum {
     pub spec: DataSpec,
     pub item: ItemEnum,
 }
