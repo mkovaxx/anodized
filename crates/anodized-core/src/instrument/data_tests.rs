@@ -1,17 +1,12 @@
-use crate::{DataSpec, instrument::Mode, test_util::assert_tokens_eq};
+use crate::{SpecEnumItem, SpecItemStruct, instrument::Mode, test_util::assert_tokens_eq};
 
 use proc_macro2::TokenStream;
-use syn::{ItemEnum, ItemStruct, parse_quote};
+use syn::parse_quote;
 
 #[test]
 fn embed_spec_item_struct() {
-    let struct_spec: DataSpec = parse_quote! {
-        maintains: [
-            COND_1,
-            COND_2,
-        ],
-    };
-    let item_struct: ItemStruct = parse_quote! {
+    let spec_item_struct: SpecItemStruct = parse_quote! {
+        #[spec(maintains: [COND_1, COND_2])]
         struct STRUCT<'LT_1, TYPE_1: BOUND_1 = DEFAULT_1, const CONST_1: TYPE_2 = DEFAULT_2>
         where
             'LT_1: 'LT_2,
@@ -47,20 +42,15 @@ fn embed_spec_item_struct() {
     };
 
     let observed = Mode::EmbedSpecs
-        .instrument_item_struct(struct_spec, item_struct)
+        .instrument_item_struct(spec_item_struct.spec, spec_item_struct.item)
         .unwrap();
     assert_tokens_eq(&observed, &expected);
 }
 
 #[test]
 fn embed_spec_item_enum() {
-    let struct_spec: DataSpec = parse_quote! {
-        maintains: [
-            COND_1,
-            COND_2,
-        ],
-    };
-    let item_enum: ItemEnum = parse_quote! {
+    let spec_item_enum: SpecEnumItem = parse_quote! {
+        #[spec(maintains: [COND_1, COND_2])]
         enum ENUM<'LT_1, TYPE_1: BOUND_1 = DEFAULT_1, const CONST_1: TYPE_2 = DEFAULT_2>
         where
             'LT_1: 'LT_2,
@@ -99,7 +89,7 @@ fn embed_spec_item_enum() {
     };
 
     let observed = Mode::EmbedSpecs
-        .instrument_item_enum(struct_spec, item_enum)
+        .instrument_item_enum(spec_item_enum.spec, spec_item_enum.item)
         .unwrap();
     assert_tokens_eq(&observed, &expected);
 }
