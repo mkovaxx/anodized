@@ -10,7 +10,7 @@ use syn::{
 };
 
 use crate::{
-    DataSpec, Spec,
+    DataSpec, SpecImplItemFn, SpecTraitItemFn,
     annotate::{get_attr_input, remove_spec_attr},
     instrument::{Mode, make_item_error},
 };
@@ -51,7 +51,10 @@ impl Mode {
                         Some(spec_attr) => get_attr_input(spec_attr)?,
                         None => TokenStream::new(),
                     };
-                    let fn_spec: Spec = syn::parse2(spec_input)?;
+                    let SpecTraitItemFn {
+                        spec: fn_spec,
+                        item: mut func,
+                    } = SpecTraitItemFn::parse_spec_on(func, spec_input)?;
 
                     let attrs: [Attribute; 2] = [
                         parse_quote!(#[doc(hidden)]),
@@ -231,7 +234,10 @@ Instead, ensure that both the trait and the impl fn have a `#[spec]` annotation.
                         Some(spec_attr) => get_attr_input(spec_attr)?,
                         None => TokenStream::new(),
                     };
-                    let fn_spec: Spec = syn::parse2(spec_input)?;
+                    let SpecImplItemFn {
+                        spec: fn_spec,
+                        item: mut func,
+                    } = SpecImplItemFn::parse_spec_on(func, spec_input)?;
 
                     let attrs: [Attribute; 2] = [
                         parse_quote!(#[doc(hidden)]),
