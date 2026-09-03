@@ -1,10 +1,31 @@
-use crate::test_util::assert_tokens_eq;
+use crate::{SpecItemFn, annotate::syntax::SpecFields, test_util::assert_tokens_eq};
 
 use super::*;
 use proc_macro2::TokenStream;
 use syn::{Block, ItemFn, parse_quote};
 
-fn make_complex_spec() -> Spec {
+fn DEPRECATED_make_complex_spec() -> Spec {
+    parse_quote! {
+        requires: COND_1,
+        #[cfg(META_1)]
+        requires: [COND_2, COND_3],
+        maintains: [COND_4, COND_5],
+        #[cfg(META_2)]
+        maintains: COND_6,
+        captures: [
+            ALIAS_1 = EXPR_1,
+            (ALIAS_2, ALIAS_3) = EXPR_2,
+        ],
+        ensures: |PAT_1| COND_7,
+        #[cfg(META_3)]
+        ensures: |PAT_1| [
+            COND_8,
+            COND_9,
+        ],
+    }
+}
+
+fn make_complex_spec() -> SpecFields {
     parse_quote! {
         requires: COND_1,
         #[cfg(META_1)]
@@ -27,8 +48,9 @@ fn make_complex_spec() -> Spec {
 
 #[test]
 fn embed_spec_item_fn() {
-    let fn_spec = make_complex_spec();
-    let item_fn: ItemFn = parse_quote! {
+    let spec_fields = make_complex_spec();
+    let spec_item_fn: SpecItemFn = parse_quote! {
+        #[spec(#spec_fields)]
         fn FUNC(&self, PARAM_1: TYPE_1, PARAM_2: TYPE_2) -> RET_TYPE {
             BODY
         }
@@ -76,14 +98,14 @@ fn embed_spec_item_fn() {
     };
 
     let observed = Mode::EmbedSpecs
-        .instrument_item_fn(fn_spec, item_fn)
+        .instrument_item_fn(spec_item_fn.spec, spec_item_fn.item)
         .unwrap();
     assert_tokens_eq(&observed, &expected);
 }
 
 #[test]
 fn default_instrument_item_fn() {
-    let fn_spec = make_complex_spec();
+    let fn_spec = DEPRECATED_make_complex_spec();
     let item_fn: ItemFn = parse_quote! {
         fn FUNC(&self, PARAM_1: TYPE_1, PARAM_2: TYPE_2) -> RET_TYPE {
             BODY
@@ -132,7 +154,7 @@ fn default_instrument_item_fn() {
 
 #[test]
 fn emit_try_fn_instrument_item_fn() {
-    let fn_spec = make_complex_spec();
+    let fn_spec = DEPRECATED_make_complex_spec();
     let item_fn: ItemFn = parse_quote! {
         fn FUNC(&self, PARAM_1: TYPE_1, PARAM_2: TYPE_2) -> RET_TYPE {
             BODY
