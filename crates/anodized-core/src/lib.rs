@@ -1,7 +1,7 @@
 #![doc = include_str!("../README.md")]
 
 use proc_macro2::Span;
-use syn::{Error, Expr, Meta, Pat};
+use syn::{Error, Expr, ImplItemFn, ItemEnum, ItemFn, ItemStruct, Meta, Pat, TraitItemFn};
 
 use crate::qualifiers::FnQualifiers;
 
@@ -11,6 +11,36 @@ pub mod qualifiers;
 
 #[cfg(test)]
 mod test_util;
+
+/// Specified `fn`.
+pub struct SpecItemFn {
+    pub spec: Spec,
+    pub item: ItemFn,
+}
+
+/// Specified `fn` inside an `impl`.
+pub struct SpecImplItemFn {
+    pub spec: Spec,
+    pub item: ImplItemFn,
+}
+
+/// Specified `fn` inside a `trait`.
+pub struct SpecTraitItemFn {
+    pub spec: Spec,
+    pub item: TraitItemFn,
+}
+
+/// Specified `struct`.
+pub struct SpecItemStruct {
+    pub spec: DataSpec,
+    pub item: ItemStruct,
+}
+
+/// Specified `enum`.
+pub struct SpecEnumItem {
+    pub spec: DataSpec,
+    pub item: ItemEnum,
+}
 
 /// Specifies the intended behavior of a function or method: `fn`.
 #[derive(Debug)]
