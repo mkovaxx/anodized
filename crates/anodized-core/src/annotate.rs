@@ -1,3 +1,4 @@
+use proc_macro2::TokenStream;
 use syn::{
     Attribute, Error, Expr, ExprAssign, FieldValue, ImplItemFn, ItemEnum, ItemFn, ItemStruct, Meta,
     Path, TraitItemFn,
@@ -18,6 +19,13 @@ use syntax::Keyword;
 #[path = "annotate_tests.rs"]
 mod annotate_tests;
 
+impl SpecItemFn {
+    pub fn parse_spec_on(item: ItemFn, spec_input: TokenStream) -> Result<Self> {
+        let spec = syn::parse2(spec_input)?;
+        Ok(SpecItemFn { spec, item })
+    }
+}
+
 impl Parse for SpecItemFn {
     fn parse(input: ParseStream) -> Result<Self> {
         let mut item: ItemFn = input.parse()?;
@@ -27,8 +35,15 @@ impl Parse for SpecItemFn {
                 "expected a `#[spec]` attribute on this `fn`",
             ));
         };
-        let spec = attr.meta.try_into()?;
-        Ok(SpecItemFn { spec, item })
+        let spec_input = get_attr_input(attr)?;
+        Self::parse_spec_on(item, spec_input)
+    }
+}
+
+impl SpecImplItemFn {
+    pub fn parse_spec_on(item: ImplItemFn, spec_input: TokenStream) -> Result<Self> {
+        let spec = syn::parse2(spec_input)?;
+        Ok(SpecImplItemFn { spec, item })
     }
 }
 
@@ -41,8 +56,15 @@ impl Parse for SpecImplItemFn {
                 "expected a `#[spec]` attribute on this `fn`",
             ));
         };
-        let spec = attr.meta.try_into()?;
-        Ok(SpecImplItemFn { spec, item })
+        let spec_input = get_attr_input(attr)?;
+        Self::parse_spec_on(item, spec_input)
+    }
+}
+
+impl SpecTraitItemFn {
+    pub fn parse_spec_on(item: TraitItemFn, spec_input: TokenStream) -> Result<Self> {
+        let spec = syn::parse2(spec_input)?;
+        Ok(SpecTraitItemFn { spec, item })
     }
 }
 
@@ -55,8 +77,15 @@ impl Parse for SpecTraitItemFn {
                 "expected a `#[spec]` attribute on this `fn`",
             ));
         };
-        let spec = attr.meta.try_into()?;
-        Ok(SpecTraitItemFn { spec, item })
+        let spec_input = get_attr_input(attr)?;
+        Self::parse_spec_on(item, spec_input)
+    }
+}
+
+impl SpecItemStruct {
+    pub fn parse_spec_on(item: ItemStruct, spec_input: TokenStream) -> Result<Self> {
+        let spec = syn::parse2(spec_input)?;
+        Ok(SpecItemStruct { spec, item })
     }
 }
 
@@ -69,8 +98,15 @@ impl Parse for SpecItemStruct {
                 "expected a `#[spec]` attribute on this `struct`",
             ));
         };
-        let spec = attr.meta.try_into()?;
-        Ok(SpecItemStruct { spec, item })
+        let spec_input = get_attr_input(attr)?;
+        Self::parse_spec_on(item, spec_input)
+    }
+}
+
+impl SpecEnumItem {
+    pub fn parse_spec_on(item: ItemEnum, spec_input: TokenStream) -> Result<Self> {
+        let spec = syn::parse2(spec_input)?;
+        Ok(SpecEnumItem { spec, item })
     }
 }
 
@@ -83,8 +119,8 @@ impl Parse for SpecEnumItem {
                 "expected a `#[spec]` attribute on this `enum`",
             ));
         };
-        let spec = attr.meta.try_into()?;
-        Ok(SpecEnumItem { spec, item })
+        let spec_input = get_attr_input(attr)?;
+        Self::parse_spec_on(item, spec_input)
     }
 }
 
@@ -122,33 +158,14 @@ fn path_matches_name(path: &Path, name: &str) -> bool {
         .is_some_and(|ident| ident.to_string() == name)
 }
 
-impl TryFrom<Meta> for Spec {
-    type Error = Error;
-
-    fn try_from(meta: Meta) -> Result<Self> {
-        match meta {
-            Meta::Path(_) => Ok(Spec::empty()),
-            Meta::List(list) => syn::parse2(list.tokens),
-            Meta::NameValue(key_value) => Err(Error::new_spanned(
-                key_value.eq_token,
-                "expected arguments between delimiters `()`, `[]`, or `{}`",
-            )),
-        }
-    }
-}
-
-impl TryFrom<Meta> for DataSpec {
-    type Error = Error;
-
-    fn try_from(meta: Meta) -> Result<Self> {
-        match meta {
-            Meta::Path(_) => Ok(DataSpec::empty()),
-            Meta::List(list) => syn::parse2(list.tokens),
-            Meta::NameValue(key_value) => Err(Error::new_spanned(
-                key_value.eq_token,
-                "expected arguments between delimiters `()`, `[]`, or `{}`",
-            )),
-        }
+fn get_attr_input(attr: Attribute) -> Result<TokenStream> {
+    match attr.meta {
+        Meta::Path(_) => Ok(TokenStream::new()),
+        Meta::List(list) => Ok(list.tokens),
+        Meta::NameValue(key_value) => Err(Error::new_spanned(
+            key_value.eq_token,
+            "expected arguments between delimiters `()`, `[]`, or `{}`",
+        )),
     }
 }
 
