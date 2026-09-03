@@ -155,7 +155,7 @@ pub fn remove_spec_attr(attrs: &mut Vec<Attribute>) -> Result<Option<Attribute>>
 
 fn path_matches_name(path: &Path, name: &str) -> bool {
     path.get_ident()
-        .is_some_and(|ident| ident.to_string() == name)
+        .is_some_and(|ident| *ident == name)
 }
 
 pub fn get_attr_input(attr: Attribute) -> Result<TokenStream> {
