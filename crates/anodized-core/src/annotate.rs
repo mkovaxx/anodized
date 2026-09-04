@@ -8,7 +8,7 @@ use syn::{
 };
 
 use crate::{
-    Capture, Condition, DataSpec, FnSpec, LoopSpec, LoopVariant, PostCondition, SpecItem,
+    Capture, Condition, DataSpec, FnSpec, LoopSpec, LoopVariant, NodeWithSpec, PostCondition,
     annotate::syntax::SpecFields, qualifiers::FnQualifiers,
 };
 
@@ -19,9 +19,9 @@ use syntax::Keyword;
 #[path = "annotate_tests.rs"]
 mod annotate_tests;
 
-/// Implemented by AST node types that may have a `#[spec]` attribute.
-pub trait Specify: Sized {
-    /// The type of the spec associated with this AST node type.
+/// Implemented by AST nodes that may have a `#[spec]` attribute.
+pub trait Specified: Sized {
+    /// The spec type associated with this AST node.
     type Spec;
 
     /// Attach the `#[spec]` from the `Attribute` list.
@@ -30,7 +30,7 @@ pub trait Specify: Sized {
     ///     and its contents are parsed as `Self::Spec`, then attached to the AST node.
     /// - If there's no `#[spec]` attribute, the spec is built from an empty `SpecFields`.
     /// - Multiple `#[spec]` attributes are not allowed and cause an error.
-    fn with_spec_attr(mut self) -> Result<SpecItem<Self::Spec, Self>>
+    fn with_spec_from_attrs(mut self) -> Result<NodeWithSpec<Self::Spec, Self>>
     where
         Self: Spanned,
     {
@@ -40,111 +40,115 @@ pub trait Specify: Sized {
             TokenStream::new()
         };
         let spec_fields: SpecFields = syn::parse2(spec_input)?;
-        self.with_spec_parse(spec_fields)
+        self.with_spec_from_fields(spec_fields)
     }
 
-    /// Attach the `#[spec]` by parsing it from a `TokenStream`.
-    fn with_spec_parse(self, fields: SpecFields) -> Result<SpecItem<Self::Spec, Self>>;
+    /// Attach the `#[spec]` by parsing it from `SpecFields`.
+    ///
+    /// Implement this to parse a spec in the context of its AST node.
+    fn with_spec_from_fields(self, fields: SpecFields) -> Result<NodeWithSpec<Self::Spec, Self>>;
 
     /// Get a mutable reference to the `Attribute` list.
+    ///
+    /// Needed to by the default `with_spec_from_attrs`.
     fn get_attrs_mut(&mut self) -> &mut Vec<Attribute>;
 }
 
-impl<Item: Parse + Spanned + Specify> Parse for SpecItem<Item::Spec, Item> {
+impl<AstNode: Parse + Spanned + Specified> Parse for NodeWithSpec<AstNode::Spec, AstNode> {
     fn parse(input: ParseStream) -> Result<Self> {
-        let item: Item = input.parse()?;
-        item.with_spec_attr()
+        let item: AstNode = input.parse()?;
+        item.with_spec_from_attrs()
     }
 }
 
-impl Specify for ItemFn {
+impl Specified for ItemFn {
     type Spec = FnSpec;
 
     fn get_attrs_mut(&mut self) -> &mut Vec<Attribute> {
         &mut self.attrs
     }
 
-    fn with_spec_parse(self, fields: SpecFields) -> Result<SpecItem<Self::Spec, Self>> {
+    fn with_spec_from_fields(self, fields: SpecFields) -> Result<NodeWithSpec<Self::Spec, Self>> {
         let spec = fields.try_into()?;
-        Ok(SpecItem { spec, item: self })
+        Ok(NodeWithSpec { spec, node: self })
     }
 }
 
-impl Specify for ImplItemFn {
+impl Specified for ImplItemFn {
     type Spec = FnSpec;
 
     fn get_attrs_mut(&mut self) -> &mut Vec<Attribute> {
         &mut self.attrs
     }
 
-    fn with_spec_parse(self, fields: SpecFields) -> Result<SpecItem<Self::Spec, Self>> {
+    fn with_spec_from_fields(self, fields: SpecFields) -> Result<NodeWithSpec<Self::Spec, Self>> {
         let spec = fields.try_into()?;
-        Ok(SpecItem { spec, item: self })
+        Ok(NodeWithSpec { spec, node: self })
     }
 }
 
-impl Specify for TraitItemFn {
+impl Specified for TraitItemFn {
     type Spec = FnSpec;
 
     fn get_attrs_mut(&mut self) -> &mut Vec<Attribute> {
         &mut self.attrs
     }
 
-    fn with_spec_parse(self, fields: SpecFields) -> Result<SpecItem<Self::Spec, Self>> {
+    fn with_spec_from_fields(self, fields: SpecFields) -> Result<NodeWithSpec<Self::Spec, Self>> {
         let spec = fields.try_into()?;
-        Ok(SpecItem { spec, item: self })
+        Ok(NodeWithSpec { spec, node: self })
     }
 }
 
-impl Specify for ItemStruct {
+impl Specified for ItemStruct {
     type Spec = DataSpec;
 
     fn get_attrs_mut(&mut self) -> &mut Vec<Attribute> {
         &mut self.attrs
     }
 
-    fn with_spec_parse(self, fields: SpecFields) -> Result<SpecItem<Self::Spec, Self>> {
+    fn with_spec_from_fields(self, fields: SpecFields) -> Result<NodeWithSpec<Self::Spec, Self>> {
         let spec = fields.try_into()?;
-        Ok(SpecItem { spec, item: self })
+        Ok(NodeWithSpec { spec, node: self })
     }
 }
 
-impl Specify for ItemEnum {
+impl Specified for ItemEnum {
     type Spec = DataSpec;
 
     fn get_attrs_mut(&mut self) -> &mut Vec<Attribute> {
         &mut self.attrs
     }
 
-    fn with_spec_parse(self, fields: SpecFields) -> Result<SpecItem<Self::Spec, Self>> {
+    fn with_spec_from_fields(self, fields: SpecFields) -> Result<NodeWithSpec<Self::Spec, Self>> {
         let spec = fields.try_into()?;
-        Ok(SpecItem { spec, item: self })
+        Ok(NodeWithSpec { spec, node: self })
     }
 }
 
-impl Specify for ItemImpl {
+impl Specified for ItemImpl {
     type Spec = DataSpec;
 
     fn get_attrs_mut(&mut self) -> &mut Vec<Attribute> {
         &mut self.attrs
     }
 
-    fn with_spec_parse(self, fields: SpecFields) -> Result<SpecItem<Self::Spec, Self>> {
+    fn with_spec_from_fields(self, fields: SpecFields) -> Result<NodeWithSpec<Self::Spec, Self>> {
         let spec = fields.try_into()?;
-        Ok(SpecItem { spec, item: self })
+        Ok(NodeWithSpec { spec, node: self })
     }
 }
 
-impl Specify for ItemTrait {
+impl Specified for ItemTrait {
     type Spec = DataSpec;
 
     fn get_attrs_mut(&mut self) -> &mut Vec<Attribute> {
         &mut self.attrs
     }
 
-    fn with_spec_parse(self, fields: SpecFields) -> Result<SpecItem<Self::Spec, Self>> {
+    fn with_spec_from_fields(self, fields: SpecFields) -> Result<NodeWithSpec<Self::Spec, Self>> {
         let spec = fields.try_into()?;
-        Ok(SpecItem { spec, item: self })
+        Ok(NodeWithSpec { spec, node: self })
     }
 }
 

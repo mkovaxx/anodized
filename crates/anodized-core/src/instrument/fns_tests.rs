@@ -76,7 +76,7 @@ fn embed_spec_item_fn() {
     };
 
     let observed = Mode::EmbedSpecs
-        .instrument_item_fn(spec_item_fn.spec, spec_item_fn.item)
+        .instrument_item_fn(spec_item_fn.spec, spec_item_fn.node)
         .unwrap();
     assert_tokens_eq(&observed, &expected);
 }
@@ -122,7 +122,7 @@ fn default_instrument_item_fn() {
     };
 
     let observed = Mode::DEFAULT
-        .instrument_item_fn(spec_item_fn.spec, spec_item_fn.item)
+        .instrument_item_fn(spec_item_fn.spec, spec_item_fn.node)
         .unwrap();
     assert_tokens_eq(&observed, &expected);
 }
@@ -200,7 +200,7 @@ fn emit_try_fn_instrument_item_fn() {
     };
 
     let observed = Mode::InjectChecks(CheckSettings::PRINT_AND_TRY)
-        .instrument_item_fn(spec_item_fn.spec, spec_item_fn.item)
+        .instrument_item_fn(spec_item_fn.spec, spec_item_fn.node)
         .unwrap();
     assert_tokens_eq(&observed, &expected);
 }
@@ -232,9 +232,9 @@ fn simple_requires() {
     let observed = CheckSettings::PRINT_AND_PANIC
         .instrument_fn_body(
             &spec_item_fn.spec,
-            &spec_item_fn.item.block,
-            spec_item_fn.item.sig.asyncness.is_some(),
-            &spec_item_fn.item.sig.output,
+            &spec_item_fn.node.block,
+            spec_item_fn.node.sig.asyncness.is_some(),
+            &spec_item_fn.node.sig.output,
         )
         .unwrap();
     assert_tokens_eq(&observed, &expected);
@@ -250,9 +250,9 @@ fn requires_disable_runtime_checks() {
     let observed = CheckSettings::DEFAULT
         .instrument_fn_body(
             &spec_item_fn.spec,
-            &spec_item_fn.item.block,
-            spec_item_fn.item.sig.asyncness.is_some(),
-            &spec_item_fn.item.sig.output,
+            &spec_item_fn.node.block,
+            spec_item_fn.node.sig.asyncness.is_some(),
+            &spec_item_fn.node.sig.output,
         )
         .unwrap();
     let expected: Block = parse_quote! {
@@ -292,9 +292,9 @@ fn requires_no_panic_runtime() {
     let observed = CheckSettings::PRINT
         .instrument_fn_body(
             &spec_item_fn.spec,
-            &spec_item_fn.item.block,
-            spec_item_fn.item.sig.asyncness.is_some(),
-            &spec_item_fn.item.sig.output,
+            &spec_item_fn.node.block,
+            spec_item_fn.node.sig.asyncness.is_some(),
+            &spec_item_fn.node.sig.output,
         )
         .unwrap();
     assert_tokens_eq(&observed, &expected);
@@ -329,9 +329,9 @@ fn simple_maintains() {
     let observed = CheckSettings::PRINT_AND_PANIC
         .instrument_fn_body(
             &spec_item_fn.spec,
-            &spec_item_fn.item.block,
-            spec_item_fn.item.sig.asyncness.is_some(),
-            &spec_item_fn.item.sig.output,
+            &spec_item_fn.node.block,
+            spec_item_fn.node.sig.asyncness.is_some(),
+            &spec_item_fn.node.sig.output,
         )
         .unwrap();
     assert_tokens_eq(&observed, &expected);
@@ -364,9 +364,9 @@ fn simple_ensures() {
     let observed = CheckSettings::PRINT_AND_PANIC
         .instrument_fn_body(
             &spec_item_fn.spec,
-            &spec_item_fn.item.block,
-            spec_item_fn.item.sig.asyncness.is_some(),
-            &spec_item_fn.item.sig.output,
+            &spec_item_fn.node.block,
+            spec_item_fn.node.sig.asyncness.is_some(),
+            &spec_item_fn.node.sig.output,
         )
         .unwrap();
     assert_tokens_eq(&observed, &expected);
@@ -403,9 +403,9 @@ fn simple_requires_and_maintains() {
     let observed = CheckSettings::PRINT_AND_PANIC
         .instrument_fn_body(
             &spec_item_fn.spec,
-            &spec_item_fn.item.block,
-            spec_item_fn.item.sig.asyncness.is_some(),
-            &spec_item_fn.item.sig.output,
+            &spec_item_fn.node.block,
+            spec_item_fn.node.sig.asyncness.is_some(),
+            &spec_item_fn.node.sig.output,
         )
         .unwrap();
     assert_tokens_eq(&observed, &expected);
@@ -440,9 +440,9 @@ fn simple_requires_and_ensures() {
     let observed = CheckSettings::PRINT_AND_PANIC
         .instrument_fn_body(
             &spec_item_fn.spec,
-            &spec_item_fn.item.block,
-            spec_item_fn.item.sig.asyncness.is_some(),
-            &spec_item_fn.item.sig.output,
+            &spec_item_fn.node.block,
+            spec_item_fn.node.sig.asyncness.is_some(),
+            &spec_item_fn.node.sig.output,
         )
         .unwrap();
     assert_tokens_eq(&observed, &expected);
@@ -479,9 +479,9 @@ fn simple_maintains_and_ensures() {
     let observed = CheckSettings::PRINT_AND_PANIC
         .instrument_fn_body(
             &spec_item_fn.spec,
-            &spec_item_fn.item.block,
-            spec_item_fn.item.sig.asyncness.is_some(),
-            &spec_item_fn.item.sig.output,
+            &spec_item_fn.node.block,
+            spec_item_fn.node.sig.asyncness.is_some(),
+            &spec_item_fn.node.sig.output,
         )
         .unwrap();
     assert_tokens_eq(&observed, &expected);
@@ -520,9 +520,9 @@ fn simple_requires_maintains_and_ensures() {
     let observed = CheckSettings::PRINT_AND_PANIC
         .instrument_fn_body(
             &spec_item_fn.spec,
-            &spec_item_fn.item.block,
-            spec_item_fn.item.sig.asyncness.is_some(),
-            &spec_item_fn.item.sig.output,
+            &spec_item_fn.node.block,
+            spec_item_fn.node.sig.asyncness.is_some(),
+            &spec_item_fn.node.sig.output,
         )
         .unwrap();
     assert_tokens_eq(&observed, &expected);
@@ -561,9 +561,9 @@ fn simple_async_requires_maintains_and_ensures() {
     let observed = CheckSettings::PRINT_AND_PANIC
         .instrument_fn_body(
             &spec_item_fn.spec,
-            &spec_item_fn.item.block,
-            spec_item_fn.item.sig.asyncness.is_some(),
-            &spec_item_fn.item.sig.output,
+            &spec_item_fn.node.block,
+            spec_item_fn.node.sig.asyncness.is_some(),
+            &spec_item_fn.node.sig.output,
         )
         .unwrap();
     assert_tokens_eq(&observed, &expected);
@@ -614,9 +614,9 @@ fn multiple_conditions_in_clauses() {
     let observed = CheckSettings::PRINT_AND_PANIC
         .instrument_fn_body(
             &spec_item_fn.spec,
-            &spec_item_fn.item.block,
-            spec_item_fn.item.sig.asyncness.is_some(),
-            &spec_item_fn.item.sig.output,
+            &spec_item_fn.node.block,
+            spec_item_fn.node.sig.asyncness.is_some(),
+            &spec_item_fn.node.sig.output,
         )
         .unwrap();
     assert_tokens_eq(&observed, &expected);
@@ -652,9 +652,9 @@ fn postcond_closure_form() {
     let observed = CheckSettings::PRINT_AND_PANIC
         .instrument_fn_body(
             &spec_item_fn.spec,
-            &spec_item_fn.item.block,
-            spec_item_fn.item.sig.asyncness.is_some(),
-            &spec_item_fn.item.sig.output,
+            &spec_item_fn.node.block,
+            spec_item_fn.node.sig.asyncness.is_some(),
+            &spec_item_fn.node.sig.output,
         )
         .unwrap();
     assert_tokens_eq(&observed, &expected);
@@ -695,9 +695,9 @@ fn postcond_borrowing_closure_form() {
     let observed = CheckSettings::PRINT_AND_PANIC
         .instrument_fn_body(
             &spec_item_fn.spec,
-            &spec_item_fn.item.block,
-            spec_item_fn.item.sig.asyncness.is_some(),
-            &spec_item_fn.item.sig.output,
+            &spec_item_fn.node.block,
+            spec_item_fn.node.sig.asyncness.is_some(),
+            &spec_item_fn.node.sig.output,
         )
         .unwrap();
     assert_tokens_eq(&observed, &expected);
@@ -741,9 +741,9 @@ fn ensures_with_mixed_conditions() {
     let observed = CheckSettings::PRINT_AND_PANIC
         .instrument_fn_body(
             &spec_item_fn.spec,
-            &spec_item_fn.item.block,
-            spec_item_fn.item.sig.asyncness.is_some(),
-            &spec_item_fn.item.sig.output,
+            &spec_item_fn.node.block,
+            spec_item_fn.node.sig.asyncness.is_some(),
+            &spec_item_fn.node.sig.output,
         )
         .unwrap();
     assert_tokens_eq(&observed, &expected);
@@ -789,9 +789,9 @@ fn cfg_attributes() {
     let observed = CheckSettings::PRINT_AND_PANIC
         .instrument_fn_body(
             &spec_item_fn.spec,
-            &spec_item_fn.item.block,
-            spec_item_fn.item.sig.asyncness.is_some(),
-            &spec_item_fn.item.sig.output,
+            &spec_item_fn.node.block,
+            spec_item_fn.node.sig.asyncness.is_some(),
+            &spec_item_fn.node.sig.output,
         )
         .unwrap();
     assert_tokens_eq(&observed, &expected);
@@ -842,9 +842,9 @@ fn cfg_on_single_and_list_conditions() {
     let observed = CheckSettings::PRINT_AND_PANIC
         .instrument_fn_body(
             &spec_item_fn.spec,
-            &spec_item_fn.item.block,
-            spec_item_fn.item.sig.asyncness.is_some(),
-            &spec_item_fn.item.sig.output,
+            &spec_item_fn.node.block,
+            spec_item_fn.node.sig.asyncness.is_some(),
+            &spec_item_fn.node.sig.output,
         )
         .unwrap();
     assert_tokens_eq(&observed, &expected);
@@ -909,9 +909,9 @@ fn complex_mixed_conditions() {
     let observed = CheckSettings::PRINT_AND_PANIC
         .instrument_fn_body(
             &spec_item_fn.spec,
-            &spec_item_fn.item.block,
-            spec_item_fn.item.sig.asyncness.is_some(),
-            &spec_item_fn.item.sig.output,
+            &spec_item_fn.node.block,
+            spec_item_fn.node.sig.asyncness.is_some(),
+            &spec_item_fn.node.sig.output,
         )
         .unwrap();
     assert_tokens_eq(&observed, &expected);
@@ -962,9 +962,9 @@ fn captures() {
     let observed = CheckSettings::PRINT_AND_PANIC
         .instrument_fn_body(
             &spec_item_fn.spec,
-            &spec_item_fn.item.block,
-            spec_item_fn.item.sig.asyncness.is_some(),
-            &spec_item_fn.item.sig.output,
+            &spec_item_fn.node.block,
+            spec_item_fn.node.sig.asyncness.is_some(),
+            &spec_item_fn.node.sig.output,
         )
         .unwrap();
     assert_tokens_eq(&observed, &expected);

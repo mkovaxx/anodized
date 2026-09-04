@@ -13,23 +13,24 @@ pub mod qualifiers;
 mod test_util;
 
 /// Specified `fn`.
-pub type SpecItemFn = SpecItem<FnSpec, ItemFn>;
+pub type SpecItemFn = NodeWithSpec<FnSpec, ItemFn>;
 
 /// Specified `fn` inside an `impl`.
-pub type SpecImplItemFn = SpecItem<FnSpec, ImplItemFn>;
+pub type SpecImplItemFn = NodeWithSpec<FnSpec, ImplItemFn>;
 
 /// Specified `fn` inside a `trait`.
-pub type SpecTraitItemFn = SpecItem<FnSpec, TraitItemFn>;
+pub type SpecTraitItemFn = NodeWithSpec<FnSpec, TraitItemFn>;
 
 /// Specified `struct`.
-pub type SpecItemStruct = SpecItem<DataSpec, ItemStruct>;
+pub type SpecItemStruct = NodeWithSpec<DataSpec, ItemStruct>;
 
 /// Specified `enum`.
-pub type SpecItemEnum = SpecItem<DataSpec, ItemEnum>;
+pub type SpecItemEnum = NodeWithSpec<DataSpec, ItemEnum>;
 
-pub struct SpecItem<Spec, Item> {
+/// An AST node with a spec attached.
+pub struct NodeWithSpec<Spec, AstNode> {
     pub spec: Spec,
-    pub item: Item,
+    pub node: AstNode,
 }
 
 /// Specifies the intended behavior of a function or method: `fn`.

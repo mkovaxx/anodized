@@ -6,7 +6,7 @@ use quote::ToTokens;
 use syn::{Expr, Item, TraitItemFn, parse_macro_input};
 
 use anodized_core::{
-    annotate::{Specify as _, syntax::SpecFields},
+    annotate::{Specified as _, syntax::SpecFields},
     instrument::{CheckSettings, Mode, PanicSettings, fns::make_try_call, make_item_error},
 };
 
@@ -40,22 +40,22 @@ pub fn spec(args: TokenStream, input: TokenStream) -> TokenStream {
 
     let result = match item {
         Item::Fn(func) => func
-            .with_spec_parse(spec_fields)
+            .with_spec_from_fields(spec_fields)
             .and_then(|spec_item| CONFIG.instrument_item_fn(spec_item.spec, spec_item.item)),
         Item::Trait(the_trait) => the_trait
-            .with_spec_parse(spec_fields)
+            .with_spec_from_fields(spec_fields)
             .and_then(|spec_item| CONFIG.instrument_item_trait(spec_item.spec, spec_item.item)),
-        Item::Impl(the_impl) if the_impl.trait_.is_some() => {
-            the_impl.with_spec_parse(spec_fields).and_then(|spec_item| {
+        Item::Impl(the_impl) if the_impl.trait_.is_some() => the_impl
+            .with_spec_from_fields(spec_fields)
+            .and_then(|spec_item| {
                 CONFIG.instrument_item_trait_impl(spec_item.spec, spec_item.item)
-            })
-        }
+            }),
         Item::Impl(the_impl) if the_impl.trait_.is_none() => the_impl
-            .with_spec_parse(spec_fields)
+            .with_spec_from_fields(spec_fields)
             .and_then(|spec_item| CONFIG.instrument_item_impl(spec_item.spec, spec_item.item)),
         Item::Const(_) => Err(make_item_error(&item, "const")),
         Item::Enum(the_enum) => the_enum
-            .with_spec_parse(spec_fields)
+            .with_spec_from_fields(spec_fields)
             .and_then(|spec_item| CONFIG.instrument_item_enum(spec_item.spec, spec_item.item)),
         Item::ExternCrate(_) => Err(make_item_error(&item, "extern crate")),
         Item::ForeignMod(_) => Err(make_item_error(&item, "extern block")),
@@ -63,7 +63,7 @@ pub fn spec(args: TokenStream, input: TokenStream) -> TokenStream {
         Item::Mod(_) => Err(make_item_error(&item, "mod")),
         Item::Static(_) => Err(make_item_error(&item, "static")),
         Item::Struct(the_struct) => the_struct
-            .with_spec_parse(spec_fields)
+            .with_spec_from_fields(spec_fields)
             .and_then(|spec_item| CONFIG.instrument_item_struct(spec_item.spec, spec_item.item)),
         Item::TraitAlias(_) => Err(make_item_error(&item, "trait alias")),
         Item::Type(_) => Err(make_item_error(&item, "type")),
