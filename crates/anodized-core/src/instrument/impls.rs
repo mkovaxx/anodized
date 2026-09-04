@@ -39,7 +39,7 @@ Instead, ensure that both the impl block and the fn have a `#[spec]` annotation.
                         ));
                     }
 
-                    let fn_spec = item_fn.with_spec_from_attrs()?;
+                    let fn_spec = item_fn.parse_spec_from_attrs()?;
 
                     if let Self::EmbedSpecs = self {
                         // Embed `spec` elements as `__anodized_fn_*` items.

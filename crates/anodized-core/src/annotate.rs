@@ -27,10 +27,10 @@ pub trait Specified: Sized {
     /// Parse the `#[spec]` from the `Attribute` list.
     ///
     /// - If the AST node has a `#[spec]` attribute, it is removed from the `Attribute` list,
-    ///     and its contents are parsed as `Self::Spec`, then attached to the AST node.
+    ///   and its contents are parsed as `Self::Spec`, then attached to the AST node.
     /// - If there's no `#[spec]` attribute, the spec is built from an empty `SpecFields`.
     /// - Multiple `#[spec]` attributes are not allowed and cause an error.
-    fn with_spec_from_attrs(&mut self) -> Result<Self::Spec>
+    fn parse_spec_from_attrs(&mut self) -> Result<Self::Spec>
     where
         Self: Spanned,
     {
@@ -40,13 +40,13 @@ pub trait Specified: Sized {
             TokenStream::new()
         };
         let spec_fields: SpecFields = syn::parse2(spec_input)?;
-        self.with_spec_from_fields(spec_fields)
+        self.parse_spec_from_fields(spec_fields)
     }
 
     /// Parse the `#[spec]` from `SpecFields`.
     ///
     /// Implement this to parse a spec in the context of its AST node.
-    fn with_spec_from_fields(&mut self, fields: SpecFields) -> Result<Self::Spec>;
+    fn parse_spec_from_fields(&mut self, fields: SpecFields) -> Result<Self::Spec>;
 
     /// Get a mutable reference to the `Attribute` list.
     ///
@@ -57,7 +57,7 @@ pub trait Specified: Sized {
 impl<AstNode: Parse + Spanned + Specified> Parse for NodeWithSpec<AstNode::Spec, AstNode> {
     fn parse(input: ParseStream) -> Result<Self> {
         let mut node: AstNode = input.parse()?;
-        let spec = node.with_spec_from_attrs()?;
+        let spec = node.parse_spec_from_attrs()?;
         Ok(Self { spec, node })
     }
 }
@@ -69,7 +69,7 @@ impl Specified for ItemFn {
         &mut self.attrs
     }
 
-    fn with_spec_from_fields(&mut self, fields: SpecFields) -> Result<Self::Spec> {
+    fn parse_spec_from_fields(&mut self, fields: SpecFields) -> Result<Self::Spec> {
         fields.try_into()
     }
 }
@@ -81,7 +81,7 @@ impl Specified for ImplItemFn {
         &mut self.attrs
     }
 
-    fn with_spec_from_fields(&mut self, fields: SpecFields) -> Result<Self::Spec> {
+    fn parse_spec_from_fields(&mut self, fields: SpecFields) -> Result<Self::Spec> {
         fields.try_into()
     }
 }
@@ -93,7 +93,7 @@ impl Specified for TraitItemFn {
         &mut self.attrs
     }
 
-    fn with_spec_from_fields(&mut self, fields: SpecFields) -> Result<Self::Spec> {
+    fn parse_spec_from_fields(&mut self, fields: SpecFields) -> Result<Self::Spec> {
         fields.try_into()
     }
 }
@@ -105,7 +105,7 @@ impl Specified for ItemStruct {
         &mut self.attrs
     }
 
-    fn with_spec_from_fields(&mut self, fields: SpecFields) -> Result<Self::Spec> {
+    fn parse_spec_from_fields(&mut self, fields: SpecFields) -> Result<Self::Spec> {
         fields.try_into()
     }
 }
@@ -117,7 +117,7 @@ impl Specified for ItemEnum {
         &mut self.attrs
     }
 
-    fn with_spec_from_fields(&mut self, fields: SpecFields) -> Result<Self::Spec> {
+    fn parse_spec_from_fields(&mut self, fields: SpecFields) -> Result<Self::Spec> {
         fields.try_into()
     }
 }
@@ -129,7 +129,7 @@ impl Specified for ItemImpl {
         &mut self.attrs
     }
 
-    fn with_spec_from_fields(&mut self, fields: SpecFields) -> Result<Self::Spec> {
+    fn parse_spec_from_fields(&mut self, fields: SpecFields) -> Result<Self::Spec> {
         fields.try_into()
     }
 }
@@ -141,7 +141,7 @@ impl Specified for ItemTrait {
         &mut self.attrs
     }
 
-    fn with_spec_from_fields(&mut self, fields: SpecFields) -> Result<Self::Spec> {
+    fn parse_spec_from_fields(&mut self, fields: SpecFields) -> Result<Self::Spec> {
         fields.try_into()
     }
 }

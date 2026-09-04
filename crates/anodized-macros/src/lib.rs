@@ -40,20 +40,20 @@ pub fn spec(args: TokenStream, input: TokenStream) -> TokenStream {
 
     let result = match item {
         Item::Fn(mut func) => func
-            .with_spec_from_fields(spec_fields)
+            .parse_spec_from_fields(spec_fields)
             .and_then(|spec| CONFIG.instrument_item_fn(spec, func)),
         Item::Trait(mut the_trait) => the_trait
-            .with_spec_from_fields(spec_fields)
+            .parse_spec_from_fields(spec_fields)
             .and_then(|spec| CONFIG.instrument_item_trait(spec, the_trait)),
         Item::Impl(mut the_impl) if the_impl.trait_.is_some() => the_impl
-            .with_spec_from_fields(spec_fields)
+            .parse_spec_from_fields(spec_fields)
             .and_then(|spec| CONFIG.instrument_item_trait_impl(spec, the_impl)),
         Item::Impl(mut the_impl) if the_impl.trait_.is_none() => the_impl
-            .with_spec_from_fields(spec_fields)
+            .parse_spec_from_fields(spec_fields)
             .and_then(|spec| CONFIG.instrument_item_impl(spec, the_impl)),
         Item::Const(_) => Err(make_item_error(&item, "const")),
         Item::Enum(mut the_enum) => the_enum
-            .with_spec_from_fields(spec_fields)
+            .parse_spec_from_fields(spec_fields)
             .and_then(|spec| CONFIG.instrument_item_enum(spec, the_enum)),
         Item::ExternCrate(_) => Err(make_item_error(&item, "extern crate")),
         Item::ForeignMod(_) => Err(make_item_error(&item, "extern block")),
@@ -61,7 +61,7 @@ pub fn spec(args: TokenStream, input: TokenStream) -> TokenStream {
         Item::Mod(_) => Err(make_item_error(&item, "mod")),
         Item::Static(_) => Err(make_item_error(&item, "static")),
         Item::Struct(mut the_struct) => the_struct
-            .with_spec_from_fields(spec_fields)
+            .parse_spec_from_fields(spec_fields)
             .and_then(|spec| CONFIG.instrument_item_struct(spec, the_struct)),
         Item::TraitAlias(_) => Err(make_item_error(&item, "trait alias")),
         Item::Type(_) => Err(make_item_error(&item, "type")),

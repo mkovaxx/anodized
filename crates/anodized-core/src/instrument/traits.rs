@@ -45,7 +45,7 @@ impl Mode {
                     //   Right now we put all attribs on both functions, but that's certainly
                     //   not going to work in every situation.
 
-                    let fn_spec = func.with_spec_from_attrs()?;
+                    let fn_spec = func.parse_spec_from_attrs()?;
 
                     let attrs: [Attribute; 2] = [
                         parse_quote!(#[doc(hidden)]),
@@ -219,7 +219,7 @@ Instead, ensure that both the trait and the impl fn have a `#[spec]` annotation.
                         ));
                     }
 
-                    let fn_spec = func.with_spec_from_attrs()?;
+                    let fn_spec = func.parse_spec_from_attrs()?;
 
                     let attrs: [Attribute; 2] = [
                         parse_quote!(#[doc(hidden)]),
