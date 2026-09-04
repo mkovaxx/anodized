@@ -2,14 +2,14 @@ use proc_macro2::TokenStream;
 use syn::{
     Attribute, Error, Expr, ExprAssign, FieldValue, ImplItemFn, ItemEnum, ItemFn, ItemImpl,
     ItemStruct, ItemTrait, Meta, Path, TraitItemFn,
-    parse::{Parse, ParseStream, Parser, Result},
+    parse::{Parse, ParseStream, Result},
     parse_quote,
     spanned::Spanned,
 };
 
 use crate::{
     Capture, Condition, DataSpec, FnSpec, LoopSpec, LoopVariant, PostCondition, SpecItem,
-    qualifiers::FnQualifiers,
+    annotate::syntax::SpecFields, qualifiers::FnQualifiers,
 };
 
 pub mod syntax;
@@ -34,16 +34,17 @@ pub trait Specify: Sized {
     where
         Self: Spanned,
     {
-        let spec_input = if let Some(attr) = remove_spec_attr(self.get_attrs_mut())? {
+        let spec_input: TokenStream = if let Some(attr) = remove_spec_attr(self.get_attrs_mut())? {
             get_attr_input(attr)?
         } else {
             TokenStream::new()
         };
-        self.with_spec_parse(spec_input)
+        let spec_fields: SpecFields = syn::parse2(spec_input)?;
+        self.with_spec_parse(spec_fields)
     }
 
     /// Attach the `#[spec]` by parsing it from a `TokenStream`.
-    fn with_spec_parse(self, input: TokenStream) -> Result<SpecItem<Self::Spec, Self>>;
+    fn with_spec_parse(self, fields: SpecFields) -> Result<SpecItem<Self::Spec, Self>>;
 
     /// Get a mutable reference to the `Attribute` list.
     fn get_attrs_mut(&mut self) -> &mut Vec<Attribute>;
@@ -63,8 +64,8 @@ impl Specify for ItemFn {
         &mut self.attrs
     }
 
-    fn with_spec_parse(self, input: TokenStream) -> Result<SpecItem<Self::Spec, Self>> {
-        let spec = Parser::parse2(FnSpec::parse, input)?;
+    fn with_spec_parse(self, fields: SpecFields) -> Result<SpecItem<Self::Spec, Self>> {
+        let spec = fields.try_into()?;
         Ok(SpecItem { spec, item: self })
     }
 }
@@ -76,8 +77,8 @@ impl Specify for ImplItemFn {
         &mut self.attrs
     }
 
-    fn with_spec_parse(self, input: TokenStream) -> Result<SpecItem<Self::Spec, Self>> {
-        let spec = Parser::parse2(FnSpec::parse, input)?;
+    fn with_spec_parse(self, fields: SpecFields) -> Result<SpecItem<Self::Spec, Self>> {
+        let spec = fields.try_into()?;
         Ok(SpecItem { spec, item: self })
     }
 }
@@ -89,8 +90,8 @@ impl Specify for TraitItemFn {
         &mut self.attrs
     }
 
-    fn with_spec_parse(self, input: TokenStream) -> Result<SpecItem<Self::Spec, Self>> {
-        let spec = Parser::parse2(FnSpec::parse, input)?;
+    fn with_spec_parse(self, fields: SpecFields) -> Result<SpecItem<Self::Spec, Self>> {
+        let spec = fields.try_into()?;
         Ok(SpecItem { spec, item: self })
     }
 }
@@ -102,8 +103,8 @@ impl Specify for ItemStruct {
         &mut self.attrs
     }
 
-    fn with_spec_parse(self, input: TokenStream) -> Result<SpecItem<Self::Spec, Self>> {
-        let spec = Parser::parse2(DataSpec::parse, input)?;
+    fn with_spec_parse(self, fields: SpecFields) -> Result<SpecItem<Self::Spec, Self>> {
+        let spec = fields.try_into()?;
         Ok(SpecItem { spec, item: self })
     }
 }
@@ -115,8 +116,8 @@ impl Specify for ItemEnum {
         &mut self.attrs
     }
 
-    fn with_spec_parse(self, input: TokenStream) -> Result<SpecItem<Self::Spec, Self>> {
-        let spec = Parser::parse2(DataSpec::parse, input)?;
+    fn with_spec_parse(self, fields: SpecFields) -> Result<SpecItem<Self::Spec, Self>> {
+        let spec = fields.try_into()?;
         Ok(SpecItem { spec, item: self })
     }
 }
@@ -128,8 +129,8 @@ impl Specify for ItemImpl {
         &mut self.attrs
     }
 
-    fn with_spec_parse(self, input: TokenStream) -> Result<SpecItem<Self::Spec, Self>> {
-        let spec = Parser::parse2(DataSpec::parse, input)?;
+    fn with_spec_parse(self, fields: SpecFields) -> Result<SpecItem<Self::Spec, Self>> {
+        let spec = fields.try_into()?;
         Ok(SpecItem { spec, item: self })
     }
 }
@@ -141,8 +142,8 @@ impl Specify for ItemTrait {
         &mut self.attrs
     }
 
-    fn with_spec_parse(self, input: TokenStream) -> Result<SpecItem<Self::Spec, Self>> {
-        let spec = Parser::parse2(DataSpec::parse, input)?;
+    fn with_spec_parse(self, fields: SpecFields) -> Result<SpecItem<Self::Spec, Self>> {
+        let spec = fields.try_into()?;
         Ok(SpecItem { spec, item: self })
     }
 }
@@ -191,9 +192,11 @@ pub fn get_attr_input(attr: Attribute) -> Result<TokenStream> {
     }
 }
 
-impl FnSpec {
-    fn parse(input: ParseStream) -> Result<FnSpec> {
-        let raw_spec = syntax::SpecFields::parse(input)?;
+impl TryFrom<SpecFields> for FnSpec {
+    type Error = Error;
+
+    fn try_from(raw_spec: SpecFields) -> Result<FnSpec> {
+        let span = raw_spec.span();
 
         let mut errors = MultiError::empty();
         let mut qualifiers = FnQualifiers::empty();
@@ -300,7 +303,7 @@ impl FnSpec {
 
         if !is_sorted {
             errors.add(Error::new(
-                input.span(),
+                span,
                 "fields are out of order: the expected order is: `<QUALIFIERS>`, `requires`, `maintains`, `captures`, `inspects`, `ensures`, where `<QUALIFIERS>` are:\n
 `functional` (`pure` and `total`),\n
 `pure` (`deterministic` and `effectfree`),\n
@@ -318,14 +321,16 @@ impl FnSpec {
             maintains,
             captures,
             ensures,
-            span: input.span(),
+            span,
         })
     }
 }
 
-impl DataSpec {
-    fn parse(input: ParseStream) -> Result<Self> {
-        let raw_spec = syntax::SpecFields::parse(input)?;
+impl TryFrom<SpecFields> for DataSpec {
+    type Error = Error;
+
+    fn try_from(raw_spec: SpecFields) -> Result<Self> {
+        let span = raw_spec.span();
 
         let mut errors = MultiError::empty();
         let mut maintains: Vec<Condition> = vec![];
@@ -351,10 +356,7 @@ impl DataSpec {
             return Err(combined_error);
         }
 
-        Ok(Self {
-            maintains,
-            span: input.span(),
-        })
+        Ok(Self { maintains, span })
     }
 }
 
