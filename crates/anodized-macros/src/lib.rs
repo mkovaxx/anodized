@@ -6,8 +6,9 @@ use quote::ToTokens;
 use syn::{Expr, Item, TraitItemFn, parse_macro_input};
 
 use anodized_core::{
-    annotate::{Specified as _, syntax::SpecFields},
+    annotate::Specified as _,
     instrument::{CheckSettings, Mode, PanicSettings, fns::make_try_call, make_item_error},
+    syntax::spec::SpecFields,
 };
 
 const CONFIG: Mode = if cfg!(anodized_discard_specs) {

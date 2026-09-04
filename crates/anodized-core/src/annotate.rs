@@ -7,11 +7,12 @@ use syn::{
 
 use crate::{
     Capture, Condition, DataSpec, FnSpec, LoopSpec, LoopVariant, PostCondition,
-    annotate::syntax::SpecFields, qualifiers::FnQualifiers,
+    qualifiers::FnQualifiers,
+    syntax::{
+        attr::{get_attr_input, remove_spec_attr},
+        spec::{Keyword, SpecFields},
+    },
 };
-
-pub mod syntax;
-use syntax::{Keyword, get_attr_input, remove_spec_attr};
 
 #[cfg(test)]
 #[path = "annotate_tests.rs"]

@@ -8,6 +8,7 @@ use crate::qualifiers::FnQualifiers;
 pub mod annotate;
 pub mod instrument;
 pub mod qualifiers;
+pub mod syntax;
 
 #[cfg(test)]
 mod test_util;
