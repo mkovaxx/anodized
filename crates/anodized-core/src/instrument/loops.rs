@@ -94,40 +94,23 @@ impl<'a> LoopSpecVisitor<'a> {
 
 impl VisitMut for LoopSpecVisitor<'_> {
     fn visit_expr_while_mut(&mut self, expr_while: &mut ExprWhile) {
-        let spec = match expr_while.parse_spec_from_attrs() {
-            Ok(spec) => spec,
-            Err(error) => {
-                self.add_error(error);
-                return;
-            }
-        };
-
         visit_mut::visit_expr_while_mut(self, expr_while);
 
-        if spec.is_empty() {
-            return;
+        match expr_while.parse_spec_from_attrs() {
+            Ok(spec) => self
+                .config
+                .instrument_loop_body(spec, &mut expr_while.body.stmts),
+            Err(error) => self.add_error(error),
         }
-
-        self.config
-            .instrument_loop_body(spec, &mut expr_while.body.stmts);
     }
 
     fn visit_expr_for_loop_mut(&mut self, expr_for_loop: &mut ExprForLoop) {
-        let spec = match expr_for_loop.parse_spec_from_attrs() {
-            Ok(spec) => spec,
-            Err(error) => {
-                self.add_error(error);
-                return;
-            }
-        };
-
         visit_mut::visit_expr_for_loop_mut(self, expr_for_loop);
 
-        if spec.is_empty() {
-            return;
+        match expr_for_loop.parse_spec_from_attrs() {
+            Ok(spec) => self.config.instrument_expr_for_loop(spec, expr_for_loop),
+            Err(error) => self.add_error(error),
         }
-
-        self.config.instrument_expr_for_loop(spec, expr_for_loop);
     }
 
     // Nested closure scopes are independently analyzed by the outer function macro expansion.
