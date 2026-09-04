@@ -375,7 +375,10 @@ fn simple_ensures() {
 #[test]
 fn simple_requires_and_maintains() {
     let spec_item_fn: SpecItemFn = parse_quote! {
-        #[spec(requires: CONDITION_1, maintains: CONDITION_2)]
+        #[spec(
+            requires: CONDITION_1,
+            maintains: CONDITION_2,
+        )]
         fn FUNCTION() -> RET_TYPE { BODY }
     };
 
@@ -414,7 +417,10 @@ fn simple_requires_and_maintains() {
 #[test]
 fn simple_requires_and_ensures() {
     let spec_item_fn: SpecItemFn = parse_quote! {
-        #[spec(requires: CONDITION_1, ensures: CONDITION_2)]
+        #[spec(
+            requires: CONDITION_1,
+            ensures: CONDITION_2,
+        )]
         fn FUNCTION() -> RET_TYPE { BODY }
     };
 
@@ -451,7 +457,10 @@ fn simple_requires_and_ensures() {
 #[test]
 fn simple_maintains_and_ensures() {
     let spec_item_fn: SpecItemFn = parse_quote! {
-        #[spec(maintains: CONDITION_1, ensures: CONDITION_2)]
+        #[spec(
+            maintains: CONDITION_1,
+            ensures: CONDITION_2,
+        )]
         fn FUNCTION() -> RET_TYPE { BODY }
     };
 
@@ -490,7 +499,11 @@ fn simple_maintains_and_ensures() {
 #[test]
 fn simple_requires_maintains_and_ensures() {
     let spec_item_fn: SpecItemFn = parse_quote! {
-        #[spec(requires: CONDITION_1, maintains: CONDITION_2, ensures: CONDITION_3)]
+        #[spec(
+            requires: CONDITION_1,
+            maintains: CONDITION_2,
+            ensures: CONDITION_3,
+        )]
         fn FUNCTION() -> RET_TYPE { BODY }
     };
 
@@ -531,7 +544,11 @@ fn simple_requires_maintains_and_ensures() {
 #[test]
 fn simple_async_requires_maintains_and_ensures() {
     let spec_item_fn: SpecItemFn = parse_quote! {
-        #[spec(requires: CONDITION_1, maintains: CONDITION_2, ensures: CONDITION_3)]
+        #[spec(
+            requires: CONDITION_1,
+            maintains: CONDITION_2,
+            ensures: CONDITION_3,
+        )]
         async fn FUNCTION() -> RET_TYPE { BODY }
     };
 
