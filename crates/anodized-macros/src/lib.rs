@@ -26,6 +26,21 @@ const CONFIG: Mode = if cfg!(anodized_discard_specs) {
     })
 };
 
+/// **Must** be inside a `#[spec]` attribute's item. May be applied to a `fn`, its inputs, and
+/// fields of a `struct` or `enum`.
+///
+/// - `#[unspec]`: The input or field may *not* satisfy its type spec.
+/// - `#[unspec(in)]`: The input may *not* satisfy its type spec at entry.
+/// - `#[unspec(out)]`: The input or output may *not* satisfy its type spec at exit.
+///
+/// This macro exists *only* to carry this documentation. It will never be invoked, because
+/// `anodized-core` removes it as part of processing `#[spec]` attributes. Note that Rust does
+/// *not* support macro attributes on inputs of a `fn` or fields of a `struct` or `enum`.
+#[proc_macro_attribute]
+pub fn unspec(_: TokenStream, _: TokenStream) -> TokenStream {
+    unimplemented!("`anodized-core` should have removed this attribute.")
+}
+
 /// Attaches a specification to supported program elements.
 ///
 /// This macro parses the spec and transforms the item's code to provide the following features:

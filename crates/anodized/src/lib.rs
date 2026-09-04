@@ -2,7 +2,7 @@
 
 pub use anodized_logic as logic;
 pub use anodized_logic::arithmetic;
-pub use anodized_macros::spec;
+pub use anodized_macros::{spec, unspec};
 
 pub mod __;
 pub mod result;
