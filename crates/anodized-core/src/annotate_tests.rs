@@ -908,9 +908,7 @@ fn cfg_on_captures() {
 #[test]
 fn captures_edge_case_cast_expr() {
     let spec_item_fn: SpecItemFn = parse_quote! {
-        #[spec(
-            captures: old_red = r as u8,
-        )]
+        #[spec(captures: old_red = r as u8)]
         fn f() {}
     };
 
@@ -932,13 +930,11 @@ fn captures_edge_case_cast_expr() {
 #[test]
 fn captures_edge_case_array_of_cast_exprs() {
     let spec_item_fn: SpecItemFn = parse_quote! {
-        #[spec(
-            captures: r8g8b8 = [
-                r as u8,
-                g as u8,
-                b as u8,
-            ],
-        )]
+        #[spec(captures: r8g8b8 = [
+            r as u8,
+            g as u8,
+            b as u8,
+        ])]
         fn f() {}
     };
 
@@ -1004,9 +1000,7 @@ fn captures_edge_case_list_of_cast_exprs() {
 #[test]
 fn captures_pattern_matches_slices() {
     let spec_item_fn: SpecItemFn = parse_quote! {
-        #[spec(
-            captures: [r, g, b] = rgb,
-        )]
+        #[spec(captures: [r, g, b] = rgb)]
         fn f() {}
     };
 
@@ -1028,9 +1022,7 @@ fn captures_pattern_matches_slices() {
 #[test]
 fn captures_pattern_matches_tuples() {
     let spec_item_fn: SpecItemFn = parse_quote! {
-        #[spec(
-            captures: (x, y, z) = point,
-        )]
+        #[spec(captures: (x, y, z) = point)]
         fn f() {}
     };
 
@@ -1052,9 +1044,7 @@ fn captures_pattern_matches_tuples() {
 #[test]
 fn captures_pattern_matches_structs() {
     let spec_item_fn: SpecItemFn = parse_quote! {
-        #[spec(
-            captures: Person { name, age } = person.clone(),
-        )]
+        #[spec(captures: Person { name, age } = person.clone())]
         fn f() {}
     };
 
@@ -1076,9 +1066,7 @@ fn captures_pattern_matches_structs() {
 #[test]
 fn captures_pattern_matches_nested() {
     let spec_item_fn: SpecItemFn = parse_quote! {
-        #[spec(
-            captures: Some((a, b)) = data.as_ref(),
-        )]
+        #[spec(captures: Some((a, b)) = data.as_ref())]
         fn f() {}
     };
 
@@ -1101,9 +1089,7 @@ fn captures_pattern_matches_nested() {
 #[should_panic(expected = "expected `,`")]
 fn captures_pattern_with_binding_modifier() {
     let _: SpecItemFn = parse_quote! {
-        #[spec(
-            captures: Some(inner_tuple @ (a, b)) = data,
-        )]
+        #[spec(captures: Some(inner_tuple @ (a, b)) = data)]
         fn f() {}
     };
 }
