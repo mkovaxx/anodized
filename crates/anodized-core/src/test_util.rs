@@ -58,6 +58,8 @@ pub fn assert_spec_eq(left: &FnSpec, right: &FnSpec) {
     // Destructure to ensure we handle all fields - compilation will fail if fields are added
     let FnSpec {
         qualifiers: left_qualifiers,
+        input_specs: left_input_specs,
+        output_spec_on_exit: left_output_spec_on_exit,
         requires: left_requires,
         maintains: left_maintains,
         captures: left_captures,
@@ -67,6 +69,8 @@ pub fn assert_spec_eq(left: &FnSpec, right: &FnSpec) {
 
     let FnSpec {
         qualifiers: right_qualifiers,
+        input_specs: right_input_specs,
+        output_spec_on_exit: right_output_spec_on_exit,
         requires: right_requires,
         maintains: right_maintains,
         captures: right_captures,
@@ -77,6 +81,25 @@ pub fn assert_spec_eq(left: &FnSpec, right: &FnSpec) {
     assert_eq!(
         left_qualifiers, right_qualifiers,
         "qualifiers do not match: {left_qualifiers:?} vs {right_qualifiers:?}"
+    );
+    assert_eq!(
+        left_output_spec_on_exit, right_output_spec_on_exit,
+        "output spec on exit does not match"
+    );
+    assert_slice_eq(
+        left_input_specs,
+        right_input_specs,
+        "input specs",
+        |left, right, message| {
+            assert_eq!(
+                left.on_entry, right.on_entry,
+                "{message} entry flags do not match"
+            );
+            assert_eq!(
+                left.on_exit, right.on_exit,
+                "{message} exit flags do not match"
+            );
+        },
     );
 
     assert_slice_eq(

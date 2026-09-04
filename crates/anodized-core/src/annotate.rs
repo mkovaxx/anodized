@@ -284,6 +284,8 @@ impl TryFrom<SpecFields> for FnSpec {
 
         Ok(Self {
             qualifiers,
+            input_specs: vec![],
+            output_spec_on_exit: false,
             requires,
             maintains,
             captures,
@@ -323,7 +325,11 @@ impl TryFrom<SpecFields> for DataSpec {
             return Err(combined_error);
         }
 
-        Ok(Self { maintains, span })
+        Ok(Self {
+            field_specs: vec![],
+            maintains,
+            span,
+        })
     }
 }
 
