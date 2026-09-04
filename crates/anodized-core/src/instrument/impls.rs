@@ -10,7 +10,7 @@ use crate::{
     DataSpec,
     annotate::Specified as _,
     instrument::{Mode, make_item_error},
-    syntax::attr::remove_spec_attr,
+    syntax::attr::remove_unique_attr,
 };
 
 impl Mode {
@@ -120,19 +120,19 @@ Instead, ensure that both the impl block and the fn have a `#[spec]` annotation.
                     new_items.push(ImplItem::Fn(item_fn));
                 }
                 ImplItem::Const(mut const_item) => {
-                    if let Some(spec_attr) = remove_spec_attr(&mut const_item.attrs)? {
+                    if let Some(spec_attr) = remove_unique_attr("spec", &mut const_item.attrs)? {
                         return Err(make_item_error(&spec_attr, "impl const"));
                     }
                     new_items.push(ImplItem::Const(const_item));
                 }
                 ImplItem::Type(mut type_item) => {
-                    if let Some(spec_attr) = remove_spec_attr(&mut type_item.attrs)? {
+                    if let Some(spec_attr) = remove_unique_attr("spec", &mut type_item.attrs)? {
                         return Err(make_item_error(&spec_attr, "impl type"));
                     }
                     new_items.push(ImplItem::Type(type_item));
                 }
                 ImplItem::Macro(mut macro_item) => {
-                    if let Some(spec_attr) = remove_spec_attr(&mut macro_item.attrs)? {
+                    if let Some(spec_attr) = remove_unique_attr("spec", &mut macro_item.attrs)? {
                         return Err(make_item_error(&spec_attr, "impl macro"));
                     }
                     new_items.push(ImplItem::Macro(macro_item));

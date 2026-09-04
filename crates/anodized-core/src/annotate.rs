@@ -9,7 +9,7 @@ use crate::{
     Capture, Condition, DataSpec, FnSpec, LoopSpec, LoopVariant, PostCondition,
     qualifiers::FnQualifiers,
     syntax::{
-        attr::{get_attr_input, remove_spec_attr},
+        attr::{get_attr_input, remove_unique_attr},
         spec::{Keyword, SpecFields},
     },
 };
@@ -30,11 +30,12 @@ pub trait Specified {
     /// - If there's no `#[spec]` attribute, the spec is built from an empty `SpecFields`.
     /// - Multiple `#[spec]` attributes are not allowed and cause an error.
     fn parse_spec_from_attrs(&mut self) -> Result<Self::Spec> {
-        let spec_input: TokenStream = if let Some(attr) = remove_spec_attr(self.get_attrs_mut())? {
-            get_attr_input(attr)?
-        } else {
-            TokenStream::new()
-        };
+        let spec_input: TokenStream =
+            if let Some(attr) = remove_unique_attr("spec", self.get_attrs_mut())? {
+                get_attr_input(attr)?
+            } else {
+                TokenStream::new()
+            };
         let spec_fields: SpecFields = syn::parse2(spec_input)?;
         self.parse_spec_from_fields(spec_fields)
     }
