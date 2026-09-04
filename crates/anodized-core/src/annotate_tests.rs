@@ -1,4 +1,6 @@
-use crate::test_util::{SpecItemFn, assert_spec_eq, assert_tokens_eq};
+use crate::test_util::{
+    SpecItemEnum, SpecItemFn, SpecItemStruct, assert_spec_eq, assert_tokens_eq,
+};
 
 use super::*;
 use proc_macro2::Span;
@@ -54,6 +56,58 @@ fn unspec_attributes_on_function_inputs_and_output() {
         fn f(x: X, y: Y, z: Z) -> R {}
     };
     assert_tokens_eq(&spec_item_fn.node, &expected_item);
+}
+
+#[test]
+fn unspec_attributes_on_struct_fields() {
+    let spec_item_struct: SpecItemStruct = parse_quote! {
+        #[spec]
+        struct S {
+            a: A,
+            #[unspec]
+            b: B,
+        }
+    };
+
+    assert_eq!(spec_item_struct.spec.field_specs, vec![vec![true, false]]);
+
+    let expected_item: ItemStruct = parse_quote! {
+        struct S {
+            a: A,
+            b: B,
+        }
+    };
+    assert_tokens_eq(&spec_item_struct.node, &expected_item);
+}
+
+#[test]
+fn unspec_attributes_on_enum_fields() {
+    let spec_item_enum: SpecItemEnum = parse_quote! {
+        #[spec]
+        enum E {
+            First(#[unspec] A, B),
+            Second {
+                c: C,
+                #[unspec]
+                d: D,
+            },
+            Third,
+        }
+    };
+
+    assert_eq!(
+        spec_item_enum.spec.field_specs,
+        vec![vec![false, true], vec![true, false], vec![]]
+    );
+
+    let expected_item: ItemEnum = parse_quote! {
+        enum E {
+            First(A, B),
+            Second { c: C, d: D },
+            Third,
+        }
+    };
+    assert_tokens_eq(&spec_item_enum.node, &expected_item);
 }
 
 #[test]

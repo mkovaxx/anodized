@@ -1,8 +1,8 @@
 use proc_macro2::TokenStream;
 use syn::{
-    Attribute, Error, Expr, ExprAssign, ExprForLoop, ExprWhile, FieldValue, FnArg, ImplItemFn,
-    ItemEnum, ItemFn, ItemImpl, ItemStruct, ItemTrait, Meta, Token, TraitItemFn, parse::Result,
-    parse_quote, punctuated::Punctuated, spanned::Spanned,
+    Attribute, Error, Expr, ExprAssign, ExprForLoop, ExprWhile, FieldValue, Fields, FnArg,
+    ImplItemFn, ItemEnum, ItemFn, ItemImpl, ItemStruct, ItemTrait, Meta, Token, TraitItemFn,
+    parse::Result, parse_quote, punctuated::Punctuated, spanned::Spanned,
 };
 
 use crate::{
@@ -375,15 +375,37 @@ impl DataSpec {
         raw_spec: SpecFields,
         item_struct: &mut ItemStruct,
     ) -> Result<Self> {
-        // TODO: Collect `#[unspec]` attributes and populate `field_specs`.
-        let field_specs = vec![];
+        let field_specs = vec![Self::extract_unspec_info(&mut item_struct.fields)?];
         Self::from_spec_and_unspec_info(raw_spec, field_specs)
     }
 
     pub fn from_spec_and_enum(raw_spec: SpecFields, item_enum: &mut ItemEnum) -> Result<Self> {
-        // TODO: Collect `#[unspec]` attributes and populate `field_specs`.
-        let field_specs = vec![];
+        let field_specs = item_enum
+            .variants
+            .iter_mut()
+            .map(|variant| Self::extract_unspec_info(&mut variant.fields))
+            .collect::<Result<_>>()?;
         Self::from_spec_and_unspec_info(raw_spec, field_specs)
+    }
+
+    fn extract_unspec_info(fields: &mut Fields) -> Result<Vec<bool>> {
+        fields
+            .iter_mut()
+            .map(|field| {
+                let Some(attr) = remove_unique_attr("unspec", &mut field.attrs)? else {
+                    return Ok(true);
+                };
+
+                let unspec: UnspecAttr = attr.try_into()?;
+                if unspec.arg.is_some() {
+                    return Err(Error::new_spanned(
+                        Attribute::from(unspec),
+                        "expected `#[unspec]` on a struct or enum field",
+                    ));
+                }
+                Ok(false)
+            })
+            .collect()
     }
 
     fn from_spec_and_unspec_info(
