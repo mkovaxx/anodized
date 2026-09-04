@@ -215,13 +215,12 @@ impl FnSpec {
         }
 
         let output_spec_on_exit = if let Some(attr) = remove_unique_attr("unspec", attrs)? {
-            let unspec: UnspecAttr = attr.try_into()?;
+            let unspec = UnspecAttr::try_from(attr)?;
             match unspec.arg {
                 Some((_, UnspecArg::Out(_))) => false,
                 _ => {
-                    let attr: Attribute = unspec.into();
                     return Err(Error::new_spanned(
-                        attr,
+                        Attribute::from(unspec),
                         "only `#[unspec(out)]` is allowed on a `fn` output",
                     ));
                 }
@@ -396,7 +395,7 @@ impl DataSpec {
                     return Ok(true);
                 };
 
-                let unspec: UnspecAttr = attr.try_into()?;
+                let unspec = UnspecAttr::try_from(attr)?;
                 if unspec.arg.is_some() {
                     return Err(Error::new_spanned(
                         Attribute::from(unspec),
