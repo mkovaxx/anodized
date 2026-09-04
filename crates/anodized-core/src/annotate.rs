@@ -30,13 +30,11 @@ pub trait Specify: Sized {
     where
         Self: Spanned,
     {
-        let Some(attr) = remove_spec_attr(self.get_attrs_mut())? else {
-            return Err(Error::new(
-                self.span(),
-                "expected a `#[spec]` attribute on this item",
-            ));
+        let spec_input = if let Some(attr) = remove_spec_attr(self.get_attrs_mut())? {
+            get_attr_input(attr)?
+        } else {
+            TokenStream::new()
         };
-        let spec_input = get_attr_input(attr)?;
         self.parse_spec(spec_input)
     }
 }
