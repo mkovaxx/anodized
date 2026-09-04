@@ -8,7 +8,7 @@ use syn::{
 };
 
 use crate::{
-    Capture, Condition, DataSpec, FnSpec, LoopSpec, LoopVariant, NodeWithSpec, PostCondition,
+    Capture, Condition, DataSpec, FnSpec, LoopSpec, LoopVariant, PostCondition,
     annotate::syntax::SpecFields, qualifiers::FnQualifiers,
 };
 
@@ -20,7 +20,7 @@ use syntax::Keyword;
 mod annotate_tests;
 
 /// Implemented by AST nodes that may have a `#[spec]` attribute.
-pub trait Specified: Sized {
+pub trait Specified {
     /// The spec type associated with this AST node.
     type Spec;
 
@@ -30,10 +30,7 @@ pub trait Specified: Sized {
     ///   and its contents are parsed as `Self::Spec`, then attached to the AST node.
     /// - If there's no `#[spec]` attribute, the spec is built from an empty `SpecFields`.
     /// - Multiple `#[spec]` attributes are not allowed and cause an error.
-    fn parse_spec_from_attrs(&mut self) -> Result<Self::Spec>
-    where
-        Self: Spanned,
-    {
+    fn parse_spec_from_attrs(&mut self) -> Result<Self::Spec> {
         let spec_input: TokenStream = if let Some(attr) = remove_spec_attr(self.get_attrs_mut())? {
             get_attr_input(attr)?
         } else {
@@ -52,14 +49,6 @@ pub trait Specified: Sized {
     ///
     /// Needed to by the default `with_spec_from_attrs`.
     fn get_attrs_mut(&mut self) -> &mut Vec<Attribute>;
-}
-
-impl<AstNode: Parse + Spanned + Specified> Parse for NodeWithSpec<AstNode::Spec, AstNode> {
-    fn parse(input: ParseStream) -> Result<Self> {
-        let mut node: AstNode = input.parse()?;
-        let spec = node.parse_spec_from_attrs()?;
-        Ok(Self { spec, node })
-    }
 }
 
 impl Specified for ItemFn {

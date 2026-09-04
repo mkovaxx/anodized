@@ -1,6 +1,42 @@
-use crate::{Capture, Condition, FnSpec, PostCondition, instrument::patterns::TamePat};
+use crate::{
+    Capture, Condition, DataSpec, FnSpec, PostCondition, annotate::Specified,
+    instrument::patterns::TamePat,
+};
 use pretty_assertions::assert_eq;
 use quote::{ToTokens, quote};
+use syn::{
+    ImplItemFn, ItemEnum, ItemFn, ItemStruct, TraitItemFn,
+    parse::{Parse, ParseStream},
+};
+
+/// Specified `fn`.
+pub type SpecItemFn = NodeWithSpec<FnSpec, ItemFn>;
+
+/// Specified `fn` inside an `impl`.
+pub type SpecImplItemFn = NodeWithSpec<FnSpec, ImplItemFn>;
+
+/// Specified `fn` inside a `trait`.
+pub type SpecTraitItemFn = NodeWithSpec<FnSpec, TraitItemFn>;
+
+/// Specified `struct`.
+pub type SpecItemStruct = NodeWithSpec<DataSpec, ItemStruct>;
+
+/// Specified `enum`.
+pub type SpecItemEnum = NodeWithSpec<DataSpec, ItemEnum>;
+
+/// An AST node with a spec attached.
+pub struct NodeWithSpec<Spec, AstNode> {
+    pub spec: Spec,
+    pub node: AstNode,
+}
+
+impl<AstNode: Parse + Specified> Parse for NodeWithSpec<AstNode::Spec, AstNode> {
+    fn parse(input: ParseStream) -> syn::Result<Self> {
+        let mut node: AstNode = input.parse()?;
+        let spec = node.parse_spec_from_attrs()?;
+        Ok(Self { spec, node })
+    }
+}
 
 pub fn assert_tokens_eq(left: &impl ToTokens, right: &impl ToTokens) {
     let left_str = pretty_print_tokens(left.to_token_stream());
