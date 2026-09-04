@@ -19,14 +19,18 @@ use syntax::Keyword;
 #[path = "annotate_tests.rs"]
 mod annotate_tests;
 
+/// Implemented by AST node types that may have a `#[spec]` attribute.
 pub trait Specify: Sized {
+    /// The type of the spec associated with this AST node type.
     type Spec;
 
-    fn get_attrs_mut(&mut self) -> &mut Vec<Attribute>;
-
-    fn parse_spec(self, input: TokenStream) -> Result<SpecItem<Self::Spec, Self>>;
-
-    fn parse_spec_attr(mut self) -> Result<SpecItem<Self::Spec, Self>>
+    /// Attach the `#[spec]` from the `Attribute` list.
+    ///
+    /// - If the AST node has a `#[spec]` attribute, it is removed from the `Attribute` list,
+    ///     and its contents are parsed as `Self::Spec`, then attached to the AST node.
+    /// - If there's no `#[spec]` attribute, the spec is built from an empty `SpecFields`.
+    /// - Multiple `#[spec]` attributes are not allowed and cause an error.
+    fn with_spec_attr(mut self) -> Result<SpecItem<Self::Spec, Self>>
     where
         Self: Spanned,
     {
@@ -35,14 +39,20 @@ pub trait Specify: Sized {
         } else {
             TokenStream::new()
         };
-        self.parse_spec(spec_input)
+        self.with_spec_parse(spec_input)
     }
+
+    /// Attach the `#[spec]` by parsing it from a `TokenStream`.
+    fn with_spec_parse(self, input: TokenStream) -> Result<SpecItem<Self::Spec, Self>>;
+
+    /// Get a mutable reference to the `Attribute` list.
+    fn get_attrs_mut(&mut self) -> &mut Vec<Attribute>;
 }
 
 impl<Item: Parse + Spanned + Specify> Parse for SpecItem<Item::Spec, Item> {
     fn parse(input: ParseStream) -> Result<Self> {
         let item: Item = input.parse()?;
-        item.parse_spec_attr()
+        item.with_spec_attr()
     }
 }
 
@@ -53,7 +63,7 @@ impl Specify for ItemFn {
         &mut self.attrs
     }
 
-    fn parse_spec(self, input: TokenStream) -> Result<SpecItem<Self::Spec, Self>> {
+    fn with_spec_parse(self, input: TokenStream) -> Result<SpecItem<Self::Spec, Self>> {
         let spec = Parser::parse2(FnSpec::parse, input)?;
         Ok(SpecItem { spec, item: self })
     }
@@ -66,7 +76,7 @@ impl Specify for ImplItemFn {
         &mut self.attrs
     }
 
-    fn parse_spec(self, input: TokenStream) -> Result<SpecItem<Self::Spec, Self>> {
+    fn with_spec_parse(self, input: TokenStream) -> Result<SpecItem<Self::Spec, Self>> {
         let spec = Parser::parse2(FnSpec::parse, input)?;
         Ok(SpecItem { spec, item: self })
     }
@@ -79,7 +89,7 @@ impl Specify for TraitItemFn {
         &mut self.attrs
     }
 
-    fn parse_spec(self, input: TokenStream) -> Result<SpecItem<Self::Spec, Self>> {
+    fn with_spec_parse(self, input: TokenStream) -> Result<SpecItem<Self::Spec, Self>> {
         let spec = Parser::parse2(FnSpec::parse, input)?;
         Ok(SpecItem { spec, item: self })
     }
@@ -92,7 +102,7 @@ impl Specify for ItemStruct {
         &mut self.attrs
     }
 
-    fn parse_spec(self, input: TokenStream) -> Result<SpecItem<Self::Spec, Self>> {
+    fn with_spec_parse(self, input: TokenStream) -> Result<SpecItem<Self::Spec, Self>> {
         let spec = Parser::parse2(DataSpec::parse, input)?;
         Ok(SpecItem { spec, item: self })
     }
@@ -105,7 +115,7 @@ impl Specify for ItemEnum {
         &mut self.attrs
     }
 
-    fn parse_spec(self, input: TokenStream) -> Result<SpecItem<Self::Spec, Self>> {
+    fn with_spec_parse(self, input: TokenStream) -> Result<SpecItem<Self::Spec, Self>> {
         let spec = Parser::parse2(DataSpec::parse, input)?;
         Ok(SpecItem { spec, item: self })
     }
@@ -118,7 +128,7 @@ impl Specify for ItemImpl {
         &mut self.attrs
     }
 
-    fn parse_spec(self, input: TokenStream) -> Result<SpecItem<Self::Spec, Self>> {
+    fn with_spec_parse(self, input: TokenStream) -> Result<SpecItem<Self::Spec, Self>> {
         let spec = Parser::parse2(DataSpec::parse, input)?;
         Ok(SpecItem { spec, item: self })
     }
@@ -131,7 +141,7 @@ impl Specify for ItemTrait {
         &mut self.attrs
     }
 
-    fn parse_spec(self, input: TokenStream) -> Result<SpecItem<Self::Spec, Self>> {
+    fn with_spec_parse(self, input: TokenStream) -> Result<SpecItem<Self::Spec, Self>> {
         let spec = Parser::parse2(DataSpec::parse, input)?;
         Ok(SpecItem { spec, item: self })
     }

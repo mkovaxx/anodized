@@ -48,7 +48,7 @@ impl Mode {
                     let SpecTraitItemFn {
                         spec: fn_spec,
                         item: mut func,
-                    } = func.parse_spec_attr()?;
+                    } = func.with_spec_attr()?;
 
                     let attrs: [Attribute; 2] = [
                         parse_quote!(#[doc(hidden)]),
@@ -225,7 +225,7 @@ Instead, ensure that both the trait and the impl fn have a `#[spec]` annotation.
                     let SpecImplItemFn {
                         spec: fn_spec,
                         item: mut func,
-                    } = func.parse_spec_attr()?;
+                    } = func.with_spec_attr()?;
 
                     let attrs: [Attribute; 2] = [
                         parse_quote!(#[doc(hidden)]),

@@ -42,7 +42,7 @@ Instead, ensure that both the impl block and the fn have a `#[spec]` annotation.
                     let SpecImplItemFn {
                         spec: fn_spec,
                         item: mut item_fn,
-                    } = item_fn.parse_spec_attr()?;
+                    } = item_fn.with_spec_attr()?;
 
                     if let Self::EmbedSpecs = self {
                         // Embed `spec` elements as `__anodized_fn_*` items.
