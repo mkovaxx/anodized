@@ -1,8 +1,8 @@
 use proc_macro2::TokenStream;
 use syn::{
-    Attribute, Error, Expr, ExprAssign, ExprForLoop, ExprWhile, FieldValue, ImplItemFn, ItemEnum,
-    ItemFn, ItemImpl, ItemStruct, ItemTrait, Meta, TraitItemFn, parse::Result, parse_quote,
-    spanned::Spanned,
+    Attribute, Error, Expr, ExprAssign, ExprForLoop, ExprWhile, FieldValue, FnArg, ImplItemFn,
+    ItemEnum, ItemFn, ItemImpl, ItemStruct, ItemTrait, Meta, Token, TraitItemFn, parse::Result,
+    parse_quote, punctuated::Punctuated, spanned::Spanned,
 };
 
 use crate::{
@@ -162,24 +162,31 @@ impl Specified for ExprWhile {
 
 impl FnSpec {
     pub fn from_spec_and_fn(raw_spec: SpecFields, item_fn: &mut ItemFn) -> Result<Self> {
-        // TODO: Collect `#[unspec]` attributes and populate input and output specs.
-        let input_specs = vec![];
-        let output_spec_on_exit = false;
+        let (input_specs, output_spec_on_exit) =
+            Self::extract_unspec_info(&mut item_fn.sig.inputs, &mut item_fn.attrs)?;
         Self::from_spec_and_unspec_info(raw_spec, input_specs, output_spec_on_exit)
     }
 
     pub fn from_spec_and_impl_fn(raw_spec: SpecFields, item_fn: &mut ImplItemFn) -> Result<Self> {
-        // TODO: Collect `#[unspec]` attributes and populate input and output specs.
-        let input_specs = vec![];
-        let output_spec_on_exit = false;
+        let (input_specs, output_spec_on_exit) =
+            Self::extract_unspec_info(&mut item_fn.sig.inputs, &mut item_fn.attrs)?;
         Self::from_spec_and_unspec_info(raw_spec, input_specs, output_spec_on_exit)
     }
 
     pub fn from_spec_and_trait_fn(raw_spec: SpecFields, item_fn: &mut TraitItemFn) -> Result<Self> {
+        let (input_specs, output_spec_on_exit) =
+            Self::extract_unspec_info(&mut item_fn.sig.inputs, &mut item_fn.attrs)?;
+        Self::from_spec_and_unspec_info(raw_spec, input_specs, output_spec_on_exit)
+    }
+
+    fn extract_unspec_info(
+        inputs: &mut Punctuated<FnArg, Token![,]>,
+        attrs: &mut Vec<Attribute>,
+    ) -> Result<(Vec<InputSpec>, bool)> {
         // TODO: Collect `#[unspec]` attributes and populate input and output specs.
         let input_specs = vec![];
         let output_spec_on_exit = false;
-        Self::from_spec_and_unspec_info(raw_spec, input_specs, output_spec_on_exit)
+        Ok((input_specs, output_spec_on_exit))
     }
 
     fn from_spec_and_unspec_info(
