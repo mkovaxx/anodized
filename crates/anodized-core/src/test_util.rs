@@ -1,5 +1,5 @@
 use crate::{
-    Capture, Condition, DataSpec, FnSpec, PostCondition, annotate::Specified,
+    Capture, Condition, DataSpec, EmptySpec, FnSpec, PostCondition, annotate::Specified,
     instrument::patterns::TamePat,
 };
 use pretty_assertions::assert_eq;
@@ -10,10 +10,10 @@ use syn::parse::{Parse, ParseStream};
 pub type SpecItemFn = NodeWithSpec<FnSpec, syn::ItemFn>;
 
 /// Specified `impl`.
-pub type SpecItemImpl = NodeWithSpec<DataSpec, syn::ItemImpl>;
+pub type SpecItemImpl = NodeWithSpec<EmptySpec, syn::ItemImpl>;
 
 /// Specified `trait`.
-pub type SpecItemTrait = NodeWithSpec<DataSpec, syn::ItemTrait>;
+pub type SpecItemTrait = NodeWithSpec<EmptySpec, syn::ItemTrait>;
 
 /// Specified `struct`.
 pub type SpecItemStruct = NodeWithSpec<DataSpec, syn::ItemStruct>;

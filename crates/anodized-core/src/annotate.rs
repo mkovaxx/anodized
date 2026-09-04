@@ -6,7 +6,7 @@ use syn::{
 };
 
 use crate::{
-    Capture, Condition, DataSpec, FnSpec, LoopSpec, LoopVariant, PostCondition,
+    Capture, Condition, DataSpec, EmptySpec, FnSpec, LoopSpec, LoopVariant, PostCondition,
     qualifiers::FnQualifiers,
     syntax::{
         attr::{get_attr_input, remove_unique_attr},
@@ -88,7 +88,7 @@ impl Specified for TraitItemFn {
 }
 
 impl Specified for ItemImpl {
-    type Spec = DataSpec;
+    type Spec = EmptySpec;
 
     fn get_attrs_mut(&mut self) -> &mut Vec<Attribute> {
         &mut self.attrs
@@ -100,7 +100,7 @@ impl Specified for ItemImpl {
 }
 
 impl Specified for ItemTrait {
-    type Spec = DataSpec;
+    type Spec = EmptySpec;
 
     fn get_attrs_mut(&mut self) -> &mut Vec<Attribute> {
         &mut self.attrs
@@ -388,6 +388,21 @@ impl TryFrom<SpecFields> for LoopSpec {
             decreases,
             span,
         })
+    }
+}
+
+impl TryFrom<SpecFields> for EmptySpec {
+    type Error = Error;
+
+    fn try_from(fields: SpecFields) -> Result<Self> {
+        if fields.fields.is_empty() {
+            Ok(Self)
+        } else {
+            Err(Error::new_spanned(
+                fields,
+                "this `#[spec]` attribute must have no fields",
+            ))
+        }
     }
 }
 

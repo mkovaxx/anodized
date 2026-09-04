@@ -6,6 +6,13 @@ use quote::ToTokens;
 use syn::{parse_quote, parse_str};
 
 #[test]
+#[should_panic(expected = "must have no fields")]
+fn empty_spec_rejects_nonempty_fields() {
+    let fields: crate::syntax::spec::SpecFields = parse_quote! { maintains: true };
+    let _: EmptySpec = fields.try_into().unwrap();
+}
+
+#[test]
 fn simple_spec() {
     let spec_item_fn: SpecItemFn = parse_quote! {
         #[spec(

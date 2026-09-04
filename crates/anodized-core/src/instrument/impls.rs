@@ -7,7 +7,7 @@ use syn::{
 };
 
 use crate::{
-    DataSpec,
+    EmptySpec,
     annotate::Specified as _,
     instrument::{Mode, make_item_error},
     syntax::attr::remove_unique_attr,
@@ -18,14 +18,10 @@ impl Mode {
     ///
     /// Reasons why impl functions must be treated differently from free-standing functions:
     /// - The `__anodized_fn_try_*` function must be qualified as `Self::` inside an impl.
-    pub fn instrument_impl(&self, spec: DataSpec, mut the_impl: ItemImpl) -> Result<ItemImpl> {
+    pub fn instrument_impl(&self, _: EmptySpec, mut the_impl: ItemImpl) -> Result<ItemImpl> {
         if the_impl.trait_.is_some() {
             return Err(make_item_error(&the_impl, "trait impl"));
         };
-
-        if !spec.is_empty() {
-            return Err(spec.spec_err("Unsupported spec element on inherent impl."));
-        }
 
         let mut new_items = Vec::with_capacity(the_impl.items.len() * 4);
 

@@ -13,6 +13,10 @@ pub mod syntax;
 #[cfg(test)]
 mod test_util;
 
+/// Mandates that an AST node's `#[spec]` attribute be empty, i.e. contain no fields.
+#[derive(Debug)]
+pub struct EmptySpec;
+
 /// Specifies the intended behavior of a function or method: `fn`.
 #[derive(Debug)]
 pub struct FnSpec {

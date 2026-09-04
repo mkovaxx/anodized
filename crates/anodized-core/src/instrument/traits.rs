@@ -9,7 +9,7 @@ use syn::{
 };
 
 use crate::{
-    DataSpec,
+    EmptySpec,
     annotate::Specified as _,
     instrument::{Mode, make_item_error},
     syntax::attr::remove_unique_attr,
@@ -24,17 +24,9 @@ impl Mode {
     ///    default impl performs runtime validation and calls the mangled function.
     pub fn instrument_trait(
         &self,
-        spec: DataSpec,
+        _: EmptySpec,
         mut the_trait: syn::ItemTrait,
     ) -> syn::Result<syn::ItemTrait> {
-        // Currently we don't support any spec fields for traits themselves.
-        if !spec.is_empty() {
-            return Err(spec.spec_err(
-                "Unsupported spec element on trait. Try placing it on an item inside the trait",
-            ));
-        }
-        let _ = move || spec;
-
         let mut new_trait_items = Vec::with_capacity(the_trait.items.len() * 5);
 
         for item in the_trait.items.into_iter() {
@@ -192,7 +184,7 @@ impl Mode {
     /// - The impl's postconditions must entail the trait's postconditions.
     pub fn instrument_trait_impl(
         &self,
-        spec: DataSpec,
+        _spec: EmptySpec,
         mut the_impl: syn::ItemImpl,
     ) -> syn::Result<syn::ItemImpl> {
         let Some((trait_bang, ref trait_path, _trait_for)) = the_impl.trait_ else {
@@ -201,10 +193,6 @@ impl Mode {
 
         if trait_bang.is_some() {
             return Err(make_item_error(&the_impl, "negative trait impl"));
-        }
-
-        if !spec.is_empty() {
-            return Err(spec.spec_err("Unsupported spec element on trait impl."));
         }
 
         let mut new_items = Vec::with_capacity(the_impl.items.len() * 4);

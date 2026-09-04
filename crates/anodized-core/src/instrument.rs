@@ -5,7 +5,7 @@ use syn::{
     Signature, parse_quote,
 };
 
-use crate::{DataSpec, FnSpec};
+use crate::{EmptySpec, FnSpec};
 
 pub mod data;
 pub mod fns;
@@ -194,14 +194,18 @@ Instead, you likely need to place a `#[spec]` attribute on an enclosing trait or
         }
     }
 
-    pub fn instrument_item_impl(&self, spec: DataSpec, item_impl: ItemImpl) -> Result<TokenStream> {
+    pub fn instrument_item_impl(
+        &self,
+        spec: EmptySpec,
+        item_impl: ItemImpl,
+    ) -> Result<TokenStream> {
         let new_impl = self.instrument_impl(spec, item_impl)?;
         Ok(new_impl.to_token_stream())
     }
 
     pub fn instrument_item_trait(
         &self,
-        spec: DataSpec,
+        spec: EmptySpec,
         item_trait: ItemTrait,
     ) -> Result<TokenStream> {
         let new_trait = self.instrument_trait(spec, item_trait)?;
@@ -210,7 +214,7 @@ Instead, you likely need to place a `#[spec]` attribute on an enclosing trait or
 
     pub fn instrument_item_trait_impl(
         &self,
-        spec: DataSpec,
+        spec: EmptySpec,
         item_impl: ItemImpl,
     ) -> Result<TokenStream> {
         let new_trait_impl = self.instrument_trait_impl(spec, item_impl)?;
