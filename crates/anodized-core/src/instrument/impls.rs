@@ -8,7 +8,7 @@ use syn::{
 
 use crate::{
     DataSpec,
-    annotate::{Specified as _, remove_spec_attr},
+    annotate::{Specified as _, syntax::remove_spec_attr},
     instrument::{Mode, make_item_error},
 };
 

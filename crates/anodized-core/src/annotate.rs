@@ -1,7 +1,7 @@
 use proc_macro2::TokenStream;
 use syn::{
     Attribute, Error, Expr, ExprAssign, ExprForLoop, ExprWhile, FieldValue, ImplItemFn, ItemEnum,
-    ItemFn, ItemImpl, ItemStruct, ItemTrait, Meta, Path, TraitItemFn, parse::Result, parse_quote,
+    ItemFn, ItemImpl, ItemStruct, ItemTrait, Meta, TraitItemFn, parse::Result, parse_quote,
     spanned::Spanned,
 };
 
@@ -11,7 +11,7 @@ use crate::{
 };
 
 pub mod syntax;
-use syntax::Keyword;
+use syntax::{Keyword, get_attr_input, remove_spec_attr};
 
 #[cfg(test)]
 #[path = "annotate_tests.rs"]
@@ -85,30 +85,6 @@ impl Specified for TraitItemFn {
     }
 }
 
-impl Specified for ItemStruct {
-    type Spec = DataSpec;
-
-    fn get_attrs_mut(&mut self) -> &mut Vec<Attribute> {
-        &mut self.attrs
-    }
-
-    fn parse_spec_from_fields(&mut self, fields: SpecFields) -> Result<Self::Spec> {
-        fields.try_into()
-    }
-}
-
-impl Specified for ItemEnum {
-    type Spec = DataSpec;
-
-    fn get_attrs_mut(&mut self) -> &mut Vec<Attribute> {
-        &mut self.attrs
-    }
-
-    fn parse_spec_from_fields(&mut self, fields: SpecFields) -> Result<Self::Spec> {
-        fields.try_into()
-    }
-}
-
 impl Specified for ItemImpl {
     type Spec = DataSpec;
 
@@ -122,6 +98,30 @@ impl Specified for ItemImpl {
 }
 
 impl Specified for ItemTrait {
+    type Spec = DataSpec;
+
+    fn get_attrs_mut(&mut self) -> &mut Vec<Attribute> {
+        &mut self.attrs
+    }
+
+    fn parse_spec_from_fields(&mut self, fields: SpecFields) -> Result<Self::Spec> {
+        fields.try_into()
+    }
+}
+
+impl Specified for ItemStruct {
+    type Spec = DataSpec;
+
+    fn get_attrs_mut(&mut self) -> &mut Vec<Attribute> {
+        &mut self.attrs
+    }
+
+    fn parse_spec_from_fields(&mut self, fields: SpecFields) -> Result<Self::Spec> {
+        fields.try_into()
+    }
+}
+
+impl Specified for ItemEnum {
     type Spec = DataSpec;
 
     fn get_attrs_mut(&mut self) -> &mut Vec<Attribute> {
@@ -154,50 +154,6 @@ impl Specified for ExprWhile {
 
     fn parse_spec_from_fields(&mut self, fields: SpecFields) -> Result<Self::Spec> {
         fields.try_into()
-    }
-}
-
-/// Removes a single `#[spec]` attribute, if present, from an attribute list.
-///
-/// If there are multiple `#[spec]` attributes, returns `Err`.
-/// The arguments of the `#[spec]` attribute are *not* validated.
-pub fn remove_spec_attr(attrs: &mut Vec<Attribute>) -> Result<Option<Attribute>> {
-    let mut maybe_index = None;
-
-    for (i, attr) in attrs
-        .iter()
-        .enumerate()
-        .filter(|(_, attr)| path_matches_name(attr.path(), "spec"))
-    {
-        if maybe_index.is_some() {
-            return Err(Error::new_spanned(
-                attr,
-                "multiple `#[spec]` attributes are not allowed",
-            ));
-        }
-        maybe_index = Some(i);
-    }
-
-    if let Some(index) = maybe_index {
-        let attr = attrs.remove(index);
-        Ok(Some(attr))
-    } else {
-        Ok(None)
-    }
-}
-
-fn path_matches_name(path: &Path, name: &str) -> bool {
-    path.get_ident().is_some_and(|ident| *ident == name)
-}
-
-pub fn get_attr_input(attr: Attribute) -> Result<TokenStream> {
-    match attr.meta {
-        Meta::Path(_) => Ok(TokenStream::new()),
-        Meta::List(list) => Ok(list.tokens),
-        Meta::NameValue(key_value) => Err(Error::new_spanned(
-            key_value.eq_token,
-            "expected arguments between delimiters `()`, `[]`, or `{}`",
-        )),
     }
 }
 
