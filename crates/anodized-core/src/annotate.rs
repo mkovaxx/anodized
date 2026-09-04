@@ -1,25 +1,167 @@
+use proc_macro2::TokenStream;
 use syn::{
-    Attribute, Error, Expr, ExprAssign, FieldValue, Meta,
-    parse::{Parse, ParseStream, Result},
-    parse_quote,
+    Attribute, Error, Expr, ExprAssign, ExprForLoop, ExprWhile, FieldValue, ImplItemFn, ItemEnum,
+    ItemFn, ItemImpl, ItemStruct, ItemTrait, Meta, TraitItemFn, parse::Result, parse_quote,
     spanned::Spanned,
 };
 
 use crate::{
-    Capture, Condition, DataSpec, LoopSpec, LoopVariant, PostCondition, Spec,
-    qualifiers::FnQualifiers,
+    Capture, Condition, DataSpec, FnSpec, LoopSpec, LoopVariant, PostCondition,
+    annotate::syntax::SpecFields, qualifiers::FnQualifiers,
 };
 
 pub mod syntax;
-use syntax::Keyword;
+use syntax::{Keyword, get_attr_input, remove_spec_attr};
 
 #[cfg(test)]
 #[path = "annotate_tests.rs"]
 mod annotate_tests;
 
-impl Parse for Spec {
-    fn parse(input: ParseStream) -> Result<Self> {
-        let raw_spec = syntax::SpecFields::parse(input)?;
+/// Implemented by AST nodes that may have a `#[spec]` attribute.
+pub trait Specified {
+    /// The spec type associated with this AST node.
+    type Spec;
+
+    /// Parse the `#[spec]` from the `Attribute` list.
+    ///
+    /// - If the AST node has a `#[spec]` attribute, it is removed from the `Attribute` list,
+    ///   and its contents are parsed as `Self::Spec`, then attached to the AST node.
+    /// - If there's no `#[spec]` attribute, the spec is built from an empty `SpecFields`.
+    /// - Multiple `#[spec]` attributes are not allowed and cause an error.
+    fn parse_spec_from_attrs(&mut self) -> Result<Self::Spec> {
+        let spec_input: TokenStream = if let Some(attr) = remove_spec_attr(self.get_attrs_mut())? {
+            get_attr_input(attr)?
+        } else {
+            TokenStream::new()
+        };
+        let spec_fields: SpecFields = syn::parse2(spec_input)?;
+        self.parse_spec_from_fields(spec_fields)
+    }
+
+    /// Parse the `#[spec]` from `SpecFields`.
+    ///
+    /// Implement this to parse a spec in the context of its AST node.
+    fn parse_spec_from_fields(&mut self, fields: SpecFields) -> Result<Self::Spec>;
+
+    /// Get a mutable reference to the `Attribute` list.
+    ///
+    /// Needed to by the default `with_spec_from_attrs`.
+    fn get_attrs_mut(&mut self) -> &mut Vec<Attribute>;
+}
+
+impl Specified for ItemFn {
+    type Spec = FnSpec;
+
+    fn get_attrs_mut(&mut self) -> &mut Vec<Attribute> {
+        &mut self.attrs
+    }
+
+    fn parse_spec_from_fields(&mut self, fields: SpecFields) -> Result<Self::Spec> {
+        fields.try_into()
+    }
+}
+
+impl Specified for ImplItemFn {
+    type Spec = FnSpec;
+
+    fn get_attrs_mut(&mut self) -> &mut Vec<Attribute> {
+        &mut self.attrs
+    }
+
+    fn parse_spec_from_fields(&mut self, fields: SpecFields) -> Result<Self::Spec> {
+        fields.try_into()
+    }
+}
+
+impl Specified for TraitItemFn {
+    type Spec = FnSpec;
+
+    fn get_attrs_mut(&mut self) -> &mut Vec<Attribute> {
+        &mut self.attrs
+    }
+
+    fn parse_spec_from_fields(&mut self, fields: SpecFields) -> Result<Self::Spec> {
+        fields.try_into()
+    }
+}
+
+impl Specified for ItemImpl {
+    type Spec = DataSpec;
+
+    fn get_attrs_mut(&mut self) -> &mut Vec<Attribute> {
+        &mut self.attrs
+    }
+
+    fn parse_spec_from_fields(&mut self, fields: SpecFields) -> Result<Self::Spec> {
+        fields.try_into()
+    }
+}
+
+impl Specified for ItemTrait {
+    type Spec = DataSpec;
+
+    fn get_attrs_mut(&mut self) -> &mut Vec<Attribute> {
+        &mut self.attrs
+    }
+
+    fn parse_spec_from_fields(&mut self, fields: SpecFields) -> Result<Self::Spec> {
+        fields.try_into()
+    }
+}
+
+impl Specified for ItemStruct {
+    type Spec = DataSpec;
+
+    fn get_attrs_mut(&mut self) -> &mut Vec<Attribute> {
+        &mut self.attrs
+    }
+
+    fn parse_spec_from_fields(&mut self, fields: SpecFields) -> Result<Self::Spec> {
+        fields.try_into()
+    }
+}
+
+impl Specified for ItemEnum {
+    type Spec = DataSpec;
+
+    fn get_attrs_mut(&mut self) -> &mut Vec<Attribute> {
+        &mut self.attrs
+    }
+
+    fn parse_spec_from_fields(&mut self, fields: SpecFields) -> Result<Self::Spec> {
+        fields.try_into()
+    }
+}
+
+impl Specified for ExprForLoop {
+    type Spec = LoopSpec;
+
+    fn get_attrs_mut(&mut self) -> &mut Vec<Attribute> {
+        &mut self.attrs
+    }
+
+    fn parse_spec_from_fields(&mut self, fields: SpecFields) -> Result<Self::Spec> {
+        fields.try_into()
+    }
+}
+
+impl Specified for ExprWhile {
+    type Spec = LoopSpec;
+
+    fn get_attrs_mut(&mut self) -> &mut Vec<Attribute> {
+        &mut self.attrs
+    }
+
+    fn parse_spec_from_fields(&mut self, fields: SpecFields) -> Result<Self::Spec> {
+        fields.try_into()
+    }
+}
+
+impl TryFrom<SpecFields> for FnSpec {
+    type Error = Error;
+
+    fn try_from(raw_spec: SpecFields) -> Result<FnSpec> {
+        let span = raw_spec.span();
 
         let mut errors = MultiError::empty();
         let mut qualifiers = FnQualifiers::empty();
@@ -126,7 +268,7 @@ impl Parse for Spec {
 
         if !is_sorted {
             errors.add(Error::new(
-                input.span(),
+                span,
                 "fields are out of order: the expected order is: `<QUALIFIERS>`, `requires`, `maintains`, `captures`, `inspects`, `ensures`, where `<QUALIFIERS>` are:\n
 `functional` (`pure` and `total`),\n
 `pure` (`deterministic` and `effectfree`),\n
@@ -144,14 +286,16 @@ impl Parse for Spec {
             maintains,
             captures,
             ensures,
-            span: input.span(),
+            span,
         })
     }
 }
 
-impl Parse for DataSpec {
-    fn parse(input: ParseStream) -> Result<Self> {
-        let raw_spec = syntax::SpecFields::parse(input)?;
+impl TryFrom<SpecFields> for DataSpec {
+    type Error = Error;
+
+    fn try_from(raw_spec: SpecFields) -> Result<Self> {
+        let span = raw_spec.span();
 
         let mut errors = MultiError::empty();
         let mut maintains: Vec<Condition> = vec![];
@@ -177,17 +321,15 @@ impl Parse for DataSpec {
             return Err(combined_error);
         }
 
-        Ok(Self {
-            maintains,
-            span: input.span(),
-        })
+        Ok(Self { maintains, span })
     }
 }
 
-impl Parse for LoopSpec {
-    fn parse(input: ParseStream) -> Result<Self> {
-        let raw_spec = syntax::SpecFields::parse(input)?;
+impl TryFrom<SpecFields> for LoopSpec {
+    type Error = Error;
 
+    fn try_from(raw_spec: SpecFields) -> Result<Self> {
+        let span = raw_spec.span();
         let is_sorted = raw_spec.is_sorted();
 
         let mut errors = MultiError::empty();
@@ -224,7 +366,7 @@ impl Parse for LoopSpec {
 
         if !is_sorted {
             errors.add(Error::new(
-                input.span(),
+                span,
                 "fields are out of order: the expected order is `maintains`, `decreases`",
             ));
         }
@@ -236,7 +378,7 @@ impl Parse for LoopSpec {
         Ok(Self {
             maintains,
             decreases,
-            span: input.span(),
+            span,
         })
     }
 }

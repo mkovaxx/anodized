@@ -1,13 +1,17 @@
-use crate::{instrument::CheckSettings, qualifiers::FnQualifiers, test_util::assert_tokens_eq};
+use crate::{
+    instrument::CheckSettings,
+    qualifiers::FnQualifiers,
+    test_util::{SpecItemImpl, SpecItemTrait, assert_tokens_eq},
+};
 
 use super::*;
 use proc_macro2::TokenStream;
-use syn::{ItemImpl, ItemTrait, parse_quote};
+use syn::parse_quote;
 
 #[test]
 fn embed_spec_item_trait() {
-    let trait_spec = DataSpec::empty();
-    let item_trait: ItemTrait = parse_quote! {
+    let spec_item_trait: SpecItemTrait = parse_quote! {
+        #[spec]
         trait TRAIT {
             #[spec(
                 requires: COND_1,
@@ -55,15 +59,15 @@ fn embed_spec_item_trait() {
     };
 
     let observed = Mode::EmbedSpecs
-        .instrument_item_trait(trait_spec, item_trait)
+        .instrument_item_trait(spec_item_trait.spec, spec_item_trait.node)
         .unwrap();
     assert_tokens_eq(&observed, &expected);
 }
 
 #[test]
 fn default_instrument_item_trait() {
-    let trait_spec = DataSpec::empty();
-    let item_trait: ItemTrait = parse_quote! {
+    let spec_item_trait: SpecItemTrait = parse_quote! {
+        #[spec]
         trait TRAIT {
             #[spec(
                 requires: COND_1,
@@ -111,15 +115,15 @@ fn default_instrument_item_trait() {
     };
 
     let observed = Mode::DEFAULT
-        .instrument_item_trait(trait_spec, item_trait)
+        .instrument_item_trait(spec_item_trait.spec, spec_item_trait.node)
         .unwrap();
     assert_tokens_eq(&observed, &expected);
 }
 
 #[test]
 fn emit_try_fn_instrument_item_trait() {
-    let trait_spec = DataSpec::empty();
-    let item_trait: ItemTrait = parse_quote! {
+    let spec_item_trait: SpecItemTrait = parse_quote! {
+        #[spec]
         trait TRAIT {
             #[spec(
                 requires: COND_1,
@@ -191,15 +195,15 @@ fn emit_try_fn_instrument_item_trait() {
     };
 
     let observed = Mode::InjectChecks(CheckSettings::PRINT_AND_TRY)
-        .instrument_item_trait(trait_spec, item_trait)
+        .instrument_item_trait(spec_item_trait.spec, spec_item_trait.node)
         .unwrap();
     assert_tokens_eq(&observed, &expected);
 }
 
 #[test]
 fn embed_spec_item_impl_trait() {
-    let trait_spec = DataSpec::empty();
-    let item_impl: ItemImpl = parse_quote! {
+    let spec_item_impl: SpecItemImpl = parse_quote! {
+        #[spec]
         impl TRAIT for IMPL_TYPE {
             #[spec(
                 requires: COND_1,
@@ -243,15 +247,15 @@ fn embed_spec_item_impl_trait() {
     };
 
     let observed = Mode::EmbedSpecs
-        .instrument_item_trait_impl(trait_spec, item_impl)
+        .instrument_item_trait_impl(spec_item_impl.spec, spec_item_impl.node)
         .unwrap();
     assert_tokens_eq(&observed, &expected);
 }
 
 #[test]
 fn default_instrument_item_impl_trait() {
-    let trait_spec = DataSpec::empty();
-    let item_impl: ItemImpl = parse_quote! {
+    let spec_item_impl: SpecItemImpl = parse_quote! {
+        #[spec]
         impl TRAIT for IMPL_TYPE {
             #[spec(
                 requires: COND_1,
@@ -299,15 +303,15 @@ fn default_instrument_item_impl_trait() {
     };
 
     let observed = Mode::DEFAULT
-        .instrument_item_trait_impl(trait_spec, item_impl)
+        .instrument_item_trait_impl(spec_item_impl.spec, spec_item_impl.node)
         .unwrap();
     assert_tokens_eq(&observed, &expected);
 }
 
 #[test]
 fn emit_try_fn_instrument_item_impl_trait() {
-    let trait_spec = DataSpec::empty();
-    let item_impl: ItemImpl = parse_quote! {
+    let spec_item_impl: SpecItemImpl = parse_quote! {
+        #[spec]
         impl TRAIT for IMPL_TYPE {
             #[spec(
                 requires: COND_1,
@@ -363,7 +367,7 @@ fn emit_try_fn_instrument_item_impl_trait() {
     };
 
     let observed = Mode::InjectChecks(CheckSettings::PRINT_AND_TRY)
-        .instrument_item_trait_impl(trait_spec, item_impl)
+        .instrument_item_trait_impl(spec_item_impl.spec, spec_item_impl.node)
         .unwrap();
     assert_tokens_eq(&observed, &expected);
 }

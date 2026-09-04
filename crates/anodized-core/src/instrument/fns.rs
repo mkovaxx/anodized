@@ -12,7 +12,7 @@ use syn::{
 };
 
 use crate::{
-    Capture, Condition, PostCondition, Spec,
+    Capture, Condition, FnSpec, PostCondition,
     instrument::{
         CheckSettings, Mode,
         patterns::{IdentGenerator, TamePat, tame_pattern},
@@ -21,7 +21,7 @@ use crate::{
 };
 
 impl Mode {
-    pub fn instrument_fn(&self, spec: &Spec, sig: &Signature, body: &mut Block) -> syn::Result<()> {
+    pub fn instrument_fn(&self, spec: &FnSpec, sig: &Signature, body: &mut Block) -> Result<()> {
         self.instrument_loops_in_fn_body(body)?;
 
         let Mode::InjectChecks(check_config) = self else {
@@ -202,7 +202,7 @@ impl Mode {
 impl CheckSettings {
     fn instrument_fn_body(
         &self,
-        spec: &Spec,
+        spec: &FnSpec,
         original_body: &Block,
         is_async: bool,
         return_type: &ReturnType,

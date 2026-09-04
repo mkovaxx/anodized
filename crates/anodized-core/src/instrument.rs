@@ -5,7 +5,7 @@ use syn::{
     Signature, parse_quote,
 };
 
-use crate::{DataSpec, Spec};
+use crate::{DataSpec, FnSpec};
 
 pub mod data;
 pub mod fns;
@@ -67,7 +67,7 @@ impl Mode {
         }
     }
 
-    pub fn instrument_item_fn(&self, spec: Spec, mut item_fn: ItemFn) -> Result<TokenStream> {
+    pub fn instrument_item_fn(&self, spec: FnSpec, mut item_fn: ItemFn) -> Result<TokenStream> {
         let mut tokens = TokenStream::new();
 
         if item_fn.sig.ident.to_string().starts_with("__anodized_") {
@@ -255,28 +255,4 @@ request at https://github.com/anodized-rs/anodized/issues/new"#,
         item_descr
     );
     syn::Error::new_spanned(tokens, msg)
-}
-
-/// Finds the `[spec]` attrib in an attribute list.
-///
-/// Returns the spec [Attribute] and the remaining attributes.
-fn find_spec_attr(attrs: Vec<Attribute>) -> syn::Result<(Option<Attribute>, Vec<Attribute>)> {
-    let mut spec_attr = None;
-    let mut other_attrs = Vec::new();
-
-    for attr in attrs {
-        if attr.path().is_ident("spec") {
-            if spec_attr.is_some() {
-                return Err(syn::Error::new_spanned(
-                    attr,
-                    "multiple `#[spec]` attributes on a single item are not supported",
-                ));
-            }
-            spec_attr = Some(attr);
-        } else {
-            other_attrs.push(attr);
-        }
-    }
-
-    Ok((spec_attr, other_attrs))
 }

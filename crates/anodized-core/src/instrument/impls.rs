@@ -7,8 +7,9 @@ use syn::{
 };
 
 use crate::{
-    DataSpec, Spec,
-    instrument::{Mode, find_spec_attr, make_item_error},
+    DataSpec,
+    annotate::{Specified as _, syntax::remove_spec_attr},
+    instrument::{Mode, make_item_error},
 };
 
 impl Mode {
@@ -30,9 +31,6 @@ impl Mode {
         for item in the_impl.items.into_iter() {
             match item {
                 ImplItem::Fn(mut item_fn) => {
-                    let (spec_attr, func_attrs) = find_spec_attr(item_fn.attrs)?;
-                    item_fn.attrs = func_attrs;
-
                     if item_fn.sig.ident.to_string().starts_with("__anodized_") {
                         return Err(Error::new_spanned(
                             item_fn.sig.ident,
@@ -41,10 +39,7 @@ Instead, ensure that both the impl block and the fn have a `#[spec]` annotation.
                         ));
                     }
 
-                    let fn_spec: Spec = match spec_attr {
-                        Some(spec_attr) => spec_attr.parse_args()?,
-                        None => Spec::empty(),
-                    };
+                    let fn_spec = item_fn.parse_spec_from_attrs()?;
 
                     if let Self::EmbedSpecs = self {
                         // Embed `spec` elements as `__anodized_fn_*` items.
@@ -124,27 +119,21 @@ Instead, ensure that both the impl block and the fn have a `#[spec]` annotation.
                     new_items.push(ImplItem::Fn(item_fn));
                 }
                 ImplItem::Const(mut const_item) => {
-                    let (spec, attrs) = find_spec_attr(const_item.attrs)?;
-                    if let Some(ref spec_attr) = spec {
+                    if let Some(spec_attr) = remove_spec_attr(&mut const_item.attrs)? {
                         return Err(make_item_error(&spec_attr, "impl const"));
                     }
-                    const_item.attrs = attrs;
                     new_items.push(ImplItem::Const(const_item));
                 }
                 ImplItem::Type(mut type_item) => {
-                    let (spec, attrs) = find_spec_attr(type_item.attrs)?;
-                    if let Some(ref spec_attr) = spec {
+                    if let Some(spec_attr) = remove_spec_attr(&mut type_item.attrs)? {
                         return Err(make_item_error(&spec_attr, "impl type"));
                     }
-                    type_item.attrs = attrs;
                     new_items.push(ImplItem::Type(type_item));
                 }
                 ImplItem::Macro(mut macro_item) => {
-                    let (spec, attrs) = find_spec_attr(macro_item.attrs)?;
-                    if let Some(ref spec_attr) = spec {
+                    if let Some(spec_attr) = remove_spec_attr(&mut macro_item.attrs)? {
                         return Err(make_item_error(&spec_attr, "impl macro"));
                     }
-                    macro_item.attrs = attrs;
                     new_items.push(ImplItem::Macro(macro_item));
                 }
                 ImplItem::Verbatim(token_stream) => {
