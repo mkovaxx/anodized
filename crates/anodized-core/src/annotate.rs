@@ -12,6 +12,7 @@ use crate::{
     syntax::{
         attr::{get_attr_input, remove_unique_attr},
         spec::{Keyword, SpecFields},
+        unspec::{UnspecArg, UnspecAttr},
     },
 };
 
@@ -183,9 +184,52 @@ impl FnSpec {
         inputs: &mut Punctuated<FnArg, Token![,]>,
         attrs: &mut Vec<Attribute>,
     ) -> Result<(Vec<InputSpec>, bool)> {
-        // TODO: Collect `#[unspec]` attributes and populate input and output specs.
-        let input_specs = vec![];
-        let output_spec_on_exit = false;
+        let mut input_specs = Vec::with_capacity(inputs.len());
+
+        for input in inputs {
+            let attrs = match input {
+                FnArg::Receiver(receiver) => &mut receiver.attrs,
+                FnArg::Typed(pat_type) => &mut pat_type.attrs,
+            };
+
+            let input_spec = if let Some(attr) = remove_unique_attr("unspec", attrs)? {
+                let unspec: UnspecAttr = attr.try_into()?;
+                match unspec.arg {
+                    None => InputSpec {
+                        on_entry: false,
+                        on_exit: false,
+                    },
+                    Some((_, UnspecArg::In(_))) => InputSpec {
+                        on_entry: false,
+                        on_exit: true,
+                    },
+                    Some((_, UnspecArg::Out(_))) => InputSpec {
+                        on_entry: true,
+                        on_exit: false,
+                    },
+                }
+            } else {
+                InputSpec::default()
+            };
+            input_specs.push(input_spec);
+        }
+
+        let output_spec_on_exit = if let Some(attr) = remove_unique_attr("unspec", attrs)? {
+            let unspec: UnspecAttr = attr.try_into()?;
+            match unspec.arg {
+                Some((_, UnspecArg::Out(_))) => false,
+                _ => {
+                    let attr: Attribute = unspec.into();
+                    return Err(Error::new_spanned(
+                        attr,
+                        "only `#[unspec(out)]` is allowed on a `fn` output",
+                    ));
+                }
+            }
+        } else {
+            true
+        };
+
         Ok((input_specs, output_spec_on_exit))
     }
 
