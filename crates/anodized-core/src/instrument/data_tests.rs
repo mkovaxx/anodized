@@ -9,7 +9,10 @@ use syn::parse_quote;
 #[test]
 fn embed_spec_item_struct() {
     let spec_item_struct: SpecItemStruct = parse_quote! {
-        #[spec(maintains: [COND_1, COND_2])]
+        #[spec(maintains: [
+            COND_1,
+            COND_2,
+        ])]
         struct STRUCT<'LT_1, TYPE_1: BOUND_1 = DEFAULT_1, const CONST_1: TYPE_2 = DEFAULT_2>
         where
             'LT_1: 'LT_2,
@@ -53,7 +56,10 @@ fn embed_spec_item_struct() {
 #[test]
 fn embed_spec_item_enum() {
     let spec_item_enum: SpecItemEnum = parse_quote! {
-        #[spec(maintains: [COND_1, COND_2])]
+        #[spec(maintains: [
+            COND_1,
+            COND_2,
+        ])]
         enum ENUM<'LT_1, TYPE_1: BOUND_1 = DEFAULT_1, const CONST_1: TYPE_2 = DEFAULT_2>
         where
             'LT_1: 'LT_2,
