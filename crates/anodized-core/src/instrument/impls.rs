@@ -7,7 +7,7 @@ use syn::{
 };
 
 use crate::{
-    DataSpec, SpecImplItemFn,
+    DataSpec,
     annotate::{Specified as _, remove_spec_attr},
     instrument::{Mode, make_item_error},
 };
@@ -30,7 +30,7 @@ impl Mode {
 
         for item in the_impl.items.into_iter() {
             match item {
-                ImplItem::Fn(item_fn) => {
+                ImplItem::Fn(mut item_fn) => {
                     if item_fn.sig.ident.to_string().starts_with("__anodized_") {
                         return Err(Error::new_spanned(
                             item_fn.sig.ident,
@@ -39,10 +39,7 @@ Instead, ensure that both the impl block and the fn have a `#[spec]` annotation.
                         ));
                     }
 
-                    let SpecImplItemFn {
-                        spec: fn_spec,
-                        node: mut item_fn,
-                    } = item_fn.with_spec_from_attrs()?;
+                    let fn_spec = item_fn.with_spec_from_attrs()?;
 
                     if let Self::EmbedSpecs = self {
                         // Embed `spec` elements as `__anodized_fn_*` items.

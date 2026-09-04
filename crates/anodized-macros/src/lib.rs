@@ -39,32 +39,30 @@ pub fn spec(args: TokenStream, input: TokenStream) -> TokenStream {
     let item = parse_macro_input!(input as Item);
 
     let result = match item {
-        Item::Fn(func) => func
+        Item::Fn(mut func) => func
             .with_spec_from_fields(spec_fields)
-            .and_then(|spec_item| CONFIG.instrument_item_fn(spec_item.spec, spec_item.item)),
-        Item::Trait(the_trait) => the_trait
+            .and_then(|spec| CONFIG.instrument_item_fn(spec, func)),
+        Item::Trait(mut the_trait) => the_trait
             .with_spec_from_fields(spec_fields)
-            .and_then(|spec_item| CONFIG.instrument_item_trait(spec_item.spec, spec_item.item)),
-        Item::Impl(the_impl) if the_impl.trait_.is_some() => the_impl
+            .and_then(|spec| CONFIG.instrument_item_trait(spec, the_trait)),
+        Item::Impl(mut the_impl) if the_impl.trait_.is_some() => the_impl
             .with_spec_from_fields(spec_fields)
-            .and_then(|spec_item| {
-                CONFIG.instrument_item_trait_impl(spec_item.spec, spec_item.item)
-            }),
-        Item::Impl(the_impl) if the_impl.trait_.is_none() => the_impl
+            .and_then(|spec| CONFIG.instrument_item_trait_impl(spec, the_impl)),
+        Item::Impl(mut the_impl) if the_impl.trait_.is_none() => the_impl
             .with_spec_from_fields(spec_fields)
-            .and_then(|spec_item| CONFIG.instrument_item_impl(spec_item.spec, spec_item.item)),
+            .and_then(|spec| CONFIG.instrument_item_impl(spec, the_impl)),
         Item::Const(_) => Err(make_item_error(&item, "const")),
-        Item::Enum(the_enum) => the_enum
+        Item::Enum(mut the_enum) => the_enum
             .with_spec_from_fields(spec_fields)
-            .and_then(|spec_item| CONFIG.instrument_item_enum(spec_item.spec, spec_item.item)),
+            .and_then(|spec| CONFIG.instrument_item_enum(spec, the_enum)),
         Item::ExternCrate(_) => Err(make_item_error(&item, "extern crate")),
         Item::ForeignMod(_) => Err(make_item_error(&item, "extern block")),
         Item::Macro(_) => Err(make_item_error(&item, "macro")),
         Item::Mod(_) => Err(make_item_error(&item, "mod")),
         Item::Static(_) => Err(make_item_error(&item, "static")),
-        Item::Struct(the_struct) => the_struct
+        Item::Struct(mut the_struct) => the_struct
             .with_spec_from_fields(spec_fields)
-            .and_then(|spec_item| CONFIG.instrument_item_struct(spec_item.spec, spec_item.item)),
+            .and_then(|spec| CONFIG.instrument_item_struct(spec, the_struct)),
         Item::TraitAlias(_) => Err(make_item_error(&item, "trait alias")),
         Item::Type(_) => Err(make_item_error(&item, "type")),
         Item::Union(_) => Err(make_item_error(&item, "union")),

@@ -9,7 +9,7 @@ use syn::{
 };
 
 use crate::{
-    DataSpec, SpecImplItemFn, SpecTraitItemFn,
+    DataSpec,
     annotate::{Specified as _, remove_spec_attr},
     instrument::{Mode, make_item_error},
 };
@@ -38,17 +38,14 @@ impl Mode {
 
         for item in the_trait.items.into_iter() {
             match item {
-                TraitItem::Fn(func) => {
+                TraitItem::Fn(mut func) => {
                     // NOTE: We have no way of knowing which attributes are
                     //   "external" - meant for the interface and belong on the wrapper,
                     //   "internal" - meant for the mangled implementation.
                     //   Right now we put all attribs on both functions, but that's certainly
                     //   not going to work in every situation.
 
-                    let SpecTraitItemFn {
-                        spec: fn_spec,
-                        node: mut func,
-                    } = func.with_spec_from_attrs()?;
+                    let fn_spec = func.with_spec_from_attrs()?;
 
                     let attrs: [Attribute; 2] = [
                         parse_quote!(#[doc(hidden)]),
@@ -213,7 +210,7 @@ impl Mode {
 
         for item in the_impl.items.into_iter() {
             match item {
-                ImplItem::Fn(func) => {
+                ImplItem::Fn(mut func) => {
                     if func.sig.ident.to_string().starts_with("__anodized_") {
                         return Err(syn::Error::new_spanned(
                             func.sig.ident,
@@ -222,10 +219,7 @@ Instead, ensure that both the trait and the impl fn have a `#[spec]` annotation.
                         ));
                     }
 
-                    let SpecImplItemFn {
-                        spec: fn_spec,
-                        node: mut func,
-                    } = func.with_spec_from_attrs()?;
+                    let fn_spec = func.with_spec_from_attrs()?;
 
                     let attrs: [Attribute; 2] = [
                         parse_quote!(#[doc(hidden)]),
