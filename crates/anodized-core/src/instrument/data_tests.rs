@@ -1,4 +1,7 @@
-use crate::{SpecItemEnum, SpecItemStruct, instrument::Mode, test_util::assert_tokens_eq};
+use crate::{
+    instrument::Mode,
+    test_util::{SpecItemEnum, SpecItemStruct, assert_tokens_eq},
+};
 
 use proc_macro2::TokenStream;
 use syn::parse_quote;

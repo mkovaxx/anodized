@@ -1,4 +1,4 @@
-use crate::{SpecItemFn, test_util::assert_tokens_eq};
+use crate::test_util::{SpecItemFn, assert_tokens_eq};
 
 use super::*;
 use proc_macro2::TokenStream;
