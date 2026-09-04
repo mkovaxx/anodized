@@ -1,13 +1,17 @@
-use crate::{instrument::CheckSettings, qualifiers::FnQualifiers, test_util::assert_tokens_eq};
+use crate::{
+    instrument::CheckSettings,
+    qualifiers::FnQualifiers,
+    test_util::{SpecItemImpl, assert_tokens_eq},
+};
 
 use super::*;
 use proc_macro2::TokenStream;
-use syn::{ItemImpl, parse_quote};
+use syn::parse_quote;
 
 #[test]
 fn embed_spec_item_impl() {
-    let impl_spec = DataSpec::empty();
-    let item_impl: ItemImpl = parse_quote! {
+    let spec_item_impl: SpecItemImpl = parse_quote! {
+        #[spec]
         impl IMPL_TYPE {
             #[spec(
                 requires: COND_1,
@@ -51,15 +55,15 @@ fn embed_spec_item_impl() {
     };
 
     let observed = Mode::EmbedSpecs
-        .instrument_item_impl(impl_spec, item_impl)
+        .instrument_item_impl(spec_item_impl.spec, spec_item_impl.node)
         .unwrap();
     assert_tokens_eq(&observed, &expected);
 }
 
 #[test]
 fn default_instrument_item_impl() {
-    let impl_spec = DataSpec::empty();
-    let item_impl: ItemImpl = parse_quote! {
+    let spec_item_impl: SpecItemImpl = parse_quote! {
+        #[spec]
         impl IMPL_TYPE {
             #[spec(
                 requires: COND_1,
@@ -93,15 +97,15 @@ fn default_instrument_item_impl() {
     };
 
     let observed = Mode::DEFAULT
-        .instrument_item_impl(impl_spec, item_impl)
+        .instrument_item_impl(spec_item_impl.spec, spec_item_impl.node)
         .unwrap();
     assert_tokens_eq(&observed, &expected);
 }
 
 #[test]
 fn emit_try_fn_instrument_item_impl() {
-    let impl_spec = DataSpec::empty();
-    let item_impl: ItemImpl = parse_quote! {
+    let spec_item_impl: SpecItemImpl = parse_quote! {
+        #[spec]
         impl IMPL_TYPE {
             #[spec(
                 requires: COND_1,
@@ -160,7 +164,7 @@ fn emit_try_fn_instrument_item_impl() {
     };
 
     let observed = Mode::InjectChecks(CheckSettings::PRINT_AND_TRY)
-        .instrument_item_impl(impl_spec, item_impl)
+        .instrument_item_impl(spec_item_impl.spec, spec_item_impl.node)
         .unwrap();
     assert_tokens_eq(&observed, &expected);
 }

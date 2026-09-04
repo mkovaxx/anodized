@@ -30,18 +30,6 @@ pub struct FnSpec {
 }
 
 impl FnSpec {
-    /// Empty spec that contains no elements.
-    pub fn empty() -> Self {
-        Self {
-            qualifiers: FnQualifiers::empty(),
-            requires: vec![],
-            maintains: vec![],
-            captures: vec![],
-            ensures: vec![],
-            span: Span::call_site(),
-        }
-    }
-
     /// Returns `true` if the spec is empty (specifies nothing), otherwise returns `false`.
     pub fn is_empty(&self) -> bool {
         self.qualifiers.is_empty()
@@ -67,14 +55,6 @@ pub struct DataSpec {
 }
 
 impl DataSpec {
-    /// Empty spec that contains no elements.
-    pub fn empty() -> Self {
-        Self {
-            maintains: vec![],
-            span: Span::call_site(),
-        }
-    }
-
     /// Returns `true` if the spec is empty (specifies nothing), otherwise returns `false`.
     pub fn is_empty(&self) -> bool {
         self.maintains.is_empty()

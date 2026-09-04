@@ -4,25 +4,22 @@ use crate::{
 };
 use pretty_assertions::assert_eq;
 use quote::{ToTokens, quote};
-use syn::{
-    ImplItemFn, ItemEnum, ItemFn, ItemStruct, TraitItemFn,
-    parse::{Parse, ParseStream},
-};
+use syn::parse::{Parse, ParseStream};
 
 /// Specified `fn`.
-pub type SpecItemFn = NodeWithSpec<FnSpec, ItemFn>;
+pub type SpecItemFn = NodeWithSpec<FnSpec, syn::ItemFn>;
 
-/// Specified `fn` inside an `impl`.
-pub type SpecImplItemFn = NodeWithSpec<FnSpec, ImplItemFn>;
+/// Specified `impl`.
+pub type SpecItemImpl = NodeWithSpec<DataSpec, syn::ItemImpl>;
 
-/// Specified `fn` inside a `trait`.
-pub type SpecTraitItemFn = NodeWithSpec<FnSpec, TraitItemFn>;
+/// Specified `trait`.
+pub type SpecItemTrait = NodeWithSpec<DataSpec, syn::ItemTrait>;
 
 /// Specified `struct`.
-pub type SpecItemStruct = NodeWithSpec<DataSpec, ItemStruct>;
+pub type SpecItemStruct = NodeWithSpec<DataSpec, syn::ItemStruct>;
 
 /// Specified `enum`.
-pub type SpecItemEnum = NodeWithSpec<DataSpec, ItemEnum>;
+pub type SpecItemEnum = NodeWithSpec<DataSpec, syn::ItemEnum>;
 
 /// An AST node with a spec attached.
 pub struct NodeWithSpec<Spec, AstNode> {
