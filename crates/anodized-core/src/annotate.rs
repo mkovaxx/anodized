@@ -25,6 +25,27 @@ pub trait Specify: Sized {
     fn get_attrs_mut(&mut self) -> &mut Vec<Attribute>;
 
     fn parse_spec(self, input: TokenStream) -> Result<SpecItem<Self::Spec, Self>>;
+
+    fn parse_spec_attr(mut self) -> Result<SpecItem<Self::Spec, Self>>
+    where
+        Self: Spanned,
+    {
+        let Some(attr) = remove_spec_attr(self.get_attrs_mut())? else {
+            return Err(Error::new(
+                self.span(),
+                "expected a `#[spec]` attribute on this item",
+            ));
+        };
+        let spec_input = get_attr_input(attr)?;
+        self.parse_spec(spec_input)
+    }
+}
+
+impl<Item: Parse + Spanned + Specify> Parse for SpecItem<Item::Spec, Item> {
+    fn parse(input: ParseStream) -> Result<Self> {
+        let item: Item = input.parse()?;
+        item.parse_spec_attr()
+    }
 }
 
 impl Specify for ItemFn {
@@ -115,20 +136,6 @@ impl Specify for ItemTrait {
     fn parse_spec(self, input: TokenStream) -> Result<SpecItem<Self::Spec, Self>> {
         let spec = Parser::parse2(DataSpec::parse, input)?;
         Ok(SpecItem { spec, item: self })
-    }
-}
-
-impl<Item: Parse + Spanned + Specify> Parse for SpecItem<Item::Spec, Item> {
-    fn parse(input: ParseStream) -> Result<Self> {
-        let mut item: Item = input.parse()?;
-        let Some(attr) = remove_spec_attr(item.get_attrs_mut())? else {
-            return Err(Error::new(
-                item.span(),
-                "expected a `#[spec]` attribute on this item",
-            ));
-        };
-        let spec_input = get_attr_input(attr)?;
-        item.parse_spec(spec_input)
     }
 }
 
