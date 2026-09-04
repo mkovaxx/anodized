@@ -1,4 +1,3 @@
-#![no_main]
 #![allow(unused)]
 
 use anodized::{spec, unspec};
