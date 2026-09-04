@@ -38,7 +38,12 @@ const CONFIG: Mode = if cfg!(anodized_discard_specs) {
 /// *not* support macro attributes on inputs of a `fn` or fields of a `struct` or `enum`.
 #[proc_macro_attribute]
 pub fn unspec(_: TokenStream, _: TokenStream) -> TokenStream {
-    unimplemented!("`anodized-core` should have removed this attribute.")
+    syn::Error::new(
+        Span::call_site(),
+        "must be on or inside the item of a `#[spec]` attribute",
+    )
+    .to_compile_error()
+    .into()
 }
 
 /// Attaches a specification to supported program elements.
