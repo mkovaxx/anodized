@@ -1,36 +1,56 @@
 #![no_main]
+#![allow(unused)]
 
 use anodized::{spec, unspec};
 
-// Default: all inputs must satisfy their type specs on both entry and exit, and the output on exit.
-#[spec]
-fn one(x: P, y: &mut Q) -> R;
+/// A `struct` with a type spec, a.k.a. refinement.
+#[spec(
+    maintains: [
+        // Something something...
+        todo!()
+    ],
+)]
+struct T;
 
-// Input `x` is "unspec-ified" (i.e. may not satisfy its type spec) on exit:
+/// Default: all inputs satisfy their type specs on both entry and exit, and the output on exit.
 #[spec]
-fn two(#[unspec(out)] x: P, y: &mut Q) -> R;
+fn one(x: T, y: &mut T) -> T {
+    todo!()
+}
 
-// Input `y` is unspecified on entry:
+/// Input `x` may not satisfy its type spec on exit.
 #[spec]
-fn three(x: P, #[unspec(in)] y: &mut Q) -> R;
+fn two(#[unspec(out)] x: T, y: &mut T) -> T {
+    todo!()
+}
 
-// Input `y` is unspecified on both entry and exit:
+/// Input `y` may not satisfy its type spec on entry.
 #[spec]
-fn four(x: P, #[unspec] y: &mut Q) -> R;
+fn three(x: T, #[unspec(in)] y: &mut T) -> T {
+    todo!()
+}
 
-// The output is unspecified on exit:
+/// Input `y` may not satisfy its type spec on both entry and exit.
+#[spec]
+fn four(x: T, #[unspec] y: &mut T) -> T {
+    todo!()
+}
+
+/// The output may not satisfy its type spec on exit.
 #[spec]
 #[unspec(out)]
-fn five(x: P, y: &mut Q) -> R;
+fn five(x: T, y: &mut T) -> T {
+    todo!()
+}
 
-// Default: all fields must satisfy their type specs:
+/// Default: all fields must satisfy their type specs.
 #[spec]
 struct Six {
     pub a: T,
     pub b: T,
 }
 
-// The field `b` is unspecified:
+/// The field `b` may not satisfy its type spec.
 #[spec]
 struct Seven {
     pub a: T,
