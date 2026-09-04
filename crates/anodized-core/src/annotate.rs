@@ -1,9 +1,7 @@
 use proc_macro2::TokenStream;
 use syn::{
-    Attribute, Error, Expr, ExprAssign, FieldValue, ImplItemFn, ItemEnum, ItemFn, ItemImpl,
-    ItemStruct, ItemTrait, Meta, Path, TraitItemFn,
-    parse::{Parse, ParseStream, Result},
-    parse_quote,
+    Attribute, Error, Expr, ExprAssign, ExprForLoop, ExprWhile, FieldValue, ImplItemFn, ItemEnum,
+    ItemFn, ItemImpl, ItemStruct, ItemTrait, Meta, Path, TraitItemFn, parse::Result, parse_quote,
     spanned::Spanned,
 };
 
@@ -125,6 +123,30 @@ impl Specified for ItemImpl {
 
 impl Specified for ItemTrait {
     type Spec = DataSpec;
+
+    fn get_attrs_mut(&mut self) -> &mut Vec<Attribute> {
+        &mut self.attrs
+    }
+
+    fn parse_spec_from_fields(&mut self, fields: SpecFields) -> Result<Self::Spec> {
+        fields.try_into()
+    }
+}
+
+impl Specified for ExprForLoop {
+    type Spec = LoopSpec;
+
+    fn get_attrs_mut(&mut self) -> &mut Vec<Attribute> {
+        &mut self.attrs
+    }
+
+    fn parse_spec_from_fields(&mut self, fields: SpecFields) -> Result<Self::Spec> {
+        fields.try_into()
+    }
+}
+
+impl Specified for ExprWhile {
+    type Spec = LoopSpec;
 
     fn get_attrs_mut(&mut self) -> &mut Vec<Attribute> {
         &mut self.attrs
@@ -347,10 +369,11 @@ impl TryFrom<SpecFields> for DataSpec {
     }
 }
 
-impl Parse for LoopSpec {
-    fn parse(input: ParseStream) -> Result<Self> {
-        let raw_spec = syntax::SpecFields::parse(input)?;
+impl TryFrom<SpecFields> for LoopSpec {
+    type Error = Error;
 
+    fn try_from(raw_spec: SpecFields) -> Result<Self> {
+        let span = raw_spec.span();
         let is_sorted = raw_spec.is_sorted();
 
         let mut errors = MultiError::empty();
@@ -387,7 +410,7 @@ impl Parse for LoopSpec {
 
         if !is_sorted {
             errors.add(Error::new(
-                input.span(),
+                span,
                 "fields are out of order: the expected order is `maintains`, `decreases`",
             ));
         }
@@ -399,7 +422,7 @@ impl Parse for LoopSpec {
         Ok(Self {
             maintains,
             decreases,
-            span: input.span(),
+            span,
         })
     }
 }

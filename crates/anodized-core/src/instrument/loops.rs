@@ -9,7 +9,7 @@ use syn::{
     visit_mut::{self, VisitMut},
 };
 
-use crate::{LoopSpec, annotate::remove_spec_attr, instrument::Mode};
+use crate::{LoopSpec, annotate::Specified, instrument::Mode};
 
 impl Mode {
     pub fn instrument_loops_in_fn_body(&self, body: &mut Block) -> Result<()> {
@@ -94,8 +94,8 @@ impl<'a> LoopSpecVisitor<'a> {
 
 impl VisitMut for LoopSpecVisitor<'_> {
     fn visit_expr_while_mut(&mut self, expr_while: &mut ExprWhile) {
-        let spec_attr = match remove_spec_attr(&mut expr_while.attrs) {
-            Ok(spec_attr) => spec_attr,
+        let spec = match expr_while.parse_spec_from_attrs() {
+            Ok(spec) => spec,
             Err(error) => {
                 self.add_error(error);
                 return;
@@ -104,21 +104,17 @@ impl VisitMut for LoopSpecVisitor<'_> {
 
         visit_mut::visit_expr_while_mut(self, expr_while);
 
-        let Some(spec_attr) = spec_attr else {
+        if spec.is_empty() {
             return;
-        };
-
-        match spec_attr.parse_args::<LoopSpec>() {
-            Ok(spec) => self
-                .config
-                .instrument_loop_body(spec, &mut expr_while.body.stmts),
-            Err(error) => self.add_error(error),
         }
+
+        self.config
+            .instrument_loop_body(spec, &mut expr_while.body.stmts);
     }
 
     fn visit_expr_for_loop_mut(&mut self, expr_for_loop: &mut ExprForLoop) {
-        let spec_attr = match remove_spec_attr(&mut expr_for_loop.attrs) {
-            Ok(spec_attr) => spec_attr,
+        let spec = match expr_for_loop.parse_spec_from_attrs() {
+            Ok(spec) => spec,
             Err(error) => {
                 self.add_error(error);
                 return;
@@ -127,14 +123,11 @@ impl VisitMut for LoopSpecVisitor<'_> {
 
         visit_mut::visit_expr_for_loop_mut(self, expr_for_loop);
 
-        let Some(spec_attr) = spec_attr else {
+        if spec.is_empty() {
             return;
-        };
-
-        match spec_attr.parse_args::<LoopSpec>() {
-            Ok(spec) => self.config.instrument_expr_for_loop(spec, expr_for_loop),
-            Err(error) => self.add_error(error),
         }
+
+        self.config.instrument_expr_for_loop(spec, expr_for_loop);
     }
 
     // Nested closure scopes are independently analyzed by the outer function macro expansion.
