@@ -2,14 +2,13 @@
 #[path = "impls_tests.rs"]
 mod impls_tests;
 
-use proc_macro2::TokenStream;
 use syn::{
     Attribute, Error, ImplItem, ImplItemFn, ItemImpl, Result, ReturnType, Visibility, parse_quote,
 };
 
 use crate::{
     DataSpec, SpecImplItemFn,
-    annotate::{Specify as _, get_attr_input, remove_spec_attr},
+    annotate::{Specify as _, remove_spec_attr},
     instrument::{Mode, make_item_error},
 };
 
@@ -31,9 +30,7 @@ impl Mode {
 
         for item in the_impl.items.into_iter() {
             match item {
-                ImplItem::Fn(mut item_fn) => {
-                    let spec_attr = remove_spec_attr(&mut item_fn.attrs)?;
-
+                ImplItem::Fn(item_fn) => {
                     if item_fn.sig.ident.to_string().starts_with("__anodized_") {
                         return Err(Error::new_spanned(
                             item_fn.sig.ident,
@@ -42,14 +39,10 @@ Instead, ensure that both the impl block and the fn have a `#[spec]` annotation.
                         ));
                     }
 
-                    let spec_input = match spec_attr {
-                        Some(spec_attr) => get_attr_input(spec_attr)?,
-                        None => TokenStream::new(),
-                    };
                     let SpecImplItemFn {
                         spec: fn_spec,
                         item: mut item_fn,
-                    } = item_fn.parse_spec(spec_input)?;
+                    } = item_fn.parse_spec_attr()?;
 
                     if let Self::EmbedSpecs = self {
                         // Embed `spec` elements as `__anodized_fn_*` items.

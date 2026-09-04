@@ -2,7 +2,6 @@
 #[path = "traits_tests.rs"]
 mod traits_tests;
 
-use proc_macro2::TokenStream;
 use syn::{
     Attribute, Block, FnArg, ImplItem, ImplItemFn, Pat, PatConst, PatIdent, PatLit, PatParen,
     PatPath, PatRange, PatSlice, PatStruct, PatTuple, PatTupleStruct, ReturnType, TraitItem,
@@ -11,7 +10,7 @@ use syn::{
 
 use crate::{
     DataSpec, SpecImplItemFn, SpecTraitItemFn,
-    annotate::{Specify as _, get_attr_input, remove_spec_attr},
+    annotate::{Specify as _, remove_spec_attr},
     instrument::{Mode, make_item_error},
 };
 
@@ -39,22 +38,17 @@ impl Mode {
 
         for item in the_trait.items.into_iter() {
             match item {
-                TraitItem::Fn(mut func) => {
-                    let spec_attr = remove_spec_attr(&mut func.attrs)?;
+                TraitItem::Fn(func) => {
                     // NOTE: We have no way of knowing which attributes are
                     //   "external" - meant for the interface and belong on the wrapper,
                     //   "internal" - meant for the mangled implementation.
                     //   Right now we put all attribs on both functions, but that's certainly
                     //   not going to work in every situation.
 
-                    let spec_input = match spec_attr {
-                        Some(spec_attr) => get_attr_input(spec_attr)?,
-                        None => TokenStream::new(),
-                    };
                     let SpecTraitItemFn {
                         spec: fn_spec,
                         item: mut func,
-                    } = func.parse_spec(spec_input)?;
+                    } = func.parse_spec_attr()?;
 
                     let attrs: [Attribute; 2] = [
                         parse_quote!(#[doc(hidden)]),
@@ -219,9 +213,7 @@ impl Mode {
 
         for item in the_impl.items.into_iter() {
             match item {
-                ImplItem::Fn(mut func) => {
-                    let spec_attr = remove_spec_attr(&mut func.attrs)?;
-
+                ImplItem::Fn(func) => {
                     if func.sig.ident.to_string().starts_with("__anodized_") {
                         return Err(syn::Error::new_spanned(
                             func.sig.ident,
@@ -230,14 +222,10 @@ Instead, ensure that both the trait and the impl fn have a `#[spec]` annotation.
                         ));
                     }
 
-                    let spec_input = match spec_attr {
-                        Some(spec_attr) => get_attr_input(spec_attr)?,
-                        None => TokenStream::new(),
-                    };
                     let SpecImplItemFn {
                         spec: fn_spec,
                         item: mut func,
-                    } = func.parse_spec(spec_input)?;
+                    } = func.parse_spec_attr()?;
 
                     let attrs: [Attribute; 2] = [
                         parse_quote!(#[doc(hidden)]),
