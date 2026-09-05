@@ -121,7 +121,8 @@ impl Specified for ItemStruct {
     }
 
     fn parse_spec_from_fields(&mut self, fields: SpecFields) -> Result<Self::Spec> {
-        DataSpec::from_spec_and_struct(fields, self)
+        let variants = std::iter::once(&mut self.fields);
+        DataSpec::from_spec_and_variants(fields, variants)
     }
 }
 
@@ -133,7 +134,8 @@ impl Specified for ItemEnum {
     }
 
     fn parse_spec_from_fields(&mut self, fields: SpecFields) -> Result<Self::Spec> {
-        DataSpec::from_spec_and_enum(fields, self)
+        let variants = self.variants.iter_mut().map(|variant| &mut variant.fields);
+        DataSpec::from_spec_and_variants(fields, variants)
     }
 }
 
@@ -361,19 +363,12 @@ impl FnSpec {
 }
 
 impl DataSpec {
-    pub fn from_spec_and_struct(
+    pub fn from_spec_and_variants<'a>(
         raw_spec: SpecFields,
-        item_struct: &mut ItemStruct,
+        variants: impl Iterator<Item = &'a mut Fields>,
     ) -> Result<Self> {
-        let field_specs = vec![Self::extract_unspec_info(&mut item_struct.fields)?];
-        Self::from_spec_and_unspec_info(raw_spec, field_specs)
-    }
-
-    pub fn from_spec_and_enum(raw_spec: SpecFields, item_enum: &mut ItemEnum) -> Result<Self> {
-        let field_specs = item_enum
-            .variants
-            .iter_mut()
-            .map(|variant| Self::extract_unspec_info(&mut variant.fields))
+        let field_specs = variants
+            .map(Self::extract_unspec_info)
             .collect::<Result<_>>()?;
         Self::from_spec_and_unspec_info(raw_spec, field_specs)
     }
