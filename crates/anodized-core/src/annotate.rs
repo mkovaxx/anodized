@@ -61,7 +61,7 @@ impl Specified for ItemFn {
     }
 
     fn parse_spec_from_fields(&mut self, fields: SpecFields) -> Result<Self::Spec> {
-        FnSpec::from_spec_and_input_attrs(fields, &mut self.sig.inputs, &mut self.attrs)
+        FnSpec::from_spec_and_inputs_attrs(fields, &mut self.sig.inputs, &mut self.attrs)
     }
 }
 
@@ -73,7 +73,7 @@ impl Specified for ImplItemFn {
     }
 
     fn parse_spec_from_fields(&mut self, fields: SpecFields) -> Result<Self::Spec> {
-        FnSpec::from_spec_and_input_attrs(fields, &mut self.sig.inputs, &mut self.attrs)
+        FnSpec::from_spec_and_inputs_attrs(fields, &mut self.sig.inputs, &mut self.attrs)
     }
 }
 
@@ -85,7 +85,7 @@ impl Specified for TraitItemFn {
     }
 
     fn parse_spec_from_fields(&mut self, fields: SpecFields) -> Result<Self::Spec> {
-        FnSpec::from_spec_and_input_attrs(fields, &mut self.sig.inputs, &mut self.attrs)
+        FnSpec::from_spec_and_inputs_attrs(fields, &mut self.sig.inputs, &mut self.attrs)
     }
 }
 
@@ -164,7 +164,7 @@ impl Specified for ExprWhile {
 }
 
 impl FnSpec {
-    pub fn from_spec_and_input_attrs(
+    pub fn from_spec_and_inputs_attrs(
         raw_spec: SpecFields,
         inputs: &mut Punctuated<FnArg, Token![,]>,
         attrs: &mut Vec<Attribute>,
