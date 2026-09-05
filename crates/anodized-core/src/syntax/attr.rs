@@ -1,10 +1,10 @@
 use proc_macro2::TokenStream;
 use syn::{Attribute, Error, Meta, Path, parse::Result};
 
-/// Removes a single `#[spec]` attribute, if present, from an attribute list.
+/// Removes a single attribute with the given name, if present, from an attribute list.
 ///
-/// If there are multiple `#[spec]` attributes, returns `Err`.
-/// The arguments of the `#[spec]` attribute are *not* validated.
+/// If there are multiple matching attributes, returns `Err`.
+/// The attribute's arguments are *not* validated.
 pub fn remove_unique_attr(name: &str, attrs: &mut Vec<Attribute>) -> Result<Option<Attribute>> {
     let mut maybe_index = None;
 
