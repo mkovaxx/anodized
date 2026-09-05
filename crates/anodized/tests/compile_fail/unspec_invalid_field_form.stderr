@@ -1,0 +1,5 @@
+error: expected `#[unspec]` on a struct or enum field
+ --> tests/compile_fail/unspec_invalid_field_form.rs:8:5
+  |
+8 |     #[unspec(out)]
+  |     ^^^^^^^^^^^^^^
