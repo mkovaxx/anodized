@@ -1,17 +1,16 @@
 use proc_macro2::TokenStream;
 use syn::{
-    Attribute, Error, Expr, ExprAssign, ExprForLoop, ExprWhile, FieldValue, ImplItemFn, ItemEnum,
-    ItemFn, ItemImpl, ItemStruct, ItemTrait, Meta, TraitItemFn, parse::Result, parse_quote,
-    spanned::Spanned,
+    Attribute, Error, Expr, ExprAssign, ExprForLoop, ExprWhile, FieldValue, Fields, FnArg,
+    ImplItemFn, ItemEnum, ItemFn, ItemImpl, ItemStruct, ItemTrait, Meta, Token, TraitItemFn,
+    parse::Result, parse_quote, punctuated::Punctuated, spanned::Spanned,
 };
 
 use crate::{
-    Capture, Condition, DataSpec, FnSpec, LoopSpec, LoopVariant, PostCondition,
-    annotate::syntax::SpecFields, qualifiers::FnQualifiers,
+    Capture, Condition, DataSpec, EmptySpec, FnSpec, InputSpecFlags, LoopSpec, LoopVariant,
+    PostCondition,
+    qualifiers::FnQualifiers,
+    syntax::{Keyword, SpecFields, UnspecArg, UnspecAttr, get_attr_input, remove_unique_attr},
 };
-
-pub mod syntax;
-use syntax::{Keyword, get_attr_input, remove_spec_attr};
 
 #[cfg(test)]
 #[path = "annotate_tests.rs"]
@@ -29,11 +28,12 @@ pub trait Specified {
     /// - If there's no `#[spec]` attribute, the spec is built from an empty `SpecFields`.
     /// - Multiple `#[spec]` attributes are not allowed and cause an error.
     fn parse_spec_from_attrs(&mut self) -> Result<Self::Spec> {
-        let spec_input: TokenStream = if let Some(attr) = remove_spec_attr(self.get_attrs_mut())? {
-            get_attr_input(attr)?
-        } else {
-            TokenStream::new()
-        };
+        let spec_input: TokenStream =
+            if let Some(attr) = remove_unique_attr("spec", self.get_attrs_mut())? {
+                get_attr_input(attr)?
+            } else {
+                TokenStream::new()
+            };
         let spec_fields: SpecFields = syn::parse2(spec_input)?;
         self.parse_spec_from_fields(spec_fields)
     }
@@ -57,7 +57,7 @@ impl Specified for ItemFn {
     }
 
     fn parse_spec_from_fields(&mut self, fields: SpecFields) -> Result<Self::Spec> {
-        fields.try_into()
+        FnSpec::from_spec_and_inputs_attrs(fields, &mut self.sig.inputs, &mut self.attrs)
     }
 }
 
@@ -69,7 +69,7 @@ impl Specified for ImplItemFn {
     }
 
     fn parse_spec_from_fields(&mut self, fields: SpecFields) -> Result<Self::Spec> {
-        fields.try_into()
+        FnSpec::from_spec_and_inputs_attrs(fields, &mut self.sig.inputs, &mut self.attrs)
     }
 }
 
@@ -81,12 +81,12 @@ impl Specified for TraitItemFn {
     }
 
     fn parse_spec_from_fields(&mut self, fields: SpecFields) -> Result<Self::Spec> {
-        fields.try_into()
+        FnSpec::from_spec_and_inputs_attrs(fields, &mut self.sig.inputs, &mut self.attrs)
     }
 }
 
 impl Specified for ItemImpl {
-    type Spec = DataSpec;
+    type Spec = EmptySpec;
 
     fn get_attrs_mut(&mut self) -> &mut Vec<Attribute> {
         &mut self.attrs
@@ -98,7 +98,7 @@ impl Specified for ItemImpl {
 }
 
 impl Specified for ItemTrait {
-    type Spec = DataSpec;
+    type Spec = EmptySpec;
 
     fn get_attrs_mut(&mut self) -> &mut Vec<Attribute> {
         &mut self.attrs
@@ -117,7 +117,8 @@ impl Specified for ItemStruct {
     }
 
     fn parse_spec_from_fields(&mut self, fields: SpecFields) -> Result<Self::Spec> {
-        fields.try_into()
+        let variants = std::iter::once(&mut self.fields);
+        DataSpec::from_spec_and_variants(fields, variants)
     }
 }
 
@@ -129,7 +130,8 @@ impl Specified for ItemEnum {
     }
 
     fn parse_spec_from_fields(&mut self, fields: SpecFields) -> Result<Self::Spec> {
-        fields.try_into()
+        let variants = self.variants.iter_mut().map(|variant| &mut variant.fields);
+        DataSpec::from_spec_and_variants(fields, variants)
     }
 }
 
@@ -157,10 +159,73 @@ impl Specified for ExprWhile {
     }
 }
 
-impl TryFrom<SpecFields> for FnSpec {
-    type Error = Error;
+impl FnSpec {
+    pub fn from_spec_and_inputs_attrs(
+        raw_spec: SpecFields,
+        inputs: &mut Punctuated<FnArg, Token![,]>,
+        attrs: &mut Vec<Attribute>,
+    ) -> Result<Self> {
+        let (input_specs, output_spec_on_exit) = Self::extract_unspec_info(inputs, attrs)?;
+        Self::from_spec_and_unspec_info(raw_spec, input_specs, output_spec_on_exit)
+    }
 
-    fn try_from(raw_spec: SpecFields) -> Result<FnSpec> {
+    fn extract_unspec_info(
+        inputs: &mut Punctuated<FnArg, Token![,]>,
+        attrs: &mut Vec<Attribute>,
+    ) -> Result<(Vec<InputSpecFlags>, bool)> {
+        let mut input_specs = Vec::with_capacity(inputs.len());
+
+        for input in inputs {
+            let attrs = match input {
+                FnArg::Receiver(receiver) => &mut receiver.attrs,
+                FnArg::Typed(pat_type) => &mut pat_type.attrs,
+            };
+
+            let input_spec = if let Some(attr) = remove_unique_attr("unspec", attrs)? {
+                let unspec: UnspecAttr = attr.try_into()?;
+                match unspec.arg {
+                    None => InputSpecFlags {
+                        on_entry: false,
+                        on_exit: false,
+                    },
+                    Some((_, UnspecArg::In(_))) => InputSpecFlags {
+                        on_entry: false,
+                        on_exit: true,
+                    },
+                    Some((_, UnspecArg::Out(_))) => InputSpecFlags {
+                        on_entry: true,
+                        on_exit: false,
+                    },
+                }
+            } else {
+                InputSpecFlags::default()
+            };
+            input_specs.push(input_spec);
+        }
+
+        let output_spec_on_exit = if let Some(attr) = remove_unique_attr("unspec", attrs)? {
+            let unspec = UnspecAttr::try_from(attr)?;
+            match unspec.arg {
+                Some((_, UnspecArg::Out(_))) => false,
+                _ => {
+                    return Err(Error::new_spanned(
+                        Attribute::from(unspec),
+                        "only `#[unspec(out)]` is allowed on a `fn` output",
+                    ));
+                }
+            }
+        } else {
+            true
+        };
+
+        Ok((input_specs, output_spec_on_exit))
+    }
+
+    fn from_spec_and_unspec_info(
+        raw_spec: SpecFields,
+        input_specs: Vec<InputSpecFlags>,
+        output_spec_on_exit: bool,
+    ) -> Result<FnSpec> {
         let span = raw_spec.span();
 
         let mut errors = MultiError::empty();
@@ -282,6 +347,8 @@ impl TryFrom<SpecFields> for FnSpec {
 
         Ok(Self {
             qualifiers,
+            input_spec_flags: input_specs,
+            output_spec_flag: output_spec_on_exit,
             requires,
             maintains,
             captures,
@@ -291,10 +358,41 @@ impl TryFrom<SpecFields> for FnSpec {
     }
 }
 
-impl TryFrom<SpecFields> for DataSpec {
-    type Error = Error;
+impl DataSpec {
+    pub fn from_spec_and_variants<'a>(
+        raw_spec: SpecFields,
+        variants: impl Iterator<Item = &'a mut Fields>,
+    ) -> Result<Self> {
+        let field_specs = variants
+            .map(Self::extract_unspec_info)
+            .collect::<Result<_>>()?;
+        Self::from_spec_and_unspec_info(raw_spec, field_specs)
+    }
 
-    fn try_from(raw_spec: SpecFields) -> Result<Self> {
+    fn extract_unspec_info(fields: &mut Fields) -> Result<Vec<bool>> {
+        fields
+            .iter_mut()
+            .map(|field| {
+                let Some(attr) = remove_unique_attr("unspec", &mut field.attrs)? else {
+                    return Ok(true);
+                };
+
+                let unspec = UnspecAttr::try_from(attr)?;
+                if unspec.arg.is_some() {
+                    return Err(Error::new_spanned(
+                        Attribute::from(unspec),
+                        "only `#[unspec]` is allowed on a field",
+                    ));
+                }
+                Ok(false)
+            })
+            .collect()
+    }
+
+    fn from_spec_and_unspec_info(
+        raw_spec: SpecFields,
+        field_specs: Vec<Vec<bool>>,
+    ) -> Result<Self> {
         let span = raw_spec.span();
 
         let mut errors = MultiError::empty();
@@ -321,7 +419,11 @@ impl TryFrom<SpecFields> for DataSpec {
             return Err(combined_error);
         }
 
-        Ok(Self { maintains, span })
+        Ok(Self {
+            field_spec_flags: field_specs,
+            maintains,
+            span,
+        })
     }
 }
 
@@ -380,6 +482,21 @@ impl TryFrom<SpecFields> for LoopSpec {
             decreases,
             span,
         })
+    }
+}
+
+impl TryFrom<SpecFields> for EmptySpec {
+    type Error = Error;
+
+    fn try_from(fields: SpecFields) -> Result<Self> {
+        if fields.fields.is_empty() {
+            Ok(Self)
+        } else {
+            Err(Error::new_spanned(
+                fields,
+                "this `#[spec]` attribute must have no fields",
+            ))
+        }
     }
 }
 

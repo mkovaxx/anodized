@@ -1,0 +1,5 @@
+error: expected exactly one argument
+ --> tests/compile_fail/unspec_multiple_arguments.rs:7:17
+  |
+7 | fn f(#[unspec(in, out)] x: i32) {}
+  |                 ^

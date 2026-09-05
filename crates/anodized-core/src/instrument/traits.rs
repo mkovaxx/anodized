@@ -9,9 +9,10 @@ use syn::{
 };
 
 use crate::{
-    DataSpec,
-    annotate::{Specified as _, syntax::remove_spec_attr},
+    EmptySpec,
+    annotate::Specified as _,
     instrument::{Mode, make_item_error},
+    syntax::remove_unique_attr,
 };
 
 impl Mode {
@@ -23,17 +24,9 @@ impl Mode {
     ///    default impl performs runtime validation and calls the mangled function.
     pub fn instrument_trait(
         &self,
-        spec: DataSpec,
+        _: EmptySpec,
         mut the_trait: syn::ItemTrait,
     ) -> syn::Result<syn::ItemTrait> {
-        // Currently we don't support any spec fields for traits themselves.
-        if !spec.is_empty() {
-            return Err(spec.spec_err(
-                "Unsupported spec element on trait. Try placing it on an item inside the trait",
-            ));
-        }
-        let _ = move || spec;
-
         let mut new_trait_items = Vec::with_capacity(the_trait.items.len() * 5);
 
         for item in the_trait.items.into_iter() {
@@ -157,19 +150,19 @@ impl Mode {
                     new_trait_items.push(TraitItem::Fn(func));
                 }
                 TraitItem::Const(mut const_item) => {
-                    if let Some(spec_attr) = remove_spec_attr(&mut const_item.attrs)? {
+                    if let Some(spec_attr) = remove_unique_attr("spec", &mut const_item.attrs)? {
                         return Err(make_item_error(&spec_attr, "trait const"));
                     }
                     new_trait_items.push(TraitItem::Const(const_item));
                 }
                 TraitItem::Type(mut type_item) => {
-                    if let Some(spec_attr) = remove_spec_attr(&mut type_item.attrs)? {
+                    if let Some(spec_attr) = remove_unique_attr("spec", &mut type_item.attrs)? {
                         return Err(make_item_error(&spec_attr, "trait type"));
                     }
                     new_trait_items.push(TraitItem::Type(type_item));
                 }
                 TraitItem::Macro(mut macro_item) => {
-                    if let Some(spec_attr) = remove_spec_attr(&mut macro_item.attrs)? {
+                    if let Some(spec_attr) = remove_unique_attr("spec", &mut macro_item.attrs)? {
                         return Err(make_item_error(&spec_attr, "trait macro"));
                     }
                     new_trait_items.push(TraitItem::Macro(macro_item));
@@ -191,7 +184,7 @@ impl Mode {
     /// - The impl's postconditions must entail the trait's postconditions.
     pub fn instrument_trait_impl(
         &self,
-        spec: DataSpec,
+        _spec: EmptySpec,
         mut the_impl: syn::ItemImpl,
     ) -> syn::Result<syn::ItemImpl> {
         let Some((trait_bang, ref trait_path, _trait_for)) = the_impl.trait_ else {
@@ -200,10 +193,6 @@ impl Mode {
 
         if trait_bang.is_some() {
             return Err(make_item_error(&the_impl, "negative trait impl"));
-        }
-
-        if !spec.is_empty() {
-            return Err(spec.spec_err("Unsupported spec element on trait impl."));
         }
 
         let mut new_items = Vec::with_capacity(the_impl.items.len() * 4);
@@ -299,19 +288,19 @@ Instead, ensure that both the trait and the impl fn have a `#[spec]` annotation.
                     new_items.push(ImplItem::Fn(func));
                 }
                 ImplItem::Const(mut const_item) => {
-                    if let Some(spec_attr) = remove_spec_attr(&mut const_item.attrs)? {
+                    if let Some(spec_attr) = remove_unique_attr("spec", &mut const_item.attrs)? {
                         return Err(make_item_error(&spec_attr, "trait impl const"));
                     }
                     new_items.push(ImplItem::Const(const_item));
                 }
                 ImplItem::Type(mut type_item) => {
-                    if let Some(spec_attr) = remove_spec_attr(&mut type_item.attrs)? {
+                    if let Some(spec_attr) = remove_unique_attr("spec", &mut type_item.attrs)? {
                         return Err(make_item_error(&spec_attr, "trait impl type"));
                     }
                     new_items.push(ImplItem::Type(type_item));
                 }
                 ImplItem::Macro(mut macro_item) => {
-                    if let Some(spec_attr) = remove_spec_attr(&mut macro_item.attrs)? {
+                    if let Some(spec_attr) = remove_unique_attr("spec", &mut macro_item.attrs)? {
                         return Err(make_item_error(&spec_attr, "trait impl macro"));
                     }
                     new_items.push(ImplItem::Macro(macro_item));

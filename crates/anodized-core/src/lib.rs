@@ -8,15 +8,24 @@ use crate::qualifiers::FnQualifiers;
 pub mod annotate;
 pub mod instrument;
 pub mod qualifiers;
+pub mod syntax;
 
 #[cfg(test)]
 mod test_util;
+
+/// Mandates that an AST node's `#[spec]` attribute be empty, i.e. contain no fields.
+#[derive(Debug)]
+pub struct EmptySpec;
 
 /// Specifies the intended behavior of a function or method: `fn`.
 #[derive(Debug)]
 pub struct FnSpec {
     /// Qualifiers that constrain the behavior of the computation.
     pub qualifiers: FnQualifiers,
+    /// Whether each input satisfies its type spec on entry/exit.
+    pub input_spec_flags: Vec<InputSpecFlags>,
+    /// Whether the output satisfies its type spec on exit.
+    pub output_spec_flag: bool,
     /// Preconditions: conditions that must hold when the function is called.
     pub requires: Vec<Condition>,
     /// Invariants: conditions that must hold both when the function is called and when it returns.
@@ -29,6 +38,15 @@ pub struct FnSpec {
     span: Span,
 }
 
+/// Determines where the input in a `fn` signature satisfies its type spec.
+#[derive(Debug)]
+pub struct InputSpecFlags {
+    /// Whether the input satisfies its type spec on entry.
+    pub on_entry: bool,
+    /// Whether the input satisfies its type spec on exit.
+    pub on_exit: bool,
+}
+
 impl FnSpec {
     /// Returns `true` if the spec is empty (specifies nothing), otherwise returns `false`.
     pub fn is_empty(&self) -> bool {
@@ -37,6 +55,11 @@ impl FnSpec {
             && self.maintains.is_empty()
             && self.ensures.is_empty()
             && self.captures.is_empty()
+            && !self.output_spec_flag
+            && !self
+                .input_spec_flags
+                .iter()
+                .any(|input_spec| input_spec.on_entry || input_spec.on_exit)
     }
 
     /// Construct an error from the whole spec.
@@ -45,9 +68,20 @@ impl FnSpec {
     }
 }
 
+impl Default for InputSpecFlags {
+    fn default() -> Self {
+        Self {
+            on_entry: true,
+            on_exit: true,
+        }
+    }
+}
+
 /// Specifies the intended behavior of a data type: `struct` or `enum`.
 #[derive(Debug)]
 pub struct DataSpec {
+    /// Whether each field satisfies its type spec. Variant index first, field index second.
+    pub field_spec_flags: Vec<Vec<bool>>,
     /// Invariants: conditions that must hold for all instances of the data type.
     pub maintains: Vec<Condition>,
     /// The span in the source code, from which this spec was parsed.
@@ -58,6 +92,11 @@ impl DataSpec {
     /// Returns `true` if the spec is empty (specifies nothing), otherwise returns `false`.
     pub fn is_empty(&self) -> bool {
         self.maintains.is_empty()
+            && !self
+                .field_spec_flags
+                .iter()
+                .flatten()
+                .any(|field_spec| *field_spec)
     }
 
     /// Construct an error from the whole spec.

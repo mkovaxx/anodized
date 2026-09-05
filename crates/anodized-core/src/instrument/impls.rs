@@ -7,9 +7,10 @@ use syn::{
 };
 
 use crate::{
-    DataSpec,
-    annotate::{Specified as _, syntax::remove_spec_attr},
+    EmptySpec,
+    annotate::Specified as _,
     instrument::{Mode, make_item_error},
+    syntax::remove_unique_attr,
 };
 
 impl Mode {
@@ -17,14 +18,10 @@ impl Mode {
     ///
     /// Reasons why impl functions must be treated differently from free-standing functions:
     /// - The `__anodized_fn_try_*` function must be qualified as `Self::` inside an impl.
-    pub fn instrument_impl(&self, spec: DataSpec, mut the_impl: ItemImpl) -> Result<ItemImpl> {
+    pub fn instrument_impl(&self, _: EmptySpec, mut the_impl: ItemImpl) -> Result<ItemImpl> {
         if the_impl.trait_.is_some() {
             return Err(make_item_error(&the_impl, "trait impl"));
         };
-
-        if !spec.is_empty() {
-            return Err(spec.spec_err("Unsupported spec element on inherent impl."));
-        }
 
         let mut new_items = Vec::with_capacity(the_impl.items.len() * 4);
 
@@ -119,19 +116,19 @@ Instead, ensure that both the impl block and the fn have a `#[spec]` annotation.
                     new_items.push(ImplItem::Fn(item_fn));
                 }
                 ImplItem::Const(mut const_item) => {
-                    if let Some(spec_attr) = remove_spec_attr(&mut const_item.attrs)? {
+                    if let Some(spec_attr) = remove_unique_attr("spec", &mut const_item.attrs)? {
                         return Err(make_item_error(&spec_attr, "impl const"));
                     }
                     new_items.push(ImplItem::Const(const_item));
                 }
                 ImplItem::Type(mut type_item) => {
-                    if let Some(spec_attr) = remove_spec_attr(&mut type_item.attrs)? {
+                    if let Some(spec_attr) = remove_unique_attr("spec", &mut type_item.attrs)? {
                         return Err(make_item_error(&spec_attr, "impl type"));
                     }
                     new_items.push(ImplItem::Type(type_item));
                 }
                 ImplItem::Macro(mut macro_item) => {
-                    if let Some(spec_attr) = remove_spec_attr(&mut macro_item.attrs)? {
+                    if let Some(spec_attr) = remove_unique_attr("spec", &mut macro_item.attrs)? {
                         return Err(make_item_error(&spec_attr, "impl macro"));
                     }
                     new_items.push(ImplItem::Macro(macro_item));

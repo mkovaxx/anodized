@@ -1,9 +1,117 @@
-use crate::test_util::{SpecItemFn, assert_spec_eq};
+use crate::test_util::{
+    SpecItemEnum, SpecItemFn, SpecItemStruct, assert_spec_eq, assert_tokens_eq,
+};
 
 use super::*;
 use proc_macro2::Span;
 use quote::ToTokens;
 use syn::{parse_quote, parse_str};
+
+#[test]
+#[should_panic(expected = "must have no fields")]
+fn empty_spec_rejects_nonempty_fields() {
+    let fields: crate::syntax::SpecFields = parse_quote! { maintains: true };
+    let _: EmptySpec = fields.try_into().unwrap();
+}
+
+#[test]
+fn unspec_attributes_on_function_inputs_and_output() {
+    let spec_item_fn: SpecItemFn = parse_quote! {
+        #[spec]
+        #[unspec(out)]
+        fn f(
+            #[unspec(out)] x: X,
+            #[unspec(in)] y: Y,
+            #[unspec] z: Z,
+        ) -> R {}
+    };
+
+    let expected = FnSpec {
+        qualifiers: FnQualifiers::empty(),
+        input_spec_flags: vec![
+            InputSpecFlags {
+                on_entry: true,
+                on_exit: false,
+            },
+            InputSpecFlags {
+                on_entry: false,
+                on_exit: true,
+            },
+            InputSpecFlags {
+                on_entry: false,
+                on_exit: false,
+            },
+        ],
+        output_spec_flag: false,
+        requires: vec![],
+        maintains: vec![],
+        captures: vec![],
+        ensures: vec![],
+        span: Span::call_site(),
+    };
+
+    assert_spec_eq(&spec_item_fn.spec, &expected);
+
+    let expected_item: ItemFn = parse_quote! {
+        fn f(x: X, y: Y, z: Z) -> R {}
+    };
+    assert_tokens_eq(&spec_item_fn.node, &expected_item);
+}
+
+#[test]
+fn unspec_attributes_on_struct_fields() {
+    let spec_item_struct: SpecItemStruct = parse_quote! {
+        #[spec]
+        struct S {
+            a: A,
+            #[unspec]
+            b: B,
+        }
+    };
+
+    assert_eq!(
+        spec_item_struct.spec.field_spec_flags,
+        vec![vec![true, false]]
+    );
+
+    let expected_item: ItemStruct = parse_quote! {
+        struct S {
+            a: A,
+            b: B,
+        }
+    };
+    assert_tokens_eq(&spec_item_struct.node, &expected_item);
+}
+
+#[test]
+fn unspec_attributes_on_enum_fields() {
+    let spec_item_enum: SpecItemEnum = parse_quote! {
+        #[spec]
+        enum E {
+            First(#[unspec] A, B),
+            Second {
+                c: C,
+                #[unspec]
+                d: D,
+            },
+            Third,
+        }
+    };
+
+    assert_eq!(
+        spec_item_enum.spec.field_spec_flags,
+        vec![vec![false, true], vec![true, false], vec![]]
+    );
+
+    let expected_item: ItemEnum = parse_quote! {
+        enum E {
+            First(A, B),
+            Second { c: C, d: D },
+            Third,
+        }
+    };
+    assert_tokens_eq(&spec_item_enum.node, &expected_item);
+}
 
 #[test]
 fn simple_spec() {
@@ -17,6 +125,8 @@ fn simple_spec() {
 
     let expected = FnSpec {
         qualifiers: FnQualifiers::empty(),
+        input_spec_flags: vec![],
+        output_spec_flag: true,
         requires: vec![Condition {
             expr: parse_quote! { is_valid(x) },
             cfg: None,
@@ -43,6 +153,8 @@ fn fn_qualifiers_functional() {
 
     let expected = FnSpec {
         qualifiers: FnQualifiers::FUNCTIONAL,
+        input_spec_flags: vec![],
+        output_spec_flag: true,
         requires: vec![],
         maintains: vec![],
         captures: vec![],
@@ -62,6 +174,8 @@ fn fn_qualifiers_pure_total() {
 
     let expected = FnSpec {
         qualifiers: FnQualifiers::PURE | FnQualifiers::TOTAL,
+        input_spec_flags: vec![],
+        output_spec_flag: true,
         requires: vec![],
         maintains: vec![],
         captures: vec![],
@@ -89,6 +203,8 @@ fn fn_qualifiers_deterministic_effectfree_infallible_terminating() {
             | FnQualifiers::EFFECTFREE
             | FnQualifiers::INFALLIBLE
             | FnQualifiers::TERMINATING,
+        input_spec_flags: vec![],
+        output_spec_flag: true,
         requires: vec![],
         maintains: vec![],
         captures: vec![],
@@ -205,6 +321,8 @@ fn all_clauses() {
 
     let expected = FnSpec {
         qualifiers: FnQualifiers::empty(),
+        input_spec_flags: vec![],
+        output_spec_flag: true,
         requires: vec![Condition {
             expr: parse_quote! { x > 0 && x.is_power_of_two() },
             cfg: None,
@@ -294,6 +412,8 @@ fn array_of_conditions() {
 
     let expected = FnSpec {
         qualifiers: FnQualifiers::empty(),
+        input_spec_flags: vec![],
+        output_spec_flag: true,
         requires: vec![
             Condition {
                 expr: parse_quote! { x >= 0 },
@@ -335,6 +455,8 @@ fn ensures_with_explicit_closure() {
 
     let expected = FnSpec {
         qualifiers: FnQualifiers::empty(),
+        input_spec_flags: vec![],
+        output_spec_flag: true,
         requires: vec![],
         maintains: vec![],
         captures: vec![],
@@ -363,6 +485,8 @@ fn multiple_clauses_of_same_flavor() {
 
     let expected = FnSpec {
         qualifiers: FnQualifiers::empty(),
+        input_spec_flags: vec![],
+        output_spec_flag: true,
         requires: vec![
             Condition {
                 expr: parse_quote! { x > 0 || x < -10 },
@@ -417,6 +541,8 @@ fn mixed_single_and_array_clauses() {
 
     let expected = FnSpec {
         qualifiers: FnQualifiers::empty(),
+        input_spec_flags: vec![],
+        output_spec_flag: true,
         requires: vec![
             Condition {
                 expr: parse_quote! { x == 0 },
@@ -480,6 +606,8 @@ fn cfg_attributes() {
 
     let expected = FnSpec {
         qualifiers: FnQualifiers::empty(),
+        input_spec_flags: vec![],
+        output_spec_flag: true,
         requires: vec![Condition {
             expr: parse_quote! { x > 0 && is_mode() },
             cfg: Some(parse_quote! { test }),
@@ -547,6 +675,8 @@ fn macro_in_condition() {
 
     let expected = FnSpec {
         qualifiers: FnQualifiers::empty(),
+        input_spec_flags: vec![],
+        output_spec_flag: true,
         requires: vec![Condition {
             expr: parse_quote! { matches!(self.state, State::Idle) },
             cfg: None,
@@ -581,6 +711,8 @@ fn binds_pattern() {
 
     let expected = FnSpec {
         qualifiers: FnQualifiers::empty(),
+        input_spec_flags: vec![],
+        output_spec_flag: true,
         requires: vec![],
         maintains: vec![],
         captures: vec![],
@@ -618,6 +750,8 @@ fn multiple_conditions() {
 
     let expected = FnSpec {
         qualifiers: FnQualifiers::empty(),
+        input_spec_flags: vec![],
+        output_spec_flag: true,
         requires: vec![
             Condition {
                 expr: parse_quote! { self.initialized },
@@ -658,6 +792,8 @@ fn rename_return_value() {
 
     let expected = FnSpec {
         qualifiers: FnQualifiers::empty(),
+        input_spec_flags: vec![],
+        output_spec_flag: true,
         requires: vec![],
         maintains: vec![],
         captures: vec![],
@@ -691,6 +827,8 @@ fn captures_simple_identifier() {
 
     let expected = FnSpec {
         qualifiers: FnQualifiers::empty(),
+        input_spec_flags: vec![],
+        output_spec_flag: true,
         requires: vec![],
         maintains: vec![],
         captures: vec![Capture {
@@ -720,6 +858,8 @@ fn captures_identifier_with_alias() {
 
     let expected = FnSpec {
         qualifiers: FnQualifiers::empty(),
+        input_spec_flags: vec![],
+        output_spec_flag: true,
         requires: vec![],
         maintains: vec![],
         captures: vec![Capture {
@@ -757,6 +897,8 @@ fn captures_array() {
 
     let expected = FnSpec {
         qualifiers: FnQualifiers::empty(),
+        input_spec_flags: vec![],
+        output_spec_flag: true,
         requires: vec![],
         maintains: vec![],
         captures: vec![
@@ -810,6 +952,8 @@ fn captures_with_all_clauses() {
 
     let expected = FnSpec {
         qualifiers: FnQualifiers::empty(),
+        input_spec_flags: vec![],
+        output_spec_flag: true,
         requires: vec![Condition {
             expr: parse_quote! { x > 0 },
             cfg: None,
@@ -857,6 +1001,8 @@ fn captures_array_expression() {
 
     let expected = FnSpec {
         qualifiers: FnQualifiers::empty(),
+        input_spec_flags: vec![],
+        output_spec_flag: true,
         requires: vec![],
         maintains: vec![],
         captures: vec![Capture {
@@ -914,6 +1060,8 @@ fn captures_edge_case_cast_expr() {
 
     let expected = FnSpec {
         qualifiers: FnQualifiers::empty(),
+        input_spec_flags: vec![],
+        output_spec_flag: true,
         requires: vec![],
         maintains: vec![],
         captures: vec![Capture {
@@ -940,6 +1088,8 @@ fn captures_edge_case_array_of_cast_exprs() {
 
     let expected = FnSpec {
         qualifiers: FnQualifiers::empty(),
+        input_spec_flags: vec![],
+        output_spec_flag: true,
         requires: vec![],
         maintains: vec![],
         captures: vec![Capture {
@@ -974,6 +1124,8 @@ fn captures_edge_case_list_of_cast_exprs() {
 
     let expected = FnSpec {
         qualifiers: FnQualifiers::empty(),
+        input_spec_flags: vec![],
+        output_spec_flag: true,
         requires: vec![],
         maintains: vec![],
         captures: vec![
@@ -1006,6 +1158,8 @@ fn captures_pattern_matches_slices() {
 
     let expected = FnSpec {
         qualifiers: FnQualifiers::empty(),
+        input_spec_flags: vec![],
+        output_spec_flag: true,
         requires: vec![],
         maintains: vec![],
         captures: vec![Capture {
@@ -1028,6 +1182,8 @@ fn captures_pattern_matches_tuples() {
 
     let expected = FnSpec {
         qualifiers: FnQualifiers::empty(),
+        input_spec_flags: vec![],
+        output_spec_flag: true,
         requires: vec![],
         maintains: vec![],
         captures: vec![Capture {
@@ -1050,6 +1206,8 @@ fn captures_pattern_matches_structs() {
 
     let expected = FnSpec {
         qualifiers: FnQualifiers::empty(),
+        input_spec_flags: vec![],
+        output_spec_flag: true,
         requires: vec![],
         maintains: vec![],
         captures: vec![Capture {
@@ -1072,6 +1230,8 @@ fn captures_pattern_matches_nested() {
 
     let expected = FnSpec {
         qualifiers: FnQualifiers::empty(),
+        input_spec_flags: vec![],
+        output_spec_flag: true,
         requires: vec![],
         maintains: vec![],
         captures: vec![Capture {
@@ -1098,7 +1258,7 @@ fn captures_pattern_with_binding_modifier() {
 #[should_panic(expected = "expected an expression")]
 fn captures_missing_assignment_value_is_rejected_by_spec_fields() {
     let input = "captures: Person { name, age } =,";
-    let _: syntax::SpecFields = parse_str(input).unwrap();
+    let _: crate::syntax::SpecFields = parse_str(input).unwrap();
 }
 
 #[test]
@@ -1130,7 +1290,7 @@ fn captures_with_extra_semicolon() {
 
 #[test]
 fn field_value_supports_shorthand_expression() {
-    let spec_fields: syntax::SpecFields = parse_quote! {
+    let spec_fields: crate::syntax::SpecFields = parse_quote! {
         key_1,
         key_2: value,
         key_3: value as expr,

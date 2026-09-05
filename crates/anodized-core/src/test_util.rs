@@ -1,5 +1,5 @@
 use crate::{
-    Capture, Condition, DataSpec, FnSpec, PostCondition, annotate::Specified,
+    Capture, Condition, DataSpec, EmptySpec, FnSpec, PostCondition, annotate::Specified,
     instrument::patterns::TamePat,
 };
 use pretty_assertions::assert_eq;
@@ -10,10 +10,10 @@ use syn::parse::{Parse, ParseStream};
 pub type SpecItemFn = NodeWithSpec<FnSpec, syn::ItemFn>;
 
 /// Specified `impl`.
-pub type SpecItemImpl = NodeWithSpec<DataSpec, syn::ItemImpl>;
+pub type SpecItemImpl = NodeWithSpec<EmptySpec, syn::ItemImpl>;
 
 /// Specified `trait`.
-pub type SpecItemTrait = NodeWithSpec<DataSpec, syn::ItemTrait>;
+pub type SpecItemTrait = NodeWithSpec<EmptySpec, syn::ItemTrait>;
 
 /// Specified `struct`.
 pub type SpecItemStruct = NodeWithSpec<DataSpec, syn::ItemStruct>;
@@ -58,6 +58,8 @@ pub fn assert_spec_eq(left: &FnSpec, right: &FnSpec) {
     // Destructure to ensure we handle all fields - compilation will fail if fields are added
     let FnSpec {
         qualifiers: left_qualifiers,
+        input_spec_flags: left_input_specs,
+        output_spec_flag: left_output_spec_on_exit,
         requires: left_requires,
         maintains: left_maintains,
         captures: left_captures,
@@ -67,6 +69,8 @@ pub fn assert_spec_eq(left: &FnSpec, right: &FnSpec) {
 
     let FnSpec {
         qualifiers: right_qualifiers,
+        input_spec_flags: right_input_specs,
+        output_spec_flag: right_output_spec_on_exit,
         requires: right_requires,
         maintains: right_maintains,
         captures: right_captures,
@@ -77,6 +81,25 @@ pub fn assert_spec_eq(left: &FnSpec, right: &FnSpec) {
     assert_eq!(
         left_qualifiers, right_qualifiers,
         "qualifiers do not match: {left_qualifiers:?} vs {right_qualifiers:?}"
+    );
+    assert_eq!(
+        left_output_spec_on_exit, right_output_spec_on_exit,
+        "output spec on exit does not match"
+    );
+    assert_slice_eq(
+        left_input_specs,
+        right_input_specs,
+        "input specs",
+        |left, right, message| {
+            assert_eq!(
+                left.on_entry, right.on_entry,
+                "{message} entry flags do not match"
+            );
+            assert_eq!(
+                left.on_exit, right.on_exit,
+                "{message} exit flags do not match"
+            );
+        },
     );
 
     assert_slice_eq(

@@ -1,0 +1,5 @@
+error: multiple `#[unspec]` attributes are not allowed
+ --> tests/compile_fail/unspec_duplicate_input.rs:7:16
+  |
+7 | fn f(#[unspec] #[unspec(in)] x: i32) {}
+  |                ^^^^^^^^^^^^^

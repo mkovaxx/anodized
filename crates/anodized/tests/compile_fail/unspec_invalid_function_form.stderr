@@ -1,0 +1,5 @@
+error: only `#[unspec(out)]` is allowed on a `fn` output
+ --> tests/compile_fail/unspec_invalid_function_form.rs:7:1
+  |
+7 | #[unspec]
+  | ^^^^^^^^^
