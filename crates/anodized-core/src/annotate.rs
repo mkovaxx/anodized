@@ -381,7 +381,7 @@ impl DataSpec {
                 if unspec.arg.is_some() {
                     return Err(Error::new_spanned(
                         Attribute::from(unspec),
-                        "expected `#[unspec]` on a struct or enum field",
+                        "only `#[unspec]` is allowed on a field",
                     ));
                 }
                 Ok(false)
