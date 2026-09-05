@@ -6,7 +6,7 @@ use syn::{
 };
 
 use crate::{
-    Capture, Condition, DataSpec, EmptySpec, FnSpec, InputSpec, LoopSpec, LoopVariant,
+    Capture, Condition, DataSpec, EmptySpec, FnSpec, InputSpecFlags, LoopSpec, LoopVariant,
     PostCondition,
     qualifiers::FnQualifiers,
     syntax::{
@@ -183,7 +183,7 @@ impl FnSpec {
     fn extract_unspec_info(
         inputs: &mut Punctuated<FnArg, Token![,]>,
         attrs: &mut Vec<Attribute>,
-    ) -> Result<(Vec<InputSpec>, bool)> {
+    ) -> Result<(Vec<InputSpecFlags>, bool)> {
         let mut input_specs = Vec::with_capacity(inputs.len());
 
         for input in inputs {
@@ -195,21 +195,21 @@ impl FnSpec {
             let input_spec = if let Some(attr) = remove_unique_attr("unspec", attrs)? {
                 let unspec: UnspecAttr = attr.try_into()?;
                 match unspec.arg {
-                    None => InputSpec {
+                    None => InputSpecFlags {
                         on_entry: false,
                         on_exit: false,
                     },
-                    Some((_, UnspecArg::In(_))) => InputSpec {
+                    Some((_, UnspecArg::In(_))) => InputSpecFlags {
                         on_entry: false,
                         on_exit: true,
                     },
-                    Some((_, UnspecArg::Out(_))) => InputSpec {
+                    Some((_, UnspecArg::Out(_))) => InputSpecFlags {
                         on_entry: true,
                         on_exit: false,
                     },
                 }
             } else {
-                InputSpec::default()
+                InputSpecFlags::default()
             };
             input_specs.push(input_spec);
         }
@@ -234,7 +234,7 @@ impl FnSpec {
 
     fn from_spec_and_unspec_info(
         raw_spec: SpecFields,
-        input_specs: Vec<InputSpec>,
+        input_specs: Vec<InputSpecFlags>,
         output_spec_on_exit: bool,
     ) -> Result<FnSpec> {
         let span = raw_spec.span();
@@ -358,8 +358,8 @@ impl FnSpec {
 
         Ok(Self {
             qualifiers,
-            input_specs,
-            output_spec_on_exit,
+            input_spec_flags: input_specs,
+            output_spec_flag: output_spec_on_exit,
             requires,
             maintains,
             captures,
@@ -438,7 +438,7 @@ impl DataSpec {
         }
 
         Ok(Self {
-            field_specs,
+            field_spec_flags: field_specs,
             maintains,
             span,
         })

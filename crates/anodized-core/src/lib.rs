@@ -23,9 +23,9 @@ pub struct FnSpec {
     /// Qualifiers that constrain the behavior of the computation.
     pub qualifiers: FnQualifiers,
     /// Whether each input satisfies its type spec on entry/exit.
-    pub input_specs: Vec<InputSpec>,
+    pub input_spec_flags: Vec<InputSpecFlags>,
     /// Whether the output satisfies its type spec on exit.
-    pub output_spec_on_exit: bool,
+    pub output_spec_flag: bool,
     /// Preconditions: conditions that must hold when the function is called.
     pub requires: Vec<Condition>,
     /// Invariants: conditions that must hold both when the function is called and when it returns.
@@ -40,7 +40,7 @@ pub struct FnSpec {
 
 /// Determines where the input in a `fn` signature satisfies its type spec.
 #[derive(Debug)]
-pub struct InputSpec {
+pub struct InputSpecFlags {
     /// Whether the input satisfies its type spec on entry.
     pub on_entry: bool,
     /// Whether the input satisfies its type spec on exit.
@@ -55,9 +55,9 @@ impl FnSpec {
             && self.maintains.is_empty()
             && self.ensures.is_empty()
             && self.captures.is_empty()
-            && !self.output_spec_on_exit
+            && !self.output_spec_flag
             && !self
-                .input_specs
+                .input_spec_flags
                 .iter()
                 .any(|input_spec| input_spec.on_entry || input_spec.on_exit)
     }
@@ -68,7 +68,7 @@ impl FnSpec {
     }
 }
 
-impl Default for InputSpec {
+impl Default for InputSpecFlags {
     fn default() -> Self {
         Self {
             on_entry: true,
@@ -81,7 +81,7 @@ impl Default for InputSpec {
 #[derive(Debug)]
 pub struct DataSpec {
     /// Whether each field satisfies its type spec. Variant index first, field index second.
-    pub field_specs: Vec<Vec<bool>>,
+    pub field_spec_flags: Vec<Vec<bool>>,
     /// Invariants: conditions that must hold for all instances of the data type.
     pub maintains: Vec<Condition>,
     /// The span in the source code, from which this spec was parsed.
@@ -93,7 +93,7 @@ impl DataSpec {
     pub fn is_empty(&self) -> bool {
         self.maintains.is_empty()
             && !self
-                .field_specs
+                .field_spec_flags
                 .iter()
                 .flatten()
                 .any(|field_spec| *field_spec)

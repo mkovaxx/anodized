@@ -58,8 +58,8 @@ pub fn assert_spec_eq(left: &FnSpec, right: &FnSpec) {
     // Destructure to ensure we handle all fields - compilation will fail if fields are added
     let FnSpec {
         qualifiers: left_qualifiers,
-        input_specs: left_input_specs,
-        output_spec_on_exit: left_output_spec_on_exit,
+        input_spec_flags: left_input_specs,
+        output_spec_flag: left_output_spec_on_exit,
         requires: left_requires,
         maintains: left_maintains,
         captures: left_captures,
@@ -69,8 +69,8 @@ pub fn assert_spec_eq(left: &FnSpec, right: &FnSpec) {
 
     let FnSpec {
         qualifiers: right_qualifiers,
-        input_specs: right_input_specs,
-        output_spec_on_exit: right_output_spec_on_exit,
+        input_spec_flags: right_input_specs,
+        output_spec_flag: right_output_spec_on_exit,
         requires: right_requires,
         maintains: right_maintains,
         captures: right_captures,
