@@ -61,7 +61,7 @@ impl Specified for ItemFn {
     }
 
     fn parse_spec_from_fields(&mut self, fields: SpecFields) -> Result<Self::Spec> {
-        FnSpec::from_spec_and_fn(fields, self)
+        FnSpec::from_spec_and_input_attrs(fields, &mut self.sig.inputs, &mut self.attrs)
     }
 }
 
@@ -73,7 +73,7 @@ impl Specified for ImplItemFn {
     }
 
     fn parse_spec_from_fields(&mut self, fields: SpecFields) -> Result<Self::Spec> {
-        FnSpec::from_spec_and_impl_fn(fields, self)
+        FnSpec::from_spec_and_input_attrs(fields, &mut self.sig.inputs, &mut self.attrs)
     }
 }
 
@@ -85,7 +85,7 @@ impl Specified for TraitItemFn {
     }
 
     fn parse_spec_from_fields(&mut self, fields: SpecFields) -> Result<Self::Spec> {
-        FnSpec::from_spec_and_trait_fn(fields, self)
+        FnSpec::from_spec_and_input_attrs(fields, &mut self.sig.inputs, &mut self.attrs)
     }
 }
 
@@ -162,21 +162,12 @@ impl Specified for ExprWhile {
 }
 
 impl FnSpec {
-    pub fn from_spec_and_fn(raw_spec: SpecFields, item_fn: &mut ItemFn) -> Result<Self> {
-        let (input_specs, output_spec_on_exit) =
-            Self::extract_unspec_info(&mut item_fn.sig.inputs, &mut item_fn.attrs)?;
-        Self::from_spec_and_unspec_info(raw_spec, input_specs, output_spec_on_exit)
-    }
-
-    pub fn from_spec_and_impl_fn(raw_spec: SpecFields, item_fn: &mut ImplItemFn) -> Result<Self> {
-        let (input_specs, output_spec_on_exit) =
-            Self::extract_unspec_info(&mut item_fn.sig.inputs, &mut item_fn.attrs)?;
-        Self::from_spec_and_unspec_info(raw_spec, input_specs, output_spec_on_exit)
-    }
-
-    pub fn from_spec_and_trait_fn(raw_spec: SpecFields, item_fn: &mut TraitItemFn) -> Result<Self> {
-        let (input_specs, output_spec_on_exit) =
-            Self::extract_unspec_info(&mut item_fn.sig.inputs, &mut item_fn.attrs)?;
+    pub fn from_spec_and_input_attrs(
+        raw_spec: SpecFields,
+        inputs: &mut Punctuated<FnArg, Token![,]>,
+        attrs: &mut Vec<Attribute>,
+    ) -> Result<Self> {
+        let (input_specs, output_spec_on_exit) = Self::extract_unspec_info(inputs, attrs)?;
         Self::from_spec_and_unspec_info(raw_spec, input_specs, output_spec_on_exit)
     }
 
