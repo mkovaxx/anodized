@@ -10,7 +10,7 @@ use syn::{parse_quote, parse_str};
 #[test]
 #[should_panic(expected = "must have no fields")]
 fn empty_spec_rejects_nonempty_fields() {
-    let fields: crate::syntax::spec::SpecFields = parse_quote! { maintains: true };
+    let fields: crate::syntax::SpecFields = parse_quote! { maintains: true };
     let _: EmptySpec = fields.try_into().unwrap();
 }
 
@@ -1258,7 +1258,7 @@ fn captures_pattern_with_binding_modifier() {
 #[should_panic(expected = "expected an expression")]
 fn captures_missing_assignment_value_is_rejected_by_spec_fields() {
     let input = "captures: Person { name, age } =,";
-    let _: crate::syntax::spec::SpecFields = parse_str(input).unwrap();
+    let _: crate::syntax::SpecFields = parse_str(input).unwrap();
 }
 
 #[test]
@@ -1290,7 +1290,7 @@ fn captures_with_extra_semicolon() {
 
 #[test]
 fn field_value_supports_shorthand_expression() {
-    let spec_fields: crate::syntax::spec::SpecFields = parse_quote! {
+    let spec_fields: crate::syntax::SpecFields = parse_quote! {
         key_1,
         key_2: value,
         key_3: value as expr,

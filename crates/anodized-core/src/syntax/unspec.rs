@@ -6,7 +6,7 @@ use syn::{
     token::{Bracket, Paren, Pound},
 };
 
-use crate::syntax::attr::path_matches_name;
+use crate::syntax::path_matches_name;
 
 /// Represents a valid `#[unspec]` attribute.
 ///

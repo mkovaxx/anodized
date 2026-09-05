@@ -9,11 +9,7 @@ use crate::{
     Capture, Condition, DataSpec, EmptySpec, FnSpec, InputSpecFlags, LoopSpec, LoopVariant,
     PostCondition,
     qualifiers::FnQualifiers,
-    syntax::{
-        attr::{get_attr_input, remove_unique_attr},
-        spec::{Keyword, SpecFields},
-        unspec::{UnspecArg, UnspecAttr},
-    },
+    syntax::{Keyword, SpecFields, UnspecArg, UnspecAttr, get_attr_input, remove_unique_attr},
 };
 
 #[cfg(test)]

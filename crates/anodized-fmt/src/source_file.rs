@@ -11,7 +11,7 @@ use crate::{
     formatter::format_spec_attribute,
 };
 
-use anodized_core::syntax::spec::SpecFields;
+use anodized_core::syntax::SpecFields;
 
 #[derive(Debug)]
 struct TextEdit {

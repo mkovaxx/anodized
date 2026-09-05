@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use anodized_core::syntax::spec::{Keyword, SpecFields};
+use anodized_core::syntax::{Keyword, SpecFields};
 use syn::FieldValue;
 use syn::spanned::Spanned;
 

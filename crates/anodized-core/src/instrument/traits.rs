@@ -12,7 +12,7 @@ use crate::{
     EmptySpec,
     annotate::Specified as _,
     instrument::{Mode, make_item_error},
-    syntax::attr::remove_unique_attr,
+    syntax::remove_unique_attr,
 };
 
 impl Mode {
