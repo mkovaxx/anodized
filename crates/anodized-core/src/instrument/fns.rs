@@ -171,7 +171,12 @@ impl Mode {
         ensures: &[PostCondition],
     ) -> Block {
         let mut stmts: Vec<Stmt> = vec![];
-        Self::emit_postcondition_checks(maintains, captures, ensures, &mut stmts, None);
+        Self::emit_capture_binding(
+            captures,
+            &parse_quote! { { __anodized_output } },
+            &mut stmts,
+        );
+        Self::emit_postcondition_checks(maintains, ensures, &mut stmts, None);
         parse_quote! {
             {
                 #(#stmts)*
@@ -180,9 +185,25 @@ impl Mode {
         }
     }
 
+    pub fn emit_capture_binding(captures: &[Capture], body: &Block, statements: &mut Vec<Stmt>) {
+        let mut patterns = vec![];
+        let mut values = vec![];
+
+        for capture in captures {
+            patterns.push(&capture.pat);
+            values.push(&capture.expr);
+        }
+
+        let output_ident = Pat::Path(parse_quote! { __anodized_output });
+        patterns.push(&output_ident);
+        let body_eval = Expr::Call(parse_quote! { ::anodized::__::eval_once(|| #body) });
+        values.push(&body_eval);
+
+        statements.push(parse_quote! { let (#(#patterns,)*) = (#(#values,)*); });
+    }
+
     pub fn emit_postcondition_checks(
         maintains: &[Condition],
-        captures: &[Capture],
         ensures: &[PostCondition],
         statements: &mut Vec<Stmt>,
         maybe_instrument_eval: Option<fn(&str, &Option<Meta>, &Expr, &str) -> Expr>,
@@ -193,7 +214,7 @@ impl Mode {
 
         for postinvariant in maintains {
             let eval = build_cond_eval(&postinvariant.expr);
-            let instrumented_eval = if let Some(instrument_eval) = &maybe_instrument_eval {
+            let instrumented_eval = if let Some(instrument_eval) = maybe_instrument_eval {
                 let repr = postinvariant.expr.to_token_stream().to_string();
                 instrument_eval("postinvariant failed: {}", &postinvariant.cfg, &eval, &repr)
             } else {
@@ -203,17 +224,9 @@ impl Mode {
             statements.push(check);
         }
 
-        {
-            let patterns = captures.iter().map(|capture| &capture.pat);
-            let values = captures
-                .iter()
-                .map(|capture| build_capture_eval(&capture.expr));
-            statements.push(parse_quote! { let (#(#patterns),*) = (#(#values),*); });
-        }
-
         for postcondition in ensures {
             let eval = build_cond_eval(&postcondition.expr);
-            let instrumented_eval = if let Some(instrument_eval) = &maybe_instrument_eval {
+            let instrumented_eval = if let Some(instrument_eval) = maybe_instrument_eval {
                 let repr = postcondition.expr.to_token_stream().to_string();
                 instrument_eval("postcondition failed: {}", &postcondition.cfg, &eval, &repr)
             } else {
