@@ -46,7 +46,10 @@ fn embed_spec_item_impl() {
                 let __anodized_post = true;
                 let __anodized_post = __anodized_post & ::anodized::__::eval::<bool>(|| COND_2);
                 let () = ();
-                let __anodized_post = __anodized_post & ::anodized::__::eval::<bool>(|| { let PAT_1 = __anodized_output; COND_3 });
+                let (__anodized_post, __anodized_output) = ::anodized::__::apply_keep(
+                    |PAT_1| (__anodized_post & ::anodized::__::eval::<bool>(|| COND_3), PAT_1),
+                    __anodized_output,
+                );
                 __anodized_post
             }
 

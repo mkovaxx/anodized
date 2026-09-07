@@ -64,9 +64,18 @@ fn embed_spec_item_fn() {
                 ::anodized::__::eval(|| EXPR_1),
                 ::anodized::__::eval(|| EXPR_2),
             );
-            let __anodized_post = __anodized_post & ::anodized::__::eval::<bool>(|| { let PAT_1 = __anodized_output; COND_7 });
-            let __anodized_post = __anodized_post & ::anodized::__::eval::<bool>(|| { let PAT_1 = __anodized_output; COND_8 });
-            let __anodized_post = __anodized_post & ::anodized::__::eval::<bool>(|| { let PAT_1 = __anodized_output; COND_9 });
+            let (__anodized_post, __anodized_output) = ::anodized::__::apply_keep(
+                |PAT_1| (__anodized_post & ::anodized::__::eval::<bool>(|| COND_7), PAT_1),
+                __anodized_output,
+            );
+            let (__anodized_post, __anodized_output) = ::anodized::__::apply_keep(
+                |PAT_1| (__anodized_post & ::anodized::__::eval::<bool>(|| COND_8), PAT_1),
+                __anodized_output,
+            );
+            let (__anodized_post, __anodized_output) = ::anodized::__::apply_keep(
+                |PAT_1| (__anodized_post & ::anodized::__::eval::<bool>(|| COND_9), PAT_1),
+                __anodized_output,
+            );
             __anodized_post
         }
 
