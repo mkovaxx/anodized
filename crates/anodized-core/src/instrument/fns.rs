@@ -334,11 +334,8 @@ impl CheckSettings {
         msg: &str,
         cfg: &Option<Meta>,
         expr: &Expr,
-        build_cond_check: F,
-    ) -> Stmt
-    where
-        F: Fn(&str, &Option<Meta>, Expr, &str) -> Expr,
-    {
+        build_cond_check: impl Fn(&str, &Option<Meta>, Expr, &str) -> Expr,
+    ) -> Stmt {
         let repr = expr.to_token_stream().to_string();
         let eval = build_cond_eval(expr);
         let check = build_cond_check(msg, cfg, eval, &repr);
@@ -353,11 +350,8 @@ impl CheckSettings {
         cfg: &Option<Meta>,
         tame_pat: &Option<TamePat>,
         expr: &Expr,
-        build_cond_check: F,
-    ) -> Stmt
-    where
-        F: Fn(&str, &Option<Meta>, Expr, &str) -> Expr,
-    {
+        build_cond_check: impl Fn(&str, &Option<Meta>, Expr, &str) -> Expr,
+    ) -> Stmt {
         let repr = expr.to_token_stream().to_string();
         let eval = build_cond_eval(expr);
         let check = build_cond_check(msg, cfg, eval, &repr);
