@@ -221,24 +221,24 @@ impl CheckSettings {
         }];
         for precondition in &spec.requires {
             let eval = build_cond_eval(&precondition.expr);
-            let check = self.build_cond_check(
+            let instrumented_eval = self.instrument_cond_eval(
                 "precondition failed: {}",
                 &precondition.cfg,
                 &eval,
                 &precondition.expr.to_token_stream().to_string(),
             );
-            let check = self.build_precond_check(&check);
+            let check = self.build_precond_check(&instrumented_eval);
             precond_checks.push(check);
         }
         for preinvariant in &spec.maintains {
             let eval = build_cond_eval(&preinvariant.expr);
-            let check = self.build_cond_check(
+            let instrumented_eval = self.instrument_cond_eval(
                 "preinvariant failed: {}",
                 &preinvariant.cfg,
                 &eval,
                 &preinvariant.expr.to_token_stream().to_string(),
             );
-            let check = self.build_precond_check(&check);
+            let check = self.build_precond_check(&instrumented_eval);
             precond_checks.push(check);
         }
 
@@ -276,13 +276,13 @@ impl CheckSettings {
         }];
         for postinvariant in &spec.maintains {
             let eval = build_cond_eval(&postinvariant.expr);
-            let check = self.build_cond_check(
+            let instrumented_eval = self.instrument_cond_eval(
                 "postinvariant failed: {}",
                 &postinvariant.cfg,
                 &eval,
                 &postinvariant.expr.to_token_stream().to_string(),
             );
-            let check = self.build_postcond_check(&None, &check);
+            let check = self.build_postcond_check(&None, &instrumented_eval);
             postcond_checks.push(check);
         }
         for postcondition in &spec.ensures {
@@ -292,13 +292,13 @@ impl CheckSettings {
                 None
             };
             let eval = build_cond_eval(&postcondition.expr);
-            let check = self.build_cond_check(
+            let instrumented_eval = self.instrument_cond_eval(
                 "postcondition failed: {}",
                 &postcondition.cfg,
                 &eval,
                 &postcondition.expr.to_token_stream().to_string(),
             );
-            let check = self.build_postcond_check(&tame_pat, &check);
+            let check = self.build_postcond_check(&tame_pat, &instrumented_eval);
             postcond_checks.push(check);
         }
 
@@ -335,13 +335,13 @@ impl CheckSettings {
         })
     }
 
-    fn build_precond_check(&self, check: &Expr) -> Stmt {
+    fn build_precond_check(&self, expr: &Expr) -> Stmt {
         parse_quote! {
-            let __anodized_pre = __anodized_pre & #check;
+            let __anodized_pre = __anodized_pre & #expr;
         }
     }
 
-    fn build_postcond_check(&self, tame_pat: &Option<TamePat>, check: &Expr) -> Stmt {
+    fn build_postcond_check(&self, tame_pat: &Option<TamePat>, expr: &Expr) -> Stmt {
         match tame_pat {
             Some(TamePat::Borrowing(brw_pat)) => {
                 parse_quote! {
@@ -350,7 +350,7 @@ impl CheckSettings {
                             ::anodized::__::coerce_input(
                                 #[allow(unused)] |#brw_pat| (), &__anodized_output);
                             let #brw_pat = __anodized_output else { unreachable!() };
-                            (__anodized_post & #check, __anodized_output)
+                            (__anodized_post & #expr, __anodized_output)
                         },
                         __anodized_output,
                     );
@@ -359,20 +359,20 @@ impl CheckSettings {
             Some(TamePat::Invertible(inv_pat, inv_expr)) => {
                 parse_quote! {
                     let (__anodized_post, __anodized_output) = ::anodized::__::apply_keep(
-                        |#inv_pat| (__anodized_post & #check, #inv_expr),
+                        |#inv_pat| (__anodized_post & #expr, #inv_expr),
                         __anodized_output,
                     );
                 }
             }
             None => {
                 parse_quote! {
-                    let __anodized_post = __anodized_post & #check;
+                    let __anodized_post = __anodized_post & #expr;
                 }
             }
         }
     }
 
-    fn build_cond_check(&self, msg: &str, cfg: &Option<Meta>, cond: &Expr, repr: &str) -> Expr {
+    fn instrument_cond_eval(&self, msg: &str, cfg: &Option<Meta>, cond: &Expr, repr: &str) -> Expr {
         let span = cond.span();
 
         let guard: Option<Expr> = if self.does_print || self.does_panic.is_some() {
