@@ -224,6 +224,7 @@ impl CheckSettings {
                 "precondition failed: {}",
                 &precondition.cfg,
                 &precondition.expr,
+                |msg, cfg, cond, repr| self.build_cond_check(msg, cfg, cond, repr),
             );
             precond_checks.push(check);
         }
@@ -232,6 +233,7 @@ impl CheckSettings {
                 "preinvariant failed: {}",
                 &preinvariant.cfg,
                 &preinvariant.expr,
+                |msg, cfg, cond, repr| self.build_cond_check(msg, cfg, cond, repr),
             );
             precond_checks.push(check);
         }
@@ -274,6 +276,7 @@ impl CheckSettings {
                 &postinvariant.cfg,
                 &None,
                 &postinvariant.expr,
+                |msg, cfg, cond, repr| self.build_cond_check(msg, cfg, cond, repr),
             );
             postcond_checks.push(check);
         }
@@ -288,6 +291,7 @@ impl CheckSettings {
                 &postcondition.cfg,
                 &tame_pat,
                 &postcondition.expr,
+                |msg, cfg, cond, repr| self.build_cond_check(msg, cfg, cond, repr),
             );
             postcond_checks.push(check);
         }
@@ -325,25 +329,38 @@ impl CheckSettings {
         })
     }
 
-    fn build_precond_check(&self, msg: &str, cfg: &Option<Meta>, expr: &Expr) -> Stmt {
+    fn build_precond_check<F>(
+        &self,
+        msg: &str,
+        cfg: &Option<Meta>,
+        expr: &Expr,
+        build_cond_check: F,
+    ) -> Stmt
+    where
+        F: Fn(&str, &Option<Meta>, Expr, &str) -> Expr,
+    {
         let repr = expr.to_token_stream().to_string();
         let eval = build_cond_eval(expr);
-        let check = self.build_cond_check(msg, cfg, eval, &repr);
+        let check = build_cond_check(msg, cfg, eval, &repr);
         parse_quote! {
             let __anodized_pre = __anodized_pre & #check;
         }
     }
 
-    fn build_postcond_check(
+    fn build_postcond_check<F>(
         &self,
         msg: &str,
         cfg: &Option<Meta>,
         tame_pat: &Option<TamePat>,
         expr: &Expr,
-    ) -> Stmt {
+        build_cond_check: F,
+    ) -> Stmt
+    where
+        F: Fn(&str, &Option<Meta>, Expr, &str) -> Expr,
+    {
         let repr = expr.to_token_stream().to_string();
         let eval = build_cond_eval(expr);
-        let check = self.build_cond_check(msg, cfg, eval, &repr);
+        let check = build_cond_check(msg, cfg, eval, &repr);
         match tame_pat {
             Some(TamePat::Borrowing(brw_pat)) => {
                 parse_quote! {
