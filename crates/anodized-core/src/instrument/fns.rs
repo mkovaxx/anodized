@@ -220,21 +220,27 @@ impl CheckSettings {
             let __anodized_pre = true;
         }];
         for precondition in &spec.requires {
-            let check = self.build_precond_check(
-                "precondition failed: {}",
-                &precondition.cfg,
-                &precondition.expr,
-                |msg, cfg, cond, repr| self.build_cond_check(msg, cfg, cond, repr),
-            );
+            let check =
+                self.build_precond_check(&precondition.cfg, &precondition.expr, |cond, cfg| {
+                    self.build_cond_check(
+                        "precondition failed: {}",
+                        cfg,
+                        cond,
+                        &precondition.expr.to_token_stream().to_string(),
+                    )
+                });
             precond_checks.push(check);
         }
         for preinvariant in &spec.maintains {
-            let check = self.build_precond_check(
-                "preinvariant failed: {}",
-                &preinvariant.cfg,
-                &preinvariant.expr,
-                |msg, cfg, cond, repr| self.build_cond_check(msg, cfg, cond, repr),
-            );
+            let check =
+                self.build_precond_check(&preinvariant.cfg, &preinvariant.expr, |cond, cfg| {
+                    self.build_cond_check(
+                        "preinvariant failed: {}",
+                        cfg,
+                        cond,
+                        &preinvariant.expr.to_token_stream().to_string(),
+                    )
+                });
             precond_checks.push(check);
         }
 
@@ -272,11 +278,17 @@ impl CheckSettings {
         }];
         for postinvariant in &spec.maintains {
             let check = self.build_postcond_check(
-                "postinvariant failed: {}",
                 &postinvariant.cfg,
                 &None,
                 &postinvariant.expr,
-                |msg, cfg, cond, repr| self.build_cond_check(msg, cfg, cond, repr),
+                |cond, cfg| {
+                    self.build_cond_check(
+                        "postinvariant failed: {}",
+                        cfg,
+                        cond,
+                        &postinvariant.expr.to_token_stream().to_string(),
+                    )
+                },
             );
             postcond_checks.push(check);
         }
@@ -287,11 +299,17 @@ impl CheckSettings {
                 None
             };
             let check = self.build_postcond_check(
-                "postcondition failed: {}",
                 &postcondition.cfg,
                 &tame_pat,
                 &postcondition.expr,
-                |msg, cfg, cond, repr| self.build_cond_check(msg, cfg, cond, repr),
+                |cond, cfg| {
+                    self.build_cond_check(
+                        "postcondition failed: {}",
+                        cfg,
+                        cond,
+                        &postcondition.expr.to_token_stream().to_string(),
+                    )
+                },
             );
             postcond_checks.push(check);
         }
@@ -329,32 +347,28 @@ impl CheckSettings {
         })
     }
 
-    fn build_precond_check<F>(
+    fn build_precond_check(
         &self,
-        msg: &str,
         cfg: &Option<Meta>,
         expr: &Expr,
-        build_cond_check: impl Fn(&str, &Option<Meta>, Expr, &str) -> Expr,
+        build_cond_check: impl Fn(&Expr, &Option<Meta>) -> Expr,
     ) -> Stmt {
-        let repr = expr.to_token_stream().to_string();
         let eval = build_cond_eval(expr);
-        let check = build_cond_check(msg, cfg, eval, &repr);
+        let check = build_cond_check(&eval, cfg);
         parse_quote! {
             let __anodized_pre = __anodized_pre & #check;
         }
     }
 
-    fn build_postcond_check<F>(
+    fn build_postcond_check(
         &self,
-        msg: &str,
         cfg: &Option<Meta>,
         tame_pat: &Option<TamePat>,
         expr: &Expr,
-        build_cond_check: impl Fn(&str, &Option<Meta>, Expr, &str) -> Expr,
+        build_cond_check: impl Fn(&Expr, &Option<Meta>) -> Expr,
     ) -> Stmt {
-        let repr = expr.to_token_stream().to_string();
         let eval = build_cond_eval(expr);
-        let check = build_cond_check(msg, cfg, eval, &repr);
+        let check = build_cond_check(&eval, cfg);
         match tame_pat {
             Some(TamePat::Borrowing(brw_pat)) => {
                 parse_quote! {
@@ -385,7 +399,7 @@ impl CheckSettings {
         }
     }
 
-    fn build_cond_check(&self, msg: &str, cfg: &Option<Meta>, cond: Expr, repr: &str) -> Expr {
+    fn build_cond_check(&self, msg: &str, cfg: &Option<Meta>, cond: &Expr, repr: &str) -> Expr {
         let span = cond.span();
 
         let guard: Option<Expr> = if self.does_print || self.does_panic.is_some() {
@@ -400,7 +414,7 @@ impl CheckSettings {
             None
         };
 
-        let maybe_exprs = [guard, Some(cond), printer];
+        let maybe_exprs = [guard.as_ref(), Some(cond), printer.as_ref()];
         let exprs = maybe_exprs.iter().flatten();
 
         if exprs.clone().count() > 1 {
