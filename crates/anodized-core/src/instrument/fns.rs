@@ -12,10 +12,7 @@ use syn::{
 
 use crate::{
     Capture, Condition, FnSpec, PostCondition,
-    instrument::{
-        CheckSettings, Mode,
-        patterns::{IdentGenerator, TamePat, tame_pattern},
-    },
+    instrument::{CheckSettings, Mode, patterns::TamePat},
     qualifiers::FnQualifiers,
 };
 
@@ -187,17 +184,9 @@ impl Mode {
         }
 
         for postcondition in ensures {
-            let expr = &postcondition.expr;
-            let eval = if let Some(pat) = &postcondition.pat {
-                build_cond_eval(&parse_quote! {
-                    { let #pat = __anodized_output; #expr }
-                })
-            } else {
-                build_cond_eval(expr)
-            };
-            statements.push(parse_quote! {
-                let __anodized_post = __anodized_post & #eval;
-            });
+            let eval = build_cond_eval(&postcondition.expr);
+            let check = build_postcond_check(&postcondition.pat, &eval);
+            statements.push(check);
         }
     }
 }
@@ -267,7 +256,6 @@ impl CheckSettings {
             let (#(#patterns),*) = (#(#values),*);
         };
 
-        let mut id_gen = IdentGenerator::new();
         // Generate postcondition checks.
         let mut postcond_checks: Vec<Stmt> = vec![parse_quote! {
             let __anodized_post = true;
@@ -284,11 +272,6 @@ impl CheckSettings {
             postcond_checks.push(check);
         }
         for postcondition in &spec.ensures {
-            let tame_pat = if let Some(pat) = &postcondition.pat {
-                Some(tame_pattern(&mut id_gen, pat.clone())?)
-            } else {
-                None
-            };
             let eval = build_cond_eval(&postcondition.expr);
             let instrumented_eval = self.instrument_cond_eval(
                 "postcondition failed: {}",
@@ -296,7 +279,7 @@ impl CheckSettings {
                 &eval,
                 &postcondition.expr.to_token_stream().to_string(),
             );
-            let check = build_postcond_check(&tame_pat, &instrumented_eval);
+            let check = build_postcond_check(&postcondition.pat, &instrumented_eval);
             postcond_checks.push(check);
         }
 

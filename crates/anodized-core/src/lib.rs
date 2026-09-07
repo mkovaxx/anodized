@@ -3,7 +3,7 @@
 use proc_macro2::Span;
 use syn::{Error, Expr, Meta, Pat};
 
-use crate::qualifiers::FnQualifiers;
+use crate::{instrument::patterns::TamePat, qualifiers::FnQualifiers};
 
 pub mod annotate;
 pub mod instrument;
@@ -153,7 +153,7 @@ pub struct Condition {
 #[derive(Debug)]
 pub struct PostCondition {
     /// The pattern to bind or destructure the function's output, e.g. `answer` or `(left, right)`.
-    pub pat: Option<Pat>,
+    pub pat: Option<TamePat>,
     /// The expression that validates the postcondition, e.g. `answer == "forty-two"`.
     pub expr: Expr,
     /// **Static analyzers can safely ignore this field.**
