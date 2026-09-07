@@ -191,15 +191,22 @@ impl Mode {
 
         for capture in captures {
             patterns.push(&capture.pat);
-            values.push(&capture.expr);
+            let capture_eval = build_capture_eval(&capture.expr);
+            values.push(capture_eval);
         }
 
         let output_ident = Pat::Path(parse_quote! { __anodized_output });
         patterns.push(&output_ident);
         let body_eval = Expr::Call(parse_quote! { ::anodized::__::eval_once(|| #body) });
-        values.push(&body_eval);
+        values.push(body_eval);
 
-        statements.push(parse_quote! { let (#(#patterns,)*) = (#(#values,)*); });
+        let binding = if patterns.len() > 1 {
+            parse_quote! { let (#(#patterns,)*) = (#(#values,)*); }
+        } else {
+            parse_quote! { let #(#patterns)* = #(#values)*; }
+        };
+
+        statements.push(binding);
     }
 
     pub fn emit_postcondition_checks(
