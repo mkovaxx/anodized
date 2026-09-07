@@ -88,7 +88,7 @@ fn default_instrument_item_impl() {
                 let __anodized_pre = __anodized_pre & (true || ::anodized::__::eval::<bool>(|| COND_1));
                 let __anodized_pre = __anodized_pre & (true || ::anodized::__::eval::<bool>(|| COND_2));
                 if !__anodized_pre {}
-                let (__anodized_output) = (::anodized::__::eval_once(|| -> RET_TYPE { BODY }));
+                let __anodized_output = ::anodized::__::eval_once(|| -> RET_TYPE { BODY });
                 let __anodized_post = true;
                 let __anodized_post = __anodized_post & (true || ::anodized::__::eval::<bool>(|| COND_2));
                 let (__anodized_post, __anodized_output) = ::anodized::__::apply_keep(
@@ -151,7 +151,7 @@ fn emit_try_fn_instrument_item_impl() {
                 if !__anodized_pre {
                     return ::anodized::result::pre_err();
                 }
-                let (__anodized_output) = (::anodized::__::eval_once(|| -> RET_TYPE { BODY }));
+                let __anodized_output = ::anodized::__::eval_once(|| -> RET_TYPE { BODY });
                 let __anodized_post = true;
                 let __anodized_post = __anodized_post & (::anodized::__::eval::<bool>(|| COND_2)
                         || eprintln!("postinvariant failed: {}", "COND_2") != ());
