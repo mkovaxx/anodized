@@ -9,6 +9,7 @@ use syn::{
     parse::{Parse, Result},
     parse_quote, parse_quote_spanned,
     spanned::Spanned,
+    token::Brace,
 };
 
 use crate::{
@@ -124,7 +125,19 @@ impl Mode {
     }
 
     pub fn build_precondition_fn_body(requires: &[Condition], maintains: &[Condition]) -> Block {
-        let mut statements: Vec<Stmt> = vec![];
+        let mut stmts: Vec<Stmt> = vec![];
+        Self::emit_precondition_checks(requires, maintains, &mut stmts);
+        Block {
+            brace_token: Brace(Span::mixed_site()),
+            stmts,
+        }
+    }
+
+    pub fn emit_precondition_checks(
+        requires: &[Condition],
+        maintains: &[Condition],
+        statements: &mut Vec<Stmt>,
+    ) {
         let mut clauses: Vec<Expr> = vec![];
 
         for condition in requires.iter().chain(maintains) {
@@ -139,12 +152,12 @@ impl Mode {
             clauses.push(parse_quote!(true));
         }
 
-        parse_quote! {
-            {
-                #(#statements)*
+        statements.push(Stmt::Expr(
+            parse_quote! {
                 #(#clauses)&&*
-            }
-        }
+            },
+            None,
+        ));
     }
 
     pub fn build_postcondition_fn_body(
@@ -152,7 +165,20 @@ impl Mode {
         captures: &[Capture],
         ensures: &[PostCondition],
     ) -> Result<Block> {
-        let mut statements: Vec<Stmt> = vec![];
+        let mut stmts: Vec<Stmt> = vec![];
+        Self::emit_postcondition_checks(maintains, captures, ensures, &mut stmts);
+        Ok(Block {
+            brace_token: Brace(Span::mixed_site()),
+            stmts,
+        })
+    }
+
+    pub fn emit_postcondition_checks(
+        maintains: &[Condition],
+        captures: &[Capture],
+        ensures: &[PostCondition],
+        statements: &mut Vec<Stmt>,
+    ) {
         let mut clauses: Vec<Expr> = vec![];
 
         for condition in maintains {
@@ -190,12 +216,12 @@ impl Mode {
             clauses.push(parse_quote!(true));
         }
 
-        Ok(parse_quote! {
-            {
-                #(#statements)*
+        statements.push(Stmt::Expr(
+            parse_quote! {
                 #(#clauses)&&*
-            }
-        })
+            },
+            None,
+        ));
     }
 }
 
