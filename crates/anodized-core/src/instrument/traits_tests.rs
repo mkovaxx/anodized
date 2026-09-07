@@ -30,18 +30,20 @@ fn embed_spec_item_trait() {
             #[doc(hidden)]
             #[allow(warnings)]
             fn __anodized_fn_requires_FUNC(&self, PARAM_1: TYPE_1, PARAM_2: TYPE_2) -> bool {
-                let __anodized_clause_1 = ::anodized::__::eval::<bool>(|| COND_1);
-                let __anodized_clause_2 = ::anodized::__::eval::<bool>(|| COND_2);
-                __anodized_clause_1 && __anodized_clause_2
+                let __anodized_pre = true;
+                let __anodized_pre = __anodized_pre & ::anodized::__::eval::<bool>(|| COND_1);
+                let __anodized_pre = __anodized_pre & ::anodized::__::eval::<bool>(|| COND_2);
+                __anodized_pre
             }
 
             #[doc(hidden)]
             #[allow(warnings)]
             fn __anodized_fn_ensures_FUNC(&self, PARAM_1: TYPE_1, PARAM_2: TYPE_2, __anodized_output: RET_TYPE) -> bool {
-                let __anodized_clause_1 = ::anodized::__::eval::<bool>(|| COND_2);
+                let __anodized_post = true;
+                let __anodized_post = ::anodized::__::eval::<bool>(|| COND_2);
                 let () = ();
-                let __anodized_clause_2 = ::anodized::__::eval::<bool>(|| { let PAT_1 = __anodized_output; COND_3 });
-                __anodized_clause_1 && __anodized_clause_2
+                let __anodized_post = __anodized_post & ::anodized::__::eval::<bool>(|| { let PAT_1 = __anodized_output; COND_3 });
+                __anodized_post
             }
 
             #[doc(hidden)]
@@ -222,18 +224,20 @@ fn embed_spec_item_impl_trait() {
             #[doc(hidden)]
             #[allow(warnings)]
             fn __anodized_fn_requires_FUNC(&self, PARAM_1: TYPE_1, PARAM_2: TYPE_2) -> bool {
-                let __anodized_clause_1 = ::anodized::__::eval::<bool>(|| COND_1);
-                let __anodized_clause_2 = ::anodized::__::eval::<bool>(|| COND_2);
-                __anodized_clause_1 && __anodized_clause_2
+                let __anodized_pre = true;
+                let __anodized_pre = __anodized_pre & ::anodized::__::eval::<bool>(|| COND_1);
+                let __anodized_pre = __anodized_pre & ::anodized::__::eval::<bool>(|| COND_2);
+                __anodized_pre
             }
 
             #[doc(hidden)]
             #[allow(warnings)]
             fn __anodized_fn_ensures_FUNC(&self, PARAM_1: TYPE_1, PARAM_2: TYPE_2, __anodized_output: RET_TYPE) -> bool {
-                let __anodized_clause_1 = ::anodized::__::eval::<bool>(|| COND_2);
+                let __anodized_post = true;
+                let __anodized_post = ::anodized::__::eval::<bool>(|| COND_2);
                 let () = ();
-                let __anodized_clause_2 = ::anodized::__::eval::<bool>(|| { let PAT_1 = __anodized_output; COND_3 });
-                __anodized_clause_1 && __anodized_clause_2
+                let __anodized_post = __anodized_post & ::anodized::__::eval::<bool>(|| { let PAT_1 = __anodized_output; COND_3 });
+                __anodized_post
             }
 
             #[doc(hidden)]
