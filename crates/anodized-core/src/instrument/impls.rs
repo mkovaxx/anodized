@@ -74,7 +74,7 @@ Instead, ensure that both the impl block and the fn have a `#[spec]` annotation.
                                 &fn_spec.maintains,
                                 &fn_spec.captures,
                                 &fn_spec.ensures,
-                            )?,
+                            ),
                             vis: Visibility::Inherited,
                             defaultness: None,
                         };

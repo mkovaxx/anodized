@@ -164,13 +164,13 @@ impl Mode {
         maintains: &[Condition],
         captures: &[Capture],
         ensures: &[PostCondition],
-    ) -> Result<Block> {
+    ) -> Block {
         let mut stmts: Vec<Stmt> = vec![];
         Self::emit_postcondition_checks(maintains, captures, ensures, &mut stmts);
-        Ok(Block {
+        Block {
             brace_token: Brace(Span::mixed_site()),
             stmts,
-        })
+        }
     }
 
     pub fn emit_postcondition_checks(
