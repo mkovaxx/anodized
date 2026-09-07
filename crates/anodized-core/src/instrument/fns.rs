@@ -158,21 +158,18 @@ impl CheckSettings {
         is_async: bool,
         return_type: &ReturnType,
     ) -> Result<Block> {
-        // The identifier for the return value binding.
-        let output_ident: Pat = parse_quote!(__anodized_output);
-
         let (output_expr, precond_fail_action, postcond_fail_action) =
             if let Some(ref panic_settings) = self.does_panic
                 && panic_settings.has_try_fn
             {
                 (
-                    parse_quote! { Ok(#output_ident) },
+                    parse_quote! { Ok(__anodized_output) },
                     Some(parse_quote! { return ::anodized::result::pre_err(); }),
-                    Some(parse_quote! { return ::anodized::result::post_err(#output_ident); }),
+                    Some(parse_quote! { return ::anodized::result::post_err(__anodized_output); }),
                 )
             } else {
                 (
-                    parse_quote! { #output_ident },
+                    parse_quote! { __anodized_output },
                     self.build_fail_action("precondition failed"),
                     self.build_fail_action("postcondition failed"),
                 )
