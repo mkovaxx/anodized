@@ -2,14 +2,12 @@
 #[path = "fns_tests.rs"]
 mod fns_tests;
 
-use proc_macro2::Span;
 use quote::{ToTokens, quote};
 use syn::{
     Attribute, Block, Expr, Ident, Meta, Pat, Path, ReturnType, Signature, Stmt, Type,
     parse::{Parse, Result},
     parse_quote, parse_quote_spanned,
     spanned::Spanned,
-    token::Brace,
 };
 
 use crate::{
@@ -127,9 +125,11 @@ impl Mode {
     pub fn build_precondition_fn_body(requires: &[Condition], maintains: &[Condition]) -> Block {
         let mut stmts: Vec<Stmt> = vec![];
         Self::emit_precondition_checks(requires, maintains, &mut stmts);
-        Block {
-            brace_token: Brace(Span::mixed_site()),
-            stmts,
+        parse_quote! {
+            {
+                #(#stmts)*
+                __anodized_pre
+            }
         }
     }
 
@@ -138,26 +138,15 @@ impl Mode {
         maintains: &[Condition],
         statements: &mut Vec<Stmt>,
     ) {
-        let mut clauses: Vec<Expr> = vec![];
-
+        statements.push(parse_quote! {
+            let __anodized_pre = true;
+        });
         for condition in requires.iter().chain(maintains) {
-            let i = clauses.len();
-            let name = Ident::new(&format!("__anodized_clause_{}", i + 1), Span::mixed_site());
             let eval = build_cond_eval(&condition.expr);
-            statements.push(parse_quote! { let #name = #eval; });
-            clauses.push(parse_quote! { #name });
+            statements.push(parse_quote! {
+                let __anodized_pre = __anodized_pre & #eval;
+            });
         }
-
-        if clauses.is_empty() {
-            clauses.push(parse_quote!(true));
-        }
-
-        statements.push(Stmt::Expr(
-            parse_quote! {
-                #(#clauses)&&*
-            },
-            None,
-        ));
     }
 
     pub fn build_postcondition_fn_body(
@@ -167,9 +156,11 @@ impl Mode {
     ) -> Block {
         let mut stmts: Vec<Stmt> = vec![];
         Self::emit_postcondition_checks(maintains, captures, ensures, &mut stmts);
-        Block {
-            brace_token: Brace(Span::mixed_site()),
-            stmts,
+        parse_quote! {
+            {
+                #(#stmts)*
+                __anodized_post
+            }
         }
     }
 
@@ -179,14 +170,14 @@ impl Mode {
         ensures: &[PostCondition],
         statements: &mut Vec<Stmt>,
     ) {
-        let mut clauses: Vec<Expr> = vec![];
-
+        statements.push(parse_quote! {
+            let __anodized_post = true;
+        });
         for condition in maintains {
-            let i = clauses.len();
-            let name = Ident::new(&format!("__anodized_clause_{}", i + 1), Span::mixed_site());
             let eval = build_cond_eval(&condition.expr);
-            statements.push(parse_quote! { let #name = #eval; });
-            clauses.push(parse_quote! { #name });
+            statements.push(parse_quote! {
+                let __anodized_post = #eval;
+            });
         }
 
         {
@@ -198,8 +189,6 @@ impl Mode {
         }
 
         for postcond in ensures {
-            let i = clauses.len();
-            let name = Ident::new(&format!("__anodized_clause_{}", i + 1), Span::mixed_site());
             let expr = &postcond.expr;
             let eval = if let Some(pat) = &postcond.pat {
                 build_cond_eval(&parse_quote! {
@@ -208,20 +197,10 @@ impl Mode {
             } else {
                 build_cond_eval(expr)
             };
-            statements.push(parse_quote! { let #name = #eval; });
-            clauses.push(parse_quote! { #name });
+            statements.push(parse_quote! {
+                let __anodized_post = __anodized_post & #eval;
+            });
         }
-
-        if clauses.is_empty() {
-            clauses.push(parse_quote!(true));
-        }
-
-        statements.push(Stmt::Expr(
-            parse_quote! {
-                #(#clauses)&&*
-            },
-            None,
-        ));
     }
 }
 
