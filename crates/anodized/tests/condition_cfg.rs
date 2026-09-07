@@ -11,7 +11,7 @@ use anodized::spec;
     #[cfg(any())]
     requires: false,
 )]
-fn gated_off_precondition(value: i32) -> i32 {
+pub fn gated_off_precondition(value: i32) -> i32 {
     value
 }
 
@@ -19,7 +19,7 @@ fn gated_off_precondition(value: i32) -> i32 {
     #[cfg(all())]
     requires: false,
 )]
-fn gated_on_precondition(value: i32) -> i32 {
+pub fn gated_on_precondition(value: i32) -> i32 {
     value
 }
 
@@ -27,7 +27,7 @@ fn gated_on_precondition(value: i32) -> i32 {
     #[cfg(any())]
     ensures: |output| output == value + 1,
 )]
-fn gated_off_postcondition(value: i32) -> i32 {
+pub fn gated_off_postcondition(value: i32) -> i32 {
     value
 }
 
@@ -35,7 +35,7 @@ fn gated_off_postcondition(value: i32) -> i32 {
     #[cfg(all())]
     ensures: |output| output == value + 1,
 )]
-fn gated_on_postcondition(value: i32) -> i32 {
+pub fn gated_on_postcondition(value: i32) -> i32 {
     value
 }
 
