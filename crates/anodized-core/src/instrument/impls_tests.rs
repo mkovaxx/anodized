@@ -34,18 +34,23 @@ fn embed_spec_item_impl() {
             #[doc(hidden)]
             #[allow(warnings)]
             fn __anodized_fn_requires_FUNC(&self, PARAM_1: TYPE_1, PARAM_2: TYPE_2) -> bool {
-                let __anodized_clause_1 = ::anodized::__::eval::<bool>(|| COND_1);
-                let __anodized_clause_2 = ::anodized::__::eval::<bool>(|| COND_2);
-                __anodized_clause_1 && __anodized_clause_2
+                let __anodized_pre = true;
+                let __anodized_pre = __anodized_pre & ::anodized::__::eval::<bool>(|| COND_1);
+                let __anodized_pre = __anodized_pre & ::anodized::__::eval::<bool>(|| COND_2);
+                __anodized_pre
             }
 
             #[doc(hidden)]
             #[allow(warnings)]
             fn __anodized_fn_ensures_FUNC(&self, PARAM_1: TYPE_1, PARAM_2: TYPE_2, __anodized_output: RET_TYPE) -> bool {
-                let __anodized_clause_1 = ::anodized::__::eval::<bool>(|| COND_2);
-                let () = ();
-                let __anodized_clause_2 = ::anodized::__::eval::<bool>(|| { let PAT_1 = __anodized_output; COND_3 });
-                __anodized_clause_1 && __anodized_clause_2
+                let __anodized_output = ::anodized::__::eval_once(|| { __anodized_output });
+                let __anodized_post = true;
+                let __anodized_post = __anodized_post & ::anodized::__::eval::<bool>(|| COND_2);
+                let (__anodized_post, __anodized_output) = ::anodized::__::apply_keep(
+                    |PAT_1| (__anodized_post & ::anodized::__::eval::<bool>(|| COND_3), PAT_1),
+                    __anodized_output,
+                );
+                __anodized_post
             }
 
             fn FUNC(&self, PARAM_1: TYPE_1, PARAM_2: TYPE_2) -> RET_TYPE {
@@ -83,7 +88,7 @@ fn default_instrument_item_impl() {
                 let __anodized_pre = __anodized_pre & (true || ::anodized::__::eval::<bool>(|| COND_1));
                 let __anodized_pre = __anodized_pre & (true || ::anodized::__::eval::<bool>(|| COND_2));
                 if !__anodized_pre {}
-                let (__anodized_output) = (::anodized::__::eval_once(|| -> RET_TYPE { BODY }));
+                let __anodized_output = ::anodized::__::eval_once(|| -> RET_TYPE { BODY });
                 let __anodized_post = true;
                 let __anodized_post = __anodized_post & (true || ::anodized::__::eval::<bool>(|| COND_2));
                 let (__anodized_post, __anodized_output) = ::anodized::__::apply_keep(
@@ -146,7 +151,7 @@ fn emit_try_fn_instrument_item_impl() {
                 if !__anodized_pre {
                     return ::anodized::result::pre_err();
                 }
-                let (__anodized_output) = (::anodized::__::eval_once(|| -> RET_TYPE { BODY }));
+                let __anodized_output = ::anodized::__::eval_once(|| -> RET_TYPE { BODY });
                 let __anodized_post = true;
                 let __anodized_post = __anodized_post & (::anodized::__::eval::<bool>(|| COND_2)
                         || eprintln!("postinvariant failed: {}", "COND_2") != ());

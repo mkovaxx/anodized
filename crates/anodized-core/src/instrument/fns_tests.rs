@@ -43,31 +43,41 @@ fn embed_spec_item_fn() {
         #[doc(hidden)]
         #[allow(warnings)]
         fn __anodized_fn_requires_FUNC(&self, PARAM_1: TYPE_1, PARAM_2: TYPE_2) -> bool {
-            let __anodized_clause_1 = ::anodized::__::eval::<bool>(|| COND_1);
-            let __anodized_clause_2 = ::anodized::__::eval::<bool>(|| COND_2);
-            let __anodized_clause_3 = ::anodized::__::eval::<bool>(|| COND_3);
-            let __anodized_clause_4 = ::anodized::__::eval::<bool>(|| COND_4);
-            let __anodized_clause_5 = ::anodized::__::eval::<bool>(|| COND_5);
-            let __anodized_clause_6 = ::anodized::__::eval::<bool>(|| COND_6);
-            __anodized_clause_1 && __anodized_clause_2 && __anodized_clause_3
-                && __anodized_clause_4 && __anodized_clause_5 && __anodized_clause_6
+            let __anodized_pre = true;
+            let __anodized_pre = __anodized_pre & ::anodized::__::eval::<bool>(|| COND_1);
+            let __anodized_pre = __anodized_pre & ::anodized::__::eval::<bool>(|| COND_2);
+            let __anodized_pre = __anodized_pre & ::anodized::__::eval::<bool>(|| COND_3);
+            let __anodized_pre = __anodized_pre & ::anodized::__::eval::<bool>(|| COND_4);
+            let __anodized_pre = __anodized_pre & ::anodized::__::eval::<bool>(|| COND_5);
+            let __anodized_pre = __anodized_pre & ::anodized::__::eval::<bool>(|| COND_6);
+            __anodized_pre
         }
 
         #[doc(hidden)]
         #[allow(warnings)]
         fn __anodized_fn_ensures_FUNC(&self, PARAM_1: TYPE_1, PARAM_2: TYPE_2, __anodized_output: RET_TYPE) -> bool {
-            let __anodized_clause_1 = ::anodized::__::eval::<bool>(|| COND_4);
-            let __anodized_clause_2 = ::anodized::__::eval::<bool>(|| COND_5);
-            let __anodized_clause_3 = ::anodized::__::eval::<bool>(|| COND_6);
-            let (ALIAS_1, (ALIAS_2, ALIAS_3)) = (
+            let (ALIAS_1, (ALIAS_2, ALIAS_3), __anodized_output) = (
                 ::anodized::__::eval(|| EXPR_1),
                 ::anodized::__::eval(|| EXPR_2),
+                ::anodized::__::eval_once(|| { __anodized_output }),
             );
-            let __anodized_clause_4 = ::anodized::__::eval::<bool>(|| { let PAT_1 = __anodized_output; COND_7 });
-            let __anodized_clause_5 = ::anodized::__::eval::<bool>(|| { let PAT_1 = __anodized_output; COND_8 });
-            let __anodized_clause_6 = ::anodized::__::eval::<bool>(|| { let PAT_1 = __anodized_output; COND_9 });
-            __anodized_clause_1 && __anodized_clause_2 && __anodized_clause_3
-                && __anodized_clause_4 && __anodized_clause_5 && __anodized_clause_6
+            let __anodized_post = true;
+            let __anodized_post = __anodized_post & ::anodized::__::eval::<bool>(|| COND_4);
+            let __anodized_post = __anodized_post & ::anodized::__::eval::<bool>(|| COND_5);
+            let __anodized_post = __anodized_post & ::anodized::__::eval::<bool>(|| COND_6);
+            let (__anodized_post, __anodized_output) = ::anodized::__::apply_keep(
+                |PAT_1| (__anodized_post & ::anodized::__::eval::<bool>(|| COND_7), PAT_1),
+                __anodized_output,
+            );
+            let (__anodized_post, __anodized_output) = ::anodized::__::apply_keep(
+                |PAT_1| (__anodized_post & ::anodized::__::eval::<bool>(|| COND_8), PAT_1),
+                __anodized_output,
+            );
+            let (__anodized_post, __anodized_output) = ::anodized::__::apply_keep(
+                |PAT_1| (__anodized_post & ::anodized::__::eval::<bool>(|| COND_9), PAT_1),
+                __anodized_output,
+            );
+            __anodized_post
         }
 
         fn FUNC(&self, PARAM_1: TYPE_1, PARAM_2: TYPE_2) -> RET_TYPE {
@@ -220,7 +230,7 @@ fn simple_requires() {
             if !__anodized_pre {
                 panic!("precondition failed");
             }
-            let (__anodized_output) = (::anodized::__::eval_once(|| -> RET_TYPE { BODY }));
+            let __anodized_output = ::anodized::__::eval_once(|| -> RET_TYPE { BODY });
             let __anodized_post = true;
             if !__anodized_post {
                 panic!("postcondition failed");
@@ -260,7 +270,7 @@ fn requires_disable_runtime_checks() {
             let __anodized_pre = true;
             let __anodized_pre = __anodized_pre & (true || ::anodized::__::eval::<bool>(|| CONDITION_1));
             if !__anodized_pre {}
-            let (__anodized_output) = (::anodized::__::eval_once(|| -> RET_TYPE { BODY }));
+            let __anodized_output = ::anodized::__::eval_once(|| -> RET_TYPE { BODY });
             let __anodized_post = true;
             if !__anodized_post {}
             __anodized_output
@@ -282,7 +292,7 @@ fn requires_no_panic_runtime() {
             let __anodized_pre = __anodized_pre & (::anodized::__::eval::<bool>(|| CONDITION_1)
                 || eprintln!("precondition failed: {}", "CONDITION_1") != ());
             if !__anodized_pre {}
-            let (__anodized_output) = (::anodized::__::eval_once(|| -> RET_TYPE { BODY }));
+            let __anodized_output = ::anodized::__::eval_once(|| -> RET_TYPE { BODY });
             let __anodized_post = true;
             if !__anodized_post {}
             __anodized_output
@@ -315,7 +325,7 @@ fn simple_maintains() {
             if !__anodized_pre {
                 panic!("precondition failed");
             }
-            let (__anodized_output) = (::anodized::__::eval_once(|| -> RET_TYPE { BODY }));
+            let __anodized_output = ::anodized::__::eval_once(|| -> RET_TYPE { BODY });
             let __anodized_post = true;
             let __anodized_post = __anodized_post & (::anodized::__::eval::<bool>(|| CONDITION_1)
                 || eprintln!("postinvariant failed: {}", "CONDITION_1") != ());
@@ -350,7 +360,7 @@ fn simple_ensures() {
             if !__anodized_pre {
                 panic!("precondition failed");
             }
-            let (__anodized_output) = (::anodized::__::eval_once(|| -> RET_TYPE { BODY }));
+            let __anodized_output = ::anodized::__::eval_once(|| -> RET_TYPE { BODY });
             let __anodized_post = true;
             let __anodized_post = __anodized_post & (::anodized::__::eval::<bool>(|| CONDITION_1)
                 || eprintln!("postcondition failed: {}", "CONDITION_1") != ());
@@ -392,7 +402,7 @@ fn simple_requires_and_maintains() {
             if !__anodized_pre {
                 panic!("precondition failed");
             }
-            let (__anodized_output) = (::anodized::__::eval_once(|| -> RET_TYPE { BODY }));
+            let __anodized_output = ::anodized::__::eval_once(|| -> RET_TYPE { BODY });
             let __anodized_post = true;
             let __anodized_post = __anodized_post & (::anodized::__::eval::<bool>(|| CONDITION_2)
                 || eprintln!("postinvariant failed: {}", "CONDITION_2") != ());
@@ -432,7 +442,7 @@ fn simple_requires_and_ensures() {
             if !__anodized_pre {
                 panic!("precondition failed");
             }
-            let (__anodized_output) = (::anodized::__::eval_once(|| -> RET_TYPE { BODY }));
+            let __anodized_output = ::anodized::__::eval_once(|| -> RET_TYPE { BODY });
             let __anodized_post = true;
             let __anodized_post = __anodized_post & (::anodized::__::eval::<bool>(|| CONDITION_2)
                 || eprintln!("postcondition failed: {}", "CONDITION_2") != ());
@@ -472,7 +482,7 @@ fn simple_maintains_and_ensures() {
             if !__anodized_pre {
                 panic!("precondition failed");
             }
-            let (__anodized_output) = (::anodized::__::eval_once(|| -> RET_TYPE { BODY }));
+            let __anodized_output = ::anodized::__::eval_once(|| -> RET_TYPE { BODY });
             let __anodized_post = true;
             let __anodized_post = __anodized_post & (::anodized::__::eval::<bool>(|| CONDITION_1)
                 || eprintln!("postinvariant failed: {}", "CONDITION_1") != ());
@@ -517,7 +527,7 @@ fn simple_requires_maintains_and_ensures() {
             if !__anodized_pre {
                 panic!("precondition failed");
             }
-            let (__anodized_output) = (::anodized::__::eval_once(|| -> RET_TYPE { BODY }));
+            let __anodized_output = ::anodized::__::eval_once(|| -> RET_TYPE { BODY });
             let __anodized_post = true;
             let __anodized_post = __anodized_post & (::anodized::__::eval::<bool>(|| CONDITION_2)
                 || eprintln!("postinvariant failed: {}", "CONDITION_2") != ());
@@ -562,7 +572,7 @@ fn simple_async_requires_maintains_and_ensures() {
             if !__anodized_pre {
                 panic!("precondition failed");
             }
-            let (__anodized_output) = (::anodized::__::eval_once(async || -> RET_TYPE { BODY }).await);
+            let __anodized_output = ::anodized::__::eval_once(async || -> RET_TYPE { BODY }).await;
             let __anodized_post = true;
             let __anodized_post = __anodized_post & (::anodized::__::eval::<bool>(|| CONDITION_2)
                 || eprintln!("postinvariant failed: {}", "CONDITION_2") != ());
@@ -611,7 +621,7 @@ fn multiple_conditions_in_clauses() {
             if !__anodized_pre {
                 panic!("precondition failed");
             }
-            let (__anodized_output) = (::anodized::__::eval_once(|| -> RET_TYPE { BODY }));
+            let __anodized_output = ::anodized::__::eval_once(|| -> RET_TYPE { BODY });
             let __anodized_post = true;
             let __anodized_post = __anodized_post & (::anodized::__::eval::<bool>(|| CONDITION_3)
                 || eprintln!("postinvariant failed: {}", "CONDITION_3") != ());
@@ -652,7 +662,7 @@ fn postcond_closure_form() {
             if !__anodized_pre {
                 panic!("precondition failed");
             }
-            let (__anodized_output) = (::anodized::__::eval_once(|| -> RET_TYPE { BODY }));
+            let __anodized_output = ::anodized::__::eval_once(|| -> RET_TYPE { BODY });
             let __anodized_post = true;
             let (__anodized_post, __anodized_output) = ::anodized::__::apply_keep(
                 |OUTPUT_PATTERN| (__anodized_post & (::anodized::__::eval::<bool>(|| CONDITION_1)
@@ -690,7 +700,7 @@ fn postcond_borrowing_closure_form() {
             if !__anodized_pre {
                 panic!("precondition failed");
             }
-            let (__anodized_output) = (::anodized::__::eval_once(|| -> RET_TYPE { BODY }));
+            let __anodized_output = ::anodized::__::eval_once(|| -> RET_TYPE { BODY });
             let __anodized_post = true;
             let (__anodized_post, __anodized_output) = ::anodized::__::apply_keep(
                 |__anodized_output| {
@@ -738,7 +748,7 @@ fn ensures_with_mixed_conditions() {
             if !__anodized_pre {
                 panic!("precondition failed");
             }
-            let (__anodized_output) = (::anodized::__::eval_once(|| -> RET_TYPE { BODY }));
+            let __anodized_output = ::anodized::__::eval_once(|| -> RET_TYPE { BODY });
             let __anodized_post = true;
             let __anodized_post = __anodized_post & (::anodized::__::eval::<bool>(|| CONDITION_1)
                 || eprintln!("postcondition failed: {}", "CONDITION_1") != ());
@@ -790,7 +800,7 @@ fn cfg_attributes() {
             if !__anodized_pre {
                 panic!("precondition failed");
             }
-            let (__anodized_output) = (::anodized::__::eval_once(|| -> RET_TYPE { BODY }));
+            let __anodized_output = ::anodized::__::eval_once(|| -> RET_TYPE { BODY });
             let __anodized_post = true;
             let __anodized_post = __anodized_post & (!cfg!(SETTING_2) || ::anodized::__::eval::<bool>(|| CONDITION_2)
                 || eprintln!("postinvariant failed: {}", "CONDITION_2") != ());
@@ -839,7 +849,7 @@ fn cfg_on_single_and_list_conditions() {
             if !__anodized_pre {
                 panic!("precondition failed");
             }
-            let (__anodized_output) = (::anodized::__::eval_once(|| -> RET_TYPE { BODY }));
+            let __anodized_output = ::anodized::__::eval_once(|| -> RET_TYPE { BODY });
             let __anodized_post = true;
             let __anodized_post = __anodized_post & (::anodized::__::eval::<bool>(|| CONDITION_2)
                 || eprintln!("postinvariant failed: {}", "CONDITION_2") != ());
@@ -902,7 +912,7 @@ fn complex_mixed_conditions() {
             if !__anodized_pre {
                 panic!("precondition failed");
             }
-            let (__anodized_output) = (::anodized::__::eval_once(|| -> RET_TYPE { BODY }));
+            let __anodized_output = ::anodized::__::eval_once(|| -> RET_TYPE { BODY });
             let __anodized_post = true;
             let __anodized_post = __anodized_post & (::anodized::__::eval::<bool>(|| CONDITION_4)
                 || eprintln!("postinvariant failed: {}", "CONDITION_4") != ());

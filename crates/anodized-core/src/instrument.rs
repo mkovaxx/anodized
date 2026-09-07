@@ -108,7 +108,7 @@ Instead, you likely need to place a `#[spec]` attribute on an enclosing trait or
                     &spec.maintains,
                     &spec.captures,
                     &spec.ensures,
-                )?),
+                )),
             };
 
             spec_qualifiers_const.to_tokens(&mut tokens);

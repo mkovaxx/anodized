@@ -8,6 +8,7 @@ use syn::{
 use crate::{
     Capture, Condition, DataSpec, EmptySpec, FnSpec, InputSpecFlags, LoopSpec, LoopVariant,
     PostCondition,
+    instrument::patterns::{IdentGenerator, tame_pattern},
     qualifiers::FnQualifiers,
     syntax::{Keyword, SpecFields, UnspecArg, UnspecAttr, get_attr_input, remove_unique_attr},
 };
@@ -229,6 +230,7 @@ impl FnSpec {
         let span = raw_spec.span();
 
         let mut errors = MultiError::empty();
+        let mut id_gen = IdentGenerator::new();
         let mut qualifiers = FnQualifiers::empty();
         let mut requires: Vec<Condition> = vec![];
         let mut maintains: Vec<Condition> = vec![];
@@ -321,7 +323,7 @@ impl FnSpec {
                     ));
                 }
                 Keyword::Ensures => {
-                    if let Err(error) = parse_postconds(field, &mut ensures) {
+                    if let Err(error) = parse_postconds(&mut id_gen, field, &mut ensures) {
                         errors.add(error);
                     }
                 }
@@ -553,7 +555,11 @@ fn parse_conditions(field: FieldValue, conditions: &mut Vec<Condition>) -> Resul
     Ok(())
 }
 
-fn parse_postconds(field: FieldValue, postconds: &mut Vec<PostCondition>) -> Result<()> {
+fn parse_postconds(
+    id_gen: &mut IdentGenerator,
+    field: FieldValue,
+    postconds: &mut Vec<PostCondition>,
+) -> Result<()> {
     let cfg_attr = find_cfg_attribute(&field.attrs)?;
     let cfg: Option<Meta> = if let Some(attr) = cfg_attr {
         Some(attr.parse_args()?)
@@ -572,17 +578,18 @@ fn parse_postconds(field: FieldValue, postconds: &mut Vec<PostCondition>) -> Res
                 ));
             }
             let (pat, _) = closure.inputs.pop().unwrap().into_tuple();
+            let tame_pat = tame_pattern(id_gen, pat)?;
             if let Expr::Array(array) = *closure.body {
                 for expr in array.elems {
                     postconds.push(PostCondition {
-                        pat: Some(pat.clone()),
+                        pat: Some(tame_pat.clone()),
                         expr,
                         cfg: cfg.clone(),
                     });
                 }
             } else {
                 postconds.push(PostCondition {
-                    pat: Some(pat),
+                    pat: Some(tame_pat),
                     expr: *closure.body,
                     cfg: cfg.clone(),
                 });
@@ -598,8 +605,9 @@ fn parse_postconds(field: FieldValue, postconds: &mut Vec<PostCondition>) -> Res
                         ));
                     }
                     let (pat, _) = closure.inputs.pop().unwrap().into_tuple();
+                    let tame_pat = tame_pattern(id_gen, pat)?;
                     postconds.push(PostCondition {
-                        pat: Some(pat),
+                        pat: Some(tame_pat),
                         expr: *closure.body,
                         cfg: cfg.clone(),
                     });

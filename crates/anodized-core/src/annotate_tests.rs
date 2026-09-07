@@ -1,3 +1,4 @@
+use crate::instrument::patterns::TamePat;
 use crate::test_util::{
     SpecItemEnum, SpecItemFn, SpecItemStruct, assert_spec_eq, assert_tokens_eq,
 };
@@ -333,7 +334,10 @@ fn all_clauses() {
         }],
         captures: vec![],
         ensures: vec![PostCondition {
-            pat: Some(parse_quote! { z }),
+            pat: Some(TamePat::Invertible(
+                parse_quote! { z },
+                Box::new(parse_quote! { z }),
+            )),
             expr: parse_quote! { z >= x },
             cfg: None,
         }],
@@ -433,7 +437,10 @@ fn array_of_conditions() {
                 cfg: None,
             },
             PostCondition {
-                pat: Some(parse_quote! { retval }),
+                pat: Some(TamePat::Invertible(
+                    parse_quote! { retval },
+                    Box::new(parse_quote! { retval }),
+                )),
                 expr: parse_quote! { retval.is_some() },
                 cfg: None,
             },
@@ -461,7 +468,10 @@ fn ensures_with_explicit_closure() {
         maintains: vec![],
         captures: vec![],
         ensures: vec![PostCondition {
-            pat: Some(parse_quote! { result }),
+            pat: Some(TamePat::Invertible(
+                parse_quote! { result },
+                Box::new(parse_quote! { result }),
+            )),
             expr: parse_quote! { result.is_ok() || result.unwrap_err().kind() == ErrorKind::NotFound },
             cfg: None,
         }],
@@ -506,7 +516,10 @@ fn multiple_clauses_of_same_flavor() {
                 cfg: None,
             },
             PostCondition {
-                pat: Some(parse_quote! { output }),
+                pat: Some(TamePat::Invertible(
+                    parse_quote! { output },
+                    Box::new(parse_quote! { output }),
+                )),
                 expr: parse_quote! { output.len() >= y.len() },
                 cfg: None,
             },
@@ -566,7 +579,10 @@ fn mixed_single_and_array_clauses() {
                 cfg: None,
             },
             PostCondition {
-                pat: Some(parse_quote! { val }),
+                pat: Some(TamePat::Invertible(
+                    parse_quote! { val },
+                    Box::new(parse_quote! { val }),
+                )),
                 expr: parse_quote! { output.starts_with(z) },
                 cfg: None,
             },
@@ -576,12 +592,18 @@ fn mixed_single_and_array_clauses() {
                 cfg: None,
             },
             PostCondition {
-                pat: Some(parse_quote! { output }),
+                pat: Some(TamePat::Invertible(
+                    parse_quote! { output },
+                    Box::new(parse_quote! { output }),
+                )),
                 expr: parse_quote! { output >= x },
                 cfg: None,
             },
             PostCondition {
-                pat: Some(parse_quote! { output }),
+                pat: Some(TamePat::Invertible(
+                    parse_quote! { output },
+                    Box::new(parse_quote! { output }),
+                )),
                 expr: parse_quote! { x != z },
                 cfg: None,
             },
@@ -718,12 +740,18 @@ fn binds_pattern() {
         captures: vec![],
         ensures: vec![
             PostCondition {
-                pat: Some(parse_quote! { (a, b) }),
+                pat: Some(TamePat::Invertible(
+                    parse_quote! { (a, b) },
+                    Box::new(parse_quote! { (a, b) }),
+                )),
                 expr: parse_quote! { a <= b },
                 cfg: None,
             },
             PostCondition {
-                pat: Some(parse_quote! { (a, b) }),
+                pat: Some(TamePat::Invertible(
+                    parse_quote! { (a, b) },
+                    Box::new(parse_quote! { (a, b) }),
+                )),
                 expr: parse_quote! { (a, b) == pair || (b, a) == pair },
                 cfg: None,
             },
@@ -799,12 +827,18 @@ fn rename_return_value() {
         captures: vec![],
         ensures: vec![
             PostCondition {
-                pat: Some(parse_quote! { result }),
+                pat: Some(TamePat::Invertible(
+                    parse_quote! { result },
+                    Box::new(parse_quote! { result }),
+                )),
                 expr: parse_quote! { result > output },
                 cfg: None,
             },
             PostCondition {
-                pat: Some(parse_quote! { result }),
+                pat: Some(TamePat::Invertible(
+                    parse_quote! { result },
+                    Box::new(parse_quote! { result }),
+                )),
                 expr: parse_quote! { result % 2 == 0 },
                 cfg: None,
             },
@@ -967,7 +1001,10 @@ fn captures_with_all_clauses() {
             expr: parse_quote! { value },
         }],
         ensures: vec![PostCondition {
-            pat: Some(parse_quote! { result }),
+            pat: Some(TamePat::Invertible(
+                parse_quote! { result },
+                Box::new(parse_quote! { result }),
+            )),
             expr: parse_quote! { result > old_val },
             cfg: None,
         }],

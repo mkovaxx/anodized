@@ -69,7 +69,7 @@ impl Mode {
                                 &fn_spec.maintains,
                                 &fn_spec.captures,
                                 &fn_spec.ensures,
-                            )?),
+                            )),
                             semi_token: None,
                         };
 
@@ -240,7 +240,7 @@ Instead, ensure that both the trait and the impl fn have a `#[spec]` annotation.
                                 &fn_spec.maintains,
                                 &fn_spec.captures,
                                 &fn_spec.ensures,
-                            )?,
+                            ),
                             vis: Visibility::Inherited,
                             defaultness: None,
                         };
