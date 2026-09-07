@@ -43,9 +43,7 @@ fn embed_spec_item_impl() {
             #[doc(hidden)]
             #[allow(warnings)]
             fn __anodized_fn_ensures_FUNC(&self, PARAM_1: TYPE_1, PARAM_2: TYPE_2, __anodized_output: RET_TYPE) -> bool {
-                let (__anodized_output,) = (
-                    ::anodized::__::eval_once(|| { __anodized_output }),
-                );
+                let __anodized_output = ::anodized::__::eval_once(|| { __anodized_output });
                 let __anodized_post = true;
                 let __anodized_post = __anodized_post & ::anodized::__::eval::<bool>(|| COND_2);
                 let (__anodized_post, __anodized_output) = ::anodized::__::apply_keep(
