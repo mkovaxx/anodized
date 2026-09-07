@@ -134,7 +134,7 @@ impl Mode {
         requires: &[Condition],
         maintains: &[Condition],
         statements: &mut Vec<Stmt>,
-        maybe_instrument_eval: Option<&impl Fn(&str, &Option<Meta>, &Expr, &str) -> Expr>,
+        maybe_instrument_eval: Option<fn(&str, &Option<Meta>, &Expr, &str) -> Expr>,
     ) {
         statements.push(parse_quote! {
             let __anodized_pre = true;
@@ -185,7 +185,7 @@ impl Mode {
         captures: &[Capture],
         ensures: &[PostCondition],
         statements: &mut Vec<Stmt>,
-        maybe_instrument_eval: Option<&impl Fn(&str, &Option<Meta>, &Expr, &str) -> Expr>,
+        maybe_instrument_eval: Option<fn(&str, &Option<Meta>, &Expr, &str) -> Expr>,
     ) {
         statements.push(parse_quote! {
             let __anodized_post = true;
