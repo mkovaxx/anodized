@@ -121,7 +121,7 @@ impl Mode {
 
     pub fn build_precondition_fn_body(requires: &[Condition], maintains: &[Condition]) -> Block {
         let mut stmts: Vec<Stmt> = vec![];
-        Self::emit_precondition_checks(requires, maintains, &mut stmts);
+        Self::emit_precondition_checks(requires, maintains, &mut stmts, None);
         parse_quote! {
             {
                 #(#stmts)*
@@ -134,13 +134,33 @@ impl Mode {
         requires: &[Condition],
         maintains: &[Condition],
         statements: &mut Vec<Stmt>,
+        maybe_instrument_eval: Option<&impl Fn(&str, &Option<Meta>, &Expr, &str) -> Expr>,
     ) {
         statements.push(parse_quote! {
             let __anodized_pre = true;
         });
-        for precondition in requires.iter().chain(maintains) {
+
+        for precondition in requires {
             let eval = build_cond_eval(&precondition.expr);
-            let check = build_precond_check(&eval);
+            let instrumented_eval = if let Some(instrument_eval) = maybe_instrument_eval {
+                let repr = precondition.expr.to_token_stream().to_string();
+                instrument_eval("precondition failed: {}", &precondition.cfg, &eval, &repr)
+            } else {
+                eval
+            };
+            let check = build_precond_check(&instrumented_eval);
+            statements.push(check);
+        }
+
+        for preinvariant in maintains {
+            let eval = build_cond_eval(&preinvariant.expr);
+            let instrumented_eval = if let Some(instrument_eval) = maybe_instrument_eval {
+                let repr = preinvariant.expr.to_token_stream().to_string();
+                instrument_eval("preinvariant failed: {}", &preinvariant.cfg, &eval, &repr)
+            } else {
+                eval
+            };
+            let check = build_precond_check(&instrumented_eval);
             statements.push(check);
         }
     }
@@ -151,7 +171,7 @@ impl Mode {
         ensures: &[PostCondition],
     ) -> Block {
         let mut stmts: Vec<Stmt> = vec![];
-        Self::emit_postcondition_checks(maintains, captures, ensures, &mut stmts);
+        Self::emit_postcondition_checks(maintains, captures, ensures, &mut stmts, None);
         parse_quote! {
             {
                 #(#stmts)*
@@ -165,13 +185,21 @@ impl Mode {
         captures: &[Capture],
         ensures: &[PostCondition],
         statements: &mut Vec<Stmt>,
+        maybe_instrument_eval: Option<&impl Fn(&str, &Option<Meta>, &Expr, &str) -> Expr>,
     ) {
         statements.push(parse_quote! {
             let __anodized_post = true;
         });
+
         for postinvariant in maintains {
             let eval = build_cond_eval(&postinvariant.expr);
-            let check = build_postcond_check(&None, &eval);
+            let instrumented_eval = if let Some(instrument_eval) = &maybe_instrument_eval {
+                let repr = postinvariant.expr.to_token_stream().to_string();
+                instrument_eval("postinvariant failed: {}", &postinvariant.cfg, &eval, &repr)
+            } else {
+                eval
+            };
+            let check = build_postcond_check(&None, &instrumented_eval);
             statements.push(check);
         }
 
@@ -185,7 +213,13 @@ impl Mode {
 
         for postcondition in ensures {
             let eval = build_cond_eval(&postcondition.expr);
-            let check = build_postcond_check(&postcondition.pat, &eval);
+            let instrumented_eval = if let Some(instrument_eval) = &maybe_instrument_eval {
+                let repr = postcondition.expr.to_token_stream().to_string();
+                instrument_eval("postcondition failed: {}", &postcondition.cfg, &eval, &repr)
+            } else {
+                eval
+            };
+            let check = build_postcond_check(&postcondition.pat, &instrumented_eval);
             statements.push(check);
         }
     }
