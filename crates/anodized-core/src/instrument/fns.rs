@@ -121,47 +121,12 @@ impl Mode {
 
     pub fn build_precondition_fn_body(requires: &[Condition], maintains: &[Condition]) -> Block {
         let mut stmts: Vec<Stmt> = vec![];
-        Self::emit_precondition_checks(requires, maintains, &mut stmts, None);
+        emit_precondition_checks(requires, maintains, &mut stmts, None);
         parse_quote! {
             {
                 #(#stmts)*
                 __anodized_pre
             }
-        }
-    }
-
-    pub fn emit_precondition_checks(
-        requires: &[Condition],
-        maintains: &[Condition],
-        statements: &mut Vec<Stmt>,
-        maybe_instrument_eval: Option<fn(&str, &Option<Meta>, &Expr, &str) -> Expr>,
-    ) {
-        statements.push(parse_quote! {
-            let __anodized_pre = true;
-        });
-
-        for precondition in requires {
-            let eval = build_cond_eval(&precondition.expr);
-            let instrumented_eval = if let Some(instrument_eval) = maybe_instrument_eval {
-                let repr = precondition.expr.to_token_stream().to_string();
-                instrument_eval("precondition failed: {}", &precondition.cfg, &eval, &repr)
-            } else {
-                eval
-            };
-            let check = build_precond_check(&instrumented_eval);
-            statements.push(check);
-        }
-
-        for preinvariant in maintains {
-            let eval = build_cond_eval(&preinvariant.expr);
-            let instrumented_eval = if let Some(instrument_eval) = maybe_instrument_eval {
-                let repr = preinvariant.expr.to_token_stream().to_string();
-                instrument_eval("preinvariant failed: {}", &preinvariant.cfg, &eval, &repr)
-            } else {
-                eval
-            };
-            let check = build_precond_check(&instrumented_eval);
-            statements.push(check);
         }
     }
 
@@ -171,76 +136,17 @@ impl Mode {
         ensures: &[PostCondition],
     ) -> Block {
         let mut stmts: Vec<Stmt> = vec![];
-        Self::emit_capture_binding(
+        emit_capture_binding(
             captures,
             &parse_quote! { { __anodized_output } },
             &mut stmts,
         );
-        Self::emit_postcondition_checks(maintains, ensures, &mut stmts, None);
+        emit_postcondition_checks(maintains, ensures, &mut stmts, None);
         parse_quote! {
             {
                 #(#stmts)*
                 __anodized_post
             }
-        }
-    }
-
-    pub fn emit_capture_binding(captures: &[Capture], body: &Block, statements: &mut Vec<Stmt>) {
-        let mut patterns = vec![];
-        let mut values = vec![];
-
-        for capture in captures {
-            patterns.push(&capture.pat);
-            let capture_eval = build_capture_eval(&capture.expr);
-            values.push(capture_eval);
-        }
-
-        let output_ident = Pat::Path(parse_quote! { __anodized_output });
-        patterns.push(&output_ident);
-        let body_eval = Expr::Call(parse_quote! { ::anodized::__::eval_once(|| #body) });
-        values.push(body_eval);
-
-        let binding = if patterns.len() > 1 {
-            parse_quote! { let (#(#patterns,)*) = (#(#values,)*); }
-        } else {
-            parse_quote! { let #(#patterns)* = #(#values)*; }
-        };
-
-        statements.push(binding);
-    }
-
-    pub fn emit_postcondition_checks(
-        maintains: &[Condition],
-        ensures: &[PostCondition],
-        statements: &mut Vec<Stmt>,
-        maybe_instrument_eval: Option<fn(&str, &Option<Meta>, &Expr, &str) -> Expr>,
-    ) {
-        statements.push(parse_quote! {
-            let __anodized_post = true;
-        });
-
-        for postinvariant in maintains {
-            let eval = build_cond_eval(&postinvariant.expr);
-            let instrumented_eval = if let Some(instrument_eval) = maybe_instrument_eval {
-                let repr = postinvariant.expr.to_token_stream().to_string();
-                instrument_eval("postinvariant failed: {}", &postinvariant.cfg, &eval, &repr)
-            } else {
-                eval
-            };
-            let check = build_postcond_check(&None, &instrumented_eval);
-            statements.push(check);
-        }
-
-        for postcondition in ensures {
-            let eval = build_cond_eval(&postcondition.expr);
-            let instrumented_eval = if let Some(instrument_eval) = maybe_instrument_eval {
-                let repr = postcondition.expr.to_token_stream().to_string();
-                instrument_eval("postcondition failed: {}", &postcondition.cfg, &eval, &repr)
-            } else {
-                eval
-            };
-            let check = build_postcond_check(&postcondition.pat, &instrumented_eval);
-            statements.push(check);
         }
     }
 }
@@ -399,6 +305,100 @@ impl CheckSettings {
         self.does_panic
             .as_ref()
             .map(|_| parse_quote! { panic!(#message); })
+    }
+}
+
+fn emit_precondition_checks(
+    requires: &[Condition],
+    maintains: &[Condition],
+    statements: &mut Vec<Stmt>,
+    maybe_instrument_eval: Option<fn(&str, &Option<Meta>, &Expr, &str) -> Expr>,
+) {
+    statements.push(parse_quote! {
+        let __anodized_pre = true;
+    });
+
+    for precondition in requires {
+        let eval = build_cond_eval(&precondition.expr);
+        let instrumented_eval = if let Some(instrument_eval) = maybe_instrument_eval {
+            let repr = precondition.expr.to_token_stream().to_string();
+            instrument_eval("precondition failed: {}", &precondition.cfg, &eval, &repr)
+        } else {
+            eval
+        };
+        let check = build_precond_check(&instrumented_eval);
+        statements.push(check);
+    }
+
+    for preinvariant in maintains {
+        let eval = build_cond_eval(&preinvariant.expr);
+        let instrumented_eval = if let Some(instrument_eval) = maybe_instrument_eval {
+            let repr = preinvariant.expr.to_token_stream().to_string();
+            instrument_eval("preinvariant failed: {}", &preinvariant.cfg, &eval, &repr)
+        } else {
+            eval
+        };
+        let check = build_precond_check(&instrumented_eval);
+        statements.push(check);
+    }
+}
+
+fn emit_capture_binding(captures: &[Capture], body: &Block, statements: &mut Vec<Stmt>) {
+    let mut patterns = vec![];
+    let mut values = vec![];
+
+    for capture in captures {
+        patterns.push(&capture.pat);
+        let capture_eval = build_capture_eval(&capture.expr);
+        values.push(capture_eval);
+    }
+
+    let output_ident = Pat::Path(parse_quote! { __anodized_output });
+    patterns.push(&output_ident);
+    let body_eval = Expr::Call(parse_quote! { ::anodized::__::eval_once(|| #body) });
+    values.push(body_eval);
+
+    let binding = if patterns.len() > 1 {
+        parse_quote! { let (#(#patterns,)*) = (#(#values,)*); }
+    } else {
+        parse_quote! { let #(#patterns)* = #(#values)*; }
+    };
+
+    statements.push(binding);
+}
+
+fn emit_postcondition_checks(
+    maintains: &[Condition],
+    ensures: &[PostCondition],
+    statements: &mut Vec<Stmt>,
+    maybe_instrument_eval: Option<fn(&str, &Option<Meta>, &Expr, &str) -> Expr>,
+) {
+    statements.push(parse_quote! {
+        let __anodized_post = true;
+    });
+
+    for postinvariant in maintains {
+        let eval = build_cond_eval(&postinvariant.expr);
+        let instrumented_eval = if let Some(instrument_eval) = maybe_instrument_eval {
+            let repr = postinvariant.expr.to_token_stream().to_string();
+            instrument_eval("postinvariant failed: {}", &postinvariant.cfg, &eval, &repr)
+        } else {
+            eval
+        };
+        let check = build_postcond_check(&None, &instrumented_eval);
+        statements.push(check);
+    }
+
+    for postcondition in ensures {
+        let eval = build_cond_eval(&postcondition.expr);
+        let instrumented_eval = if let Some(instrument_eval) = maybe_instrument_eval {
+            let repr = postcondition.expr.to_token_stream().to_string();
+            instrument_eval("postcondition failed: {}", &postcondition.cfg, &eval, &repr)
+        } else {
+            eval
+        };
+        let check = build_postcond_check(&postcondition.pat, &instrumented_eval);
+        statements.push(check);
     }
 }
 
