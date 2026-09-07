@@ -141,7 +141,7 @@ impl Mode {
         let output_eval: Expr = parse_quote! {
             ::anodized::__::eval_once(|| { __anodized_output })
         };
-        emit_capture_binding(captures, output_eval, &mut stmts);
+        emit_captures_and_output_binding(captures, output_eval, &mut stmts);
         emit_postcondition_checks(maintains, ensures, &mut stmts, |_, _, cond_eval, _| {
             cond_eval.clone()
         });
@@ -204,7 +204,7 @@ impl CheckSettings {
                 ::anodized::__::eval_once(|| #return_type #original_body)
             }
         };
-        emit_capture_binding(&spec.captures, output_eval, &mut stmts);
+        emit_captures_and_output_binding(&spec.captures, output_eval, &mut stmts);
 
         // Generate postcondition checks.
         emit_postcondition_checks(
@@ -291,7 +291,11 @@ fn emit_precondition_checks(
     }
 }
 
-fn emit_capture_binding(captures: &[Capture], output_eval: Expr, statements: &mut Vec<Stmt>) {
+fn emit_captures_and_output_binding(
+    captures: &[Capture],
+    output_eval: Expr,
+    statements: &mut Vec<Stmt>,
+) {
     let mut patterns = vec![];
     let mut values = vec![];
 
