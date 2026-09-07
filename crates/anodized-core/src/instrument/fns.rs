@@ -141,11 +141,10 @@ impl Mode {
         statements.push(parse_quote! {
             let __anodized_pre = true;
         });
-        for condition in requires.iter().chain(maintains) {
-            let eval = build_cond_eval(&condition.expr);
-            statements.push(parse_quote! {
-                let __anodized_pre = __anodized_pre & #eval;
-            });
+        for precondition in requires.iter().chain(maintains) {
+            let eval = build_cond_eval(&precondition.expr);
+            let check = build_precond_check(&eval);
+            statements.push(check);
         }
     }
 
@@ -173,11 +172,10 @@ impl Mode {
         statements.push(parse_quote! {
             let __anodized_post = true;
         });
-        for condition in maintains {
-            let eval = build_cond_eval(&condition.expr);
-            statements.push(parse_quote! {
-                let __anodized_post = #eval;
-            });
+        for postinvariant in maintains {
+            let eval = build_cond_eval(&postinvariant.expr);
+            let check = build_postcond_check(&None, &eval);
+            statements.push(check);
         }
 
         {
@@ -188,9 +186,9 @@ impl Mode {
             statements.push(parse_quote! { let (#(#patterns),*) = (#(#values),*); });
         }
 
-        for postcond in ensures {
-            let expr = &postcond.expr;
-            let eval = if let Some(pat) = &postcond.pat {
+        for postcondition in ensures {
+            let expr = &postcondition.expr;
+            let eval = if let Some(pat) = &postcondition.pat {
                 build_cond_eval(&parse_quote! {
                     { let #pat = __anodized_output; #expr }
                 })
@@ -227,7 +225,7 @@ impl CheckSettings {
                 &eval,
                 &precondition.expr.to_token_stream().to_string(),
             );
-            let check = self.build_precond_check(&instrumented_eval);
+            let check = build_precond_check(&instrumented_eval);
             precond_checks.push(check);
         }
         for preinvariant in &spec.maintains {
@@ -238,7 +236,7 @@ impl CheckSettings {
                 &eval,
                 &preinvariant.expr.to_token_stream().to_string(),
             );
-            let check = self.build_precond_check(&instrumented_eval);
+            let check = build_precond_check(&instrumented_eval);
             precond_checks.push(check);
         }
 
@@ -282,7 +280,7 @@ impl CheckSettings {
                 &eval,
                 &postinvariant.expr.to_token_stream().to_string(),
             );
-            let check = self.build_postcond_check(&None, &instrumented_eval);
+            let check = build_postcond_check(&None, &instrumented_eval);
             postcond_checks.push(check);
         }
         for postcondition in &spec.ensures {
@@ -298,7 +296,7 @@ impl CheckSettings {
                 &eval,
                 &postcondition.expr.to_token_stream().to_string(),
             );
-            let check = self.build_postcond_check(&tame_pat, &instrumented_eval);
+            let check = build_postcond_check(&tame_pat, &instrumented_eval);
             postcond_checks.push(check);
         }
 
@@ -333,43 +331,6 @@ impl CheckSettings {
                 #output_expr
             }
         })
-    }
-
-    fn build_precond_check(&self, expr: &Expr) -> Stmt {
-        parse_quote! {
-            let __anodized_pre = __anodized_pre & #expr;
-        }
-    }
-
-    fn build_postcond_check(&self, tame_pat: &Option<TamePat>, expr: &Expr) -> Stmt {
-        match tame_pat {
-            Some(TamePat::Borrowing(brw_pat)) => {
-                parse_quote! {
-                    let (__anodized_post, __anodized_output) = ::anodized::__::apply_keep(
-                        |__anodized_output| {
-                            ::anodized::__::coerce_input(
-                                #[allow(unused)] |#brw_pat| (), &__anodized_output);
-                            let #brw_pat = __anodized_output else { unreachable!() };
-                            (__anodized_post & #expr, __anodized_output)
-                        },
-                        __anodized_output,
-                    );
-                }
-            }
-            Some(TamePat::Invertible(inv_pat, inv_expr)) => {
-                parse_quote! {
-                    let (__anodized_post, __anodized_output) = ::anodized::__::apply_keep(
-                        |#inv_pat| (__anodized_post & #expr, #inv_expr),
-                        __anodized_output,
-                    );
-                }
-            }
-            None => {
-                parse_quote! {
-                    let __anodized_post = __anodized_post & #expr;
-                }
-            }
-        }
     }
 
     fn instrument_cond_eval(&self, msg: &str, cfg: &Option<Meta>, cond: &Expr, repr: &str) -> Expr {
@@ -411,6 +372,43 @@ fn build_cond_eval(expr: &Expr) -> Expr {
 
 fn build_capture_eval(expr: &Expr) -> Expr {
     parse_quote! { ::anodized::__::eval(|| #expr) }
+}
+
+fn build_precond_check(expr: &Expr) -> Stmt {
+    parse_quote! {
+        let __anodized_pre = __anodized_pre & #expr;
+    }
+}
+
+fn build_postcond_check(tame_pat: &Option<TamePat>, expr: &Expr) -> Stmt {
+    match tame_pat {
+        Some(TamePat::Borrowing(brw_pat)) => {
+            parse_quote! {
+                let (__anodized_post, __anodized_output) = ::anodized::__::apply_keep(
+                    |__anodized_output| {
+                        ::anodized::__::coerce_input(
+                            #[allow(unused)] |#brw_pat| (), &__anodized_output);
+                        let #brw_pat = __anodized_output else { unreachable!() };
+                        (__anodized_post & #expr, __anodized_output)
+                    },
+                    __anodized_output,
+                );
+            }
+        }
+        Some(TamePat::Invertible(inv_pat, inv_expr)) => {
+            parse_quote! {
+                let (__anodized_post, __anodized_output) = ::anodized::__::apply_keep(
+                    |#inv_pat| (__anodized_post & #expr, #inv_expr),
+                    __anodized_output,
+                );
+            }
+        }
+        None => {
+            parse_quote! {
+                let __anodized_post = __anodized_post & #expr;
+            }
+        }
+    }
 }
 
 pub(crate) fn make_try_fn_ident(ident: &Ident) -> Ident {
