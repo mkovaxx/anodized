@@ -121,7 +121,9 @@ impl Mode {
 
     pub fn build_precondition_fn_body(requires: &[Condition], maintains: &[Condition]) -> Block {
         let mut stmts: Vec<Stmt> = vec![];
-        emit_precondition_checks(requires, maintains, &mut stmts, None);
+        emit_precondition_checks(requires, maintains, &mut stmts, |_, _, cond_eval, _| {
+            cond_eval.clone()
+        });
         parse_quote! {
             {
                 #(#stmts)*
@@ -140,7 +142,9 @@ impl Mode {
             ::anodized::__::eval_once(|| { __anodized_output })
         };
         emit_capture_binding(captures, output_eval, &mut stmts);
-        emit_postcondition_checks(maintains, ensures, &mut stmts, None);
+        emit_postcondition_checks(maintains, ensures, &mut stmts, |_, _, cond_eval, _| {
+            cond_eval.clone()
+        });
         parse_quote! {
             {
                 #(#stmts)*
@@ -175,10 +179,6 @@ impl CheckSettings {
                 )
             };
 
-        let instrument_eval = |msg: &str, cfg: &Option<Meta>, cond: &Expr, repr: &str| {
-            self.instrument_cond_eval(msg, cfg, cond, repr)
-        };
-
         let mut stmts: Vec<Stmt> = vec![];
 
         // Generate precondition checks.
@@ -186,7 +186,7 @@ impl CheckSettings {
             &spec.requires,
             &spec.maintains,
             &mut stmts,
-            Some(&instrument_eval),
+            |msg, cfg, cond, repr| self.instrument_cond_eval(msg, cfg, cond, repr),
         );
         stmts.push(parse_quote! {
             if !__anodized_pre {
@@ -211,7 +211,7 @@ impl CheckSettings {
             &spec.maintains,
             &spec.ensures,
             &mut stmts,
-            Some(&instrument_eval),
+            |msg, cfg, cond, repr| self.instrument_cond_eval(msg, cfg, cond, repr),
         );
         stmts.push(parse_quote! {
             if !__anodized_post {
@@ -259,11 +259,14 @@ impl CheckSettings {
     }
 }
 
+trait FnInstrumentEval: Fn(&str, &Option<Meta>, &Expr, &str) -> Expr {}
+impl<F> FnInstrumentEval for F where F: Fn(&str, &Option<Meta>, &Expr, &str) -> Expr {}
+
 fn emit_precondition_checks(
     requires: &[Condition],
     maintains: &[Condition],
     statements: &mut Vec<Stmt>,
-    maybe_instrument_eval: Option<&dyn Fn(&str, &Option<Meta>, &Expr, &str) -> Expr>,
+    instrument_eval: impl FnInstrumentEval,
 ) {
     statements.push(parse_quote! {
         let __anodized_pre = true;
@@ -271,24 +274,18 @@ fn emit_precondition_checks(
 
     for precondition in requires {
         let eval = build_cond_eval(&precondition.expr);
-        let instrumented_eval = if let Some(instrument_eval) = maybe_instrument_eval {
-            let repr = precondition.expr.to_token_stream().to_string();
-            instrument_eval("precondition failed: {}", &precondition.cfg, &eval, &repr)
-        } else {
-            eval
-        };
+        let repr = precondition.expr.to_token_stream().to_string();
+        let instrumented_eval =
+            instrument_eval("precondition failed: {}", &precondition.cfg, &eval, &repr);
         let check = build_precond_check(&instrumented_eval);
         statements.push(check);
     }
 
     for preinvariant in maintains {
         let eval = build_cond_eval(&preinvariant.expr);
-        let instrumented_eval = if let Some(instrument_eval) = maybe_instrument_eval {
-            let repr = preinvariant.expr.to_token_stream().to_string();
-            instrument_eval("preinvariant failed: {}", &preinvariant.cfg, &eval, &repr)
-        } else {
-            eval
-        };
+        let repr = preinvariant.expr.to_token_stream().to_string();
+        let instrumented_eval =
+            instrument_eval("preinvariant failed: {}", &preinvariant.cfg, &eval, &repr);
         let check = build_precond_check(&instrumented_eval);
         statements.push(check);
     }
@@ -321,7 +318,7 @@ fn emit_postcondition_checks(
     maintains: &[Condition],
     ensures: &[PostCondition],
     statements: &mut Vec<Stmt>,
-    maybe_instrument_eval: Option<&dyn Fn(&str, &Option<Meta>, &Expr, &str) -> Expr>,
+    instrument_eval: impl FnInstrumentEval,
 ) {
     statements.push(parse_quote! {
         let __anodized_post = true;
@@ -329,24 +326,18 @@ fn emit_postcondition_checks(
 
     for postinvariant in maintains {
         let eval = build_cond_eval(&postinvariant.expr);
-        let instrumented_eval = if let Some(instrument_eval) = maybe_instrument_eval {
-            let repr = postinvariant.expr.to_token_stream().to_string();
-            instrument_eval("postinvariant failed: {}", &postinvariant.cfg, &eval, &repr)
-        } else {
-            eval
-        };
+        let repr = postinvariant.expr.to_token_stream().to_string();
+        let instrumented_eval =
+            instrument_eval("postinvariant failed: {}", &postinvariant.cfg, &eval, &repr);
         let check = build_postcond_check(&None, &instrumented_eval);
         statements.push(check);
     }
 
     for postcondition in ensures {
         let eval = build_cond_eval(&postcondition.expr);
-        let instrumented_eval = if let Some(instrument_eval) = maybe_instrument_eval {
-            let repr = postcondition.expr.to_token_stream().to_string();
-            instrument_eval("postcondition failed: {}", &postcondition.cfg, &eval, &repr)
-        } else {
-            eval
-        };
+        let repr = postcondition.expr.to_token_stream().to_string();
+        let instrumented_eval =
+            instrument_eval("postcondition failed: {}", &postcondition.cfg, &eval, &repr);
         let check = build_postcond_check(&postcondition.pat, &instrumented_eval);
         statements.push(check);
     }
