@@ -2,7 +2,7 @@
 #[path = "fns_tests.rs"]
 mod fns_tests;
 
-use quote::{ToTokens, quote};
+use quote::ToTokens;
 use syn::{
     Attribute, Block, Expr, Ident, Meta, Pat, Path, ReturnType, Signature, Stmt, Type,
     parse::{Parse, Result},
@@ -136,11 +136,10 @@ impl Mode {
         ensures: &[PostCondition],
     ) -> Block {
         let mut stmts: Vec<Stmt> = vec![];
-        emit_capture_binding(
-            captures,
-            &parse_quote! { { __anodized_output } },
-            &mut stmts,
-        );
+        let output_eval: Expr = parse_quote! {
+            ::anodized::__::eval_once(|| { __anodized_output })
+        };
+        emit_capture_binding(captures, output_eval, &mut stmts);
         emit_postcondition_checks(maintains, ensures, &mut stmts, None);
         parse_quote! {
             {
@@ -162,42 +161,44 @@ impl CheckSettings {
         // The identifier for the return value binding.
         let output_ident: Pat = parse_quote!(__anodized_output);
 
+        let (output_expr, precond_fail_action, postcond_fail_action) =
+            if let Some(ref panic_settings) = self.does_panic
+                && panic_settings.has_try_fn
+            {
+                (
+                    parse_quote! { Ok(#output_ident) },
+                    Some(parse_quote! { return ::anodized::result::pre_err(); }),
+                    Some(parse_quote! { return ::anodized::result::post_err(#output_ident); }),
+                )
+            } else {
+                (
+                    parse_quote! { #output_ident },
+                    self.build_fail_action("precondition failed"),
+                    self.build_fail_action("postcondition failed"),
+                )
+            };
+
+        let instrument_eval = |msg: &str, cfg: &Option<Meta>, cond: &Expr, repr: &str| {
+            self.instrument_cond_eval(msg, cfg, cond, repr)
+        };
+
+        let mut stmts: Vec<Stmt> = vec![];
+
         // Generate precondition checks.
-        let mut precond_checks: Vec<Stmt> = vec![parse_quote! {
-            let __anodized_pre = true;
-        }];
-        for precondition in &spec.requires {
-            let eval = build_cond_eval(&precondition.expr);
-            let instrumented_eval = self.instrument_cond_eval(
-                "precondition failed: {}",
-                &precondition.cfg,
-                &eval,
-                &precondition.expr.to_token_stream().to_string(),
-            );
-            let check = build_precond_check(&instrumented_eval);
-            precond_checks.push(check);
-        }
-        for preinvariant in &spec.maintains {
-            let eval = build_cond_eval(&preinvariant.expr);
-            let instrumented_eval = self.instrument_cond_eval(
-                "preinvariant failed: {}",
-                &preinvariant.cfg,
-                &eval,
-                &preinvariant.expr.to_token_stream().to_string(),
-            );
-            let check = build_precond_check(&instrumented_eval);
-            precond_checks.push(check);
-        }
+        emit_precondition_checks(
+            &spec.requires,
+            &spec.maintains,
+            &mut stmts,
+            Some(&instrument_eval),
+        );
+        stmts.push(parse_quote! {
+            if !__anodized_pre {
+                #precond_fail_action
+            }
+        });
 
-        // Bind capture values and function output in a single tuple assignment.
-        // This ensures captured values are inaccessible to the body.
-        let patterns = spec
-            .captures
-            .iter()
-            .map(|cb| &cb.pat)
-            .chain(std::iter::once(&output_ident));
-
-        let body_expr: Expr = if is_async {
+        // Generate the binding for captures and the return value.
+        let output_eval: Expr = if is_async {
             parse_quote! {
                 ::anodized::__::eval_once(async || #return_type #original_body).await
             }
@@ -206,73 +207,26 @@ impl CheckSettings {
                 ::anodized::__::eval_once(|| #return_type #original_body)
             }
         };
-        let values = spec
-            .captures
-            .iter()
-            .map(|cb| build_capture_eval(&cb.expr))
-            .chain(std::iter::once(body_expr));
-
-        let captures_and_output = quote! {
-            let (#(#patterns),*) = (#(#values),*);
-        };
+        emit_capture_binding(&spec.captures, output_eval, &mut stmts);
 
         // Generate postcondition checks.
-        let mut postcond_checks: Vec<Stmt> = vec![parse_quote! {
-            let __anodized_post = true;
-        }];
-        for postinvariant in &spec.maintains {
-            let eval = build_cond_eval(&postinvariant.expr);
-            let instrumented_eval = self.instrument_cond_eval(
-                "postinvariant failed: {}",
-                &postinvariant.cfg,
-                &eval,
-                &postinvariant.expr.to_token_stream().to_string(),
-            );
-            let check = build_postcond_check(&None, &instrumented_eval);
-            postcond_checks.push(check);
-        }
-        for postcondition in &spec.ensures {
-            let eval = build_cond_eval(&postcondition.expr);
-            let instrumented_eval = self.instrument_cond_eval(
-                "postcondition failed: {}",
-                &postcondition.cfg,
-                &eval,
-                &postcondition.expr.to_token_stream().to_string(),
-            );
-            let check = build_postcond_check(&postcondition.pat, &instrumented_eval);
-            postcond_checks.push(check);
-        }
-
-        let (output_expr, precond_fail_action, postcond_fail_action) =
-            if let Some(ref panic_settings) = self.does_panic
-                && panic_settings.has_try_fn
-            {
-                (
-                    quote! { Ok(#output_ident) },
-                    Some(parse_quote! { return ::anodized::result::pre_err(); }),
-                    Some(parse_quote! { return ::anodized::result::post_err(#output_ident); }),
-                )
-            } else {
-                (
-                    quote! { #output_ident },
-                    self.build_fail_action("precondition failed"),
-                    self.build_fail_action("postcondition failed"),
-                )
-            };
-
-        Ok(parse_quote! {
-            {
-                #(#precond_checks)*
-                if !__anodized_pre {
-                    #precond_fail_action
-                }
-                #captures_and_output
-                #(#postcond_checks)*
-                if !__anodized_post {
-                    #postcond_fail_action
-                }
-                #output_expr
+        emit_postcondition_checks(
+            &spec.maintains,
+            &spec.ensures,
+            &mut stmts,
+            Some(&instrument_eval),
+        );
+        stmts.push(parse_quote! {
+            if !__anodized_post {
+                #postcond_fail_action
             }
+        });
+
+        stmts.push(Stmt::Expr(output_expr, None));
+
+        Ok(Block {
+            brace_token: original_body.brace_token,
+            stmts,
         })
     }
 
@@ -312,7 +266,7 @@ fn emit_precondition_checks(
     requires: &[Condition],
     maintains: &[Condition],
     statements: &mut Vec<Stmt>,
-    maybe_instrument_eval: Option<fn(&str, &Option<Meta>, &Expr, &str) -> Expr>,
+    maybe_instrument_eval: Option<&dyn Fn(&str, &Option<Meta>, &Expr, &str) -> Expr>,
 ) {
     statements.push(parse_quote! {
         let __anodized_pre = true;
@@ -343,7 +297,7 @@ fn emit_precondition_checks(
     }
 }
 
-fn emit_capture_binding(captures: &[Capture], body: &Block, statements: &mut Vec<Stmt>) {
+fn emit_capture_binding(captures: &[Capture], output_eval: Expr, statements: &mut Vec<Stmt>) {
     let mut patterns = vec![];
     let mut values = vec![];
 
@@ -355,8 +309,7 @@ fn emit_capture_binding(captures: &[Capture], body: &Block, statements: &mut Vec
 
     let output_ident = Pat::Path(parse_quote! { __anodized_output });
     patterns.push(&output_ident);
-    let body_eval = Expr::Call(parse_quote! { ::anodized::__::eval_once(|| #body) });
-    values.push(body_eval);
+    values.push(output_eval);
 
     let binding = if patterns.len() > 1 {
         parse_quote! { let (#(#patterns,)*) = (#(#values,)*); }
@@ -371,7 +324,7 @@ fn emit_postcondition_checks(
     maintains: &[Condition],
     ensures: &[PostCondition],
     statements: &mut Vec<Stmt>,
-    maybe_instrument_eval: Option<fn(&str, &Option<Meta>, &Expr, &str) -> Expr>,
+    maybe_instrument_eval: Option<&dyn Fn(&str, &Option<Meta>, &Expr, &str) -> Expr>,
 ) {
     statements.push(parse_quote! {
         let __anodized_post = true;
