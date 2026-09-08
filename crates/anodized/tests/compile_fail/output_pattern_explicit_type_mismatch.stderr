@@ -1,0 +1,17 @@
+error[E0631]: type mismatch in closure arguments
+ --> tests/compile_fail/output_pattern_explicit_type_mismatch.rs:5:1
+  |
+5 | #[spec(ensures: |output: u32| true)]
+  | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  | |
+  | expected due to this
+  | found signature defined here
+  |
+  = note: expected closure signature `fn(usize) -> _`
+             found closure signature `fn(u32) -> _`
+note: required by a bound in `apply_keep`
+ --> src/__.rs
+  |
+  | pub fn apply_keep<T, U>(closure: impl Fn(U) -> (T, U), value: U) -> (T, U) {
+  |                                       ^^^^^^^^^^^^^^^ required by this bound in `apply_keep`
+  = note: this error originates in the attribute macro `spec` (in Nightly builds, run with -Z macro-backtrace for more info)
