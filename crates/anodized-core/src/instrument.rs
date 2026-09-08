@@ -5,7 +5,7 @@ use syn::{
     Signature, parse_quote,
 };
 
-use crate::{DataSpec, Spec};
+use crate::{EmptySpec, FnSpec};
 
 pub mod data;
 pub mod fns;
@@ -67,7 +67,7 @@ impl Mode {
         }
     }
 
-    pub fn instrument_item_fn(&self, spec: Spec, mut item_fn: ItemFn) -> Result<TokenStream> {
+    pub fn instrument_item_fn(&self, spec: FnSpec, mut item_fn: ItemFn) -> Result<TokenStream> {
         let mut tokens = TokenStream::new();
 
         if item_fn.sig.ident.to_string().starts_with("__anodized_") {
@@ -108,7 +108,7 @@ Instead, you likely need to place a `#[spec]` attribute on an enclosing trait or
                     &spec.maintains,
                     &spec.captures,
                     &spec.ensures,
-                )?),
+                )),
             };
 
             spec_qualifiers_const.to_tokens(&mut tokens);
@@ -194,14 +194,18 @@ Instead, you likely need to place a `#[spec]` attribute on an enclosing trait or
         }
     }
 
-    pub fn instrument_item_impl(&self, spec: DataSpec, item_impl: ItemImpl) -> Result<TokenStream> {
+    pub fn instrument_item_impl(
+        &self,
+        spec: EmptySpec,
+        item_impl: ItemImpl,
+    ) -> Result<TokenStream> {
         let new_impl = self.instrument_impl(spec, item_impl)?;
         Ok(new_impl.to_token_stream())
     }
 
     pub fn instrument_item_trait(
         &self,
-        spec: DataSpec,
+        spec: EmptySpec,
         item_trait: ItemTrait,
     ) -> Result<TokenStream> {
         let new_trait = self.instrument_trait(spec, item_trait)?;
@@ -210,7 +214,7 @@ Instead, you likely need to place a `#[spec]` attribute on an enclosing trait or
 
     pub fn instrument_item_trait_impl(
         &self,
-        spec: DataSpec,
+        spec: EmptySpec,
         item_impl: ItemImpl,
     ) -> Result<TokenStream> {
         let new_trait_impl = self.instrument_trait_impl(spec, item_impl)?;
@@ -255,28 +259,4 @@ request at https://github.com/anodized-rs/anodized/issues/new"#,
         item_descr
     );
     syn::Error::new_spanned(tokens, msg)
-}
-
-/// Finds the `[spec]` attrib in an attribute list.
-///
-/// Returns the spec [Attribute] and the remaining attributes.
-fn find_spec_attr(attrs: Vec<Attribute>) -> syn::Result<(Option<Attribute>, Vec<Attribute>)> {
-    let mut spec_attr = None;
-    let mut other_attrs = Vec::new();
-
-    for attr in attrs {
-        if attr.path().is_ident("spec") {
-            if spec_attr.is_some() {
-                return Err(syn::Error::new_spanned(
-                    attr,
-                    "multiple `#[spec]` attributes on a single item are not supported",
-                ));
-            }
-            spec_attr = Some(attr);
-        } else {
-            other_attrs.push(attr);
-        }
-    }
-
-    Ok((spec_attr, other_attrs))
 }

@@ -2,6 +2,6 @@
 use anodized::spec;
 
 #[spec]
-fn id(x: &mut i32) -> &mut i32 {
+pub fn id(x: &mut i32) -> &mut i32 {
     x
 }

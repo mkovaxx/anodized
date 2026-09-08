@@ -1,3 +1,4 @@
+use quote::ToTokens;
 use syn::{
     FieldValue, Ident, Member, Token,
     parse::{Parse, ParseStream, Result},
@@ -14,6 +15,12 @@ use syn::{
 #[derive(Debug, Clone)]
 pub struct SpecFields {
     pub fields: Punctuated<FieldValue, Token![,]>,
+}
+
+impl ToTokens for SpecFields {
+    fn to_tokens(&self, tokens: &mut proc_macro2::TokenStream) {
+        self.fields.to_tokens(tokens);
+    }
 }
 
 impl Parse for SpecFields {

@@ -9,10 +9,7 @@ use syn::{
     visit_mut::{self, VisitMut},
 };
 
-use crate::{
-    LoopSpec,
-    instrument::{Mode, find_spec_attr},
-};
+use crate::{LoopSpec, annotate::Specified, instrument::Mode};
 
 impl Mode {
     pub fn instrument_loops_in_fn_body(&self, body: &mut Block) -> Result<()> {
@@ -97,23 +94,9 @@ impl<'a> LoopSpecVisitor<'a> {
 
 impl VisitMut for LoopSpecVisitor<'_> {
     fn visit_expr_while_mut(&mut self, expr_while: &mut ExprWhile) {
-        let attrs = std::mem::take(&mut expr_while.attrs);
-        let (spec_attr, other_attrs) = match find_spec_attr(attrs) {
-            Ok(result) => result,
-            Err(error) => {
-                self.add_error(error);
-                return;
-            }
-        };
-        expr_while.attrs = other_attrs;
-
         visit_mut::visit_expr_while_mut(self, expr_while);
 
-        let Some(spec_attr) = spec_attr else {
-            return;
-        };
-
-        match spec_attr.parse_args::<LoopSpec>() {
+        match expr_while.parse_spec_from_attrs() {
             Ok(spec) => self
                 .config
                 .instrument_loop_body(spec, &mut expr_while.body.stmts),
@@ -122,23 +105,9 @@ impl VisitMut for LoopSpecVisitor<'_> {
     }
 
     fn visit_expr_for_loop_mut(&mut self, expr_for_loop: &mut ExprForLoop) {
-        let attrs = std::mem::take(&mut expr_for_loop.attrs);
-        let (spec_attr, other_attrs) = match find_spec_attr(attrs) {
-            Ok(result) => result,
-            Err(error) => {
-                self.add_error(error);
-                return;
-            }
-        };
-        expr_for_loop.attrs = other_attrs;
-
         visit_mut::visit_expr_for_loop_mut(self, expr_for_loop);
 
-        let Some(spec_attr) = spec_attr else {
-            return;
-        };
-
-        match spec_attr.parse_args::<LoopSpec>() {
+        match expr_for_loop.parse_spec_from_attrs() {
             Ok(spec) => self.config.instrument_expr_for_loop(spec, expr_for_loop),
             Err(error) => self.add_error(error),
         }

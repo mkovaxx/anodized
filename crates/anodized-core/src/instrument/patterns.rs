@@ -6,7 +6,7 @@ use syn::{Expr, Ident, Pat, PatIdent, parse_quote, visit_mut::VisitMut};
 mod patterns_tests;
 
 /// A 'tame' pattern can be used inside a `#[spec]`.
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum TamePat {
     /// The pattern binds only by `ref`. It may contain wildcard (`_`) and rest (`..`) patterns.
     Borrowing(Pat),

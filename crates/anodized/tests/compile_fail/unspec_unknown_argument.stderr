@@ -1,0 +1,5 @@
+error: expected `in` or `out`
+ --> tests/compile_fail/unspec_unknown_argument.rs:7:15
+  |
+7 | fn f(#[unspec(entry)] x: i32) {}
+  |               ^^^^^
