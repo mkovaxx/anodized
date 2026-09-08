@@ -5,6 +5,7 @@ members = [
     "crates/anodized-fmt",
     "crates/anodized-logic",
     "crates/anodized-macros",
+    "crates/skill-tools",
     "crates/test-util",
     "fuzz",
 ]
@@ -33,6 +34,7 @@ keywords = [
 ]
 
 [workspace.dependencies]
+anodized = { version = "0.6.0", path = "crates/anodized" }
 anodized-core = { version = "0.6.0", path = "crates/anodized-core" }
 anodized-fmt = { version = "0.6.0", path = "crates/anodized-fmt" }
 anodized-logic = { version = "0.6.0", path = "crates/anodized-logic" }

@@ -1,0 +1,19 @@
+{
+  "name": "anodized",
+  "interface": {
+    "displayName": "Anodized"
+  },
+  "plugins": [
+    {
+      "name": "anodized",
+      "source": {
+        "source": "local",
+        "path": "./plugins/anodized"
+      },
+      "policy": {
+        "installation": "AVAILABLE"
+      },
+      "category": "Developer Tools"
+    }
+  ]
+}

@@ -1,0 +1,26 @@
+{
+  "name": "anodized",
+  "version": "0.6.0",
+  "description": "Write, review, and debug Anodized `#[spec]` specifications on Rust functions, traits, loops, structs, and enums, and run the runtime-check build configurations.",
+  "author": {
+    "name": "anodized-rs"
+  },
+  "homepage": "https://github.com/anodized-rs/anodized",
+  "repository": "https://github.com/anodized-rs/anodized",
+  "license": "MIT OR Apache-2.0",
+  "keywords": [
+    "anodized",
+    "rust",
+    "specification",
+    "design-by-contract",
+    "verification"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Anodized",
+    "shortDescription": "Write Anodized `#[spec]` specs in Rust",
+    "developerName": "anodized-rs",
+    "category": "Developer Tools",
+    "websiteURL": "https://github.com/anodized-rs/anodized"
+  }
+}
