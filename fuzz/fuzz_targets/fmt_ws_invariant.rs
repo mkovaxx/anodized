@@ -28,13 +28,11 @@ static TEMPLATE: OnceLock<Template> = OnceLock::new();
 ///             [first, second, third] = values,
 ///             State { active, count } = state.clone(),
 ///         ],
-///         // return value binding
-///         inspects: ret_val,
 ///         // postconditions
-///         ensures: [
-///             *output > x,
+///         ensures: |output| [
+///             output > x,
 ///             // postcond 2
-///             *output < 100,
+///             output < 100,
 ///         ],
 ///     )]
 ///     fn func(x: i32) -> i32 { todo!() }
@@ -62,14 +60,11 @@ fn make_template() -> Template {
         .z().tokens("State { active , count } =").p().tokens("state . clone ( ) ,").fixed("\n")
         .z().tokens("] ,").fixed("\n")
 
-        .z().fixed("// return value binding\n")
-        .z().tokens("inspects : ret_val ,").fixed("\n")
-
         .z().fixed("// postconditions\n")
-        .z().tokens("ensures : [").fixed("\n")
-        .z().tokens("* output > x ,").fixed("\n")
+        .z().tokens("ensures : | output | [").fixed("\n")
+        .z().tokens("output > x ,").fixed("\n")
         .z().fixed("// postcond 2\n")
-        .z().tokens("* output < 100 ,").fixed("\n")
+        .z().tokens("output < 100 ,").fixed("\n")
         .z().tokens("] ,").fixed("\n")
 
         .z().fixed(")]\n")

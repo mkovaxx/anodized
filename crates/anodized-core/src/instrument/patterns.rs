@@ -1,24 +1,33 @@
 use proc_macro2::Span;
-use syn::{Ident, Pat, PatIdent, visit_mut::VisitMut};
+use syn::{Expr, Ident, Pat, PatIdent, parse_quote, visit_mut::VisitMut};
 
 #[cfg(test)]
 #[path = "patterns_tests.rs"]
 mod patterns_tests;
 
 /// A 'tame' pattern can be used inside a `#[spec]`.
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum TamePat {
     /// The pattern binds only by `ref`. It may contain wildcard (`_`) and rest (`..`) patterns.
     Borrowing(Pat),
     /// The deconstructed value can be reconstructed from the pattern's bindings.
-    Invertible(Pat),
+    Invertible(Pat, Box<Expr>),
+}
+
+impl TamePat {
+    pub fn get_pat(&self) -> &Pat {
+        match self {
+            Self::Borrowing(pat) | Self::Invertible(pat, _) => pat,
+        }
+    }
 }
 
 /// Tame an irrefutable pattern, so that it may be used inside a `#[spec]`.
 ///
-/// 1. If the pattern binds *only* references, classify as `Borrowing`.
-/// 2. If the pattern binds *any* references or contains the rest (`..`) pattern, return `Err`.
-/// 3. Replace wildcard (`_`) patterns with fresh identifiers, then classify as `Invertible`.
+/// 1. If the pattern binds *no* names by `ref` and does not contain rest (`..`) patterns,
+///    then rename wildcards (`_`) to fresh idents and mark as `Invertible`.
+/// 2. If the pattern binds *all* names by `ref`, then mark as `Borrowing`.
+/// 3. Otherwise return `Err`.
 pub fn tame_pattern(id_gen: &mut IdentGenerator, mut pat: Pat) -> syn::Result<TamePat> {
     let mut ident_count: u32 = 0;
     let mut ref_count: u32 = 0;
@@ -36,9 +45,7 @@ pub fn tame_pattern(id_gen: &mut IdentGenerator, mut pat: Pat) -> syn::Result<Ta
     })
     .visit_pat_mut(&mut pat);
 
-    if ident_count == ref_count {
-        Ok(TamePat::Borrowing(pat))
-    } else if ref_count == 0 && !has_rest {
+    if ref_count == 0 && !has_rest {
         ForEachMutPattern::with(|subpat| {
             if let Pat::Wild(subpat_wild) = subpat {
                 *subpat = Pat::Ident(PatIdent {
@@ -52,7 +59,27 @@ pub fn tame_pattern(id_gen: &mut IdentGenerator, mut pat: Pat) -> syn::Result<Ta
         })
         .visit_pat_mut(&mut pat);
 
-        Ok(TamePat::Invertible(pat))
+        let mut clean_pat = pat.clone();
+        // Transform `clean_pat` to eliminate `mut`, `@`, and type ascriptions.
+        ForEachMutPattern::with(|subpat| {
+            // TODO: Remove attributes.
+            match subpat {
+                Pat::Ident(subpat_ident) => {
+                    subpat_ident.mutability = None;
+                    subpat_ident.subpat = None;
+                }
+                Pat::Type(subpat_typed) => {
+                    *subpat = std::mem::replace(&mut *subpat_typed.pat, parse_quote! { _ });
+                }
+                _ => {}
+            }
+        })
+        .visit_pat_mut(&mut clean_pat);
+        let expr = parse_quote! { #clean_pat };
+
+        Ok(TamePat::Invertible(pat, expr))
+    } else if ident_count == ref_count {
+        Ok(TamePat::Borrowing(pat))
     } else {
         let message = if has_rest {
             "inside `#[spec]`, patterns containing `..` must bind only by `ref`"

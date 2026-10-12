@@ -1,3 +1,6 @@
+#![cfg_attr(anodized_charon, feature(register_tool))]
+#![cfg_attr(anodized_charon, register_tool(charon))]
+
 //! A `#[cfg]` on a condition must gate the check in every build configuration.
 //!
 //! These tests are gated on `anodized_panic` alone, not on `all(anodized_print,
@@ -11,7 +14,7 @@ use anodized::spec;
     #[cfg(any())]
     requires: false,
 )]
-fn gated_off_precondition(value: i32) -> i32 {
+pub fn gated_off_precondition(value: i32) -> i32 {
     value
 }
 
@@ -19,7 +22,7 @@ fn gated_off_precondition(value: i32) -> i32 {
     #[cfg(all())]
     requires: false,
 )]
-fn gated_on_precondition(value: i32) -> i32 {
+pub fn gated_on_precondition(value: i32) -> i32 {
     value
 }
 
@@ -27,7 +30,7 @@ fn gated_on_precondition(value: i32) -> i32 {
     #[cfg(any())]
     ensures: |output| output == value + 1,
 )]
-fn gated_off_postcondition(value: i32) -> i32 {
+pub fn gated_off_postcondition(value: i32) -> i32 {
     value
 }
 
@@ -35,7 +38,7 @@ fn gated_off_postcondition(value: i32) -> i32 {
     #[cfg(all())]
     ensures: |output| output == value + 1,
 )]
-fn gated_on_postcondition(value: i32) -> i32 {
+pub fn gated_on_postcondition(value: i32) -> i32 {
     value
 }
 

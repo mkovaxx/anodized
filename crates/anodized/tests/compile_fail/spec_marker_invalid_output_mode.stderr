@@ -1,0 +1,5 @@
+error: the type spec enforcement marker on a `fn` output cannot have a mode
+ --> tests/compile_fail/spec_marker_invalid_output_mode.rs:7:22
+  |
+7 | fn f() -> Spec!(i32, out) {
+  |                      ^^^

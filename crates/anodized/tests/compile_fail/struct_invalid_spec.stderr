@@ -10,7 +10,7 @@ error: not allowed here
 8 |     captures: old_x = self.x,
   |     ^^^^^^^^
 
-error: not allowed here
+error: unknown spec field
  --> tests/compile_fail/struct_invalid_spec.rs:9:5
   |
 9 |     inspects: ret_val,

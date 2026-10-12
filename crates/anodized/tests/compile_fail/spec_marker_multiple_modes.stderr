@@ -1,0 +1,5 @@
+error: expected exactly one mode, `out` or `inout`
+ --> tests/compile_fail/spec_marker_multiple_modes.rs:7:23
+  |
+7 | fn f(x: Spec!(i32, out, inout)) {}
+  |                       ^

@@ -1,13 +1,17 @@
-use crate::{instrument::CheckSettings, qualifiers::FnQualifiers, test_util::assert_tokens_eq};
+use crate::{
+    instrument::CheckSettings,
+    qualifiers::FnQualifiers,
+    test_util::{SpecItemImpl, SpecItemTrait, assert_tokens_eq},
+};
 
 use super::*;
 use proc_macro2::TokenStream;
-use syn::{ItemImpl, ItemTrait, parse_quote};
+use syn::parse_quote;
 
 #[test]
 fn embed_spec_item_trait() {
-    let trait_spec = DataSpec::empty();
-    let item_trait: ItemTrait = parse_quote! {
+    let spec_item_trait: SpecItemTrait = parse_quote! {
+        #[spec]
         trait TRAIT {
             #[spec(
                 requires: COND_1,
@@ -26,18 +30,23 @@ fn embed_spec_item_trait() {
             #[doc(hidden)]
             #[allow(warnings)]
             fn __anodized_fn_requires_FUNC(&self, PARAM_1: TYPE_1, PARAM_2: TYPE_2) -> bool {
-                let __anodized_clause_1 = ::anodized::__::eval::<bool>(|| COND_1);
-                let __anodized_clause_2 = ::anodized::__::eval::<bool>(|| COND_2);
-                __anodized_clause_1 && __anodized_clause_2
+                let __anodized_pre = true;
+                let __anodized_pre = __anodized_pre & ::anodized::__::eval::<bool>(|| COND_1);
+                let __anodized_pre = __anodized_pre & ::anodized::__::eval::<bool>(|| COND_2);
+                __anodized_pre
             }
 
             #[doc(hidden)]
             #[allow(warnings)]
             fn __anodized_fn_ensures_FUNC(&self, PARAM_1: TYPE_1, PARAM_2: TYPE_2, __anodized_output: RET_TYPE) -> bool {
-                let __anodized_clause_1 = ::anodized::__::eval::<bool>(|| COND_2);
-                let () = ();
-                let __anodized_clause_2 = ::anodized::__::eval::<bool>(|| { let PAT_1 = __anodized_output; COND_3 });
-                __anodized_clause_1 && __anodized_clause_2
+                let __anodized_output = ::anodized::__::eval_once(|| { __anodized_output });
+                let __anodized_post = true;
+                let __anodized_post = __anodized_post & ::anodized::__::eval::<bool>(|| COND_2);
+                let (__anodized_post, __anodized_output) = ::anodized::__::apply_keep(
+                    |PAT_1| (__anodized_post & ::anodized::__::eval::<bool>(|| COND_3), PAT_1),
+                    __anodized_output,
+                );
+                __anodized_post
             }
 
             #[doc(hidden)]
@@ -54,16 +63,64 @@ fn embed_spec_item_trait() {
         }
     };
 
-    let observed = Mode::EmbedSpecs
-        .instrument_item_trait(trait_spec, item_trait)
+    let observed = Mode::EMBED_SPECS
+        .instrument_item_trait(spec_item_trait.spec, spec_item_trait.node)
+        .unwrap();
+    assert_tokens_eq(&observed, &expected);
+}
+
+#[test]
+fn embed_spec_charon_item_trait() {
+    let spec_item_trait: SpecItemTrait = parse_quote! {
+        #[spec]
+        trait TRAIT {
+            #[spec]
+            fn FUNC();
+        }
+    };
+
+    let qualifier_bits = FnQualifiers::empty().bits();
+    let expected: TokenStream = parse_quote! {
+        trait TRAIT {
+            #[doc(hidden)]
+            #[allow(warnings)]
+            #[charon::contract(kind = "precondition", for = "FUNC")]
+            fn __anodized_fn_requires_FUNC() -> bool {
+                let __anodized_pre = true;
+                __anodized_pre
+            }
+
+            #[doc(hidden)]
+            #[allow(warnings)]
+            #[charon::contract(kind = "postcondition", for = "FUNC")]
+            fn __anodized_fn_ensures_FUNC(__anodized_output: ()) -> bool {
+                let __anodized_output = ::anodized::__::eval_once(|| { __anodized_output });
+                let __anodized_post = true;
+                __anodized_post
+            }
+
+            #[doc(hidden)]
+            #[allow(warnings)]
+            const __anodized_fn_qualifiers_trait_FUNC: u32 = #qualifier_bits;
+
+            #[doc(hidden)]
+            #[allow(warnings)]
+            const __anodized_fn_qualifiers_FUNC: u32 = #qualifier_bits;
+
+            fn FUNC();
+        }
+    };
+
+    let observed = Mode::EMBED_SPECS_CHARON
+        .instrument_item_trait(spec_item_trait.spec, spec_item_trait.node)
         .unwrap();
     assert_tokens_eq(&observed, &expected);
 }
 
 #[test]
 fn default_instrument_item_trait() {
-    let trait_spec = DataSpec::empty();
-    let item_trait: ItemTrait = parse_quote! {
+    let spec_item_trait: SpecItemTrait = parse_quote! {
+        #[spec]
         trait TRAIT {
             #[spec(
                 requires: COND_1,
@@ -93,38 +150,33 @@ fn default_instrument_item_trait() {
             }
 
             fn FUNC(&self, PARAM_1: TYPE_1, PARAM_2: TYPE_2) -> RET_TYPE {
-                if false {
-                    let __anodized_pre = true;
-                    let __anodized_pre = __anodized_pre & ::anodized::__::eval::<bool>(|| COND_1);
-                    let __anodized_pre = __anodized_pre & ::anodized::__::eval::<bool>(|| COND_2);
-                    if !__anodized_pre {}
-                }
-                let (mut __anodized_output) = ((|| -> RET_TYPE { Self::__anodized_FUNC(self, PARAM_1, PARAM_2) })());
-                if false {
-                    let mut __anodized_post = true;
-                    __anodized_post &= ::anodized::__::eval::<bool>(|| COND_2);
-                    {
-                        let PAT_1 = __anodized_output;
-                        __anodized_post &= ::anodized::__::eval::<bool>(|| COND_3);
-                        __anodized_output = PAT_1;
-                    }
-                    if !__anodized_post {}
-                }
+                let __anodized_pre = true;
+                let __anodized_pre = __anodized_pre & (true || ::anodized::__::eval::<bool>(|| COND_1));
+                let __anodized_pre = __anodized_pre & (true || ::anodized::__::eval::<bool>(|| COND_2));
+                if !__anodized_pre {}
+                let __anodized_output = ::anodized::__::eval_once(|| -> RET_TYPE { Self::__anodized_FUNC(self, PARAM_1, PARAM_2) });
+                let __anodized_post = true;
+                let __anodized_post = __anodized_post & (true || ::anodized::__::eval::<bool>(|| COND_2));
+                let (__anodized_post, __anodized_output) = ::anodized::__::apply_keep(
+                    |PAT_1| (__anodized_post & (true || ::anodized::__::eval::<bool>(|| COND_3)), PAT_1),
+                    __anodized_output,
+                );
+                if !__anodized_post {}
                 __anodized_output
             }
         }
     };
 
     let observed = Mode::DEFAULT
-        .instrument_item_trait(trait_spec, item_trait)
+        .instrument_item_trait(spec_item_trait.spec, spec_item_trait.node)
         .unwrap();
     assert_tokens_eq(&observed, &expected);
 }
 
 #[test]
 fn emit_try_fn_instrument_item_trait() {
-    let trait_spec = DataSpec::empty();
-    let item_trait: ItemTrait = parse_quote! {
+    let spec_item_trait: SpecItemTrait = parse_quote! {
+        #[spec]
         trait TRAIT {
             #[spec(
                 requires: COND_1,
@@ -170,30 +222,25 @@ fn emit_try_fn_instrument_item_trait() {
             fn __anodized_fn_try_FUNC(&self, PARAM_1: TYPE_1, PARAM_2: TYPE_2)
                 -> ::anodized::result::Result<RET_TYPE>
             {
-                if true {
-                    let __anodized_pre = true;
-                    let __anodized_pre = __anodized_pre & (::anodized::__::eval::<bool>(|| COND_1)
-                            || eprintln!("precondition failed: {}", "COND_1") != ());
-                    let __anodized_pre = __anodized_pre & (::anodized::__::eval::<bool>(|| COND_2)
-                            || eprintln!("preinvariant failed: {}", "COND_2") != ());
-                    if !__anodized_pre {
-                        return ::anodized::result::pre_err();
-                    }
+                let __anodized_pre = true;
+                let __anodized_pre = __anodized_pre & (::anodized::__::eval::<bool>(|| COND_1)
+                    || eprintln!("precondition failed: {}", "COND_1") != ());
+                let __anodized_pre = __anodized_pre & (::anodized::__::eval::<bool>(|| COND_2)
+                    || eprintln!("preinvariant failed: {}", "COND_2") != ());
+                if !__anodized_pre {
+                    return ::anodized::result::pre_err();
                 }
-                let (mut __anodized_output) = ((|| -> RET_TYPE { Self::__anodized_FUNC(self, PARAM_1, PARAM_2) })());
-                if true {
-                    let mut __anodized_post = true;
-                    __anodized_post &= (::anodized::__::eval::<bool>(|| COND_2)
-                            || eprintln!("postinvariant failed: {}", "COND_2") != ());
-                    {
-                        let PAT_1 = __anodized_output;
-                        __anodized_post &= (::anodized::__::eval::<bool>(|| COND_3)
-                            || eprintln!("postcondition failed: {}", "COND_3") != ());
-                        __anodized_output = PAT_1;
-                    }
-                    if !__anodized_post {
-                        return ::anodized::result::post_err(__anodized_output);
-                    }
+                let __anodized_output = ::anodized::__::eval_once(|| -> RET_TYPE { Self::__anodized_FUNC(self, PARAM_1, PARAM_2) });
+                let __anodized_post = true;
+                let __anodized_post = __anodized_post & (::anodized::__::eval::<bool>(|| COND_2)
+                        || eprintln!("postinvariant failed: {}", "COND_2") != ());
+                let (__anodized_post, __anodized_output) = ::anodized::__::apply_keep(
+                    |PAT_1| (__anodized_post & (::anodized::__::eval::<bool>(|| COND_3)
+                        || eprintln!("postcondition failed: {}", "COND_3") != ()), PAT_1),
+                    __anodized_output,
+                );
+                if !__anodized_post {
+                    return ::anodized::result::post_err(__anodized_output);
                 }
                 Ok(__anodized_output)
             }
@@ -201,15 +248,15 @@ fn emit_try_fn_instrument_item_trait() {
     };
 
     let observed = Mode::InjectChecks(CheckSettings::PRINT_AND_TRY)
-        .instrument_item_trait(trait_spec, item_trait)
+        .instrument_item_trait(spec_item_trait.spec, spec_item_trait.node)
         .unwrap();
     assert_tokens_eq(&observed, &expected);
 }
 
 #[test]
 fn embed_spec_item_impl_trait() {
-    let trait_spec = DataSpec::empty();
-    let item_impl: ItemImpl = parse_quote! {
+    let spec_item_impl: SpecItemImpl = parse_quote! {
+        #[spec]
         impl TRAIT for IMPL_TYPE {
             #[spec(
                 requires: COND_1,
@@ -228,18 +275,23 @@ fn embed_spec_item_impl_trait() {
             #[doc(hidden)]
             #[allow(warnings)]
             fn __anodized_fn_requires_FUNC(&self, PARAM_1: TYPE_1, PARAM_2: TYPE_2) -> bool {
-                let __anodized_clause_1 = ::anodized::__::eval::<bool>(|| COND_1);
-                let __anodized_clause_2 = ::anodized::__::eval::<bool>(|| COND_2);
-                __anodized_clause_1 && __anodized_clause_2
+                let __anodized_pre = true;
+                let __anodized_pre = __anodized_pre & ::anodized::__::eval::<bool>(|| COND_1);
+                let __anodized_pre = __anodized_pre & ::anodized::__::eval::<bool>(|| COND_2);
+                __anodized_pre
             }
 
             #[doc(hidden)]
             #[allow(warnings)]
             fn __anodized_fn_ensures_FUNC(&self, PARAM_1: TYPE_1, PARAM_2: TYPE_2, __anodized_output: RET_TYPE) -> bool {
-                let __anodized_clause_1 = ::anodized::__::eval::<bool>(|| COND_2);
-                let () = ();
-                let __anodized_clause_2 = ::anodized::__::eval::<bool>(|| { let PAT_1 = __anodized_output; COND_3 });
-                __anodized_clause_1 && __anodized_clause_2
+                let __anodized_output = ::anodized::__::eval_once(|| { __anodized_output });
+                let __anodized_post = true;
+                let __anodized_post = __anodized_post & ::anodized::__::eval::<bool>(|| COND_2);
+                let (__anodized_post, __anodized_output) = ::anodized::__::apply_keep(
+                    |PAT_1| (__anodized_post & ::anodized::__::eval::<bool>(|| COND_3), PAT_1),
+                    __anodized_output,
+                );
+                __anodized_post
             }
 
             #[doc(hidden)]
@@ -252,16 +304,60 @@ fn embed_spec_item_impl_trait() {
         }
     };
 
-    let observed = Mode::EmbedSpecs
-        .instrument_item_trait_impl(trait_spec, item_impl)
+    let observed = Mode::EMBED_SPECS
+        .instrument_item_trait_impl(spec_item_impl.spec, spec_item_impl.node)
+        .unwrap();
+    assert_tokens_eq(&observed, &expected);
+}
+
+#[test]
+fn embed_spec_charon_item_impl_trait() {
+    let spec_item_impl: SpecItemImpl = parse_quote! {
+        #[spec]
+        impl TRAIT for IMPL_TYPE {
+            #[spec]
+            fn FUNC() {}
+        }
+    };
+
+    let qualifier_bits = FnQualifiers::empty().bits();
+    let expected: TokenStream = parse_quote! {
+        impl TRAIT for IMPL_TYPE {
+            #[doc(hidden)]
+            #[allow(warnings)]
+            #[charon::contract(kind = "precondition", for = "FUNC")]
+            fn __anodized_fn_requires_FUNC() -> bool {
+                let __anodized_pre = true;
+                __anodized_pre
+            }
+
+            #[doc(hidden)]
+            #[allow(warnings)]
+            #[charon::contract(kind = "postcondition", for = "FUNC")]
+            fn __anodized_fn_ensures_FUNC(__anodized_output: ()) -> bool {
+                let __anodized_output = ::anodized::__::eval_once(|| { __anodized_output });
+                let __anodized_post = true;
+                __anodized_post
+            }
+
+            #[doc(hidden)]
+            #[allow(warnings)]
+            const __anodized_fn_qualifiers_FUNC: u32 = #qualifier_bits;
+
+            fn FUNC() {}
+        }
+    };
+
+    let observed = Mode::EMBED_SPECS_CHARON
+        .instrument_item_trait_impl(spec_item_impl.spec, spec_item_impl.node)
         .unwrap();
     assert_tokens_eq(&observed, &expected);
 }
 
 #[test]
 fn default_instrument_item_impl_trait() {
-    let trait_spec = DataSpec::empty();
-    let item_impl: ItemImpl = parse_quote! {
+    let spec_item_impl: SpecItemImpl = parse_quote! {
+        #[spec]
         impl TRAIT for IMPL_TYPE {
             #[spec(
                 requires: COND_1,
@@ -291,38 +387,33 @@ fn default_instrument_item_impl_trait() {
                         "the qualifiers on the impl `IMPL_TYPE::FUNC` cannot be weaker than the qualifiers on the trait `TRAIT::FUNC`",
                     );
                 };
-                if false {
-                    let __anodized_pre = true;
-                    let __anodized_pre = __anodized_pre & ::anodized::__::eval::<bool>(|| COND_1);
-                    let __anodized_pre = __anodized_pre & ::anodized::__::eval::<bool>(|| COND_2);
-                    if !__anodized_pre {}
-                }
-                let (mut __anodized_output) = ((|| -> RET_TYPE { BODY })());
-                if false {
-                    let mut __anodized_post = true;
-                    __anodized_post &= ::anodized::__::eval::<bool>(|| COND_2);
-                    {
-                        let PAT_1 = __anodized_output;
-                        __anodized_post &= ::anodized::__::eval::<bool>(|| COND_3);
-                        __anodized_output = PAT_1;
-                    }
-                    if !__anodized_post {}
-                }
+                let __anodized_pre = true;
+                let __anodized_pre = __anodized_pre & (true || ::anodized::__::eval::<bool>(|| COND_1));
+                let __anodized_pre = __anodized_pre & (true || ::anodized::__::eval::<bool>(|| COND_2));
+                if !__anodized_pre {}
+                let __anodized_output = ::anodized::__::eval_once(|| -> RET_TYPE { BODY });
+                let __anodized_post = true;
+                let __anodized_post = __anodized_post & (true || ::anodized::__::eval::<bool>(|| COND_2));
+                let (__anodized_post, __anodized_output) = ::anodized::__::apply_keep(
+                    |PAT_1| (__anodized_post & (true || ::anodized::__::eval::<bool>(|| COND_3)), PAT_1),
+                    __anodized_output,
+                );
+                if !__anodized_post {}
                 __anodized_output
             }
         }
     };
 
     let observed = Mode::DEFAULT
-        .instrument_item_trait_impl(trait_spec, item_impl)
+        .instrument_item_trait_impl(spec_item_impl.spec, spec_item_impl.node)
         .unwrap();
     assert_tokens_eq(&observed, &expected);
 }
 
 #[test]
 fn emit_try_fn_instrument_item_impl_trait() {
-    let trait_spec = DataSpec::empty();
-    let item_impl: ItemImpl = parse_quote! {
+    let spec_item_impl: SpecItemImpl = parse_quote! {
+        #[spec]
         impl TRAIT for IMPL_TYPE {
             #[spec(
                 requires: COND_1,
@@ -352,30 +443,25 @@ fn emit_try_fn_instrument_item_impl_trait() {
                         "the qualifiers on the impl `IMPL_TYPE::FUNC` cannot be weaker than the qualifiers on the trait `TRAIT::FUNC`",
                     );
                 };
-                if true {
-                    let __anodized_pre = true;
-                    let __anodized_pre = __anodized_pre & (::anodized::__::eval::<bool>(|| COND_1)
-                            || eprintln!("precondition failed: {}", "COND_1") != ());
-                    let __anodized_pre = __anodized_pre & (::anodized::__::eval::<bool>(|| COND_2)
-                            || eprintln!("preinvariant failed: {}", "COND_2") != ());
-                    if !__anodized_pre {
-                        panic!("precondition failed");
-                    }
+                let __anodized_pre = true;
+                let __anodized_pre = __anodized_pre & (::anodized::__::eval::<bool>(|| COND_1)
+                    || eprintln!("precondition failed: {}", "COND_1") != ());
+                let __anodized_pre = __anodized_pre & (::anodized::__::eval::<bool>(|| COND_2)
+                    || eprintln!("preinvariant failed: {}", "COND_2") != ());
+                if !__anodized_pre {
+                    panic!("precondition failed");
                 }
-                let (mut __anodized_output) = ((|| -> RET_TYPE { BODY })());
-                if true {
-                    let mut __anodized_post = true;
-                    __anodized_post &= (::anodized::__::eval::<bool>(|| COND_2)
-                            || eprintln!("postinvariant failed: {}", "COND_2") != ());
-                    {
-                        let PAT_1 = __anodized_output;
-                        __anodized_post &= (::anodized::__::eval::<bool>(|| COND_3)
-                            || eprintln!("postcondition failed: {}", "COND_3") != ());
-                        __anodized_output = PAT_1;
-                    }
-                    if !__anodized_post {
-                        panic!("postcondition failed");
-                    }
+                let __anodized_output = ::anodized::__::eval_once(|| -> RET_TYPE { BODY });
+                let __anodized_post = true;
+                let __anodized_post = __anodized_post & (::anodized::__::eval::<bool>(|| COND_2)
+                        || eprintln!("postinvariant failed: {}", "COND_2") != ());
+                let (__anodized_post, __anodized_output) = ::anodized::__::apply_keep(
+                    |PAT_1| (__anodized_post & (::anodized::__::eval::<bool>(|| COND_3)
+                        || eprintln!("postcondition failed: {}", "COND_3") != ()), PAT_1),
+                    __anodized_output,
+                );
+                if !__anodized_post {
+                    panic!("postcondition failed");
                 }
                 __anodized_output
             }
@@ -383,7 +469,7 @@ fn emit_try_fn_instrument_item_impl_trait() {
     };
 
     let observed = Mode::InjectChecks(CheckSettings::PRINT_AND_TRY)
-        .instrument_item_trait_impl(trait_spec, item_impl)
+        .instrument_item_trait_impl(spec_item_impl.spec, spec_item_impl.node)
         .unwrap();
     assert_tokens_eq(&observed, &expected);
 }

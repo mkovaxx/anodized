@@ -1,8 +1,7 @@
 use anodized::spec;
 
 #[spec(
-    inspects: result,
-    ensures: *result % 2 == 0,
+    ensures: |result| result % 2 == 0,
 )]
 fn calculate_odd_result(output: i32) -> i32 {
     if output % 2 == 0 {

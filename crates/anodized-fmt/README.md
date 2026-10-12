@@ -73,7 +73,7 @@ Create an `anodized-fmt.toml` file in your project root:
 tab_spaces = 4
 
 # Reorder spec fields into recommended order
-# (requires, maintains, captures, inspects, ensures)
+# (requires, maintains, captures, ensures)
 reorder_spec_items = true,
 
 # Maximum line width for spec attributes

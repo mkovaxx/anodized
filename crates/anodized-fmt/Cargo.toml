@@ -21,15 +21,15 @@ path = "src/lib.rs"
 
 [dependencies]
 anodized-core.workspace = true
+clap.workspace = true
 prettyplease.workspace = true
 proc-macro2.workspace = true
 quote.workspace = true
 syn.workspace = true
+thiserror.workspace = true
 
-clap = { version = "4", features = ["derive"] }
 crop = "0.4"
 serde = { version = "1", features = ["derive"] }
-thiserror = "2"
 toml = "0.9"
 walkdir = "2"
 

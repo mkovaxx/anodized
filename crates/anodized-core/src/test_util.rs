@@ -1,6 +1,39 @@
-use crate::{Capture, Condition, PostCondition, Spec, instrument::patterns::TamePat};
+use crate::{
+    Capture, Condition, EmptySpec, FnSpec, PostCondition, TypeSpec, annotate::Specified,
+    instrument::patterns::TamePat,
+};
 use pretty_assertions::assert_eq;
 use quote::{ToTokens, quote};
+use syn::parse::{Parse, ParseStream};
+
+/// Specified `fn`.
+pub type SpecItemFn = NodeWithSpec<FnSpec, syn::ItemFn>;
+
+/// Specified `impl`.
+pub type SpecItemImpl = NodeWithSpec<EmptySpec, syn::ItemImpl>;
+
+/// Specified `trait`.
+pub type SpecItemTrait = NodeWithSpec<EmptySpec, syn::ItemTrait>;
+
+/// Specified `struct`.
+pub type SpecItemStruct = NodeWithSpec<TypeSpec, syn::ItemStruct>;
+
+/// Specified `enum`.
+pub type SpecItemEnum = NodeWithSpec<TypeSpec, syn::ItemEnum>;
+
+/// An AST node with a spec attached.
+pub struct NodeWithSpec<Spec, AstNode> {
+    pub spec: Spec,
+    pub node: AstNode,
+}
+
+impl<AstNode: Parse + Specified> Parse for NodeWithSpec<AstNode::Spec, AstNode> {
+    fn parse(input: ParseStream) -> syn::Result<Self> {
+        let mut node: AstNode = input.parse()?;
+        let spec = node.parse_spec_from_attrs()?;
+        Ok(Self { spec, node })
+    }
+}
 
 pub fn assert_tokens_eq(left: &impl ToTokens, right: &impl ToTokens) {
     let left_str = pretty_print_tokens(left.to_token_stream());
@@ -21,10 +54,12 @@ fn pretty_print_tokens(ts: proc_macro2::TokenStream) -> String {
     prettyplease::unparse(&file)
 }
 
-pub fn assert_spec_eq(left: &Spec, right: &Spec) {
+pub fn assert_spec_eq(left: &FnSpec, right: &FnSpec) {
     // Destructure to ensure we handle all fields - compilation will fail if fields are added
-    let Spec {
+    let FnSpec {
         qualifiers: left_qualifiers,
+        input_spec_flags: left_input_specs,
+        output_spec_flag: left_output_spec_on_exit,
         requires: left_requires,
         maintains: left_maintains,
         captures: left_captures,
@@ -32,8 +67,10 @@ pub fn assert_spec_eq(left: &Spec, right: &Spec) {
         span: _,
     } = left;
 
-    let Spec {
+    let FnSpec {
         qualifiers: right_qualifiers,
+        input_spec_flags: right_input_specs,
+        output_spec_flag: right_output_spec_on_exit,
         requires: right_requires,
         maintains: right_maintains,
         captures: right_captures,
@@ -44,6 +81,26 @@ pub fn assert_spec_eq(left: &Spec, right: &Spec) {
     assert_eq!(
         left_qualifiers, right_qualifiers,
         "qualifiers do not match: {left_qualifiers:?} vs {right_qualifiers:?}"
+    );
+    assert_eq!(
+        left_output_spec_on_exit, right_output_spec_on_exit,
+        "output spec on exit does not match"
+    );
+    assert_slice_eq(
+        left_input_specs,
+        right_input_specs,
+        "input specs",
+        |left, right, message| match (left, right) {
+            (crate::InputSpecFlags::Neither, crate::InputSpecFlags::Neither) => {}
+            (crate::InputSpecFlags::In(left), crate::InputSpecFlags::In(right)) => {
+                assert_tokens_eq(left, right);
+            }
+            (crate::InputSpecFlags::Out(left), crate::InputSpecFlags::Out(right))
+            | (crate::InputSpecFlags::Both(left), crate::InputSpecFlags::Both(right)) => {
+                assert_eq!(left, right, "{message} exit patterns do not match");
+            }
+            _ => panic!("{message} flags do not match"),
+        },
     );
 
     assert_slice_eq(
@@ -176,7 +233,7 @@ pub fn assert_tame_pat_eq(left: &syn::Result<TamePat>, right: &syn::Result<TameP
 fn stringify_tame_pat(tame_pat: &syn::Result<TamePat>) -> String {
     let tokens = match tame_pat {
         Ok(TamePat::Borrowing(brw_pat)) => quote! { brw #brw_pat },
-        Ok(TamePat::Invertible(inv_pat)) => quote! { inv #inv_pat },
+        Ok(TamePat::Invertible(inv_pat, inv_expr)) => quote! { inv #inv_pat => #inv_expr },
         Err(err) => {
             let msg = err.to_string();
             quote! { err #msg }

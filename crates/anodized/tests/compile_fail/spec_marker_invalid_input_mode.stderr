@@ -1,0 +1,5 @@
+error: expected a mode, `out` or `inout`
+ --> tests/compile_fail/spec_marker_invalid_input_mode.rs:7:20
+  |
+7 | fn f(x: Spec!(i32, in)) {}
+  |                    ^^

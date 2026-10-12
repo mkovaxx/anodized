@@ -34,12 +34,12 @@ Anodized specs are not comments but attributes, so they are checked by the Rust 
 
 ```toml
 [dependencies]
-anodized = "0.6.0"
+anodized = "0.7.0"
 ```
 
 **2. Extend your code with specs.**
 
-Use the `#[spec]` attribute to attach preconditions and postconditions to functions, invariants to loops, and refinements to data types. Each _condition_ is a standard Rust expression that evaluates to `bool`.
+Use the `#[spec]` attribute to attach preconditions and postconditions to functions, invariants to loops, and refinements to types. Each _condition_ is a standard Rust expression that evaluates to `bool`.
 
 ```rust,no_run
 use anodized::spec;

@@ -1,3 +1,4 @@
+use quote::ToTokens;
 use syn::{
     FieldValue, Ident, Member, Token,
     parse::{Parse, ParseStream, Result},
@@ -14,6 +15,12 @@ use syn::{
 #[derive(Debug, Clone)]
 pub struct SpecFields {
     pub fields: Punctuated<FieldValue, Token![,]>,
+}
+
+impl ToTokens for SpecFields {
+    fn to_tokens(&self, tokens: &mut proc_macro2::TokenStream) {
+        self.fields.to_tokens(tokens);
+    }
 }
 
 impl Parse for SpecFields {
@@ -48,9 +55,6 @@ pub enum Keyword {
     Requires,
     Maintains,
     Captures,
-    // TODO: Remove `binds` and `inspects` before v0.7.0 is released.
-    Binds,
-    Inspects,
     Ensures,
     Decreases,
 }
@@ -69,8 +73,6 @@ impl From<&Member> for Keyword {
             Member::Named(ident) if ident == "requires" => Requires,
             Member::Named(ident) if ident == "maintains" => Maintains,
             Member::Named(ident) if ident == "captures" => Captures,
-            Member::Named(ident) if ident == "binds" => Binds,
-            Member::Named(ident) if ident == "inspects" => Inspects,
             Member::Named(ident) if ident == "ensures" => Ensures,
             Member::Named(ident) if ident == "decreases" => Decreases,
             Member::Named(ident) => Unknown(ident.clone()),
@@ -93,8 +95,6 @@ impl std::fmt::Display for Keyword {
             Keyword::Requires => write!(f, "requires"),
             Keyword::Maintains => write!(f, "maintains"),
             Keyword::Captures => write!(f, "captures"),
-            Keyword::Binds => write!(f, "binds"),
-            Keyword::Inspects => write!(f, "inspects"),
             Keyword::Ensures => write!(f, "ensures"),
             Keyword::Decreases => write!(f, "decreases"),
         }

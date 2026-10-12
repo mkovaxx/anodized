@@ -12,6 +12,7 @@ keywords.workspace = true
 license.workspace = true
 
 [dependencies]
+anodized-macros.workspace = true
 num-bigint.workspace = true
 
 [dev-dependencies]

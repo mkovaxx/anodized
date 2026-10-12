@@ -1,3 +1,5 @@
+#![cfg_attr(anodized_charon, feature(register_tool))]
+#![cfg_attr(anodized_charon, register_tool(charon))]
 #![allow(clippy::unit_cmp, clippy::needless_return)]
 
 use anodized::spec;
@@ -163,5 +165,51 @@ fn async_execution_order() {
             "ensures1",
             "ensures2",
         ]
+    );
+}
+
+#[spec(maintains: { self.log.push(self.label); true })]
+pub struct TypeWithSpec<'a> {
+    label: &'static str,
+    log: &'a ExecLog,
+}
+
+#[spec(
+    requires: { i2.log.push("pre"); true },
+    ensures: { i2.log.push("post"); true },
+)]
+pub fn func_io<'a>(
+    i1: Spec!(TypeWithSpec<'a>),
+    i2: Spec!(&mut TypeWithSpec, inout),
+    _: Spec!(&TypeWithSpec),
+) -> Spec!(TypeWithSpec<'a>) {
+    TypeWithSpec {
+        label: "out",
+        log: i1.log,
+    }
+}
+
+#[cfg(anodized_panic)]
+#[test]
+fn type_spec_check_execution_order() {
+    let log = ExecLog::new();
+
+    let i1 = TypeWithSpec {
+        label: "in1",
+        log: &log,
+    };
+    let mut i2 = TypeWithSpec {
+        label: "in2",
+        log: &log,
+    };
+    let i3 = TypeWithSpec {
+        label: "in3",
+        log: &log,
+    };
+    let _ = func_io(i1, &mut i2, &i3);
+
+    assert_eq!(
+        log.into_vec(),
+        ["in1", "in2", "in3", "pre", "out", "in2", "post"]
     );
 }

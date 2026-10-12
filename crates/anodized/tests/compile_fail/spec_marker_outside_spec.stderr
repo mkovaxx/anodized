@@ -1,0 +1,7 @@
+error: `Spec!` must appear inside an item annotated with `#[spec]`
+ --> tests/compile_fail/spec_marker_outside_spec.rs:6:10
+  |
+6 | type T = Spec!(i32);
+  |          ^^^^^^^^^^
+  |
+  = note: this error originates in the macro `Spec` (in Nightly builds, run with -Z macro-backtrace for more info)

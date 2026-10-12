@@ -1,3 +1,5 @@
+#![cfg_attr(anodized_charon, feature(register_tool))]
+#![cfg_attr(anodized_charon, register_tool(charon))]
 #![allow(unused)]
 
 use anodized::spec;

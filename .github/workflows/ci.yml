@@ -25,6 +25,20 @@ jobs:
       - name: Check formatting
         run: cargo fmt --all -- --check
 
+  build-cargo-anodized:
+    name: Build cargo-anodized
+    runs-on: ubuntu-latest
+    needs: fmt
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@1.95.0
+
+      - name: Build cargo-anodized
+        run: cargo build -p cargo-anodized
+
   test-anodized-core:
     name: Lint and test anodized-core
     runs-on: ubuntu-latest
@@ -45,32 +59,48 @@ jobs:
         run: cargo test -p anodized-core --lib --no-fail-fast
 
   test-anodized:
-    name: Lint and test anodized with cfg `${{ matrix.cfg }}`
+    name: Lint and test anodized with flags `${{ matrix.flags }}`
     runs-on: ubuntu-latest
     needs: fmt
     strategy:
       matrix:
         include:
-          - cfg: ""
-          - cfg: '--config ''build.rustflags=["--cfg","anodized_discard_specs"]'''
-          - cfg: '--config ''build.rustflags=["--cfg","anodized_print"]'''
-          - cfg: '--config ''build.rustflags=["--cfg","anodized_panic"]'''
-          - cfg: '--config ''build.rustflags=["--cfg","anodized_print","--cfg","anodized_panic"]'''
-          - cfg: '--config ''build.rustflags=["--cfg","anodized_print","--cfg","anodized_panic","--cfg","anodized_try"]'''
+          - toolchain: stable
+            flags: ""
+          - toolchain: stable
+            flags: '--config ''build.rustflags=["--cfg","anodized_discard_specs"]'''
+          - toolchain: stable
+            flags: '--config ''build.rustflags=["--cfg","anodized_print"]'''
+          - toolchain: stable
+            flags: '--config ''build.rustflags=["--cfg","anodized_panic"]'''
+          - toolchain: stable
+            flags: '--config ''build.rustflags=["--cfg","anodized_print","--cfg","anodized_panic"]'''
+          - toolchain: stable
+            flags: '--config ''build.rustflags=["--cfg","anodized_print","--cfg","anodized_panic","--cfg","anodized_try"]'''
+          - toolchain: nightly
+            flags: '+nightly --config ''build.rustflags=["--cfg","anodized_embed_specs","--cfg","anodized_charon"]'''
+            test_flags: -- --skip compile_errors
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Install Rust toolchain
+      - name: Install Rust stable toolchain
+        if: matrix.toolchain == 'stable'
         uses: dtolnay/rust-toolchain@1.95.0
         with:
           components: clippy
 
-      - name: Lint anodized with cfg `${{ matrix.cfg }}`
-        run: cargo ${{ matrix.cfg }} clippy -p anodized --all-targets -- -D warnings
+      - name: Install Rust Nightly toolchain
+        if: matrix.toolchain == 'nightly'
+        uses: dtolnay/rust-toolchain@nightly
+        with:
+          components: clippy
 
-      - name: Integration test anodized with cfg `${{ matrix.cfg }}`
-        run: cargo ${{ matrix.cfg }} test -p anodized --tests --no-fail-fast
+      - name: Lint anodized with flags `${{ matrix.flags }}`
+        run: cargo ${{ matrix.flags }} clippy -p anodized --all-targets -- -D warnings
+
+      - name: Integration test anodized with flags `${{ matrix.flags }}`
+        run: cargo ${{ matrix.flags }} test -p anodized --tests --no-fail-fast ${{ matrix.test_flags }}
 
   test-anodized-fmt:
     name: Lint and test anodized-fmt

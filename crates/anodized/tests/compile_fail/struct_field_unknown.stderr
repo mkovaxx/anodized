@@ -1,11 +1,11 @@
 error[E0609]: no field `z` on type `&Point`
- --> tests/compile_fail/struct_field_unknown.rs:5:24
+ --> tests/compile_fail/struct_field_unknown.rs:6:24
   |
-5 | #[spec(maintains: self.z < 42.0)]
+6 | #[spec(maintains: self.z < 42.0)]
   |                        ^ unknown field
   |
 help: a field with a similar name exists
   |
-5 - #[spec(maintains: self.z < 42.0)]
-5 + #[spec(maintains: self.x < 42.0)]
+6 - #[spec(maintains: self.z < 42.0)]
+6 + #[spec(maintains: self.x < 42.0)]
   |
