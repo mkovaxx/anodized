@@ -17,6 +17,7 @@ fn run() -> Result<(), Error> {
 
     match cli.command {
         Command::Fmt(options) => commands::fmt::fmt(options)?,
+        Command::Z3(options) => todo!(),
     }
 
     Ok(())

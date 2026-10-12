@@ -13,6 +13,8 @@ pub struct Cli {
 pub enum Command {
     /// Format a Cargo project.
     Fmt(FmtOptions),
+    /// Launch Z3 in `-smt2 -in` mode.
+    Z3(Z3Options),
 }
 
 #[derive(Args)]
@@ -37,3 +39,6 @@ pub struct FmtOptions {
     #[arg(long)]
     pub check: bool,
 }
+
+#[derive(Args)]
+pub struct Z3Options {}
