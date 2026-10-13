@@ -17,6 +17,7 @@ fn run() -> Result<(), Error> {
 
     match cli.command {
         Command::Fmt(options) => commands::fmt::fmt(options)?,
+        #[cfg(feature = "z3")]
         Command::Z3Smt2In(options) => commands::z3::emulate_smt2_in(options)?,
     }
 
@@ -27,6 +28,8 @@ fn run() -> Result<(), Error> {
 enum Error {
     #[error(transparent)]
     Fmt(#[from] commands::fmt::Error),
+
+    #[cfg(feature = "z3")]
     #[error(transparent)]
     Z3Smt2In(#[from] commands::z3::Error),
 }

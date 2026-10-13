@@ -13,6 +13,7 @@ pub struct Cli {
 pub enum Command {
     /// Format a Cargo project.
     Fmt(FmtOptions),
+    #[cfg(feature = "z3")]
     /// Emulates `z3 -smt2 -in`.
     Z3Smt2In(Z3Options),
 }
