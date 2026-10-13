@@ -19,6 +19,7 @@ path = "src/main.rs"
 anodized-fmt.workspace = true
 clap.workspace = true
 thiserror.workspace = true
+z3 = { version = "0.21.1" }
 
 [dev-dependencies]
 pretty_assertions.workspace = true
