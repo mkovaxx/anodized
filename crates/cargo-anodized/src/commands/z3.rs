@@ -1,3 +1,5 @@
+#![cfg(feature = "z3")]
+
 use std::ffi::{CStr, CString};
 use std::io::{BufRead, Write};
 
