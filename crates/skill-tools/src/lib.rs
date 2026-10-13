@@ -8,7 +8,7 @@ use std::error::Error;
 use std::fs;
 use std::path::{Path, PathBuf};
 
-use anodized_core::annotate::syntax::Keyword;
+use anodized_core::syntax::Keyword;
 
 pub mod fences;
 pub mod generate;
