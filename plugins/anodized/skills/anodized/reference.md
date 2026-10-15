@@ -154,5 +154,5 @@ consistently across a codebase.
 | `#[requires(...)]` / `#[ensures(...)]` | Never existed. One unified `#[spec(...)]`. |
 | Closure-form preconditions | Removed in 0.6. Write the expression directly. |
 
-The parser still recognizes `binds` and `inspects` purely so it can tell you what replaced
-them; they are scheduled for deletion before 0.7.
+In 0.7, `binds` and `inspects` produce `unknown spec field`. Replace them with an `ensures`
+closure; the parser no longer emits a dedicated migration diagnostic.

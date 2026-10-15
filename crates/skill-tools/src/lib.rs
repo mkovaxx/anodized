@@ -64,7 +64,9 @@ pub const FRONTMATTER_BUDGET: usize = 1536;
 
 /// Build configuration flags, which must match the `check-cfg` declarations.
 pub const CFG_FLAGS: &[&str] = &[
+    "anodized_charon",
     "anodized_discard_specs",
+    "anodized_embed_specs",
     "anodized_panic",
     "anodized_print",
     "anodized_try",
@@ -73,7 +75,7 @@ pub const CFG_FLAGS: &[&str] = &[
 /// Crate sources searched for the diagnostics in [`DIAGNOSTICS`].
 pub const DIAGNOSTIC_SOURCES: &[&str] = &["crates/anodized-core/src", "crates/anodized-macros/src"];
 
-/// Diagnostics the macro emits verbatim, which `diagnostics.md` must document.
+/// Diagnostic text and format templates, which `diagnostics.md` must document.
 ///
 /// Each is asserted to still exist in the sources listed by [`DIAGNOSTIC_SOURCES`], so that
 /// rewording a message in the macro fails this crate's tests rather than silently turning the
@@ -82,7 +84,6 @@ pub const DIAGNOSTICS: &[&str] = &[
     "unknown spec field",
     "fields are out of order: the expected order is",
     "at most one `captures` field is allowed",
-    "no longer supported, use the following form instead",
     "postcondition closure must have exactly one input",
     "qualifier does not take a value",
     "this qualifier is redundant; remove it",
@@ -91,7 +92,7 @@ pub const DIAGNOSTICS: &[&str] = &[
     "multiple `cfg` attributes are not supported",
     "`cfg` attribute is not supported here",
     "multiple `decreases` fields are not allowed",
-    "multiple `#[spec]` attributes on a single item are not supported",
+    "multiple `#[{name}]` attributes are not allowed",
     "expected an expression",
     "expected an assignment",
     "expected an assignment or block",
@@ -99,9 +100,7 @@ pub const DIAGNOSTICS: &[&str] = &[
     "not allowed here due to `#[spec]`",
     "or-pattern not allowed here due to `#[spec]`",
     "The enclosing trait must have a `#[spec]` annotation.",
-    "Unsupported spec element on trait.",
-    "Unsupported spec element on trait impl.",
-    "Unsupported spec element on inherent impl.",
+    "this `#[spec]` attribute must have no fields",
     "cannot be weaker than the qualifiers on the trait",
     "The #[spec] attribute doesn't yet support this item",
     "`try_call` needs the `anodized_try` build `cfg` to be enabled",

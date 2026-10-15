@@ -12,7 +12,7 @@
       "name": "anodized",
       "source": "./plugins/anodized",
       "description": "Write, review, and debug Anodized `#[spec]` specifications on Rust functions, traits, loops, structs, and enums, and run the runtime-check build configurations.",
-      "version": "0.6.0",
+      "version": "0.7.0",
       "author": {
         "name": "anodized-rs"
       },

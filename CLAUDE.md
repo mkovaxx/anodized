@@ -26,7 +26,9 @@ There are **no Cargo features**. Behavior is controlled entirely by `--cfg` flag
 | Flag | Effect |
 | --- | --- |
 | *(none)* | Specs embedded and type-checked; no checks run. |
-| `anodized_discard_specs` | Specs dropped entirely. |
+| `anodized_discard_specs` | Specs dropped entirely; incompatible with all other flags. |
+| `anodized_embed_specs` | Specs emitted as separate items for analysis; incompatible with runtime-check flags. |
+| `anodized_charon` | Embedding with Charon contract attributes; requires nightly and Charon tool registration. |
 | `anodized_print` | Violations report to stderr and continue. |
 | `anodized_panic` | Violations panic. |
 | `anodized_try` | Enables `try_call!`. Requires `anodized_panic`. |
@@ -67,9 +69,10 @@ golden fixtures under `tests/fixtures/`.
 - Change a clause keyword, a qualifier, a `cfg` flag, or a macro error message and the tests
   will name the document that needs updating.
 
-The harness has one blind spot worth knowing: loop and `enum` conditions are dropped before
-they reach the compiler, so "every block compiles" proves nothing about the conditions inside
-a loop or enum example. Read those by eye.
+Loop conditions are dropped before they reach the compiler, so "every block compiles" proves
+nothing about their validity. Read them by eye. Both `struct` and `enum` conditions generate
+a type-checked `Spec::predicate`; test that predicate or enforce it at a `Spec!(T)` function
+boundary to check the invariant at runtime.
 
 **No test covers meaning.** The coverage tests assert that a term *appears*; they cannot tell
 whether the sentence around it is still true. Changing spec semantics requires a manual read

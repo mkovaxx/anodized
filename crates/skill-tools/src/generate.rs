@@ -31,6 +31,17 @@ pub const REGIONS: &[(&str, &str)] = &[
 /// Build configurations, paired with what each one does.
 pub const CFG_EFFECTS: &[(&str, &str)] = &[
     (
+        "anodized_embed_specs",
+        "Embeds specifications as separate items for analysis without changing function bodies. \
+         Incompatible with `anodized_panic`, `anodized_print`, and `anodized_try`.",
+    ),
+    (
+        "anodized_charon",
+        "Selects specification embedding and adds Charon contract attributes. Requires nightly \
+         and `#![feature(register_tool)]` with `#![register_tool(charon)]` in the consuming crate. \
+         Incompatible with runtime-check flags.",
+    ),
+    (
         "anodized_discard_specs",
         "Specs are dropped entirely: not embedded, not type-checked. Fastest builds.",
     ),
@@ -83,8 +94,8 @@ pub const ITEM_KINDS: &[(&str, &str, &str)] = &[
 pub const DIAGNOSTIC_DOCS: &[(&str, &str, &str)] = &[
     (
         "unknown spec field",
-        "A clause name the parser does not recognize, often a guess from another crate.",
-        "Use one of `requires`, `maintains`, `captures`, `ensures`, `decreases`, or a qualifier.",
+        "An unrecognized clause name, including the removed `binds:` and `inspects:` forms.",
+        "Use a current clause or qualifier. Replace `binds:` and `inspects:` with `ensures: \\|PAT\\| [EXPR, ...]`.",
     ),
     (
         "fields are out of order: the expected order is",
@@ -95,11 +106,6 @@ pub const DIAGNOSTIC_DOCS: &[(&str, &str, &str)] = &[
         "at most one `captures` field is allowed",
         "Two `captures:` fields in one spec.",
         "Merge them: `captures: [first = a, second = b]`.",
-    ),
-    (
-        "no longer supported, use the following form instead",
-        "`binds:` or `inspects:`, both removed.",
-        "Write `ensures: |PAT| [EXPR, ...]` instead.",
     ),
     (
         "postcondition closure must have exactly one input",
@@ -142,8 +148,8 @@ pub const DIAGNOSTIC_DOCS: &[(&str, &str, &str)] = &[
         "Keep one expression.",
     ),
     (
-        "multiple `#[spec]` attributes on a single item are not supported",
-        "Two `#[spec]` attributes stacked on one item.",
+        "multiple `#[{name}]` attributes are not allowed",
+        "Repeated attributes on one item; `{name}` is `spec` for specification attributes.",
         "Merge the clauses into one attribute.",
     ),
     (
@@ -182,19 +188,9 @@ pub const DIAGNOSTIC_DOCS: &[(&str, &str, &str)] = &[
         "Add a bare `#[spec]` to the trait.",
     ),
     (
-        "Unsupported spec element on trait.",
-        "Clauses on the `#[spec]` attached to a trait.",
-        "Keep the trait's attribute bare; put clauses on its functions.",
-    ),
-    (
-        "Unsupported spec element on trait impl.",
-        "Clauses on the `#[spec]` attached to an `impl Trait for T`.",
-        "Keep it bare; put clauses on the functions.",
-    ),
-    (
-        "Unsupported spec element on inherent impl.",
-        "Clauses on the `#[spec]` attached to an inherent `impl`.",
-        "Keep it bare; put clauses on the methods.",
+        "this `#[spec]` attribute must have no fields",
+        "Clauses on the attribute attached to a `trait` or `impl`.",
+        "Keep the enclosing attribute bare; put clauses on its functions or methods.",
     ),
     (
         "cannot be weaker than the qualifiers on the trait",

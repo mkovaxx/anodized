@@ -26,12 +26,11 @@ allowed-tools: Bash(cargo:*), Bash(anodized-fmt:*)
 # Writing Anodized specifications
 
 A spec is ordinary Rust: every condition is a `bool` expression, and there is no separate
-specification language to learn. Conditions on functions and on `struct` definitions are
-type-checked by the compiler like any other code. Conditions on **loops and `enum`
-definitions are not** — as of 0.6 they are parsed and then dropped, so a typo in one compiles
-silently. Write those with extra care. What has to
-be learned is the shape of the attribute, and the handful of places where that shape differs
-from what every other contract system has trained you to expect.
+specification language to learn. Conditions on functions, `struct` definitions, and `enum`
+definitions are type-checked unless `anodized_discard_specs` is enabled. **Loop conditions
+are not**: they are parsed and then dropped, so a typo in one compiles silently. Review loop
+conditions by eye. What has to be learned is the shape of the attribute, and the handful of
+places where that shape differs from what every other contract system has trained you to expect.
 
 ## Four things that are not what you expect
 
@@ -138,9 +137,8 @@ enables loop specs inside the body, so it is not purely decorative.
 Not every function can carry one, though. The macro evaluates the body inside a closure, so
 any shape the language will not let cross a closure boundary stops compiling the moment a spec
 is attached — in every configuration except `anodized_discard_specs`, which drops specs before
-they expand. Known cases: a function returning `impl Trait` (`E0562`), a `const fn` (`E0015`),
-and a function returning `&mut` borrowed from a parameter (`captured variable cannot escape
-`FnMut` closure body`, which carries no error code). Returning a shared `&` is fine.
+they expand. Known cases: a function returning `impl Trait` (`E0562`) and a `const fn`
+(`E0015`). Returning a shared `&` or a `&mut` borrowed from a parameter is supported.
 
 Treat that list as incomplete rather than exhaustive. The rule that generalizes is the closure:
 if attaching a spec makes a function stop compiling, that shape cannot carry one, and the only
@@ -313,8 +311,10 @@ intent and feed analysis backends. Do not rely on them catching anything today.
 ## Data
 
 `struct` and `enum` take `maintains` only, describing what is always true of a value. `self`
-is in scope, and enum variants are brought into scope automatically. Neither is checked at
-runtime yet. A `struct` condition **is** type-checked; an `enum` condition is not.
+is in scope, and enum variants are brought into scope automatically. Both generate a
+type-checked `anodized::types::Spec::predicate` unless `anodized_discard_specs` is enabled.
+Construction alone does not check the invariant. Call the predicate explicitly, or use
+`Spec!(T)` at a spec'd function boundary with runtime checks enabled to enforce it.
 
 ```rust
 use anodized::spec;
@@ -332,6 +332,8 @@ struct Range {
 | Build configuration | Effect |
 | --- | --- |
 | *(none)* | Specs embedded and type-checked; no check runs. `captures` still evaluate. |
+| `--cfg anodized_embed_specs` | Embeds specifications as separate items for analysis without changing function bodies. Incompatible with `anodized_panic`, `anodized_print`, and `anodized_try`. |
+| `--cfg anodized_charon` | Selects specification embedding and adds Charon contract attributes. Requires nightly and `#![feature(register_tool)]` with `#![register_tool(charon)]` in the consuming crate. Incompatible with runtime-check flags. |
 | `--cfg anodized_discard_specs` | Specs are dropped entirely: not embedded, not type-checked. Fastest builds. |
 | `--cfg anodized_print` | A violated condition reports to stderr and execution continues. |
 | `--cfg anodized_panic` | A violated condition panics, without naming the condition. Pair with `anodized_print` to be told which expression failed. |

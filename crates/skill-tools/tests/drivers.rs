@@ -9,7 +9,8 @@
 
 /// The documents whose examples must every one be driven or declared undriven.
 ///
-/// `reference.md`, `diagnostics.md`, and `migration.md` carry no runnable examples;
+/// `reference.md` and `migration.md` carry no runnable examples; the runnable example in
+/// `diagnostics.md` exercises itself.
 /// `REFERENCE.md` is excluded because most of its illustrations have `todo!()` bodies, which a
 /// driver cannot execute.
 pub const DRIVEN_FILES: &[&str] = &["examples.md", "SKILL.md"];
@@ -57,16 +58,41 @@ pub struct Driver {
 ///
 /// These are verified by reading. Keeping them named here is what stops the set growing
 /// silently: a new example must either be driven or be listed as deliberately undriven.
-pub const UNDRIVEN: &[(&str, &str)] = &[
-    // Data specs: `self` is in scope but there is nothing to call, and neither a `struct` nor
-    // an `enum` invariant is checked at runtime, so a driver would exercise nothing.
-    ("examples.md", "struct Bounds"),
-    ("examples.md", "enum Temperature"),
-    ("SKILL.md", "struct Range"),
-];
+pub const UNDRIVEN: &[(&str, &str)] = &[];
 
 /// The drivers, one per runnable example.
 pub const DRIVERS: &[Driver] = &[
+    Driver {
+        file: "examples.md",
+        defines: "struct Bounds",
+        main: r#"fn main() {
+            use anodized::types::Spec;
+            assert!(Bounds { low: 0, high: 0 }.predicate());
+            assert!(Bounds { low: 0, high: u32::MAX }.predicate());
+            assert!(!Bounds { low: 1, high: 0 }.predicate());
+        }"#,
+    },
+    Driver {
+        file: "examples.md",
+        defines: "enum Temperature",
+        main: r#"fn main() {
+            use anodized::types::Spec;
+            assert!(Temperature::Celsius(-273).predicate());
+            assert!(!Temperature::Celsius(-274).predicate());
+            assert!(Temperature::Kelvin(0).predicate());
+            assert!(!Temperature::Kelvin(-1).predicate());
+        }"#,
+    },
+    Driver {
+        file: "SKILL.md",
+        defines: "struct Range",
+        main: r#"fn main() {
+            use anodized::types::Spec;
+            assert!(Range { low: 0, high: 0 }.predicate());
+            assert!(Range { low: 0, high: u32::MAX }.predicate());
+            assert!(!Range { low: 1, high: 0 }.predicate());
+        }"#,
+    },
     Driver {
         file: "examples.md",
         defines: "fn nth",

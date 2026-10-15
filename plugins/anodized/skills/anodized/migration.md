@@ -17,6 +17,8 @@ more likely to be stale than to be wrong about some other crate.
 | `inspects: ...` | `ensures: \|pat\| [...]` |
 | `requires: \|\| condition` | `requires: condition` |
 
+In 0.7, `binds` and `inspects` produce `unknown spec field`; use the replacements above.
+
 The automatic `old_` binding is the one that bites hardest, because the replacement is not a
 rename: captures must be declared, and they are visible only to postconditions.
 

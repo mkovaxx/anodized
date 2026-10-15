@@ -78,7 +78,7 @@ Use `#[cfg]` attributes on individual conditions to control when checks run (see
 When runtime checks are enabled, use the standard `#[cfg]` attribute to select build configurations under which a condition is checked.
 
 ```rust, no_run
-use anodized::{spec, types::Spec};
+use anodized::spec;
 
 #[spec(
     // Runtime checks only during `cargo test`.

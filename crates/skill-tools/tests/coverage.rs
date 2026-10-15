@@ -44,15 +44,13 @@ fn every_removed_keyword_is_documented_as_removed() -> Result<()> {
     let diagnostics = read_skill_file("diagnostics.md")?;
     let migration = read_skill_file("migration.md")?;
     let reference = read_skill_file("reference.md")?;
-    for keyword in all_keywords() {
-        if let KeywordDoc::Removed { name, .. } = documented_keyword(&keyword) {
-            assert!(
-                migration.contains(name) && reference.contains(name),
-                "`{name}` is removed but migration.md and reference.md do not both say so"
-            );
-        }
+    for name in ["binds", "inspects"] {
+        assert!(
+            migration.contains(name) && reference.contains(name) && diagnostics.contains(name),
+            "`{name}` is removed but its migration or diagnostic guidance is missing"
+        );
     }
-    assert!(diagnostics.contains("no longer supported"));
+    assert!(diagnostics.contains("unknown spec field"));
     Ok(())
 }
 

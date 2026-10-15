@@ -6,8 +6,8 @@ allowed-tools: Bash(cargo:*)
 # Check every Anodized build configuration
 
 Anodized behavior is controlled entirely by `--cfg` flags, not Cargo features. A spec that
-type-checks under one configuration can still fail under another, so verify all six — the same
-set the Anodized CI matrix runs.
+type-checks under one configuration can still fail under another, so verify the six runtime configurations below.
+The CI matrix also checks specification embedding with Charon on nightly.
 
 Run each pass in order, from the current crate's directory:
 
@@ -30,6 +30,18 @@ What each pass proves:
 | `anodized_panic` | violations panic |
 | `print` + `panic` | both, the usual configuration for a test suite |
 | `print` + `panic` + `try` | additionally enables `try_call!` |
+
+For static-analysis integration, also run the CI embedding configuration on nightly. The
+consuming crate must register the Charon tool with `#![feature(register_tool)]` and
+`#![register_tool(charon)]` when `anodized_charon` is enabled:
+
+```bash
+cargo +nightly --config 'build.rustflags=["--cfg","anodized_embed_specs","--cfg","anodized_charon"]' test --no-fail-fast -- --skip compile_errors
+```
+
+This checks embedded specifications and Charon attributes. Compile-error goldens are skipped,
+as in CI, because they target runtime instrumentation. Do not combine embedding flags with
+`anodized_print`, `anodized_panic`, or `anodized_try`.
 
 Report the results as a table of pass versus outcome. A compile error only under
 `anodized_discard_specs` means real code depends on something a spec brought into scope.
