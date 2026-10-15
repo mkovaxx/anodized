@@ -175,14 +175,6 @@ pub fn documented_keyword(keyword: &Keyword) -> KeywordDoc {
             takes: "`pattern = expression`, or a list; at most one field",
             items: "`fn`",
         },
-        Keyword::Binds => KeywordDoc::Removed {
-            name: "binds",
-            replacement: "`ensures: |PAT| [EXPR, ...]`",
-        },
-        Keyword::Inspects => KeywordDoc::Removed {
-            name: "inspects",
-            replacement: "`ensures: |PAT| [EXPR, ...]`",
-        },
         Keyword::Ensures => KeywordDoc::Current {
             name: "ensures",
             takes: "a condition, `\\|pattern\\| condition`, or a list of either",
@@ -216,8 +208,6 @@ pub fn all_keywords() -> Vec<Keyword> {
         Keyword::Requires,
         Keyword::Maintains,
         Keyword::Captures,
-        Keyword::Binds,
-        Keyword::Inspects,
         Keyword::Ensures,
         Keyword::Decreases,
     ]
