@@ -101,6 +101,24 @@ reported before the panic.
 
 For more details and other approaches, see [The Anodized Reference](https://github.com/anodized-rs/anodized/blob/main/crates/anodized/REFERENCE.md).
 
+## Using Anodized with a Coding Agent
+
+Anodized ships an agent skill, so an assistant writes current `#[spec]` syntax instead of guessing from other contract systems.
+
+```sh
+# Claude Code
+claude plugin marketplace add anodized-rs/anodized
+claude plugin install anodized@anodized
+
+# Codex
+codex plugin marketplace add anodized-rs/anodized
+codex plugin add anodized@anodized
+```
+
+The skill loads by itself when you mention Anodized or `#[spec]`. It also adds two commands: `/anodized:spec` to add specs to code you point it at, and `/anodized:check` to run your tests under every build configuration.
+
+Using an agent with no plugin support? Point it at [the skill directory](https://github.com/anodized-rs/anodized/tree/main/plugins/anodized/skills/anodized).
+
 ## Why Anodized
 
 Rust has a growing ecosystem of excellent verification tools - Aeneas, Creusot, Flux, Hax, Kani, Prusti, Verus, and more. Each one brings unique strengths. Anodized provides a shared specification layer so that these tools, and the developers who use them, do not have to go it alone.

@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+### Added
+
+- **[anodized] Agent skill and plugin** - The repository now ships an agent skill for Claude
+  Code and Codex under `plugins/anodized`, installable with
+  `claude plugin marketplace add anodized-rs/anodized`. Its factual tables are generated from
+  the crate sources and its examples are compiled, so it cannot drift from the syntax it
+  documents.
+
+### Fixed
+
+- **[anodized] Repaired the examples in `REFERENCE.md`** - Several examples still used the
+  pre-0.6 postcondition syntax and did not compile; others warned, or asserted a comparison
+  the type already guaranteed.
+
 ## 0.7.0 (2026 Sep 27)
 
 ### Breaking Changes
