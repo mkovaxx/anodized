@@ -32,7 +32,7 @@ RUSTFLAGS="--cfg anodized_print" cargo test
 
 Disable embedding the specs as Rust code.
 
-**Important:** This has **no effect on runtime performance** because the embedded specs are always dead code. On the other hand, it **prevents syntax/type checking** specs, so it may decrease compilation time.
+**Important:** Discarding specs removes their generated code and prevents syntax/type checking of their expressions. With no `anodized_*` flags, runtime checks are disabled, but `captures` expressions still execute alongside the function body: a `.clone()` in a capture still runs. The separate `anodized_embed_specs` mode embeds specifications without changing the function body.
 
 ### `anodized_embed_specs`
 
@@ -78,7 +78,7 @@ Use `#[cfg]` attributes on individual conditions to control when checks run (see
 When runtime checks are enabled, use the standard `#[cfg]` attribute to select build configurations under which a condition is checked.
 
 ```rust, no_run
-use anodized::{spec, types::Spec};
+use anodized::spec;
 
 #[spec(
     // Runtime checks only during `cargo test`.
@@ -87,12 +87,12 @@ use anodized::{spec, types::Spec};
 
     // Runtime checks only in debug builds (like `debug_assert!`)
     #[cfg(debug_assertions)]
-    ensures: output.is_ok(),
+    ensures: |output| output.is_ok(),
 )]
 fn perform_complex_operation(input: i32) -> Result<i32, String> { todo!() }
 ```
 
-The `#[cfg]` attribute follows standard Rust semantics: when the configuration predicate is false, the runtime check for the condition is completely omitted.
+The `#[cfg]` attribute follows standard Rust semantics: when the configuration predicate is false, the runtime check for the condition is completely omitted. This holds in every build configuration that runs checks, whether or not `anodized_print` is enabled.
 
 **Important:** Anodized guarantees that each condition remains syntactically valid and type-correct regardless of its `#[cfg]` settings. This prevents conditions from becoming invalid between different build configurations, and keeps the entire spec always visible to analysis tools.
 
@@ -146,6 +146,7 @@ Sometimes postconditions need to compare the function's final state with its ini
 use anodized::spec;
 
 #[spec(
+    requires: !items.is_empty(),
     captures: [
         // Copy types: captured directly
         orig_len = items.len(),
@@ -270,9 +271,10 @@ Loop specs support the following fields:
 use anodized::spec;
 
 #[spec(
-    ensures: [
-        seq.iter().any(|elem| elem == output),
-        seq.iter().all(|elem| elem <= output),
+    requires: !seq.is_empty(),
+    ensures: |output| [
+        seq.iter().any(|elem| *elem == output),
+        seq.iter().all(|elem| *elem <= output),
     ],
 )]
 fn find_maximum(seq: &[u8]) -> u8 {
@@ -298,10 +300,10 @@ use anodized::spec;
 
 #[spec(
     requires: seq.is_sorted(),
-    ensures: [
-        *output <= seq.len(),
-        seq[0..*output].iter().all(|item| item < value),
-        seq[*output..].iter().all(|item| item >= value),
+    ensures: |output| [
+        output <= seq.len(),
+        seq[0..output].iter().all(|item| item < value),
+        seq[output..].iter().all(|item| item >= value),
     ],
 )]
 fn find_insert_position<T: Ord>(seq: &[T], value: &T) -> usize {
@@ -343,6 +345,7 @@ trait MonotonicGenerator {
     fn current(&self) -> i32;
 
     #[spec(
+        requires: self.current() < i32::MAX,
         captures: old_val = self.current(),
         ensures: self.current() > old_val,
     )]
@@ -407,7 +410,6 @@ use anodized::spec;
         Descending(vec) => vec.iter().rev().is_sorted(),
     }
 )]
-#[allow(unused)]
 enum MonotonicVec<T: Ord> {
     Ascending(Vec<T>),
     Descending(Vec<T>),
