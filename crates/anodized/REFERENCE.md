@@ -32,7 +32,7 @@ RUSTFLAGS="--cfg anodized_print" cargo test
 
 Disable embedding the specs as Rust code.
 
-**Important:** This is the only configuration in which a spec costs exactly nothing. Conditions are dead code whenever checks are disabled, but `captures` expressions are bound alongside the body and so are evaluated on every call regardless — a `.clone()` in a capture is a real clone. Discarding specs also **prevents syntax/type checking** them, so it may decrease compilation time.
+**Important:** Discarding specs removes their generated code and prevents syntax/type checking of their expressions. With no `anodized_*` flags, runtime checks are disabled, but `captures` expressions still execute alongside the function body: a `.clone()` in a capture still runs. The separate `anodized_embed_specs` mode embeds specifications without changing the function body.
 
 ### `anodized_embed_specs`
 
@@ -87,7 +87,7 @@ use anodized::spec;
 
     // Runtime checks only in debug builds (like `debug_assert!`)
     #[cfg(debug_assertions)]
-    ensures: |ref output| output.is_ok(),
+    ensures: |output| output.is_ok(),
 )]
 fn perform_complex_operation(input: i32) -> Result<i32, String> { todo!() }
 ```
