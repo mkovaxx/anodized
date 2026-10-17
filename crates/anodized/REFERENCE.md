@@ -135,7 +135,7 @@ use anodized::spec;
     // Invariant: length never exceeds capacity
     maintains: vec.len() <= vec.capacity(),
 )]
-fn push_checked<T>(vec: &mut Vec<T>, value: T) { vec.push(value) }
+fn push_checked<T>(vec: &mut Vec<T>, value: T) { todo!() }
 ```
 
 ### `captures`: Capture Entry-Time Values
@@ -208,7 +208,6 @@ reconstructed.
 use anodized::spec;
 
 #[spec(
-    requires: input < i32::MAX - 1,
     // Bind the return value to `output` for the entire group of postconditions.
     ensures: |output| [
         output > input,
@@ -245,7 +244,7 @@ fn sort_pair(pair: (i32, i32)) -> (i32, i32) { todo!() }
 use anodized::spec;
 
 #[spec(
-    requires: amount >= 0 && *balance >= amount,
+    requires: *balance >= amount,
     maintains: *balance >= 0,
     captures: initial_balance = *balance,
     ensures: |(new_balance, receipt_amount)| [
@@ -254,7 +253,7 @@ use anodized::spec;
         *balance == new_balance,
     ],
 )]
-fn withdraw(balance: &mut i64, amount: i64) -> (i64, i64) { todo!() }
+fn withdraw(balance: &mut u64, amount: u64) -> (u64, u64) { todo!() }
 ```
 
 ### Loop Specs
